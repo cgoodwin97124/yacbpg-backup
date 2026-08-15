@@ -15,7 +15,8 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(Empty — the tooltips + per-panel size request was implemented 2026-08-15; see ✅ DONE.)
+(Empty — the Focus hover-preview bug was fixed 2026-08-15; see ✅ DONE.)
+
 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
@@ -30,6 +31,14 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-15 — Bug: hover-to-preview for images invisible in Focus view (fixed 2026.08.15.6)
+- **Status:** DONE 2026-08-15 (changelog 2026.08.15.6). Author report: "The hover-to-preview for images
+  doesn't work when the panel has Focus." Root cause: Focus moves the real panel card into #singleOverlay
+  (.view-overlay z-index 10000), which painted ABOVE #imgPreview (z-index 9999). Fixed by bumping .img-preview
+  to z-index 10002. Verified with real-browser hit testing (elementsFromPoint returns imgPreviewImg first),
+  since html2canvas can't capture fixed-position elements.
+
+
 
 ### 2026-08-15 — Panel Objects tooltips + per-panel image size selector (implemented)
 - **Status:** DONE 2026-08-15 (changelog 2026.08.15.5). Greenlit same day ("Go ahead and greenlight these,
