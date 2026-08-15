@@ -1,0 +1,250 @@
+
+# CHANGELOG — Yet Another Comic Book Page Generator
+
+Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
+Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
+
+## 2026.08.15.4 — 2026-08-15 — Fix: Backup dialog Close button
+- The Close button stopped working right after the visibility fix: the hardened overlay is pinned with inline `display:flex !important`, which overrides perchance's `[hidden]{display:none !important}` rule — so `ghClose()`'s `hidden=true` no longer hid anything. `ghClose()` now also forces `display:none !important`, and a `_ghClosed` flag makes the 2s visibility guard stop re-showing it. Open → Close → Reopen verified.
+## 2026.08.15.3 — 2026-08-15 — Fix: Backup dialog opening invisibly in some browsers
+- The "⬆ Backup to GitHub…" dialog opened invisibly for the author (Firefox, devtools docked) even though it was in the DOM with `display:flex`. Hardened `openGhBackup()`: pins the overlay with inline `!important` styles, moves it to the end of `<body>`, raises its z-index to the max (2147483647), detects any ancestor that breaks `position:fixed` (transform/filter/perspective/contain) and falls back to a viewport-pinned absolute position, locks body scroll while open, and re-asserts visibility for ~2s so nothing can re-hide it. The dialog box is now scroll-safe in short viewports (margin:auto centering + max-height 100% + internal scroll) instead of being clipped. It also logs a diagnostic line (`[gh] opened — …rect… viewport… fixed-breaker…`) so if it ever fails again the console shows exactly why.
+
+## 2026.08.15.2 — 2026-08-15 — "Backup to GitHub" — version history for your generator
+- File → Backup Project → "⬆ Backup to GitHub…" saves your repo settings (owner, repo, token) in your browser. Backups themselves are run by the AI assistant on request — say "back it up to GitHub" in the chat — and each backup is a commit on GitHub you can view, compare, and restore. (There's deliberately no push button in the shipped generator: the token stays in your browser, scoped to your repo, and visitors can't trigger commits.)
+- The backup includes main.pjs, index.html (the full live page), src/user-manual.html, and the PENDING / AI-NOTES / CHANGELOG / ISSUES docs.
+- One-time setup: create a private repo + a fine-grained Personal Access Token (Contents: read & write, scoped to that repo), paste it in the Backup dialog, and press 🔍 Test. The token is stored only in your browser — it's never in exports, backups, or the shipped generator.
+- Each backup lands as a commit titled "backup <version> — <timestamp>"; the dialog shows when the last backup happened.
+## 2026.08.15.1 — 2026-08-15 — Batch: JSON-only backups drop image protection; unified "Panel Objects" in every panel
+- JSON-only backups (⬇ Export / 💾 Save) no longer include the image protection status — restoring a .json-only backup comes back fully unprotected. Backups that also include the images (.zip export) keep the protection exactly as it was.
+- Each panel's Panel Library (Characters / Location / Action) is now a single "🧩 Panel Objects" section: every object in the panel is one row showing its Type, Identity, and Freeform Description, with the same Type dropdown as the main 📚 Library menu.
+- The "add object" dropdown offers ＋ New Character…, ＋ New Location…, ＋ New Action…, and ＋ New <Your Type>… for every custom type you've created (plus ＋ New Type… to invent another), or you can add an existing object from the "Add from library" list.
+- A panel can hold any number of objects — extra characters, extra locations/actions, or objects of a custom type. A warning notes that too many objects can confuse the image AI, and no limit is enforced.
+- Changing a row's Type moves it to the right place automatically (Character → a character slot, Location → the location slot, Action → the action box).
+- Picking a saved character or location now auto-fills the row's Freeform Description with the library description (like actions already did).
+- Your existing panels loaded exactly as before.
+
+## 2026.08.14.7 — 2026-08-14 — Batch: Generate All From Here, floating panels button, hide-panels password, File → New Project, unified Panel Library Objects
+- ⚡ Each panel's ⚙ settings now has "Generate All From Here" — regenerates that panel and everything after it (best for a fresh look after a tweak).
+- The Hide/Show Panels button now floats at the bottom-left of the screen so it's always within reach, no matter how far you've scrolled.
+- You can now require a password to show the panels after hiding them (File → Preferences → "Require password to show panels"). Set it once; hiding the panels locks them, and showing them again asks for the password.
+- File → 📄 New Project starts a fresh project: back up the current one (💾 Save & New), skip the backup (Continue), or abort (Cancel).
+- 📚 Library is now one unified "Panel Library Objects" section — one list with all your saved characters, locations, and action prompts. Each entry has a Type (Character / Location / Action — or make your own type), a name, and a description. What type an entry has decides which panel dropdown it appears in. Your existing saved characters, locations, and action prompts were migrated over automatically.
+- Fixed an import bug (an import from a freshly-loaded page could fail with a "syncState" error).
+
+- New 📚 Library section "My Saved Action Prompts" — save reusable action prompts (what happens in a panel)
+  with a name and text; edit or delete them anytime.
+- Every panel's 🎬 Action Prompt now has a "From Action Library" dropdown: pick a saved action to drop its
+  text into that panel's action box, or "＋ New Action…" to create a new saved action right there. Your own
+  typed actions still work exactly as before.
+
+## 2026.08.14.5 — 2026-08-14 — Creating a character/location: separate panel description
+- When you create a new character or location from the dropdowns, you're now asked three things: a name, the
+  main library description (reusable — shows in 📚 Library and in every prompt that uses that entry), and a
+  separate panel description that fills that panel's own slot in 📖 Panel Library.
+
+## 2026.08.14.4 — 2026-08-14 — New Character / New Location moved into the dropdowns
+- The ＋ New Character / ＋ New Location buttons are gone — each character slot's dropdown and the location
+  dropdown now have their own "＋ New Character…" / "＋ New Location…" option.
+- Pick it, name the entry (description optional), and it's created and placed in exactly the slot you chose.
+
+## 2026.08.14.3 — 2026-08-14 — New characters & locations: optional description
+- The ＋ New Character / ＋ New Location buttons now also ask for an optional freeform description — how the
+  character looks or what the place is like — which is woven into every panel prompt that uses that entry.
+  You can leave it blank and fill it in later from 📚 Library.
+
+## 2026.08.14.2 — 2026-08-14 — Create characters & locations right from a panel
+- Each panel's 👤 Characters and 📍 Location sections now have a ＋ New Character / ＋ New Location button.
+- Click it, give the new entry a name, and it's saved to your library and used in that panel immediately —
+  no need to jump to the Library tab first.
+
+## 2026.08.14.1 — 2026-08-14 — Cleaner start: menus closed by default
+- The app no longer opens a menu or highlights a menu button when it loads — everything starts tucked away,
+  so nothing looks "open" that isn't. (Previously a previously-used menu could stay highlighted while a
+  different menu was actually showing.)
+
+## 2026.08.13.10 — 2026-08-13 — User Manual
+- A full user manual is now included with the generator and opens from **❓ Help → 📖 Open User Manual** —
+  a guide covering building panels, generating images, persistence and backups, multi-page projects, and more.
+- The manual opens in a reader window inside the app (opening it in a separate browser tab isn't supported
+  on this platform, so the in-app reader is the way to read it).
+  (It's a snapshot document, so the very latest revisions are best seen in Help → About / Version History.)
+
+## 2026.08.13.9 — 2026-08-13 — Stop button for any generation, per-image buttons restored, Show/Hide Menus
+- The ■ Stop button now activates whenever ANY generation is running — a ⚡ batch, a single panel, or a
+  single image reroll — and deactivates when nothing is in flight. Stopping still cancels everything cleanly.
+- The per-image ↗ Open / ⬇ Save / ✕ Clear / 🔓 Protect / ⭐ Cover buttons are back directly under each
+  generated image (they had been tucked into a collapsed "Image Controls" accordion). The 🖼 Image Controls
+  accordion is gone; the buttons live under the image again, as small icon chips.
+- Each panel's blue Show Menu button is now a single **Show/Hide Menus** toggle: click to open all of that
+  panel's accordion menus, click again to collapse them.
+
+## 2026.08.13.8 — 2026-08-13 — ⟳ Location & Action persistence + line delete buttons
+- 📍 Location and 🎬 Panel Action Prompt now have a ⟳ persist checkbox (like the character slots): checking it
+  copies that panel's location (with its modifier) or action prompt to all later panels on the page.
+- All ⟳ chains (characters, location, action) now also reach exactly one panel beyond the page — panel 1 of the
+  next page — then stop. The value lands when you switch to that page, and only if you haven't already changed
+  that panel yourself.
+- Each character line, the Location, and the Action Prompt now have a small ✕ delete button that clears the line
+  (No Character Selected / No Location Selected + modifier cleared, action prompt emptied) and turns its ⟳ off.
+- Choosing "No Location Selected" now also clears the location modifier box (matching the character behavior).
+
+## 2026.08.13.7 — 2026-08-13 — Global Stop button
+- The per-panel ■ Stop buttons are now one GLOBAL ■ Stop button next to ⚡ GENERATE ALL PANELS — always
+  visible, and enabled while a run is in progress. Clicking it cancels the run cleanly (stops in-flight
+  images, marks them "Stopped").
+
+## 2026.08.13.6 — 2026-08-13 — Panel info summary + cleaner dropdown label
+- Each panel now shows a one-line summary under its "Panel N" heading: the selected characters (or
+  "No Character Selected"), the location (or "No Location Selected"), and the action prompt (truncated
+  with "…" when too long, or "No Action Prompt"). It updates live as you edit and survives reloads.
+- The "No Location Selected" dropdown option no longer shows square brackets.
+
+## 2026.08.13.5 — 2026-08-13 — Show / Collapse Menu buttons restored
+- Each panel's blue Show Menu button (next to 🔍 Focus) is back — it opens all of that panel's accordion
+  menus (📖 Panel Library, 📝 Prompt, ⚙ Panel, 💾 Files, and the nested 👤/📍/🎬 sections) at once.
+- The ⚙ Panel accordion's Collapse Menu button is back too — it collapses them all again.
+- Like Stop + Hide Panels, these were lost in the same file-merge mishap; re-implemented 2026-08-13.
+
+## 2026.08.13.4 — 2026-08-13 — Stop + Hide Panels restored
+- The ■ Stop button and the ▧ Hide/Show Panels header button are back. They had been lost in a file-merge
+  mishap (Help → About listed them but the app code didn't have them). Re-implemented 2026-08-13:
+- ■ Stop (per panel, appears only while a ⚡ Generate All Panels run is going) cleanly cancels the run —
+  stops in-flight images and marks them "Stopped".
+- ▧ Hide Panels hides every panel card while rendering keeps running invisibly in the background; the choice
+  is remembered and included in backups.
+
+## 2026.08.13.3 — 2026-08-13 — App renamed
+- The app is now called "Yet Another Comic Book Page Generator" — new title in the header and the Help > About page.
+
+## 2026.08.13.2 — 2026-08-13 — Generate always visible + Hide Panels + Stop
+- ⚡ Generate All Panels stays visible even when you hide the menu — it just sits in a slim bar on its own.
+- New ▧ Hide Panels button in the header hides every panel card so you can watch the status line instead, while rendering keeps running invisibly in the background (show it again any time).
+- Each panel now has a ■ Stop button that cleanly cancels a running Generate All Panels run.
+
+## 2026.08.13.1 — 2026-08-13 — Show / Collapse Menu buttons
+- Each panel now has a blue Show Menu button right next to 🔍 Focus that opens all of that panel’s accordion menus (📖 Panel Library, 📝 Prompt, ⚙ Panel, 💾 Files, and the nested sections) at once.
+- The ⚙ Panel accordion now has a Collapse Menu button that collapses them all again.
+
+## 2026.08.12.29 — 2026-08-13 — Deselect polish
+- The "No Character Selected" dropdown option no longer shows square brackets.
+- Selecting "No Character Selected" also clears that slot’s modifier box.
+
+## 2026.08.12.28 — 2026-08-13 — Image buttons back under each image
+- The 🖼 Image Controls accordion is gone — each image now has its own small icon button row right beneath it: ↗ Open, ⬇ Save, ✕ Clear, 🔓 Protect, ⭐ Cover (hover for the tooltip).
+- Protected images keep the little 🔒 badge on their corner.
+
+## 2026.08.12.27 — 2026-08-13 — Panel Library sections collapsible
+- Inside 📖 Panel Library, the Characters, Location, and Action Prompt sections can now each be collapsed or expanded individually.
+
+## 2026.08.12.26 — 2026-08-13 — Panels slimmed down with more accordions
+- Characters, Location, and Panel Action Prompt now hide inside a 📖 Panel Library accordion.
+- Panel Seed moved into the ⚙ Panel accordion.
+- Each image’s buttons (Open / Save / Clear / Protect / Cover) moved into a 🖼 Image Controls accordion, so each panel just shows its images. Protected images show a small 🔒 badge on the corner so you can still tell at a glance.
+
+## 2026.08.12.25 — 2026-08-13 — Panel buttons organized into accordions
+- Each panel now shows just 🔍 Focus and 🔄 Generate, with the rest of the buttons tucked into three slim accordions: 📝 Prompt (prompt editor + copy), ⚙ Panel (duplicate / add / clear / delete), and 💾 Files (open all / save all / export).
+
+## 2026.08.12.24 — 2026-08-13 — Per-panel art style
+- Each panel now has its own Style dropdown (next to the Images selector) — pick any art style for just that panel, or [Default (Global)] to follow the global Art Style.
+- The choice is saved with the panel, copied when you duplicate it, and included in exports.
+- About the "sticky comic style": the style never actually stuck — those were the panel’s old images still displayed (images persist until you regenerate or reload the page). Switching style only affects new generations. If a panel still looks wrong after regenerating, it has a custom 📝 Prompt override pinning its keywords.
+
+## 2026.08.12.23 — 2026-08-13 — Deleting the last panel/page resets the project
+- Deleting the last panel of a page now warns that the page will be deleted too.
+- Deleting the only page (via 🗑 Delete Page in File → Page Setup, or by deleting the only panel) warns you and then resets the whole project to defaults — like Edit > Reset to Defaults.
+
+## 2026.08.12.22 — 2026-08-12 — Add a panel
+- Every panel now has a green ＋ Add Panel chip next to 🗑 Delete — it inserts a new empty panel right after, moving later panels down and renumbering them (the exact inverse of Delete).
+
+## 2026.08.12.21 — 2026-08-12 — Delete a panel
+- Every panel now has a red 🗑 Delete chip. Deleting a panel removes it (settings, generated images, protection) and moves all later panels up, renumbering them.
+- You are asked to confirm before a panel is deleted, and the last panel on a page cannot be deleted.
+- ☝ Heads-up: verifying this feature destroyed the sample project in this browser’s local save (my test cleanup bug). Re-import your last export to bring it back — the generator code is unaffected.
+
+## 2026.08.12.20 — 2026-08-12 — Fixed menu buttons overlapping hint text
+- The small gray hint texts in the menu no longer get pulled up into the buttons above them (fixed for the Storyboard View chip, the Backup Project buttons, and everywhere else).
+
+## 2026.08.12.19 — 2026-08-12 — Storyboard button in File → Project
+- The 📄 File → Project panel now has a ▦ Storyboard View button — handy when the menu is on the side and you do not have to use the header button.
+
+## 2026.08.12.18 — 2026-08-12 — Floating menu button now lives upper-left
+- The floating Show Menu button now appears in the upper-left corner (where the header buttons are) instead of the lower-right.
+- When the menu is open, the floating Hide button stays in the lower-right so it never covers the menu itself.
+- It still only appears once you scroll past the header buttons.
+
+## 2026.08.12.17 — 2026-08-12 — Floating menu button tracks the header
+- On mobile, the floating menu button now appears whenever the header buttons are scrolled out of view — not just when the menu is hidden — so you can hide and unhide the menu from anywhere without scrolling back to the top.
+- It doubles as a Show Menu / Hide Menu toggle and stays labeled accordingly.
+
+## 2026.08.12.16 — 2026-08-12 — Header buttons moved to upper left
+- The Storyboard / Hide Menu / Menu: Side buttons moved from the upper-right to the upper-left corner of the header, next to the title — handier when quickly hiding and unhiding the menu.
+
+## 2026.08.12.15 — 2026-08-12 — Menu visibility toggle
+- A ☰ Hide/Show Menu button in the header now hides or restores the whole menu panel (top or side). A floating ☰ Menu button appears bottom-right when it is hidden, so you can bring it back after scrolling.
+- Your menu visibility choice is remembered between visits and included in project backups.
+
+## 2026.08.12.14 — 2026-08-12 — Side menu stacks menu bar
+- The File / Edit / Library / Help buttons now also stack full-width vertically when the menu is on the side — they stay side-by-side with the top menu.
+
+## 2026.08.12.13 — 2026-08-12 — Side menu stacks chips
+- With the menu moved to the side, the action-chip rows (Backup, Page buttons, Image Count) now stack vertically — they stay horizontal with the top menu.
+
+## 2026.08.12.12 — 2026-08-12 — Guidance slider must be a whole number
+- The Prompt Obedience slider now only allows whole numbers 1–30 — the image service rejects fractional values (your 9.5 was silently killing every generation after it).
+- Saved fractional values (like 9.5) are rounded on load; generation also rounds defensively.
+
+## 2026.08.12.11 — 2026-08-12 — Detect stalled image service
+- If the image service stops responding (e.g. after a tab switch mid-generation), Generate now shows a clear error telling you to reload the page — no more silently doing nothing.
+- Generate All Panels reports per-panel failures instead of stopping without a word.
+
+## 2026.08.12.10 — 2026-08-12 — Generate-after-background fix
+- After a tab-went-to-background pause, clicking a panel or image Generate chip silently did nothing — now it resets the pause flag and generates normally (or shows a real error).
+
+## 2026.08.12.9 — 2026-08-12 — Prompt obedience slider
+- New Prompt Obedience (guidance scale) slider in File → Page Setup (1–30, default 7) — how literally the AI follows your prompt.
+- Green–yellow–red slider track + value readout warn about diminishing returns (red past ~15: oversaturation, halo/text artifacts).
+
+## 2026.08.12.8 — 2026-08-12 — Safer project import
+- Importing warns when you have a project in progress — Save (back it up first), Continue, or Cancel.
+- Import fully clears the current project, including image protection.
+
+## 2026.08.12.7 — 2026-08-12 — Protect Image
+- Protect individual images instead of whole panels.
+- Protected images are never overwritten by Generate — panel Generate keeps them and regenerates the rest.
+- Backup buttons moved under File → Project.
+
+## 2026.08.12.6 — 2026-08-12 — Project export/import + project name
+- Project naming (shown in the header, used for export/save filenames).
+- Export Project (.zip) bundles settings + every generated image (all pages).
+- Import a project .zip to restore settings AND images; .json restores settings.
+
+## 2026.08.12.5 — 2026-08-12 — Multiple pages
+- Add, name, switch, and delete pages — each with its own panels, panel count, and seed.
+- Duplicating a panel on a full page offers to start a new page with a copy of it.
+
+## 2026.08.12.4 — 2026-08-12 — View modes
+- Storyboard view — all panels at a glance with placeholders for empty panels.
+- Single-panel Focus view with a panel list, dropdown, prev/next, and arrow keys.
+
+## 2026.08.12.3 — 2026-08-12 — Panel operations
+- Duplicate a panel — full data/prompt copy, no images.
+
+## 2026.08.12.2 — 2026-08-12 — Image slots
+- Protect a panel’s images from regeneration.
+- Star a panel’s Cover/representative image.
+- Set the image count for all panels at once.
+
+## 2026.08.12.1 — 2026-08-12 — Menu & preview polish
+- Collapsible menu panels.
+- Image hover / long-press preview (configurable delay, with an on/off toggle).
+- No Character Selected moved to the bottom of the dropdowns.
+
+## 2026.08.11.1 — 2026-08-11 — Persistence & export overhaul
+- All menu settings persist across reloads.
+- JSON backup/import, silent Save… / Save as…, ZIP export with images.
+- Per-panel reroll, multi-image panels, prompt editor, image size + upscale.
+
+## 2026.08.10.1 — 2026-08-10 — Initial release
+- Core panel grid with characters, locations, and actions.
+- Menu system (File / Edit / Library / Help), style presets, keyword chips.
+- Mobile memory hardening for generated images.
