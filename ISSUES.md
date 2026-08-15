@@ -1,0 +1,239 @@
+
+# Comic Generator — Issue Log
+
+Log of reported issues and their resolutions, newest first.
+A future AI helper session should GREP THIS FILE before diagnosing anything —
+the real root cause of a "same" symptom is usually already recorded here.
+
+Convention: every resolved issue gets an entry (symptom → root cause → fix → gotchas).
+Keep entries short but complete enough that a fresh session never re-diagnoses.
+
+---
+
+## 2026-08-14 — "another_upload_in_progress" blocks ALL saves forever on specific src/ files (platform bug + workaround)
+- **Symptom:** Save fails with "Couldn't save the src files: couldn't upload src/<file>: another_upload_in_progress"
+  for hours on end; survives full browser restarts and network changes; every retry names a file in the same set.
+- **Root cause (diagnosed, not confirmed by platform):** a src/ file whose first upload ever got interrupted
+  (e.g. an AI-session hard page reload killing the in-flight sync) leaves a permanent server-side per-file upload
+  lock. The dot next to the file's size in the editor's files panel = dirty/pending-upload state; it NEVER clears.
+  While a wedged file exists in src/, EVERY save of the generator fails — including main.pjs/index.html. The
+  throwaway-generator test proved it's per-generator, not per-account. ISSUES.md / user-manual.html / changelog.js
+  (never wedged) save fine.
+- **Cure (only one that worked):** delete the offending file(s) from the files panel → Save succeeds. Recreating
+  the file (even without any reload) re-wedges it — the lock is tied to the file name.
+- **Fallout / permanent workaround applied:** the AI-facing docs were relocated OUT of src/ into `<script
+  type="text/plain">` blocks embedded in index.html (ids: embeddedPENDING, embeddedAINOTES, embeddedChangelog)
+  — read via .textContent; inert to the perchance template engine (script contents are not template-processed,
+  so `[...]` inside them is safe). renderChangelog now reads #embeddedChangelog first (src/ fetch kept only as a
+  stale-copy fallback). src/PENDING.md, src/CHANGELOG.md, src/AI-NOTES.md are PERMANENTLY GONE from src/ —
+  future sessions edit the embedded blocks in index.html instead. Do NOT recreate those src/ file names.
+- **Gotchas for future sessions:** (1) NEVER hard-reload (browser_eval/browser_refresh) immediately after writing
+  a src/ file — the reload kills the in-flight sync and wedges that file name. (2) upload_file probes return
+  "another_upload_in_progress" while the generator's upload state is wedged — a handy diagnostic. (3) The user's
+  full backup is in the chat (generator-full-backup.zip) and the docs content lives in index.html now.
+
+## 2026-08-14 — Description entered at creation doesn't appear in the panel's slot (Not A Bug — clarified)
+- **Symptom:** After creating a New Character / New Location from the dropdown and typing a description, the
+  slot in 📖 Panel Library → Characters / Location showed nothing.
+- **Investigation:** The description typed at creation is the LIBRARY description (`entry.desc`), stored on the
+  reusable library entry and woven into every panel prompt that uses that entry (resolveDesc). The panel slot's
+  own description field (the modifier/extra textarea) is intentionally SEPARATE and per-panel — it was never
+  meant to be auto-filled from the library description.
+- **Resolution (2026.08.14.5):** not a bug. Per the author's clarification, the create flow now asks THREE
+  prompts: (1) name, (2) the main library description (reusable, shows in 📚 Library), (3) a separate PANEL
+  description that fills the placed slot's own description field. Both descriptions feed that panel's prompt
+  (library desc via resolveDesc + panel desc as the modifier) — deliberately distinct.
+
+## 2026-08-14 — On load, a menu button is highlighted that doesn't match the menu actually open (Resolved)
+- **Symptom:** On refresh, the app came up with the ❓ Help button highlighted — implying the Help menu was
+  open — while the 📄 File menu was actually the one showing.
+- **Root cause:** `initMenu()` restored a previously-used menu from localStorage ('comicGen.activeMenu',
+  defaulting to 'file') and highlighted its button, but it NEVER hid the other menu groups. The File group
+  has no `hidden` attribute in the HTML (visible by default), so when a different menu (e.g. Help) was the
+  saved one, BOTH groups ended up visible — the File menu open on the page while the Help button alone was
+  highlighted.
+- **Fix (2026.08.14.1):** the app now always starts with every `.menu-group` hidden and no `.menu-btn`
+  highlighted — `initMenu()` explicitly hides all groups and strips `active` from all buttons (no
+  auto-restore of 'comicGen.activeMenu' on load). `menuGroup-file` also got the `hidden` attribute so
+  nothing flashes before initMenu runs. `switchMenu()` still persists the active menu so an import can
+  restore it.
+- **Gotcha:** this is a deliberate behavior change (author-requested default state = all closed). Do NOT
+  re-add the load-time restore of 'comicGen.activeMenu'.
+
+## 2026-08-14 — Manual "↗ Open in new tab" → "No src manifest available for this page" (Resolved)
+- **Symptom:** The in-app reader works great, but the manual overlay's "↗ Open in new tab" button opened a
+  new tab at `https://<publicId>.perchance.org/src/user-manual.html` (the absolute URL the previous fix
+  computed) that showed: "No src manifest available for this page (service worker had no state for the client)."
+- **Root cause:** Top-level navigation to a `src/` file is fundamentally unsupported in this environment.
+  The generator runs behind a perchance service worker that keeps "src manifest" state only for the app page
+  itself; a brand-new tab pointed straight at a `src/` asset URL has no such client state, so the service
+  worker refuses to serve it. The absolute-URL correction below was necessary but NOT sufficient — any
+  `window.open`/anchor whose target is a `src/` asset of this generator can never work here.
+- **Fix:** Removed the "↗ Open in new tab" button from `#manualOverlay` and deleted `openUserManualTab()`
+  (function + window export). The manual now opens ONLY in the in-app reader (`openUserManual()` → fetch →
+  `<iframe#manualFrame>` srcdoc), which works reliably in the editor preview and when published.
+- **Gotcha:** NEVER ship a `window.open` / anchor navigation targeting a `src/` asset of this generator —
+  the service worker blocks it with "No src manifest available for this page". In-app `fetch('src/...')`
+  continues to work fine.
+
+## 2026-08-14 — 📖 Open User Manual → "Cannot GET /src/user-manual.html" (Resolved)
+- **Symptom:** Clicking Help → 📖 Open User Manual (added in 2026.08.13.10) opened a new tab that 404'd with
+  "Cannot GET /src/user-manual.html".
+- **Root cause:** The generator iframe's `document.baseURI` is `https://perchance.org/<name>` — Perchance
+  injects a `<base>` tag pointing at the PUBLIC generator URL on `perchance.org`. The old implementation did
+  `window.open('src/user-manual.html')`, which resolved the relative URL against that base
+  → `https://perchance.org/src/user-manual.html` — a top-level navigation the `perchance.org` host 404s.
+  The file actually serves on the PUBLIC-ID subdomain root (`location.origin + '/src/user-manual.html'`,
+  verified fetch 200), and the app's own `fetch('src/user-manual.html')` also returns 200.
+- **Fix (superseded 2026-08-14 — see the entry above):** The manual now opens IN-APP: `#manualOverlay`
+  (same pattern as the view overlays) with `<iframe#manualFrame>` whose `srcdoc` is set from
+  `fetch('src/user-manual.html')` — isolated styling, guaranteed to work in the editor preview and when
+  published. `closeUserManual()` hides the overlay. Exported: openUserManual / closeUserManual. (The
+  secondary "↗ Open in new tab" button / `openUserManualTab` using the corrected absolute URL was REMOVED —
+  new-tab navigation to a `src/` asset is refused by the service worker.)
+- **Gotcha (recorded for the future):** in this generator's iframe, relative URLs resolve against
+  `perchance.org/<name>` (the injected `<base>`), NOT against `location.origin`. For any `window.open` of an
+  app asset, build the URL from `location.origin` explicitly. For in-app loading, plain relative `fetch`
+  works (server-side it's the same subdomain).
+
+## 2026-08-13 — ■ Stop button "missing" next to Generate All Panels on mobile (Resolved — Not An Issue)
+- **Symptom:** Author reported the global ■ Stop button (`#globalStopBtn`, sits beside ⚡ GENERATE ALL
+  PANELS in `.gen-actions`) was not visible on mobile — suspected screen real estate or a mobile-specific
+  layout issue — and could NOT reproduce it by resizing the editor preview.
+- **Investigation:** Checked markup (button always present, no `hidden`), CSS (`.btn-stop-global` has no
+  mobile hiding rule; `.gen-row` flex + `white-space:nowrap` keeps it on-screen down to ~320px), and logic
+  (`setStopButtonEnabled(true)` runs at every Generate All start). Measured layout live — the row fits at
+  narrow widths. Nothing device-specific hides it.
+- **Resolution:** Author re-checked on mobile and confirmed the Stop button IS present → **Resolved — Not
+  An Issue**. No code change.
+- **Gotchas / latent observations (no fix requested, left as-is):** (1) `body.menu-hidden .menu-frame {
+  display:none }` still hides the ENTIRE generate bar with the menu — contradicts CHANGELOG 2026.08.13.2's
+  "⚡ stays visible when menu hidden" promise (a regression carried in by the older-index.html merge; the
+  fix would hide only `.menu-scroll`). (2) `.gen-actions { flex:0 1 auto; min-height:0 }` inside the
+  45dvh `.menu-frame` can be flex-squeezed to near-zero by tall `.menu-scroll` content on short screens
+  (phones) — `flex: 0 0 auto` would guarantee the generate row always shows.
+
+## 2026-08-13 — Show / Collapse Menu buttons missing after reload
+- **Symptom:** Per-panel Show Menu (opens all of a panel's accordion menus at once) and the ⚙ Panel's
+  Collapse Menu button were gone after a reload, though Help → About listed them (2026.08.13.1).
+- **Root cause:** Same file-merge mishap as Stop/Hide Panels — newer docs kept, older index.html without
+  the implementations.
+- **Fix:** Re-implemented 2026-08-13 (CHANGELOG 2026.08.13.5): `showPanelMenus(i)` / `collapsePanelMenus(i)`
+  set every `.panel-acc` in `#panel-card-i` to open/collapsed via `setPanelAccsCollapsed` (nested sections
+  included); Show Menu button added to the action row (`.btn-view.menu-show`), Collapse Menu button added to
+  the ⚙ Panel accordion body (`.btn-panel-menu`); both exported on window.
+- **Gotchas:** Buttons are inline-onclick, so they must stay exported on window; accordion collapse state is
+  NOT persisted (session-only, by design).
+
+## 2026-08-13 — Stop button + Hide Panels button missing after reload
+- **Symptom:** Author reloaded and the ■ Stop button (cancel a Generate All run) and the ▧ Hide/Show Panels
+  header button were gone, even though Help → About listed them (version 2026.08.13.2).
+- **Root cause:** A file-merge/reconciliation kept the NEWER changelog + AI notes but an OLDER index.html
+  that never contained the implementations — the features were described in docs but absent from code.
+- **Fix:** Re-implemented 2026-08-13 (see CHANGELOG 2026.08.13.4): haltGenerations()/stopRequested/
+  generateAllRunning + per-panel ■ Stop buttons (visible only during Generate All) + `.stopped` box/card
+  states; ▧ Hide/Show Panels header button toggling `body.panels-hidden` (hides only `.canvas-frame`;
+  generation keeps running), persisted as `comicGen.panelsVisible` and included in exports/imports.
+- **Gotchas:** `.stopped` is cleared wherever box/card states reset; renderPanelSlot bails early when
+  stopRequested is set; single-slot generation clears a stale stopRequested via `!generateAllRunning`;
+  stopAllGenerations still marks `.paused`, not `.stopped`.
+
+## 2026-08-13 — Panels seem to "keep" their old art style after switching the global style
+- **Symptom:** After switching the global Art Style to Photorealistic, some panels (created under
+  Comic Book) still showed comic-style images.
+- **Root cause:** There was NO per-panel style storage — style is keyword-driven and read LIVE from
+  `globalPos` at generation time, so non-overridden panels always render in the current global style.
+  Two things made it LOOK sticky: (1) generated images persist in the page session (memory) until you
+  reload or regenerate that panel — switching the style never re-renders existing images; (2) a panel
+  with a custom 📝 Prompt override uses exactly those keywords. Note: `applyPreset()` calls
+  `clearAllPromptOverrides()` when the global style changes, so overrides only matter if set AFTER the
+  switch (or imported — applyImportedSettings does NOT clear overrides).
+- **Fix (v2026.08.12.24):** added the per-panel **Style** dropdown (feature request) — see the
+  PER-PANEL ART STYLE dev note. No persistence bug existed; the sticky look was stale images /
+  prompt overrides.
+- **Gotcha:** Existing images never restyle themselves — regenerate (or Clear + Generate) a panel to
+  see its new style. If a panel stubbornly keeps a style after regenerating, its 📝 Prompt override
+  is the cause.
+
+## 2026-08-12 — AI's test harness deleted the author's project page (tooling hazard)
+- **Symptom:** During verification of the new delete-panel feature, the author's saved project
+  (page 1 of "Sample NSFW Comic") vanished from localStorage; only a leftover test page remained.
+- **Root cause:** The AI's browser_eval created throwaway pages for testing, then called
+  `deletePage()` to clean up. `deletePage()` is gated by `confirm(...)`, and `confirm()`
+  AUTO-ACCEPTS (returns true) inside the eval harness, so the cleanup deleted page 1.
+- **Fix/lesson (2026-08-12):** NEVER mutate via confirm()-gated or delete functions in
+  browser_eval against a live project. Prefer read-only evals, or if a mutation test is
+  unavoidable, run it against a disposable page and restore the original panelState JSON
+  (save it to scratch/ first) instead of relying on in-app deletion for cleanup.
+- **Author recovery used:** re-imported the last exported settings file. (Alternative: a trivial
+  edit in a stale tab still holding the data auto-saves it back — see the tab-model entry below.)
+
+## 2026-08-12 — Menu chips/buttons overlap the hint text below them
+- **Symptom:** In the menu, buttons (e.g. the new ▦ Storyboard View chip, the Backup Project
+  buttons) visually overlap the small gray hint text underneath by a few pixels.
+- **Root cause:** `.lib-hint { margin-top: -8px }` — the negative margin pulled every hint
+  8px up into whatever preceded it. When that predecessor is an `input`/`select` (5px bottom
+  margin) the overlap was invisible; when it's a `.chip-row` of buttons (0 bottom margin, 8px
+  bottom padding) the hint text landed right at/over the button's bottom edge.
+- **Fix (v2026.08.12.20):** `.lib-hint` margin-top `-8px` → `0`. Hints now sit below their
+  predecessor with a small clean gap everywhere; top and side menu both.
+- **Gotcha:** `.lib-hint` is used globally (menu panels, library rows) — the fix intentionally
+  changes spacing everywhere, not just the one reported spot.
+
+## 2026-08-12 — "Generate does nothing" after moving the Prompt Obedience slider
+- **Symptom:** Generated a panel fine at default settings (4 images), then every subsequent
+  Generate click (panel chip, image chip, Generate All) appeared to do nothing — no image,
+  no error, no status change, even after clearing images.
+- **Root cause:** The image service requires `guidanceScale` to be a WHOLE NUMBER (1–30).
+  The Prompt Obedience slider allowed 0.5 steps; at 9.5 the plugin returned an ERROR TILE — a
+  plain String, e.g. `(text-to-image-plugin: <b>guidanceScale</b> should be a whole number
+  between 1 and 30...)` — returned synchronously, NOT a thenable. `withTimeout`'s
+  `Promise.race` resolved instantly with that string, `result.dataUrl` was undefined, and the
+  app reported "generated" with no image → silent nothing.
+- **Fix (v2026.08.12.12):** slider `step` 0.5→1; load/migrate/restore round & clamp saved
+  values to integers (saved 9.5 → 10); generation passes an `parseInt`ed integer.
+- **Hardening (v2026.08.12.11):** `renderPanelSlot` now throws if `result.dataUrl` is missing,
+  so ANY plugin option/rejection error shows as a visible `.failed` box + alt text instead of
+  silent success; Generate All catches per-panel failures and reports them in the "Done:" line.
+- **Gotchas:** (1) `root.generateImage()` returns error tiles as non-thenable STRINGS — never
+  assume the return is a real Promise; always check `result.dataUrl`. (2) Don't trust a
+  "generated" return — verify the image actually appeared. (3) This plugin validates options
+  and returns error-tile strings for invalid values; surface these to the user.
+
+## 2026-08-12 — "Generate does nothing" after tab went to background
+- **Symptom:** After the tab was backgrounded mid-generation (visibilitychange pause, status
+  "Stopped generations — tab went to background"), clicking a panel / per-image Generate chip
+  silently did nothing.
+- **Root cause:** The pause set `pausedByVisibility = true`; only `generateComicPage` reset it.
+  Single-panel and per-slot generation never did, so a subsequent failing or timed-out
+  generation was swallowed as `'cleared'` by `renderPanelSlot`'s catch.
+- **Fix (v2026.08.12.10):** `generateSinglePanel` and `generateSinglePanelSlot` now set
+  `pausedByVisibility = false` right after their `panelBusy` guard.
+- **Gotcha:** The stale "Stopped generations…" status text persists until any generation runs.
+
+## 2026-08-12 — Saved project "vanished" during troubleshooting (NOT an app bug — tab model)
+- **Symptom:** Data loaded in one tab was not visible in the preview pane of another tab; and a
+  troubleshooting step appeared to erase the saved project.
+- **Root cause (platform model):** App data lives in `localStorage`, which is SHARED across all
+  tabs of the same browser on the same origin (`https://<generatorPublicId>.perchance.org/
+  <generatorName>`). But each tab only READS it at load, keeps its own in-memory state, and
+  generated images are session-only (never in localStorage). Consequences: (a) a stale tab's
+  DOM does not update when another tab imports/changes data until it reloads; (b) any
+  auto-save triggered in a STALE tab writes that tab's empty/old DOM over the shared good state.
+- **Recovery used:** the user did a trivial edit in the tab that still held the data → its
+  auto-save rewrote the full good state back into shared localStorage. (Alternative: re-import
+  the last export file.)
+- **Gotchas for future sessions:** (1) Confirm WHICH page your browser_eval is attached to
+  (preview pane vs the user's live tab) before mutating anything. (2) Never trigger the app's
+  auto-save (any clear / input handler / toggle) in a tab whose DOM may be stale — it clobbers
+  the shared saved state. Prefer read-only evals during troubleshooting. (3) localStorage is
+  shared per-origin but NOT synced across already-open tabs and NOT shared across devices.
+
+## 2026-08-12 — Import replaced current project without warning; protected images not cleared
+- **Symptom:** Importing a project over an active project cleared it silently; protection
+  survived an import.
+- **Root cause:** No confirmation flow, and `applyImportedSettings` didn't reset protect chips.
+- **Fix (v2026.08.12.8):** `hasActiveProject()` check → three-choice modal (💾 Save & Import /
+  Continue / Cancel) via `#importConfirmOverlay`; import now "nukes" first (all 24×4 slots
+  `setSlotProtected(i,k,false)`) before applying imported state. See the IMPORT WARNING + NUKE
+  dev note for details.
