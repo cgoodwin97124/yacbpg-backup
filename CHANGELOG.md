@@ -4,6 +4,9 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.15.6 — 2026-08-15 — Fix: image hover preview invisible in 🔍 Focus view
+- Hovering/long-pressing a generated image in a panel's 🔍 Focus (single-panel) view now shows the preview again. The Focus view moves the real panel card into a full-screen overlay (.view-overlay, z-index 10000) that was painted ABOVE the preview overlay (z-index 9999), so the preview fired but rendered invisibly behind it. Bumped .img-preview to z-index 10002.
+
 ## 2026.08.15.5 — 2026-08-15 — Panel Objects tooltips + per-panel image size override
 - Hover over (or long-press on touch) a 🧩 Panel Objects **Identity dropdown** or **Freeform Description** and its full contents appear in a floating tooltip — handy when a description is cut off.
 - Every panel now has its own **Size** dropdown in the panel header, right next to Style: **\[Default (Global)\]** follows the Image Size in File → Page Setup, or override it with any of the same presets (512×512 / 768×768 / 1024×1024 / 1920×1080 / 1080×1920) or **Custom…** (own width × height, clamped 64–1920 × 64–1080; blank custom fields fall back to the global size). The override is saved with the panel — it survives saves, loads, imports/exports, and duplicating a panel — and is used by 🔄 Generate, single-slot generation, and ⚡ Generate All From Here.
