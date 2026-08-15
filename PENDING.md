@@ -15,14 +15,35 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(Empty — Tier 3 "Backup to GitHub" was implemented 2026-08-15; see ✅ DONE.)
+(Empty — the tooltips + per-panel size request was implemented 2026-08-15; see ✅ DONE.)
 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
 (Empty — the Tier 3 Backup-to-GitHub request was greenlit 2026-08-14 and moved to 🟢 START NOW.)
 
+### 2026-08-15 — STANDING DIRECTIVE: back up to GitHub on every Save reminder
+- **Status:** in force until the author says otherwise (no changelog entry — process/directive, not a feature).
+  Recorded 2026-08-15 at the author's request ("add this to the ongoing directives: until I specify otherwise,
+  always back it up to GitHub at the same time you remind me to Save"). Every future session must, at task end,
+  run the GitHub backup in the same turn as the "press Save" reminder: openGhBackup() → ghPush() → ghClose().
+  Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
+
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-08-15 — Panel Objects tooltips + per-panel image size selector (implemented)
+- **Status:** DONE 2026-08-15 (changelog 2026.08.15.5). Greenlit same day ("Go ahead and greenlight these,
+  unless you need me to make any decisions..."). (1) Hover / long-press over a Panel Objects Identity dropdown
+  (.po-sel) or Freeform Description (.po-desc) shows the full contents in a floating tooltip (delegated
+  document listeners + a single #poTooltip div, 350ms hover / 500ms long-press delay, viewport-clamped,
+  hidden on scroll/touchmove; perchance engine reload-proof). (2) Each panel header now has a Size dropdown
+  (panel-size-N) next to Style: [Default (Global)] / the same presets as File → Page Setup / Custom… (inline
+  panel-size-w/h inputs). getPanelImageSize(i) falls back to the global getImageSize() when blank/custom-empty;
+  used by generateSinglePanel + generateSinglePanelSlot. Saved in panelState page[i].sizeSel/sizeW/sizeH
+  (version stays 2 — fields are optional/back-compatible), restored on load, reset by Edit → Reset to Defaults,
+  copied by Duplicate (whole-page[i] deep copy). Verified live: override/custom/fallback logic, save→restore
+  round trip (persisted to localStorage, restored on reload), both tooltip types.
+
 
 ### 2026-08-15 — Bug: Backup dialog's Close button did nothing (fixed 2026-08-15.4)
 - **Status:** DONE 2026-08-15 (changelog 2026.08.15.4). After the dialog-visibility hardening made the overlay
