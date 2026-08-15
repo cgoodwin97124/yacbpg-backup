@@ -13,6 +13,13 @@ author has greenlit go into the 🟢 START NOW section, everything awaiting "go 
 QUEUED section.** When a feature is implemented, move it to ✅ DONE with the changelog version. Keep
 those in sync with this doc.
 
+**STANDING DIRECTIVE (author-mandated 2026-08-15): BACK UP TO GITHUB ON EVERY "PRESS SAVE" REMINDER.**
+Until the author says otherwise, whenever a task finishes with the usual "press Save" reminder, ALSO
+run the GitHub backup in the same turn (it uses the saved owner/repo/token via `ghPush()` —
+`openGhBackup()` first to load the inputs, then `ghPush()`, then `ghClose()`) so the shipped code and
+the GitHub history stay in lockstep. The backup is cheap and push-button-free (AI-only), so just do
+it every time — no need to ask.
+
 Not referenced by any app code — documentation only. Lives in `src/` so it persists across
 sessions (the ONLY durable places are `main.pjs`, `index.html`, and `src/`; everything else,
 incl. `scratch/`, is wiped between sessions). Note: because `src/` ships publicly, this file
