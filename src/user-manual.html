@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yet Another Comic Book Page Generator — Design Document</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #141414; color: #ddd;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6; padding: 24px;
+  }
+  .page { max-width: 860px; margin: 0 auto; background: #1d1d1d; border: 1px solid #333; border-radius: 10px; padding: 40px 48px; }
+  h1 { color: #fff; border-bottom: 3px solid #4d9fff; padding-bottom: 12px; margin-top: 0; }
+  h2 { color: #4d9fff; border-bottom: 1px solid #333; padding-bottom: 6px; margin-top: 2em; }
+  h3 { color: #ffcc00; }
+  a { color: #7db8ff; }
+  code { background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; padding: 1px 5px; font-size: 0.9em; color: #ffb84d; }
+  pre { background: #111; border: 1px solid #333; border-radius: 6px; padding: 12px; overflow-x: auto; }
+  pre code { background: none; border: none; color: #ccc; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  th, td { border: 1px solid #3a3a3a; padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #242424; color: #ffcc00; }
+  tr:nth-child(even) td { background: #1f1f1f; }
+  blockquote { border-left: 4px solid #4d9fff; margin: 1em 0; padding: 4px 16px; background: #222; color: #bbb; }
+  ul, ol { padding-left: 1.4em; }
+  hr { border: none; border-top: 1px solid #333; margin: 2em 0; }
+  em { color: #ccc; }
+  @media (max-width: 700px) { body { padding: 10px; } .page { padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>Yet Another Comic Book Page Generator</h1>
+<h3>Design Document — version 2026.08.13.9</h3>
+<p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
+<hr>
+<h2>1. What it is</h2>
+<p>Yet Another Comic Book Page Generator is a browser-based tool for assembling <strong>comic-book pages</strong> from AI-generated art. You describe a page as a sequence of <strong>panels</strong> — each with characters, a location, and a short action prompt — and the app renders each panel into <strong>1–4 images</strong> using Perchance&#39;s text-to-image service. You can work across <strong>multiple pages</strong>, apply art <strong>styles</strong> and color <strong>presets</strong>, protect the images you like from being overwritten, and back everything up to a file.</p>
+<p>Everything runs in the browser. There is no backend, no accounts, and no server-side storage — your project, your saved character/location libraries, and your settings live in your browser&#39;s local storage, and generated images live only for the current session (unless you download or export them).</p>
+<h2>2. Getting around the interface</h2>
+<p>The app has three main zones:</p>
+<ul>
+<li><strong>The menu bar</strong> (top, or a side column on wide screens) — File, Edit, Library, and Help. Only one group is open at a time.</li>
+<li><strong>The panel grid</strong> — your comic page, made of panel cards arranged in a grid.</li>
+<li><strong>The app header</strong> — page controls (Storyboard / Focus buttons, hide/show menu, menu side/top, hide/show panels) and the ⚡ <strong>GENERATE ALL PANELS</strong> button with the global ■ <strong>Stop</strong> button and the status line.</li>
+</ul>
+<h3>The menu groups</h3>
+<ul>
+<li><strong>📄 File</strong> — Save… / Save as… (writes your project to a file), Export Project (JSON or ZIP), Import Project, set the <strong>Image Count for All Panels</strong>, manage pages (add/delete), and set the <strong>Image Size</strong>.</li>
+<li><strong>📝 Edit</strong> — global keywords (positive/negative), art style + color palette presets, the global seed, the NSFW mode toggle, and <em>Reset to Defaults</em>.</li>
+<li><strong>📚 Library</strong> — manage your own saved <strong>Characters</strong> and <strong>Locations</strong> (name + description), which appear at the top of the panel dropdowns.</li>
+<li><strong>❓ Help</strong> — about, the shortcut guide, and the version history (changelog, fetched live from the project files).</li>
+</ul>
+<h3>Pages</h3>
+<p>A project can have as many pages as you like. The page selector sits in the File menu; <strong>＋ Add Page</strong> appends a new page and <strong>🗑 Delete Page</strong> removes the current one (deleting the only page resets the whole project — you&#39;re asked first). Each page keeps its own panel setup, seed, name, and generated images.</p>
+<h3>Panels</h3>
+<p>Each panel card contains:</p>
+<ul>
+<li><strong>Header row</strong> — &quot;Panel N&quot; label, an optional panel title, the <strong>Images</strong> count (1–4), a per-panel <strong>Style</strong> override, and a <strong>⇅ Move</strong> control to reorder panels on the page.</li>
+<li><strong>Info summary</strong> — a one-line summary of the panel&#39;s characters, location, and action.</li>
+<li><strong>Image slots</strong> — up to 4 images per panel. Each slot has its own small button row (see <em>Managing images</em>).</li>
+<li><strong>Action row</strong> — <strong>Show/Hide Menus</strong> (opens/collapses the panel&#39;s accordion menus with one button), <strong>🔍 Focus</strong> (single-panel view), and <strong>🔄 Generate</strong> (render just this panel).</li>
+<li><strong>Accordion menus</strong> — 📖 <strong>Panel Library</strong> (characters, location, action), 📝 <strong>Prompt</strong> (view/edit the exact prompt), ⚙ <strong>Panel</strong> (collapse menus, duplicate, add/delete panel, clear images, per-panel seed), 💾 <strong>Files</strong> (open/save/export this panel&#39;s images).</li>
+</ul>
+<h2>3. Building a panel</h2>
+<p>Open a panel&#39;s <strong>📖 Panel Library</strong> accordion to fill it in.</p>
+<h3>👤 Characters (up to 3)</h3>
+<p>Each character line has a dropdown (your saved characters first, then the built-in ones) and a small <strong>modifier</strong> box — a short phrase that tweaks that character <em>for this panel only</em>, e.g. &quot;wearing a torn jacket&quot; or &quot;sprinting&quot;. A red ✕ button clears the line back to <strong>No Character Selected</strong>.</p>
+<h3>📍 Location</h3>
+<p>Pick a location (again: your saved ones, then built-ins) and optionally add a <strong>Single-use Location modifier</strong> to flavour it for this panel. Choosing <strong>No Location Selected</strong> clears the modifier box. A red ✕ clears the whole line.</p>
+<h3>🎬 Action Prompt</h3>
+<p>One or two lines describing what happens in the panel (&quot;jumping through the air kicking a door&quot;). Pressing <strong>Enter</strong> (without Shift) generates the panel immediately. A red ✕ clears the prompt.</p>
+<h3>⟳ persistence</h3>
+<p>Every character line, the Location, and the Action Prompt has a small <strong>⟳ checkbox</strong>. Checking it means: <em>&quot;whatever I set here, keep applying to all the later panels too.&quot;</em> So set Hero + &quot;cyber-ninja suit&quot; on panel 1, tick ⟳, and every later panel picks up the same character and modifier. The chain respects your edits — if you change a later panel yourself, it&#39;s no longer part of the chain and won&#39;t be overwritten. Chains flow from a panel through the rest of the page <strong>and then exactly one step further: panel 1 of the next page</strong> (if one exists), then stop. Checking ⟳ again (or editing a chained line) pushes the new value down the chain.</p>
+<p>The red ✕ delete buttons also switch that line&#39;s ⟳ off and drop it from any chain.</p>
+<h3>Titles, styles, seeds</h3>
+<ul>
+<li><strong>Panel title</strong> is display-only — it never appears in the generated prompt.</li>
+<li><strong>Style</strong> overrides the global art style for that panel only (<strong>[Default (Global)]</strong> follows the Edit-menu preset).</li>
+<li><strong>Seed</strong> (in ⚙ Panel) pins the panel&#39;s randomness; leave blank to fall back to the global seed.</li>
+</ul>
+<h2>4. Generating images</h2>
+<p>Click <strong>⚡ GENERATE ALL PANELS</strong> to render every panel on the current page (the status line shows progress), <strong>🔄 Generate</strong> on a panel for just that panel, or <strong>🔄 Generate</strong> on an individual image slot for a single variation.</p>
+<ul>
+<li><strong>Empty panels are skipped</strong> — a panel needs at least a character, location, or action to render. If it has only 🔒 protected images, those are kept and reported.</li>
+<li><strong>■ Stop</strong> — the global Stop button next to ⚡ becomes active whenever any generation is running (batch, single panel, or single image) and cancels it cleanly; in-progress images are marked <strong>Stopped</strong>. Generation also pauses automatically if the browser tab goes to the background.</li>
+<li><strong>Timeouts</strong> — each image may take up to about two minutes; a stall shows a &quot;Generation failed or timed out&quot; tile you can retry.</li>
+</ul>
+<h3>How a prompt is built</h3>
+<p>Each panel&#39;s prompt is assembled from, in order:</p>
+<ol>
+<li><strong>Style keywords</strong> — the global style preset (or the panel&#39;s own Style override) plus its color palette,</li>
+<li>the selected <strong>characters</strong> (their stored descriptions) with their per-panel <strong>modifiers</strong>,</li>
+<li>the <strong>location</strong> description and its modifier,</li>
+<li>the <strong>action prompt</strong>.</li>
+</ol>
+<p>They&#39;re joined into one comma-separated prompt and sent to the text-to-image service. The <strong>📝 Prompt</strong> accordion shows the exact prompt for a panel, and lets you <em>override</em> it entirely (positive + negative text of your own). Typing anything in the panel&#39;s characters/location/action fields discards that override and returns to the automatic prompt.</p>
+<h3>Seeds</h3>
+<p>Seeds make a generation reproducible. Slot <em>k</em> of a panel uses <code>panel seed + (k − 1)</code> (the panel seed defaults to the global seed + panel index, or completely random if neither is set).</p>
+<h3>Image size &amp; guidance</h3>
+<p>Image size is set in <strong>📄 File → Image Size</strong> (e.g. 512×512 up to 768×768). Guidance scale (how closely the model follows your prompt, 1–30) is set in Edit. When the chosen size isn&#39;t a native service size, the result is upscaled to match.</p>
+<h3>NSFW mode</h3>
+<p>The <strong>NSFW toggle</strong> (Edit) switches off the automatic SFW safety keywords (&quot;fully clothed&quot; / &quot;nsfw, nudity, explicit&quot;). The filter is purely prompt-level: nothing is uploaded or stored differently.</p>
+<h2>5. Managing images</h2>
+<p>Under each generated image you&#39;ll find a small row of buttons:</p>
+<ul>
+<li><strong>↗</strong> Open the image in a new tab.</li>
+<li><strong>⬇</strong> Save it to your device.</li>
+<li><strong>✕</strong> Clear just that image (it aborts an in-progress render of that slot too).</li>
+<li><strong>🔓 / 🔒</strong> Protect — a protected image is never overwritten by regeneration (Generate skips it; unprotect to allow regeneration again).</li>
+<li><strong>⭐</strong> Make it the panel&#39;s <strong>representative/cover</strong> image — the one shown first (with a ⭐ badge) and used in Storyboard view.</li>
+</ul>
+<p>Each panel also has <strong>🗑 Clear Images</strong> (remove all images, keep the text setup) and <strong>🗑 Clear</strong> (images <em>and</em> all characters/location/action).</p>
+<p><strong>Hover/long-press preview</strong> — hovering (desktop) or long-pressing (mobile) a panel image shows a large preview overlay. Delay and on/off are set in Edit.</p>
+<p>Generated images exist only in the current browser session&#39;s memory — refreshing the page clears them (your settings and prompts are kept). Save any image you want to keep, or export a ZIP backup (see §8).</p>
+<h2>6. Pages &amp; multi-page projects</h2>
+<p>Pages are numbered and hold up to <strong>24 panels</strong> each (select 1, 4, 6, 12, 24, or a custom count per page). The page selector and page name live in File.</p>
+<p><strong>⟳ chains across pages</strong> — a chain from a page flows to the later panels on the same page and then lands on <strong>panel 1 of the next page</strong> (and only there). Because the next page isn&#39;t built until you switch to it, the value is held in memory and applied when that page loads — and only if you haven&#39;t already changed panel 1 yourself.</p>
+<p><strong>Duplicate / Add / Delete panel</strong> (⚙ Panel) insert or remove panels and renumber the rest, preserving each panel&#39;s data, protection, and chains.</p>
+<h2>7. How your data is stored</h2>
+<p>Everything is stored in your browser (localStorage, plus IndexedDB for the silent &quot;Save…&quot; file handle). <strong>Nothing is sent to a server except the image prompts themselves</strong> (the text-to-image service).</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>comicGen.panelState</code></td>
+<td>The whole project: project name, image size, guidance, keywords, NSFW flag, current page, and every page&#39;s panels (characters + modifiers + ⟳ flags, titles, location + modifier + ⟳, actions + ⟳, seeds, image counts, per-panel styles, prompt overrides, protection).</td>
+</tr>
+<tr>
+<td><code>comicGen.charLibrary</code> / <code>comicGen.locLibrary</code></td>
+<td>Your saved characters and locations.</td>
+</tr>
+<tr>
+<td><code>comicGen.preset</code></td>
+<td>The active art style + palette.</td>
+</tr>
+<tr>
+<td><code>comicGen.*</code> (activeMenu / layoutMode / menuVisible / panelsVisible)</td>
+<td>UI preferences.</td>
+</tr>
+</tbody></table>
+<p><strong>Session-only</strong> (lost on reload): generated images, ⟳ chain state, prompt overrides, and which accordions are open.</p>
+<p><strong>IndexedDB</strong> stores the File System Access handle used by <strong>💾 Save…</strong> so the app can silently save to the same file you chose before.</p>
+<h2>8. Backup, export &amp; import</h2>
+<ul>
+<li><strong>💾 Save… / Save as…</strong> — write the project settings to a JSON file (silent save to a remembered file, or pick a new one).</li>
+<li><strong>⬇ Export Project</strong> — <strong>JSON</strong> (all settings + libraries + preferences) or <strong>ZIP</strong> (the same settings <strong>plus every generated image</strong> for every page). ZIP is the complete backup.</li>
+<li><strong>⬆ Import Project</strong> — restore from a JSON or ZIP export. Importing starts with a safety prompt (it will replace the current project). ZIP imports restore the images into the right panels.</li>
+</ul>
+<h2>9. Layout &amp; theming</h2>
+<p>The interface adapts to the screen: the menu sits on top normally, or as a <strong>side column</strong> on wide landscape screens (▤ Menu: Side). The <strong>☰ button</strong> hides the menu (a floating ☰ reappears to bring it back), and <strong>▧ Hide/Show Panels</strong> hides the whole panel grid while generation keeps running invisibly. <strong>▦ Storyboard</strong> shows one representative image per panel as a page overview; <strong>🔍 Focus</strong> works on a single panel at a time.</p>
+<h2>10. How it&#39;s built (technical overview)</h2>
+<p>The generator is a Perchance generator made of two source files plus a small <code>src/</code> folder:</p>
+<ul>
+<li><strong><code>main.pjs</code></strong> — a small Perchance-js file: the app title, the character/location lists, and the import of the text-to-image plugin (<code>generateImage</code>). Its top-level names become page globals.</li>
+<li><strong><code>index.html</code></strong> — the entire application: styling, the full HTML layout, and one big JavaScript module containing all the logic (UI building, generation pipeline, persistence, backup).</li>
+<li><strong><code>src/</code></strong> — auxiliary files shipped with the generator: the changelog, issue log, the AI worker&#39;s notes, and the feature-request queue.</li>
+</ul>
+<p><strong>The rendering pipeline</strong> (the heart of the app):</p>
+<ol>
+<li>You click a Generate control.</li>
+<li>The app builds the prompt for the panel (§4) and resolves the image size and seed.</li>
+<li>For each image slot it calls the text-to-image plugin (<code>root.generateImage</code>) with the prompt, negative prompt, resolution, guidance scale, and seed.</li>
+<li>The plugin streams back an image (data URL); the app upscales it if the target size differs, then displays it and enables the slot&#39;s buttons.</li>
+<li>Batch runs loop panel-by-panel, honoring protection, skipping empties, and checking for Stop/pause at each step. A single global ■ Stop aborts every in-flight image.</li>
+</ol>
+<p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
+<h2>11. Recent changes (changelog highlights)</h2>
+<ul>
+<li><strong>2026.08.13.9</strong> — Stop button activates during <em>any</em> generation (batch, single panel, or single image) and deactivates when nothing is running; per-image Open/Save/Clear/Protect/Cover buttons returned to their spot directly under each image; Show Menu button became a single <strong>Show/Hide Menus</strong> toggle.</li>
+<li><strong>2026.08.13.8</strong> — ⟳ persistence for Location and Action Prompt (alongside characters), cross-page propagation capped at the next page&#39;s panel 1, and ✕ delete buttons on every character/location/action line.</li>
+<li><strong>2026.08.13.7</strong> — single global ■ Stop button (always visible, active during runs) replaced the per-panel hidden ones.</li>
+<li><strong>2026.08.13.6</strong> — panel info summary line and the cleaner &quot;No Location Selected&quot; dropdown option.</li>
+<li>Earlier — the panel accordion layout, side-menu option, hide/show menu &amp; panels toggles, and the multi-page model.</li>
+</ul>
+<h2>12. Notes &amp; limitations</h2>
+<ul>
+<li><strong>Images are session-only</strong> — reloading clears generated art (settings survive). Use ZIP export for a durable copy.</li>
+<li><strong>Local storage is per-browser</strong> — your project lives in the browser you used; a different browser or a cleared profile starts fresh (unless you import a backup).</li>
+<li><strong>Generation speed</strong> depends on the text-to-image service; each image can take up to ~2 minutes.</li>
+<li><strong>Guidance scale is whole numbers only</strong> (1–30).</li>
+<li>The <strong>NSFW toggle only affects prompt text</strong> — it&#39;s not a content filter on the returned image.</li>
+</ul>
+
+<hr>
+<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.08.13.10. Written 2026-08-14. This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
+</div>
+</body>
+</html>
