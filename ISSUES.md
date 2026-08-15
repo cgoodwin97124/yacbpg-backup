@@ -10,6 +10,54 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
+## 2026-08-15 — Duplicate embedded docs + broken ISSUES close (consolidated; ~230KB removed)
+- **Symptom:** the four embedded docs (embeddedPENDING/AINOTES/Changelog/Issues) existed TWICE in index.html
+  (a second copy sat mid-file), and the FIRST embeddedIssues block had lost its closing script tag — its
+  element swallowed ~1870 stray lines (a duplicate of the top dev-notes block, a stale <style>, and the second
+  docs copy) as text/plain content. Consequence: the ISSUES element's .textContent was ~182KB of mixed garbage
+  and every GitHub backup pushed that garbage as ISSUES.md.
+- **Root cause:** a past session pasted the docs section twice while moving them out of src/; the first
+  copy's Issues close tag was lost in the shuffle.
+- **Fix (2026-08-15):** consolidated programmatically — the whole region from the first embeddedIssues open
+  through the second set's close was replaced with ONE clean embeddedIssues block (content taken from the
+  verified-clean duplicate copy, with the two 2026-08-15 entries re-added by hand). Result: exactly one of
+  each doc id, no swallowed text, no visible garbage; verified live (counts =1, app boots, no console errors).
+- **Gotchas for future sessions:** (1) NEVER paste the four doc blocks twice — and NEVER write the literal
+  close-script sequence ("</" + "script>") inside a text/plain doc block: the HTML parser closes the script
+  element at the first such sequence, silently swallowing everything after it as inert text (getElementById
+  keeps returning the first element but its .textContent now contains garbage — and ghPush ships it). If you
+  must mention it in doc prose, split it (as done here). (2) After any big edit, verify
+  document.querySelectorAll('#embeddedX').length === 1 and sane .textContent.length.
+
+## 2026-08-15 — Image hover/long-press preview invisible in 🔍 Focus (single-panel view)
+- **Symptom:** hover/long-press preview of a generated image works in the grid page but not when a panel is in
+  single-panel view (🔍 Focus button).
+- **Root cause:** Focus doesn't clone the card — it MOVES the real #panel-card-N into #singleOverlay
+  (.view-overlay, position:fixed; z-index:10000). The preview overlay #imgPreview is a body-level sibling with
+  .img-preview { z-index:9999 }, so it was painted BEHIND the opaque #1a1a1a single overlay — the trigger
+  logic (document-level pointerover on .panel-img-box + id regex ^imgbox-panel-(\d+)-(\d+)$) still fired;
+  the user just couldn't see it.
+- **Fix:** .img-preview z-index 9999 → 10002 (above .view-overlay 10000 AND the password/manual overlays
+  10001; the GitHub backup overlay at 2147483647 still covers it, but that blocks hovering image boxes anyway).
+- **Gotcha:** html2canvas doesn't render the fixed #imgPreview, so it can't be vision-verified that way — verify
+  with real-browser hit testing: temporarily set pointerEvents:auto on #imgPreview and confirm
+  document.elementsFromPoint(center) returns imgPreviewImg first.
+
+
+# Comic Generator — Issue Log
+
+Log of reported issues and their resolutions, newest first.
+A future AI helper session should GREP THIS FILE before diagnosing anything —
+the real root cause of a "same" symptom is usually already recorded here.
+
+)
+  still fired; the user just couldn't see it.
+- **Fix:** `.img-preview` z-index 9999 → 10002 (above `.view-overlay` 10000 AND the password/manual overlays
+  10001; the GitHub backup overlay at 2147483647 still covers it, but that blocks hovering image boxes anyway).
+- **Gotcha:** html2canvas doesn't render the fixed `#imgPreview`, so it can't be vision-verified that way —
+  verify with real-browser hit testing: temporarily set `pointerEvents:auto` on `#imgPreview` and confirm
+  `document.elementsFromPoint(center)` returns `imgPreviewImg` first.
+
 ## 2026-08-14 — "another_upload_in_progress" blocks ALL saves forever on specific src/ files (platform bug + workaround)
 - **Symptom:** Save fails with "Couldn't save the src files: couldn't upload src/<file>: another_upload_in_progress"
   for hours on end; survives full browser restarts and network changes; every retry names a file in the same set.
