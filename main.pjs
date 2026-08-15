@@ -1,0 +1,16 @@
+title = Yet Another Comic Book Page Generator
+generateImage = {import:text-to-image-plugin}
+
+characters
+  none = 
+  hero = A fierce cyber-ninja with silver hair, wearing a glowing neon blue visor and dark carbon fiber armor
+  villain = A tall mastermind in a pristine white business suit, wearing a gold cybernetic monocle
+  sidekick = A young tech-mechanic wearing grease-stained yellow overalls and oversized welding goggles
+  civilian = A worried storefront owner wearing a simple brown apron and holding a tablet
+
+locations
+  none = 
+  city = Rainy dystopian cyberpunk city streets at midnight, towering holographic advertisements, neon wet asphalt
+  lab = A high-tech secret laboratory filled with glowing green liquid vats, dangling wires, and server racks
+  hideout = An abandoned industrial warehouse with broken windows, shafts of dramatic sunlight, and concrete pillars
+  rooftop = High above the city on a skyscraper ledge, dramatic dark clouds, lightning flashing in the background
