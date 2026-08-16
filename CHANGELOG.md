@@ -4,6 +4,8 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.1 — 2026-08-16 — Panel actions: no more name prompts
+- Adding an Action from a panel's 🧩 Panel Objects "add an object" menu no longer asks for a name or description prompt — just pick **＋ New Action…**, type a **freeform action description**, and hit **Ok** (or press Enter). It lands straight in the panel's action slot (or as an extra action row if the panel already has an action) and appears in the panel's prompt. No library entry is created, so no name is needed. The **Add from library → Action… → ＋ New Action…** path works the same way. Characters, locations, and custom types still ask for a name, as before.
 ## 2026.08.15.6 — 2026-08-15 — Fix: image hover preview invisible in 🔍 Focus view
 - Hovering/long-pressing a generated image in a panel's 🔍 Focus (single-panel) view now shows the preview again. The Focus view moves the real panel card into a full-screen overlay (.view-overlay, z-index 10000) that was painted ABOVE the preview overlay (z-index 9999), so the preview fired but rendered invisibly behind it. Bumped .img-preview to z-index 10002.
 
