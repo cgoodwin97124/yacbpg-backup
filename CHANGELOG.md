@@ -4,6 +4,11 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.4 — 2026-08-16 — Panel Action Prompt box spans the full entry width
+- The Panel Action Prompt textarea in a panel's 📖 Panel Library now spans the same combined width as a
+  row's Identity dropdown + Freeform Description together (grid-column 1/3), so the action box is as wide
+  as the character/location entry controls. The ⟳ copy-to-later-panels checkbox and ✕ remove button stay
+  aligned with the other rows' columns.
 ## 2026.08.16.3 — 2026-08-16 — Panel library reverted to fixed slots; Library back to buckets
 - Panels: each panel's accordion is again a single 📖 Panel Library showing **three fixed Character slots**, **one Location slot**, and **one Panel Action Prompt** (a plain freeform text box). Creating a character/location from a panel uses the three-prompt flow again: **name → reusable library description → separate panel description** that fills that panel's own slot. The 2026.08.15.1 row-based "Panel Objects" (Type column, add-object menu, extra rows) and the action library (＋ New Action, "From Action Library" dropdown) are gone; existing saved action prompts and custom-type objects were deleted.
 - 📚 Library menu displays two buckets again — **👤 Characters** and **📍 Locations** — instead of one flat "Panel Library Objects" list with a Type dropdown per row; "+ Add Library Object" removed (entries are created from the panels). Entries keep their name/description/delete, edited in place.
