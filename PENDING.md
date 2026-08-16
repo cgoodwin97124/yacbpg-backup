@@ -31,6 +31,17 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — Library menu: add Characters/Locations via green + button (implemented 2026.08.16.5)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.5). Author request: in the main Library menu, a small
+  green square button with a + sits to the right of the Characters / Locations subheaders, above the rows'
+  Delete buttons, and adds a new Character / new Location. Implemented: renderLibrary's bucket header is
+  now a `.lib-bucket-row` flex row (h3 + `.btn-add-bucket`, 22×22 green #2ea043, "+") with
+  title "Add a new Character/Location"; clicking calls the new `addLibraryEntryByType(type)` — two
+  prompts (name, then the reusable library description), saves to libObjects, re-renders the library +
+  all panel dropdowns. No panel is involved, so there's no separate panel-description prompt. Verified
+  live: both buttons render green with correct titles, Character creation lands in the right bucket with
+  the typed description, and panel dropdowns pick it up.
+
 ### 2026-08-16 — Panel Action Prompt box width (implemented 2026.08.16.4)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.4). Author request: the Panel Action Prompt entry
   control should have the combined width of the dropdown + freeform description controls of the
