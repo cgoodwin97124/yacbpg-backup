@@ -4,6 +4,14 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.8 — 2026-08-16 — ⚡ Generate All Panels On Page button in Focus view
+- The 🔍 **Focus** (single-panel) view now has its own **⚡ GENERATE ALL PANELS ON PAGE** button with the
+  exact same behavior — it renders every panel of the current page while you work in Focus. It sits in a
+  row beneath the Focus navigation (◀ Prev / Panel / Next ▶), together with a **■ Stop** button (so you can
+  cancel a run without leaving Focus) and the live status line. All three mirror the main bar exactly:
+  the button is disabled while a run is in progress, ■ Stop becomes active during a run, and the status
+  text stays in sync at all times. The focused panel itself is generated like any other — you can watch the
+  page render panel by panel and flip between panels while it runs.
 ## 2026.08.16.7 — 2026-08-16 — "Generate All Panels On Page" + per-page panel counts clarified
 - The ⚡ button is now labeled **⚡ GENERATE ALL PANELS ON PAGE ⚡** and is explicitly a current-page
   operation: it renders every panel of the page you're on (it always worked that way — the label now says
