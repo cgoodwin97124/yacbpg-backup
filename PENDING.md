@@ -31,6 +31,19 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — "Generate All Panels On Page" label + per-page panel counts (implemented 2026.08.16.7)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.7). Author request: Generate All Panels should generate
+  only the current page and be labeled "Generate All Panels On Page"; also be able to vary the number of
+  panels per page. Findings: Generate All ALREADY only generated the current page, and per-page panel counts
+  ALREADY worked (each page stores its own count). Implemented: relabeled the ⚡ button, ■ Stop tooltip, 3
+  status strings, embedded help, and src/user-manual.html to "GENERATE ALL PANELS ON PAGE"; made the Page
+  Setup control's label explicit ("Number of Panels on This Page — each page remembers its own"). Plus layout
+  fixes the longer label forced: two-line `<br>` button text, compact sizes, `color:#000` restored (a
+  platform `button:not([disabled]){color:inherit}` override had silently made the ⚡ button white-on-yellow),
+  and a 6px right margin so ■ Stop sits fully inside the sidebar. Verified live: black-on-yellow two-line
+  label, Stop fully inside, generation uses the current page's count only. Author's project data verified
+  intact after testing.
+
 ### 2026-08-16 — Page navigator + multi-page chain fixes (implemented 2026.08.16.6)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.6). Author go-ahead given 2026-08-16. Combined
   implementation: (1) **Page navigator** — `#pageNav` (◀ Prev + numbered `.page-nav-page` buttons with
@@ -341,7 +354,7 @@ each section).
 - **Status:** DONE 2026-08-13 (changelog 2026.08.13.7) — implemented as a single GLOBAL ■ Stop button next
   to the ⚡ button, always visible, enabled while a Generate All run is active.
 - **Request:** The per-panel ■ Stop Generation button EXISTS and works (24 × `.btn-view.btn-stop` →
-  `haltGenerations()`, verified live 2026-08-13) but is `hidden` unless a ⚡ Generate All Panels run is
+  `haltGenerations()`, verified live 2026-08-13) but is `hidden` unless a ⚡ Generate All Panels On Page run is
   active (`setStopButtonsVisible`), so the author couldn't see it in normal use. Pick/implement a more
   discoverable presentation — e.g. always visible (disabled when nothing is running), or a single global
   ■ Stop in the Generate bar (`#gen-actions`), while keeping it functional during runs.
