@@ -31,6 +31,16 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — ⚡ Generate All Panels On Page button in Focus view (implemented 2026.08.16.8)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.8). Author request: put the Generate All Panels On Page
+  button on the Focus page with the same functionality; implement now. Implemented: a `.focus-gen` row in
+  the #singleOverlay (Focus) with its own ⚡ button (calls the same generateComicPage), a ■ Stop button, and
+  a status line. No changes to generation internals — state is mirrored via MutationObservers
+  (syncFocusControls/initFocusSync): sidebar ⚡ disabled → focus ⚡, globalStopBtn disabled → focus Stop,
+  statusEl text → focusStatusEl. Verified live: both buttons disabled during a run and both Stops enabled,
+  status synced through the run, black-on-yellow label rendering, visual pass. Author's project verified
+  intact after testing.
+
 ### 2026-08-16 — "Generate All Panels On Page" label + per-page panel counts (implemented 2026.08.16.7)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.7). Author request: Generate All Panels should generate
   only the current page and be labeled "Generate All Panels On Page"; also be able to vary the number of
