@@ -15,7 +15,7 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(Empty — the Focus hover-preview bug was fixed 2026-08-15; see ✅ DONE.)
+(Empty — the freeform-action request was implemented 2026-08-16; see ✅ DONE.)
 
 
 
@@ -31,6 +31,17 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — Panel Menu: adding an Action without a name (implemented)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.1). Author request: when adding an Action via the
+  Panel Menu's add flow, the name doesn't matter — a freeform description alone should suffice. Flow now:
+  selecting "Action" from either entry point (the add-bar dropdown's "＋ New Action…" option, or the
+  object picker's pick:Action → "＋ New Action…") switches the add bar into freeform mode: no name prompt,
+  no library entry created. The description textarea shows "Freeform action description — goes straight
+  into the panel prompt", the Add button relabels to "Ok", and Enter (without Shift) confirms. On Ok,
+  the trimmed description lands directly in the panel's Action slot (#panel-act-N) and its summary
+  (#ps-act-N); if the panel already has an action, it queues as an extra row. The picker's "＋" (__new_act__)
+  now routes to the same freeform mode. Library entries (__new_char__ / __new_loc__) are unaffected.
+
 ### 2026-08-15 — Bug: hover-to-preview for images invisible in Focus view (fixed 2026.08.15.6)
 - **Status:** DONE 2026-08-15 (changelog 2026.08.15.6). Author report: "The hover-to-preview for images
   doesn't work when the panel has Focus." Root cause: Focus moves the real panel card into #singleOverlay
