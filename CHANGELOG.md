@@ -4,6 +4,21 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.6 — 2026-08-16 — Page navigator + multi-page chain fixes
+- **Page navigator:** when your comic has more than one page, a green page bar appears at the bottom center
+  of the screen — ◀ Prev, a row of numbered page buttons, ▶ Next (your current page is highlighted). It
+  jumps straight to any page and wraps around with ◀/▶. On landscape browsers it sits in the same bottom
+  row as the floating buttons; on mobile/portrait it floats higher, above the ▧ Hide Panels and ☰ Menu
+  buttons.
+- **⟳ chains no longer break when you delete mid-chain:** removing a character/location/action (✕) from
+  the middle of a copy chain previously froze that panel forever (and could scramble an unrelated panel's
+  chain). Now the chain keeps flowing to every later panel, including the one you deleted.
+- **⟳ chains respect what you set on the next page's panel 1:** when a chain carries to the next page, it
+  only fills panel 1 if that spot is still blank (or already holds the same value). If you'd deliberately
+  put a different character/location/action there, it stays — the chain pauses instead of overwriting it.
+- The one-page-forward carry is unchanged: the chain lands on the next page's panel 1, and you decide there
+  whether to continue it (turn that panel's ⟳ on to keep it flowing page to page, or leave it alone to
+  stop).
 ## 2026.08.16.5 — 2026-08-16 — Add characters/locations straight from the Library menu
 - Each section of the 📚 Library menu now has a small green **+** button to the right of its heading
   (👤 Characters / 📍 Locations). Click it, give the new entry a name and an optional reusable description
