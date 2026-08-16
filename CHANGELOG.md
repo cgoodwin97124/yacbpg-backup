@@ -4,6 +4,11 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.5 — 2026-08-16 — Add characters/locations straight from the Library menu
+- Each section of the 📚 Library menu now has a small green **+** button to the right of its heading
+  (👤 Characters / 📍 Locations). Click it, give the new entry a name and an optional reusable description
+  (the same description used in every panel prompt that references it), and it's saved to that bucket and
+  appears in every panel's dropdown immediately — no need to jump to a panel first.
 ## 2026.08.16.4 — 2026-08-16 — Panel Action Prompt box spans the full entry width
 - The Panel Action Prompt textarea in a panel's 📖 Panel Library now spans the same combined width as a
   row's Identity dropdown + Freeform Description together (grid-column 1/3), so the action box is as wide
