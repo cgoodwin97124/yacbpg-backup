@@ -31,6 +31,20 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — Panel library → fixed slots; Library → Character/Location buckets (revert, 2026.08.16.3)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.3). Author request: revert panel adding of chars/locs
+  to 2026.08.14.5 (name → reusable library description → separate panel description), keep one panel
+  accordion, and revert the main Library menu display to separate Character/Location buckets. Author
+  decisions: delete saved Action prompts + custom types; migrate any extra panel objects into empty main
+  slots (none existed); remove "+ Add Library Object"; keep hover tooltips. Implemented: 📖 Panel Library
+  accordion renders 3 fixed char slots + loc slot + freeform action box (no type column, no add-object
+  menu, no extra rows, no action library); char/loc creation goes through newPanelLibraryEntry's 3 prompts
+  via handleGridInput; Library menu renders 👤 Characters / 📍 Locations buckets (name+desc+🗑 rows);
+  migrateLibObjects prunes non-Character/Location entries + deletes comicGen.libTypes; migratePanelExtras
+  folds legacy extras into main slots at restore. Verified live: 3-prompt flows (library desc vs panel
+  desc distinct), save→reload round trip, buckets render, tooltips intact, page error-free, panel library
+  layout vision-checked.
+
 ### 2026-08-16 — Bug: Panel Objects "Add" button doesn't add an Action (fixed 2026.08.16.2)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.2). Author report: "When I click the Add button in
   order to add an Action to the Panel Objects, the Action is not added." Two root causes found + fixed:
