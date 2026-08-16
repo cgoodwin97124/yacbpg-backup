@@ -31,6 +31,23 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — Pause a run and continue it (implemented 2026.08.16.9)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.9). Author request: "Is there a way we can pause a run
+  rather than disabling it, and be able to continue it?" Implemented: a ⏸ Pause button (sidebar gen-row
+  between ⚡ and ■ Stop, plus a mirrored ⏸ in the Focus overlay's .focus-gen row) that pauses the running
+  Generate All Panels On Page run after the current panel; pressing ⚡ GENERATE ALL PANELS ON PAGE again
+  CONTINUES from the panel it paused on — done panels are NOT regenerated. ■ Stop still fully cancels
+  (⚡ then restarts from panel 1). Tab-background auto-pause now also resumes mid-run instead of
+  restarting. Mechanics: `pausedManually` + `resumePanel` state; `pauseGenerations()` (guard on
+  generateAllRunning) stops the in-flight generation like Stop does; the generateComicPage loop's break
+  block records `resumePanel = (result === 'cleared') ? i : i + 1` (clamped to totalPanels) and the next
+  ⚡ click starts from there; "Generate All From Here" (startPanel) clears resumePanel; button states:
+  ⏸+■ disabled while paused, ⚡ enabled. Verified live with mocked image generation: pause mid-run →
+  status "Paused — press ⚡ ... to continue from panel N", resume regenerated only from panel N (skipped
+  count correct, done panel images kept), Stop still cancels cleanly (loop breaks, ⚡ restarts fresh from
+  panel 1), Focus overlay ⏸ mirrors sidebar state through a full pause/resume cycle, from-here overrides a
+  stored resume point. Test page deleted and author's project data verified intact after testing.
+
 ### 2026-08-16 — ⚡ Generate All Panels On Page button in Focus view (implemented 2026.08.16.8)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.8). Author request: put the Generate All Panels On Page
   button on the Focus page with the same functionality; implement now. Implemented: a `.focus-gen` row in
