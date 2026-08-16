@@ -47,6 +47,11 @@ each section).
   count correct, done panel images kept), Stop still cancels cleanly (loop breaks, ⚡ restarts fresh from
   panel 1), Focus overlay ⏸ mirrors sidebar state through a full pause/resume cycle, from-here overrides a
   stored resume point. Test page deleted and author's project data verified intact after testing.
+  (REVISED 2026-08-16 after author retest: the first live verification used a mock WITH a `.stop()`
+  method, which the real text-to-image plugin does not have — so Pause couldn't cancel the in-flight
+  image, the current panel kept rendering and its result landed anyway, and the run only paused after it
+  finished. Fixed in 2026.08.16.10 with a per-run abort signal raced against each image request; see the
+  BATCH 2026.08.16.10 dev-note. Re-verified live with a realistic no-.stop mock.)
 
 ### 2026-08-16 — ⚡ Generate All Panels On Page button in Focus view (implemented 2026.08.16.8)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.8). Author request: put the Generate All Panels On Page
