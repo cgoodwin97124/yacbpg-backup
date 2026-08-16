@@ -31,6 +31,15 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — Panel Action Prompt box width (implemented 2026.08.16.4)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.4). Author request: the Panel Action Prompt entry
+  control should have the combined width of the dropdown + freeform description controls of the
+  Characters/Location rows. The action textarea (a 4-column grid row with nothing filling the description
+  column) now gets `grid-column: 1 / 3` via a `.pl-act-wide` class — it spans both columns, leaving the ⟳
+  and ✕ to auto-place into their correct columns (previously they sat misaligned in the middle columns).
+  Verified by pixel measurement: action box left edge == dropdown left edge, right edge == description
+  right edge, ⟳/✕ x-positions identical to the other rows.
+
 ### 2026-08-16 — Panel library → fixed slots; Library → Character/Location buckets (revert, 2026.08.16.3)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.3). Author request: revert panel adding of chars/locs
   to 2026.08.14.5 (name → reusable library description → separate panel description), keep one panel
