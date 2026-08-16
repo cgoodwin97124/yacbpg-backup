@@ -4,6 +4,15 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.10 — 2026-08-16 — Pause actually pauses (bug fix)
+- A real-world retest found that ⏸ **Pause** stopped the current panel's image but the run kept going.
+  Root cause: the text-to-image plugin's promise has **no `.stop()` method**, so Pause couldn't cancel the
+  in-flight image — it kept rendering (each image takes 10–40s), its result landed on the "paused" panel
+  anyway, and the run only stopped after that panel fully finished. It looked like the run never paused.
+- Fixed: every image request during a run now races against an **abort signal**. ⏸ Pause (and ■ Stop, and
+  the tab-background pause) fires it, so the loop stops **instantly** — the in-flight image is abandoned
+  (no wait, and nothing appears on the paused panel). Pressing ⚡ still continues from exactly the panel
+  it stopped on. As a bonus, ■ Stop now cancels immediately too instead of waiting for the current image.
 ## 2026.08.16.9 — 2026-08-16 — Pause and continue a run
 - The generate bar now has a **⏸ Pause** button between ⚡ and ■ Stop. While a *Generate All Panels On
   Page* run is in progress, ⏸ Pause stops it right after the current panel finishes its image — and ⚡
