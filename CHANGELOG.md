@@ -4,6 +4,8 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.2 — 2026-08-16 — Fix: adding an Action via the Panel Objects Add button
+- Two fixes for adding Actions from a panel's 🧩 Panel Objects menu. (1) If you opened **＋ New Action…** (freeform mode) and then switched to **Add from library → Action…**, the picker stayed stuck in freeform mode — the identity dropdown stayed hidden and the button still read "Ok", so clicking it with an empty description did nothing and the Action was never added. Switching the add menu to any other choice (or back to "— add object —") now fully resets the picker: identity dropdown shown, button back to "Add", placeholder restored. (2) Adding a library Action now uses the library entry's own action text when you don't type a freeform description (previously the slot was set to the empty description and the pick silently failed).
 ## 2026.08.16.1 — 2026-08-16 — Panel actions: no more name prompts
 - Adding an Action from a panel's 🧩 Panel Objects "add an object" menu no longer asks for a name or description prompt — just pick **＋ New Action…**, type a **freeform action description**, and hit **Ok** (or press Enter). It lands straight in the panel's action slot (or as an extra action row if the panel already has an action) and appears in the panel's prompt. No library entry is created, so no name is needed. The **Add from library → Action… → ＋ New Action…** path works the same way. Characters, locations, and custom types still ask for a name, as before.
 ## 2026.08.15.6 — 2026-08-15 — Fix: image hover preview invisible in 🔍 Focus view
