@@ -31,7 +31,7 @@ only live ephemerally or inside `index.html`'s comment block.
 ## 1. Big picture
 
 - A single-page Perchance generator: user fills in panel details (characters, location,
-  action), clicks **⚡ GENERATE ALL PANELS**, and the text-to-image-plugin renders each panel
+  action), clicks **⚡ GENERATE ALL PANELS ON PAGE**, and the text-to-image-plugin renders each panel
   into 1–4 comic-book-style images. Pages, style presets, prompt overrides, and project
   backup/restore are the major feature areas.
 - **File layout**
