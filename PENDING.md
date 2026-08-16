@@ -31,6 +31,18 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — Bug: Panel Objects "Add" button doesn't add an Action (fixed 2026.08.16.2)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.2). Author report: "When I click the Add button in
+  order to add an Action to the Panel Objects, the Action is not added." Two root causes found + fixed:
+  (1) switching the add menu from "＋ New Action…" (freeform) to "Add from library → Action…" left the
+  picker in stale freeform mode — identity dropdown stayed hidden, button still said "Ok", and clicking
+  it with an empty description returned early (nothing added). onPanelAddSelect now fully resets the
+  picker on every menu change (mode cleared, dropdown shown, label "Add", placeholder restored), including
+  "— add object —". (2) routeObject's Action branch ignored the library selection and set the action slot
+  to the (possibly empty) freeform description — picking a library Action with no typed description
+  silently added nothing; it now falls back to the library entry's action text. Verified live: the stale-
+  switch sequence, clean library pick + prefill, freeform (slot + extra-row), and full reset.
+
 ### 2026-08-16 — Panel Menu: adding an Action without a name (implemented)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.1). Author request: when adding an Action via the
   Panel Menu's add flow, the name doesn't matter — a freeform description alone should suffice. Flow now:
