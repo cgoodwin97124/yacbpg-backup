@@ -4,6 +4,18 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.7 — 2026-08-16 — "Generate All Panels On Page" + per-page panel counts clarified
+- The ⚡ button is now labeled **⚡ GENERATE ALL PANELS ON PAGE ⚡** and is explicitly a current-page
+  operation: it renders every panel of the page you're on (it always worked that way — the label now says
+  so). The ■ Stop button's tooltip, the pause/stop status messages, the in-app help, and the user manual
+  were updated to match.
+- **Per-page panel counts:** the Number of Panels control in File → Page Setup is per-page — each page
+  remembers its own panel count (1, 4, 6, 12, 24, or Custom 1–24) when you switch away and back, and
+  ⚡ GENERATE ALL PANELS ON PAGE uses that page's count. The control's label now says "Number of Panels on
+  This Page — each page remembers its own" so it's clear.
+- The ⚡ button's label now sits on two clean lines (it was wrapping awkwardly), its text color is properly
+  black-on-yellow again (a platform stylesheet override had silently made it white), and the button + ■ Stop
+  row was rebalanced so both fit comfortably inside the sidebar.
 ## 2026.08.16.6 — 2026-08-16 — Page navigator + multi-page chain fixes
 - **Page navigator:** when your comic has more than one page, a green page bar appears at the bottom center
   of the screen — ◀ Prev, a row of numbered page buttons, ▶ Next (your current page is highlighted). It
