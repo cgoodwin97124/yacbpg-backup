@@ -4,6 +4,20 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.9 — 2026-08-16 — Pause and continue a run
+- The generate bar now has a **⏸ Pause** button between ⚡ and ■ Stop. While a *Generate All Panels On
+  Page* run is in progress, ⏸ Pause stops it right after the current panel finishes its image — and ⚡
+  **GENERATE ALL PANELS ON PAGE** then *continues* from exactly where it left off (it does not re-do the
+  panels that already generated). Pause/Stop turn themselves off while paused, and the status line says
+  which panel the run will continue from.
+- **■ Stop** still fully cancels a run (⚡ then restarts from panel 1, as before). Pausing has no effect
+  outside a run.
+- The 🔍 **Focus** view's row got its own ⏸ Pause button that mirrors the sidebar one through the whole
+  run/pause/continue cycle.
+- Tab-background auto-pause (when the generator tab goes to the background mid-run) now also resumes
+  where it left off — press ⚡ when you come back instead of restarting the whole page. A panel started
+  via **Generate This Panel / Generate All From Here** starts fresh from that panel regardless of any
+  stored pause point.
 ## 2026.08.16.8 — 2026-08-16 — ⚡ Generate All Panels On Page button in Focus view
 - The 🔍 **Focus** (single-panel) view now has its own **⚡ GENERATE ALL PANELS ON PAGE** button with the
   exact same behavior — it renders every panel of the current page while you work in Focus. It sits in a
