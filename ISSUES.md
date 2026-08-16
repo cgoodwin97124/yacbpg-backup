@@ -10,6 +10,26 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
+## 2026-08-16 — "Add" button doesn't add an Action to Panel Objects (fixed 2026.08.16.2)
+- **Symptom:** clicking the Add button while adding an Action to a panel's 🧩 Panel Objects did nothing — the
+  Action never appeared.
+- **Root cause (two bugs):** (1) The 2026.08.16.1 freeform-action feature left stale state when the add menu
+  was switched away from "＋ New Action…": onPanelAddSelect's pick: and empty branches never cleared
+  `picker.dataset.mode`, never unhid the identity dropdown, and never restored the "Add" label. After
+  freeform→"Add from library→Action…" the picker was still in freeform mode (dropdown hidden, button "Ok"),
+  and panelAddPick's new-action branch early-returned on an empty description — so the click did nothing.
+  (2) routeObject's Action branch set the action slot to the freeform description `d` and ignored `sel`, so
+  picking a library Action without typing a description set the slot to "" and silently failed.
+- **Fix (2026.08.16.2):** onPanelAddSelect now runs resetPicker() on every menu change (incl. "— add object —")
+  — clears dataset.mode, shows the dropdown, restores "Add" label + default placeholder. routeObject's Action
+  branch falls back to the library entry's desc when `d` is empty.
+- **Gotcha for future sessions:** any UI that toggles between hidden/freeform states must clear ALL its state
+  on every transition, not only on success. Also: when browser_eval drives the UI across an innerHTML re-render
+  (routeObject→renderPanelObjects rebuilds the add bar), cached element references go stale — re-query
+  getElementById after any render.
+
+---
+
 ## 2026-08-15 — Duplicate embedded docs + broken ISSUES close (consolidated; ~230KB removed)
 - **Symptom:** the four embedded docs (embeddedPENDING/AINOTES/Changelog/Issues) existed TWICE in index.html
   (a second copy sat mid-file), and the FIRST embeddedIssues block had lost its closing script tag — its
