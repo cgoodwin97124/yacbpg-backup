@@ -31,6 +31,20 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-08-16 — Page navigator + multi-page chain fixes (implemented 2026.08.16.6)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.6). Author go-ahead given 2026-08-16. Combined
+  implementation: (1) **Page navigator** — `#pageNav` (◀ Prev + numbered `.page-nav-page` buttons with
+  `.active` + ▶ Next) shows fixed bottom-center only when pageCount() > 1; `updatePageNav()` called from
+  `populatePageSel` (covers switch/add/delete/rename), `pageNavDelta(delta)` wraps. Landscape: bottom 16px;
+  `@media (orientation: portrait)` bottom 74px so it clears the fixed ▧ Hide Panels (bottom-left) and ☰ Menu
+  (bottom-right) buttons. (2) **BUG 1** — `clearChainFor(i, suffix)` now deletes `syncState[i + suffix]`
+  (was `currentPage + suffix`); deleting mid-chain no longer permanently breaks the chain or corrupts an
+  unrelated panel's entry. (3) **BUG 2** — `applyCarryToPanel1` + new `panel1IsPristine()` only land a
+  cross-page carry on a pristine panel 1 (matches applied, or holds the same value, or is untouched
+  default); a deliberately different value set there is preserved. One-page-forward carry + decision point
+  unchanged (verified continue + stop paths). All verified live with mocked image generation; test pages
+  deleted and author's project data restored afterwards.
+
 ### 2026-08-16 — Library menu: add Characters/Locations via green + button (implemented 2026.08.16.5)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.5). Author request: in the main Library menu, a small
   green square button with a + sits to the right of the Characters / Locations subheaders, above the rows'
