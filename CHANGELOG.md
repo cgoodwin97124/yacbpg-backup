@@ -4,6 +4,19 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.11 — 2026-08-17 — Panel Library persistence replaced with "copy from previous panel" buttons
+- The ⟳ **persistence** system is gone: characters, Location, and Panel Action Prompt no longer have a
+  ⟳ checkbox that copies them into every later panel (and on to the next page). Per the author's request,
+  each row instead has a small **⇤** button that copies that item — selection plus freeform
+  description/modifier — from the panel directly before it. Click panel 2's ⇤ character button to bring
+  over panel 1's character, panel 3's for the next one, and so on; the Location and Action Prompt rows
+  have the same button. Panel 1 has no previous panel, so its ⇤ buttons are disabled. Nothing copies
+  automatically anymore, and there is no cross-page carry.
+- All chain machinery was removed: `syncState`/`carryNext` (and the cross-page carry to next page's
+  panel 1), the divergence/still-in-sync logic, and the persisted `persist`/`locPersist`/`actPersist`
+  flags. Existing saved projects keep their characters/locations/actions (the flags are simply dropped
+  on the next save) — the author's page-1 data was verified intact.
+- Help text, the user manual, and the developer docs (AI-NOTES) were updated to describe the ⇤ buttons.
 ## 2026.08.16.10 — 2026-08-16 — Pause actually pauses (bug fix)
 - A real-world retest found that ⏸ **Pause** stopped the current panel's image but the run kept going.
   Root cause: the text-to-image plugin's promise has **no `.stop()` method**, so Pause couldn't cancel the
