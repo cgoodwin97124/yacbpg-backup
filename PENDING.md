@@ -15,7 +15,15 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(Empty — the freeform-action request was implemented 2026-08-16; see ✅ DONE.)
+### 2026-08-17 — Remove Panel Library persistence; add "copy from previous panel" buttons
+- **Status:** DONE 2026-08-17 (changelog 2026.08.16.11). Author request: "I'd like to eliminate the Panel
+  Library persistence function. Instead, I'd like to replace it with a small button that copies the
+  corresponding item from the previous panel. And we'll go ahead with this now." Implemented: the entire ⟳
+  persistence system (checkbox propagation to later panels + cross-page carry) was removed and replaced
+  with a small ⇤ button on each character slot, the Location row, and the Panel Action Prompt row that
+  copies that item (selection + modifier) from the panel directly before it. Panel 1's buttons are
+  disabled. Nothing copies automatically anymore. Old saved projects keep their content (persist flags
+  dropped on next save). Help + user manual + dev docs updated. Verified live; author's project intact.
 
 
 
