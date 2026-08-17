@@ -73,9 +73,8 @@
 <p>Pick a location (again: your saved ones, then built-ins) and optionally add a <strong>Single-use Location modifier</strong> to flavour it for this panel. Choosing <strong>No Location Selected</strong> clears the modifier box. A red ✕ clears the whole line.</p>
 <h3>🎬 Action Prompt</h3>
 <p>One or two lines describing what happens in the panel (&quot;jumping through the air kicking a door&quot;). Pressing <strong>Enter</strong> (without Shift) generates the panel immediately. A red ✕ clears the prompt.</p>
-<h3>⟳ persistence</h3>
-<p>Every character line, the Location, and the Action Prompt has a small <strong>⟳ checkbox</strong>. Checking it means: <em>&quot;whatever I set here, keep applying to all the later panels too.&quot;</em> So set Hero + &quot;cyber-ninja suit&quot; on panel 1, tick ⟳, and every later panel picks up the same character and modifier. The chain respects your edits — if you change a later panel yourself, it&#39;s no longer part of the chain and won&#39;t be overwritten. Chains flow from a panel through the rest of the page <strong>and then exactly one step further: panel 1 of the next page</strong> (if one exists), then stop. Checking ⟳ again (or editing a chained line) pushes the new value down the chain.</p>
-<p>The red ✕ delete buttons also switch that line&#39;s ⟳ off and drop it from any chain.</p>
+<h3>⇤ Copy from the previous panel</h3>
+<p>Every character slot, the Location, and the Action Prompt has a small <strong>⇤</strong> button. Clicking it copies that item — including any freeform description/modifier — from the panel directly before it. So set Hero + &quot;cyber-ninja suit&quot; on panel 2, click panel 3's ⇤ character button, and panel 3 gets the same character and modifier; click it again on panel 4 and so on. Panel 1 has no previous panel, so its ⇤ buttons are disabled. The copy overwrites whatever that item currently holds. There is no automatic copying between panels — each panel gets exactly what you click into it.</p>
 <h3>Titles, styles, seeds</h3>
 <ul>
 <li><strong>Panel title</strong> is display-only — it never appears in the generated prompt.</li>
@@ -119,8 +118,8 @@
 <p>Generated images exist only in the current browser session&#39;s memory — refreshing the page clears them (your settings and prompts are kept). Save any image you want to keep, or export a ZIP backup (see §8).</p>
 <h2>6. Pages &amp; multi-page projects</h2>
 <p>Pages are numbered and hold up to <strong>24 panels</strong> each (select 1, 4, 6, 12, 24, or a custom count per page). The page selector and page name live in File.</p>
-<p><strong>⟳ chains across pages</strong> — a chain from a page flows to the later panels on the same page and then lands on <strong>panel 1 of the next page</strong> (and only there). Because the next page isn&#39;t built until you switch to it, the value is held in memory and applied when that page loads — and only if you haven&#39;t already changed panel 1 yourself.</p>
-<p><strong>Duplicate / Add / Delete panel</strong> (⚙ Panel) insert or remove panels and renumber the rest, preserving each panel&#39;s data, protection, and chains.</p>
+<p><strong>Copy between panels</strong> — each character slot, the Location, and the Action Prompt has a small <strong>⇤</strong> button that copies that item from the panel directly before it, whenever you want it. Nothing copies across panels or pages automatically.</p>
+<p><strong>Duplicate / Add / Delete panel</strong> (⚙ Panel) insert or remove panels and renumber the rest, preserving each panel's data and protection.</p>
 <h2>7. How your data is stored</h2>
 <p>Everything is stored in your browser (localStorage, plus IndexedDB for the silent &quot;Save…&quot; file handle). <strong>Nothing is sent to a server except the image prompts themselves</strong> (the text-to-image service).</p>
 <table>
@@ -132,7 +131,7 @@
 </thead>
 <tbody><tr>
 <td><code>comicGen.panelState</code></td>
-<td>The whole project: project name, image size, guidance, keywords, NSFW flag, current page, and every page&#39;s panels (characters + modifiers + ⟳ flags, titles, location + modifier + ⟳, actions + ⟳, seeds, image counts, per-panel styles, prompt overrides, protection).</td>
+<td>The whole project: project name, image size, guidance, keywords, NSFW flag, current page, and every page&#39;s panels (characters + modifiers, titles, location + modifier, actions, seeds, image counts, per-panel styles, prompt overrides, protection).</td>
 </tr>
 <tr>
 <td><code>comicGen.charLibrary</code> / <code>comicGen.locLibrary</code></td>
@@ -147,7 +146,7 @@
 <td>UI preferences.</td>
 </tr>
 </tbody></table>
-<p><strong>Session-only</strong> (lost on reload): generated images, ⟳ chain state, prompt overrides, and which accordions are open.</p>
+<p><strong>Session-only</strong> (lost on reload): generated images, prompt overrides, and which accordions are open.</p>
 <p><strong>IndexedDB</strong> stores the File System Access handle used by <strong>💾 Save…</strong> so the app can silently save to the same file you chose before.</p>
 <h2>8. Backup, export &amp; import</h2>
 <ul>
