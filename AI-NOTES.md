@@ -83,11 +83,11 @@ only live ephemerally or inside `index.html`'s comment block.
 - `comicGen.panelState` — versioned `{version:2, projectName, imageSizeSel/W/H, guidanceScale,
   previewDelay, previewOn, globalPos, globalNeg, nsfw, currentPage, pages:{N: pageData}}`.
   pageData = `{name, panelCountSel, panelCountCustom, seed, 1..24: panelEntry}`.
-  panelEntry = `{chars:[{sel,extra,persist}]x3, title, protectSlots:[bool x4], loc, locExtra,
-  locPersist, action, actPersist, seed, imgCount, style, promptOverride,
-  extras:[{type, sel, desc}]}` (2026-08-15.1 — `extras` holds arbitrary additional objects of any
-  library type, created via the 🧩 Panel Objects add bar). v1 flat data auto-migrates via
-  `ensurePages()`.
+  panelEntry = `{chars:[{sel,extra}]x3, title, protectSlots:[bool x4], loc, locExtra, action, seed,
+  imgCount, style, promptOverride, extras:[{type, sel, desc}]}` (2026-08-15.1 — `extras` holds arbitrary
+  additional objects of any library type, created via the 🧩 Panel Objects add bar). The ⟳ persist flags
+  (`chars[].persist`, `locPersist`, `actPersist`) were REMOVED 2026-08-16 (changelog 2026.08.16.11) — old
+  saved entries may still carry them but they are ignored. v1 flat data auto-migrates via `ensurePages()`.
 - `comicGen.libObjects` — unified Panel Library Objects store `[{id, type, name, desc}]` where `type`
   is a LABEL ('Character'/'Location'/'Action' or custom via "＋ New Type…") deciding which panel
   dropdown the object appears in (2026-08-14.7). Replaces the three legacy keys
@@ -101,16 +101,14 @@ only live ephemerally or inside `index.html`'s comment block.
 **IndexedDB** `comicGenSaveState` — `{handle, name}` (File System Access handle for 💾 Save…)
 
 **Session-only (in memory, per page)** — NOT persisted, wiped on reload:
-- `pageSession[N] = {images, sync}`; current page's live refs are `panelImages`/`syncState`
+- `pageSession[N] = {images}`; current page's live ref is `panelImages`
 - `panelImages[i][k-1]` = data URL of slot k of panel i
-- `syncState['i-s'] = {sel, extra}` — ⟳ persist chains (copy char+modifier to later panels). Keys `'i-loc'`
-  = {sel, extra} and `'i-act'` = string mirror it for the Location/Action ⟳ chains (2026-08-13).
-- `carryNext[page] = {pending, applied}` — session-only cross-page carry: a ⟳ chain on a page buffers its value
-  so it lands on panel 1 of the NEXT page when it loads (`applyCarryToPanel1` in loadCurrentPage; key format
-  `'1-s'`/`'1-loc'`/`'1-act'`). `applied` = last value pushed (divergence check — a user-edited next-page
-  panel 1 keeps its value); pending is consumed on first apply. Propagation stops exactly at next page's panel 1.
 - `panelPromptOverrides[i] = {pos, neg}` — 📝 Prompt override
 - accordion open/closed state (`.panel-acc[data-collapsed]`), `.stopped`/`.paused` boxes
+- (The ⟳ persist chains `syncState['i-s']`/`'i-loc'`/`'i-act'` and the cross-page carry
+  `carryNext[page]` were REMOVED 2026-08-16 (changelog 2026.08.16.11) — replaced by the per-row ⇤
+  copy-from-previous-panel button `copyFromPrevPanel(i, kind, s)`, which copies the corresponding
+  char/location/action from panel i−1 on demand. No auto-propagation or cross-page carry exists anymore.)
 
 **Save pipeline:** grid `input`/`change` events → `handleGridInput(e)` + `schedulePanelSave()`
 (debounced 250ms) → `collectPanelState()` → localStorage. `collectPageData()` reads the live DOM
@@ -125,7 +123,7 @@ for the current page. Import/export round-trips `buildExportData(includeProtecti
 - `currentPage` + `pageSession` — multi-page model
 - `imgObserver` (IntersectionObserver) — evicts/restores `<img>` srcs
 - `gridHasListeners` — grid listeners attached once
-- `syncState`, `panelImages`, `panelPromptOverrides`, `panelSaveTimer`
+- `panelImages`, `panelPromptOverrides`, `panelSaveTimer`
 - `mapsPromise` — cached `getMaps()` (charMap/locMap from `root.characters`/`root.locations`)
 
 ## 5. DOM structure of a panel card (built by `buildPanelGrid`)
@@ -319,10 +317,9 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   In tests, dispatch `new Event('input', {bubbles:true})` after setting a value (this is how
   real typing clears overrides). (The ✕ line-delete buttons bypass this by doing their own
   `clearPanelPromptOverride`/`updatePanelSummary`/`schedulePanelSave`.)
-- ⟳ chains (char/loc/act) are session-only; persisted flags are `persist`/`locPersist`/`actPersist`. Cross-page
-  carry lands on next page's panel 1 at page-load and stops there; if several panels on a page propagate, the
-  LAST source's value wins for the carry. The ✕ delete buttons ALSO uncheck the line's ⟳ and clear its
-  syncState/carry entries (author-approved decision, 2026-08-13).
+- ⟳ chains and cross-page carry were REMOVED 2026-08-16 (changelog 2026.08.16.11) — replaced by the per-row
+  ⇤ copy-from-previous-panel button (`copyFromPrevPanel(i, kind, s)`); no auto-propagation exists anymore, and
+  the ✕ delete buttons no longer touch chains (they just clear the line + prompt override + summary + save).
 - **TESTING GOTCHA (2026-08-15.1, full write-up in the index.html dev-notes):** `schedulePanelSave()` is
   debounced ~250ms. After mutating panel state in browser_eval you MUST wait >400ms THEN restore the
   localStorage snapshot (and re-restore once more) before reloading, or the pending debounced save
