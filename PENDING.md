@@ -15,6 +15,13 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-08-22 — File → New Project should clear the library (bug report)
+- **Status:** DONE 2026-08-22 (changelog 2026.08.16.12). Author: "File -> New is not clearing the
+  library." Root cause: doNewProject() → resetEverything(true) only wiped comicGen.libObjects when the Edit→Reset
+  "Also permanently delete my saved library objects" checkbox was checked (it defaults off and resets to false), so
+  New Project never cleared it. Fixed: doNewProject() now always removes comicGen.libObjects + re-renders the
+  library panel. Edit→Reset checkbox path unchanged.
+
 ### 2026-08-17 — Remove Panel Library persistence; add "copy from previous panel" buttons
 - **Status:** DONE 2026-08-17 (changelog 2026.08.16.11). Author request: "I'd like to eliminate the Panel
   Library persistence function. Instead, I'd like to replace it with a small button that copies the
