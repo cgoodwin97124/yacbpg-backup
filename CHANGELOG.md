@@ -4,6 +4,14 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.12 — 2026-08-22 — File → New Project now clears the library (bug fix)
+- File → 📄 New Project runs `doNewProject()` → `resetEverything(true)`, which only wiped the saved library
+  objects (`comicGen.libObjects`) when the separate "Also permanently delete my saved library objects" checkbox
+  in Edit → Reset was checked — and that checkbox defaults to unchecked and is reset to off after every reset, so
+  New Project never actually cleared the library. The reusable library is supposed to be a fresh-start thing too.
+- Fixed: `doNewProject()` now always removes `comicGen.libObjects` and re-renders the library panel, so File →
+  New Project starts fully clean (characters, locations, and action-prompt library all wiped), independent of the
+  Edit → Reset checkbox (that path is unchanged and still honors it).
 ## 2026.08.16.11 — 2026-08-17 — Panel Library persistence replaced with "copy from previous panel" buttons
 - The ⟳ **persistence** system is gone: characters, Location, and Panel Action Prompt no longer have a
   ⟳ checkbox that copies them into every later panel (and on to the next page). Per the author's request,
