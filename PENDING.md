@@ -41,13 +41,17 @@ each section).
   have each panel display the seed it uses? I'd like to have it placed in the panel header area, where the
   panel title, number of images, style, and size are. I'd also like to make this user-editable, so if the
   user changes it here it uses that seed for that panel."
-- **DESIGN DECISIONS (author, 2026-09-18):** (1) the box SHOWS THE RESOLVED SEED the panel would use, i.e.
+- **DESIGN DECISIONS (author, 2026-09-18):** (1) The box SHOWS THE RESOLVED SEED the panel would use, i.e.
   `getPanelSeed(i)` = panel override > global seed + (N−1) > random — so when a panel has no override and a
-  global seed is set, it displays that computed value; when neither is set the resolved value is random, so
-  the display should read "random"/"unseeded" rather than a made-up number. (2) The header field behaves
-  IDENTICALLY to the accordion box: typing a value = that panel's override, clearing it = fall back to the
-  global seed. (3) The header field REPLACES the ⚙ Panel accordion seed box — the accordion
-  `#panel-seed-N` label+input block (~line 4367) is REMOVED, not duplicated/synced.
+  global seed is set, it displays that computed value (global + N−1). When NEITHER is set it may be BLANK
+  until generation (no placeholder needed). (2) The header field behaves IDENTICALLY to the accordion box:
+  typing a value = that panel's override, clearing it = fall back to the global seed. (3) The header field
+  REPLACES the ⚙ Panel accordion seed box — the accordion `#panel-seed-N` label+input block (~line 4367) is
+  REMOVED, not duplicated/synced. (4) ONCE A SEED IS DECIDED AT GENERATION, the panel HOLDS that seed — it is
+  written into the panel's seed field and keeps using it (reproducibly) until the user changes or clears it.
+  Concretely: when a panel's resolved seed would be random, pick ONE random integer for the panel at
+  generation time, store it in `#panel-seed-N`, and derive the image slots from it; every later regeneration
+  of that panel reuses the stored seed instead of rolling a fresh one.
 - **Implementation notes:** Move the per-panel seed input into the panel header row `.panel-header-row`
   (renderPanels, index.html ~line 4279), which today holds `Panel N`, `#panel-title-N`, the Images
   `#panel-img-count-N` select, the Style `#panel-style-N` select, the Size `#panel-size-N` select (+ custom
@@ -56,13 +60,16 @@ each section).
   which reads `#panel-seed-N`). The `.panel-card input[id^="panel-seed-"]` CSS rule (~line 1194, keeps the
   seed box a 1-line input under the 5-line-textarea rule) still applies. Remove the accordion `.panel-acc-stack`
   wrapper that held the seed label/input. Enter already triggers generateSinglePanel for the seed input — keep
-  that on the header field. To DISPLAY the resolved seed when the box is empty, set the input's `placeholder`
-  from getPanelSeed(i) after render and refresh it when the global seed changes (the existing `#seedInput`
-  listener at ~line 7110 is the hook) and whenever panel numbering changes (reorder/add/delete). If the author
-  wants the resolved value to be genuinely visible even for a random/unseeded panel, note that an unseeded
-  panel's seed is only chosen at generation time (`-1` → random) and is NOT currently stored — flag this as an
-  open sub-decision (store the last-used random seed for display, vs. show "random"). The header is already
-  dense, so check the flex-wrap layout at phone width (390px).
+  that on the header field. When a global seed is set but the panel is blank, DISPLAY the computed value
+  (global + N−1) as the input's `placeholder`, refreshed by the existing `#seedInput` listener (~line 7110)
+  and after any panel renumbering (reorder/add/delete). For the random case, the seed is only decided at
+  generation, so hook where the seed is resolved for a run (getPanelSeed ~line 5033, used by
+  generateSinglePanel ~line 4907): if it would be `-1`, choose a random integer, WRITE it into `#panel-seed-N`
+  (so the field shows it and it saves via the normal panelState path), then proceed using that seed (+ (k−1)
+  per image slot). That pins the seed on the first run; clearing the box returns the panel to
+  random-until-next-run. This is a small behavior change from today (an unseeded panel currently re-randomizes
+  every run), so note it in the changelog when implemented. The header is already dense, so check the
+  flex-wrap layout at phone width (390px).
 
 ### 2026-08-15 — STANDING DIRECTIVE: back up to GitHub on every Save reminder
 - **Status:** in force until the author says otherwise (no changelog entry — process/directive, not a feature).
