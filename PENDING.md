@@ -36,7 +36,26 @@ each section).
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
-(Empty — the Tier 3 Backup-to-GitHub request was greenlit 2026-08-14 and moved to 🟢 START NOW.)
+### 2026-09-18 — Show each panel's seed in the panel header (user-editable)
+- **Status:** QUEUED — awaiting the author's "go ahead" (DO NOT start). Author request: "Is it possible to
+  have each panel display the seed it uses? I'd like to have it placed in the panel header area, where the
+  panel title, number of images, style, and size are. I'd also like to make this user-editable, so if the
+  user changes it here it uses that seed for that panel."
+- **Plan / notes:** Add a compact Seed field to the panel header row `.panel-header-row` (renderPanels,
+  index.html ~line 4279), which today holds `Panel N`, `#panel-title-N`, the Images `#panel-img-count-N`
+  select, the Style `#panel-style-N` select, the Size `#panel-size-N` select (+ custom W/H), and the ⇅ Move
+  chip. The existing per-panel seed input (`#panel-seed-N`) currently lives in the ⚙ Panel accordion
+  (~line 4367) — decide whether to MOVE it to the header or ADD a header field kept in sync with it (the id
+  `panel-seed-N` is already taken, so a header field would need a new id, e.g. `#panel-seed-head-N`, unless
+  the accordion one is removed and every reference repointed). References to update either way: the save loop
+  (~line 3766), the restore loop (~line 4159), the reset loop (~line 6417), the `.panel-card
+  input[id^="panel-seed-"]` CSS rule (~line 1194, which keeps the seed box a 1-line input under the
+  5-line-textarea rule), and getPanelSeed (~line 5033). Two behaviour questions to confirm with the author:
+  (a) when the box is blank, show the RESOLVED seed as a placeholder (getPanelSeed(i) = panel seed > global
+  seed + (N−1) > random) vs. showing nothing until set; (b) typing a value = that panel's override, clearing
+  it = fall back to the global seed (existing behavior). Enter in the accordion seed box already triggers
+  generateSinglePanel — mirror that in the header. The header is already dense, so check the flex-wrap layout
+  at phone width (390px).
 
 ### 2026-08-15 — STANDING DIRECTIVE: back up to GitHub on every Save reminder
 - **Status:** in force until the author says otherwise (no changelog entry — process/directive, not a feature).
