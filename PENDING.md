@@ -15,45 +15,10 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(Empty — nothing is greenlit; the seed-header request is still in QUEUED below.)
+(Empty — nothing is greenlit right now.)
 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
-
-### 2026-09-18 — Show each panel's seed in the panel header (user-editable)
-- **Status:** QUEUED — awaiting the author's "go ahead" (DO NOT start). Author request: "Is it possible to
-  have each panel display the seed it uses? I'd like to have it placed in the panel header area, where the
-  panel title, number of images, style, and size are. I'd also like to make this user-editable, so if the
-  user changes it here it uses that seed for that panel."
-- **DESIGN DECISIONS (author, 2026-09-18):** (1) The box SHOWS THE RESOLVED SEED the panel would use, i.e.
-  `getPanelSeed(i)` = panel override > global seed + (N−1) > random — so when a panel has no override and a
-  global seed is set, it displays that computed value (global + N−1). When NEITHER is set it may be BLANK
-  until generation (no placeholder needed). (2) The header field behaves IDENTICALLY to the accordion box:
-  typing a value = that panel's override, clearing it = fall back to the global seed. (3) The header field
-  REPLACES the ⚙ Panel accordion seed box — the accordion `#panel-seed-N` label+input block (~line 4367) is
-  REMOVED, not duplicated/synced. (4) ONCE A SEED IS DECIDED AT GENERATION, the panel HOLDS that seed — it is
-  written into the panel's seed field and keeps using it (reproducibly) until the user changes or clears it.
-  Concretely: when a panel's resolved seed would be random, pick ONE random integer for the panel at
-  generation time, store it in `#panel-seed-N`, and derive the image slots from it; every later regeneration
-  of that panel reuses the stored seed instead of rolling a fresh one.
-- **Implementation notes:** Move the per-panel seed input into the panel header row `.panel-header-row`
-  (renderPanels, index.html ~line 4279), which today holds `Panel N`, `#panel-title-N`, the Images
-  `#panel-img-count-N` select, the Style `#panel-style-N` select, the Size `#panel-size-N` select (+ custom
-  W/H), and the ⇅ Move chip. Keep the SAME id `panel-seed-N` so the existing state plumbing keeps working:
-  save loop (~line 3766), restore loop (~line 4159), reset loop (~line 6417), and getPanelSeed (~line 5033,
-  which reads `#panel-seed-N`). The `.panel-card input[id^="panel-seed-"]` CSS rule (~line 1194, keeps the
-  seed box a 1-line input under the 5-line-textarea rule) still applies. Remove the accordion `.panel-acc-stack`
-  wrapper that held the seed label/input. Enter already triggers generateSinglePanel for the seed input — keep
-  that on the header field. When a global seed is set but the panel is blank, DISPLAY the computed value
-  (global + N−1) as the input's `placeholder`, refreshed by the existing `#seedInput` listener (~line 7110)
-  and after any panel renumbering (reorder/add/delete). For the random case, the seed is only decided at
-  generation, so hook where the seed is resolved for a run (getPanelSeed ~line 5033, used by
-  generateSinglePanel ~line 4907): if it would be `-1`, choose a random integer, WRITE it into `#panel-seed-N`
-  (so the field shows it and it saves via the normal panelState path), then proceed using that seed (+ (k−1)
-  per image slot). That pins the seed on the first run; clearing the box returns the panel to
-  random-until-next-run. This is a small behavior change from today (an unseeded panel currently re-randomizes
-  every run), so note it in the changelog when implemented. The header is already dense, so check the
-  flex-wrap layout at phone width (390px).
 
 ### 2026-08-15 — STANDING DIRECTIVE: back up to GitHub on every Save reminder
 - **Status:** in force until the author says otherwise (no changelog entry — process/directive, not a feature).
@@ -63,6 +28,18 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-09-18 — Show each panel's seed in the panel header (user-editable)
+- **Status:** DONE 2026-09-18 (changelog 2026.08.16.13). Author request: "Is it possible to have each panel
+  display the seed it uses? I'd like to have it placed in the panel header area, where the panel title, number
+  of images, style, and size are. I'd also like to make this user-editable, so if the user changes it here it
+  uses that seed for that panel." Implemented: the per-panel seed input moved from the ⚙ Panel accordion into
+  the panel header row (next to title/Images/Style), keeps the id `panel-seed-N` and its Enter-to-render
+  behavior, and now SHOWS the resolved seed (panel override > global+(N−1)) via a live placeholder ("random"
+  when neither is set; typing = override, clearing = follow global). New pin-on-generation: when a panel's
+  seed would be random, one random integer is chosen at generation, written into that panel's seed field, and
+  held for later regenerations (so results are reproducible after the first run). Verified live with a mocked
+  image service; desktop + 390px layouts checked (no overflow/overlap).
 
 ### 2026-08-22 — File → New Project should clear the library (bug report)
 - **Status:** DONE 2026-08-22 (changelog 2026.08.16.12). Author: "File -> New is not clearing the
