@@ -4,6 +4,20 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.13 — 2026-09-18 — Per-panel Seed moves into the panel header (shows the resolved seed, pins on first run)
+- Each panel's **Seed** box now sits in the **panel header** — right next to its title, **Images** count, and
+  **Style** — instead of being tucked inside the ⚙ Panel accordion. It behaves the same way (type a value to
+  override the page seed for that one panel; clear it to fall back to the page seed), keeps the same Enter-to-
+  generate shortcut, and is still saved with the project.
+- The box now **shows the seed the panel will actually use**: when it's empty it displays the resolved value as
+  ghost text — the page seed + (panel number − 1), or "random" when no page seed is set. So you can see at a
+  glance whether a panel is deterministic or free.
+- **New: the seed is pinned on the first run.** Previously an unseeded panel rolled a fresh random seed every
+  time. Now, when a panel has no seed (and no page seed), one random seed is chosen when it first generates,
+  filled into its Seed box, and reused — so re-generating that panel reproduces the same image until you edit or
+  clear the box. This makes "I liked that result, keep it" the default instead of "reroll every time."
+- Verified live (mocked image service): pinning, page-seed fallback, per-panel override, and the header
+  placeholders all behave correctly; desktop and 390px-phone layouts checked.
 ## 2026.08.16.12 — 2026-08-22 — File → New Project now clears the library (bug fix)
 - File → 📄 New Project runs `doNewProject()` → `resetEverything(true)`, which only wiped the saved library
   objects (`comicGen.libObjects`) when the separate "Also permanently delete my saved library objects" checkbox
