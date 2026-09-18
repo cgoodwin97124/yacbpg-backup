@@ -15,23 +15,7 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-### 2026-08-22 — File → New Project should clear the library (bug report)
-- **Status:** DONE 2026-08-22 (changelog 2026.08.16.12). Author: "File -> New is not clearing the
-  library." Root cause: doNewProject() → resetEverything(true) only wiped comicGen.libObjects when the Edit→Reset
-  "Also permanently delete my saved library objects" checkbox was checked (it defaults off and resets to false), so
-  New Project never cleared it. Fixed: doNewProject() now always removes comicGen.libObjects + re-renders the
-  library panel. Edit→Reset checkbox path unchanged.
-
-### 2026-08-17 — Remove Panel Library persistence; add "copy from previous panel" buttons
-- **Status:** DONE 2026-08-17 (changelog 2026.08.16.11). Author request: "I'd like to eliminate the Panel
-  Library persistence function. Instead, I'd like to replace it with a small button that copies the
-  corresponding item from the previous panel. And we'll go ahead with this now." Implemented: the entire ⟳
-  persistence system (checkbox propagation to later panels + cross-page carry) was removed and replaced
-  with a small ⇤ button on each character slot, the Location row, and the Panel Action Prompt row that
-  copies that item (selection + modifier) from the panel directly before it. Panel 1's buttons are
-  disabled. Nothing copies automatically anymore. Old saved projects keep their content (persist flags
-  dropped on next save). Help + user manual + dev docs updated. Verified live; author's project intact.
-
+(Empty — nothing is greenlit; the seed-header request is still in QUEUED below.)
 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
@@ -79,6 +63,24 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-08-22 — File → New Project should clear the library (bug report)
+- **Status:** DONE 2026-08-22 (changelog 2026.08.16.12). Author: "File -> New is not clearing the
+  library." Root cause: doNewProject() → resetEverything(true) only wiped comicGen.libObjects when the Edit→Reset
+  "Also permanently delete my saved library objects" checkbox was checked (it defaults off and resets to false), so
+  New Project never cleared it. Fixed: doNewProject() now always removes comicGen.libObjects + re-renders the
+  library panel. Edit→Reset checkbox path unchanged.
+
+### 2026-08-17 — Remove Panel Library persistence; add "copy from previous panel" buttons
+- **Status:** DONE 2026-08-17 (changelog 2026.08.16.11). Author request: "I'd like to eliminate the Panel
+  Library persistence function. Instead, I'd like to replace it with a small button that copies the
+  corresponding item from the previous panel. And we'll go ahead with this now." Implemented: the entire ⟳
+  persistence system (checkbox propagation to later panels + cross-page carry) was removed and replaced
+  with a small ⇤ button on each character slot, the Location row, and the Panel Action Prompt row that
+  copies that item (selection + modifier) from the panel directly before it. Panel 1's buttons are
+  disabled. Nothing copies automatically anymore. Old saved projects keep their content (persist flags
+  dropped on next save). Help + user manual + dev docs updated. Verified live; author's project intact.
+
 ### 2026-08-16 — Pause a run and continue it (implemented 2026.08.16.9)
 - **Status:** DONE 2026-08-16 (changelog 2026.08.16.9). Author request: "Is there a way we can pause a run
   rather than disabling it, and be able to continue it?" Implemented: a ⏸ Pause button (sidebar gen-row
