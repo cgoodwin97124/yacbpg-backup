@@ -210,7 +210,10 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `panelPromptOverrides[i]` (from 📝 Prompt editor) completely replaces pos/neg and defines its
   own hasContent. Typing in any panel content field clears the override
   (`handleGridInput` → `clearPanelPromptOverride`); global keyword/preset/NSFW changes clear ALL.
-- **Seeds:** `getPanelSeed(i)` = panel `#panel-seed-N` > global `#seedInput` + (i−1) > random(-1).
+- **Seeds:** `#panel-seed-N` sits in the panel header (since 2026-09-18) and shows the resolved seed as a
+  placeholder. `pinPanelSeedForRun(i)` (used by renderPanelSlot) = panel `#panel-seed-N` > global `#seedInput`
+  + (i−1) > one random int, which it writes back into `#panel-seed-N` (so the panel HOLDS the seed and is
+  reproducible on later runs). `getPanelSeed(i)` still exists but is no longer used by render.
   Slot k uses seed + (k−1).
 - **Size:** `getImageSize()` from File menu; `pickSourceResolution` picks the nearest plugin
   size (512²/512×768/768×512/768²); `upscaleDataUrl` cover-crops + upscales to target
