@@ -41,21 +41,28 @@ each section).
   have each panel display the seed it uses? I'd like to have it placed in the panel header area, where the
   panel title, number of images, style, and size are. I'd also like to make this user-editable, so if the
   user changes it here it uses that seed for that panel."
-- **Plan / notes:** Add a compact Seed field to the panel header row `.panel-header-row` (renderPanels,
-  index.html ~line 4279), which today holds `Panel N`, `#panel-title-N`, the Images `#panel-img-count-N`
-  select, the Style `#panel-style-N` select, the Size `#panel-size-N` select (+ custom W/H), and the ⇅ Move
-  chip. The existing per-panel seed input (`#panel-seed-N`) currently lives in the ⚙ Panel accordion
-  (~line 4367) — decide whether to MOVE it to the header or ADD a header field kept in sync with it (the id
-  `panel-seed-N` is already taken, so a header field would need a new id, e.g. `#panel-seed-head-N`, unless
-  the accordion one is removed and every reference repointed). References to update either way: the save loop
-  (~line 3766), the restore loop (~line 4159), the reset loop (~line 6417), the `.panel-card
-  input[id^="panel-seed-"]` CSS rule (~line 1194, which keeps the seed box a 1-line input under the
-  5-line-textarea rule), and getPanelSeed (~line 5033). Two behaviour questions to confirm with the author:
-  (a) when the box is blank, show the RESOLVED seed as a placeholder (getPanelSeed(i) = panel seed > global
-  seed + (N−1) > random) vs. showing nothing until set; (b) typing a value = that panel's override, clearing
-  it = fall back to the global seed (existing behavior). Enter in the accordion seed box already triggers
-  generateSinglePanel — mirror that in the header. The header is already dense, so check the flex-wrap layout
-  at phone width (390px).
+- **DESIGN DECISIONS (author, 2026-09-18):** (1) the box SHOWS THE RESOLVED SEED the panel would use, i.e.
+  `getPanelSeed(i)` = panel override > global seed + (N−1) > random — so when a panel has no override and a
+  global seed is set, it displays that computed value; when neither is set the resolved value is random, so
+  the display should read "random"/"unseeded" rather than a made-up number. (2) The header field behaves
+  IDENTICALLY to the accordion box: typing a value = that panel's override, clearing it = fall back to the
+  global seed. (3) The header field REPLACES the ⚙ Panel accordion seed box — the accordion
+  `#panel-seed-N` label+input block (~line 4367) is REMOVED, not duplicated/synced.
+- **Implementation notes:** Move the per-panel seed input into the panel header row `.panel-header-row`
+  (renderPanels, index.html ~line 4279), which today holds `Panel N`, `#panel-title-N`, the Images
+  `#panel-img-count-N` select, the Style `#panel-style-N` select, the Size `#panel-size-N` select (+ custom
+  W/H), and the ⇅ Move chip. Keep the SAME id `panel-seed-N` so the existing state plumbing keeps working:
+  save loop (~line 3766), restore loop (~line 4159), reset loop (~line 6417), and getPanelSeed (~line 5033,
+  which reads `#panel-seed-N`). The `.panel-card input[id^="panel-seed-"]` CSS rule (~line 1194, keeps the
+  seed box a 1-line input under the 5-line-textarea rule) still applies. Remove the accordion `.panel-acc-stack`
+  wrapper that held the seed label/input. Enter already triggers generateSinglePanel for the seed input — keep
+  that on the header field. To DISPLAY the resolved seed when the box is empty, set the input's `placeholder`
+  from getPanelSeed(i) after render and refresh it when the global seed changes (the existing `#seedInput`
+  listener at ~line 7110 is the hook) and whenever panel numbering changes (reorder/add/delete). If the author
+  wants the resolved value to be genuinely visible even for a random/unseeded panel, note that an unseeded
+  panel's seed is only chosen at generation time (`-1` → random) and is NOT currently stored — flag this as an
+  open sub-decision (store the last-used random seed for display, vs. show "random"). The header is already
+  dense, so check the flex-wrap layout at phone width (390px).
 
 ### 2026-08-15 — STANDING DIRECTIVE: back up to GitHub on every Save reminder
 - **Status:** in force until the author says otherwise (no changelog entry — process/directive, not a feature).
