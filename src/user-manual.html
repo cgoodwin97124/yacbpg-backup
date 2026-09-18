@@ -59,11 +59,11 @@
 <h3>Panels</h3>
 <p>Each panel card contains:</p>
 <ul>
-<li><strong>Header row</strong> — &quot;Panel N&quot; label, an optional panel title, the <strong>Images</strong> count (1–4), a per-panel <strong>Style</strong> override, and a <strong>⇅ Move</strong> control to reorder panels on the page.</li>
+<li><strong>Header row</strong> — &quot;Panel N&quot; label, an optional panel title, the <strong>Images</strong> count (1–4), a per-panel <strong>Style</strong> override, a per-panel <strong>Seed</strong> box, and a <strong>⇅ Move</strong> control to reorder panels on the page.</li>
 <li><strong>Info summary</strong> — a one-line summary of the panel&#39;s characters, location, and action.</li>
 <li><strong>Image slots</strong> — up to 4 images per panel. Each slot has its own small button row (see <em>Managing images</em>).</li>
 <li><strong>Action row</strong> — <strong>Show/Hide Menus</strong> (opens/collapses the panel&#39;s accordion menus with one button), <strong>🔍 Focus</strong> (single-panel view), and <strong>🔄 Generate</strong> (render just this panel).</li>
-<li><strong>Accordion menus</strong> — 📖 <strong>Panel Library</strong> (characters, location, action), 📝 <strong>Prompt</strong> (view/edit the exact prompt), ⚙ <strong>Panel</strong> (collapse menus, duplicate, add/delete panel, clear images, per-panel seed), 💾 <strong>Files</strong> (open/save/export this panel&#39;s images).</li>
+<li><strong>Accordion menus</strong> — 📖 <strong>Panel Library</strong> (characters, location, action), 📝 <strong>Prompt</strong> (view/edit the exact prompt), ⚙ <strong>Panel</strong> (collapse menus, duplicate, add/delete panel, clear images), 💾 <strong>Files</strong> (open/save/export this panel&#39;s images).</li>
 </ul>
 <h2>3. Building a panel</h2>
 <p>Open a panel&#39;s <strong>📖 Panel Library</strong> accordion to fill it in.</p>
@@ -79,7 +79,7 @@
 <ul>
 <li><strong>Panel title</strong> is display-only — it never appears in the generated prompt.</li>
 <li><strong>Style</strong> overrides the global art style for that panel only (<strong>[Default (Global)]</strong> follows the Edit-menu preset).</li>
-<li><strong>Seed</strong> (in ⚙ Panel) pins the panel&#39;s randomness; leave blank to fall back to the global seed.</li>
+<li><strong>Seed</strong> (in the panel header) pins the panel&#39;s randomness; leave blank to fall back to the global seed. An empty box shows, in grey, the seed the panel will use (the global seed + panel number − 1, or &quot;random&quot; if no global seed is set).</li>
 </ul>
 <h2>4. Generating images</h2>
 <p>Click <strong>⚡ GENERATE ALL PANELS ON PAGE</strong> to render every panel on the current page (the status line shows progress), <strong>🔄 Generate</strong> on a panel for just that panel, or <strong>🔄 Generate</strong> on an individual image slot for a single variation.</p>
@@ -99,7 +99,7 @@
 </ol>
 <p>They&#39;re joined into one comma-separated prompt and sent to the text-to-image service. The <strong>📝 Prompt</strong> accordion shows the exact prompt for a panel, and lets you <em>override</em> it entirely (positive + negative text of your own). Typing anything in the panel&#39;s characters/location/action fields discards that override and returns to the automatic prompt.</p>
 <h3>Seeds</h3>
-<p>Seeds make a generation reproducible. Slot <em>k</em> of a panel uses <code>panel seed + (k − 1)</code> (the panel seed defaults to the global seed + panel index, or completely random if neither is set).</p>
+<p>Seeds make a generation reproducible. Slot <em>k</em> of a panel uses <code>panel seed + (k − 1)</code> (the panel seed defaults to the global seed + panel index, or completely random if neither is set). When neither is set, the first time a panel generates it picks a random seed and fills it into the panel&#39;s Seed box, so re-generating that panel reproduces the same image until you change or clear the box.</p>
 <h3>Image size &amp; guidance</h3>
 <p>Image size is set in <strong>📄 File → Image Size</strong> (e.g. 512×512 up to 768×768). Guidance scale (how closely the model follows your prompt, 1–30) is set in Edit. When the chosen size isn&#39;t a native service size, the result is upscaled to match.</p>
 <h3>NSFW mode</h3>
