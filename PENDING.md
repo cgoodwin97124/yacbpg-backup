@@ -31,12 +31,13 @@ each section).
 ### 2026-09-19 — Analysis: add the Panel Action Prompt field (as the first field per panel)
 - **Status:** DONE 2026-09-19 (changelog 2026.08.16.17). Author request: "On the Library Analysis page, I'd like to
   add the Panel Action Prompt field for each panel. On this page I'd like it to be the first field for each
-  panel." Implemented: each panel's header in the Analysis matrix now has an editable ▶ Panel Action Prompt box
-  placed as the FIRST field (under the panel name, above the 🎨/📐/🎲 chips). It edits the panel's real action live
-  (current page) or saves it to the browsed page, auto-grows to fit its text, keeps the Action-item cells in sync,
-  and stays in sync when the action is changed via a cell or ＋ Add. Verified live, desktop + 390px.
-- **Assumption (no blocking question asked):** "field" = the panel's own editable property fields in its Analysis
-  header (not a matrix body row/cell).
+  panel." First built as a field inside each panel's header; the author then CLARIFIED: "I did mean a dedicated
+  first row across the panels instead." So the header field was removed and the final implementation is a
+  dedicated **▶ Panel Action Prompt** row as the FIRST BODY ROW of the matrix (one editable box per panel column,
+  aligned under each panel). When ⇄ Swap makes panels the rows, it becomes the FIRST COLUMN (right of the panel
+  names) — the transpose, so it stays "first" relative to the panels. It edits the panel's real action live
+  (current page) or saves to the browsed page, auto-grows to fit its text, keeps that panel's Action-item cells in
+  sync, and stays in sync when the action is changed via a cell or ＋ Add. Verified live, desktop + 390px.
 
 ### 2026-09-19 — Analysis: project defaults + per-panel style/size/seed in the matrix
 - **Status:** DONE 2026-09-19 (changelog 2026.08.16.16). Author request: "I'd like the Analysis page to show the
