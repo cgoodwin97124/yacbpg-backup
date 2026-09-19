@@ -17,7 +17,6 @@ each section).
 
 (Empty — nothing is greenlit right now.)
 
-
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
 ### 2026-08-15 — STANDING DIRECTIVE: back up to GitHub on every Save reminder
@@ -28,6 +27,54 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-09-19 — Library → Analysis: panel × library cross-reference matrix
+- **Status:** DONE 2026-09-19 (changelog 2026.08.16.15). Author idea: a new 📚 Library menu
+  tool showing a matrix of the current page's panels vs. the whole library, marking at each intersection
+  whether that library item is used in that panel (✅ green check), with the per-panel description editable
+  right there. The user can toggle which thing (panels or library items) is rows vs. columns. Assumed
+  orientation (library items as ROWS, panels as COLUMNS): the leftmost column shows each library item's
+  GLOBAL description; the top row shows each panel's representative-image thumbnail; a cell shows ✅ when the
+  item is used in that panel, and when used, that panel's per-panel description is editable in the cell.
+- **DECISIONS (author, 2026-09-19):** (1) A used cell edits exactly the character slot's modifier
+  (panel-char-extra-N-S) or the location modifier (panel-loc-extra-N), and autosaves. (2) When an item is used
+  in MORE THAN ONE slot of a panel, show it PER SLOT (up to 3 character slots). (3) Scope = the CURRENT PAGE,
+  with a page selector to browse pages. (4) Show ALL library items, including ones used in no panel.
+  (5) Thumbnail = the panel's representative image (⭐ Cover if set, else the panel's first image; placeholder
+  when the panel has none). (6) The global-description column is READ-ONLY by default; an "allow inline
+  editing" checkbox (unchecked by default) makes it editable inline. (7) Placement = a FULL-PAGE overlay like
+  the ▦ Storyboard view and the user manual; the grid scrolls BOTH horizontally and vertically with a STICKY
+  first row and first column. (8) Clicking a non-✅ intersection offers to ADD that library item to that panel.
+
+
+### 2026-09-19 — Library → Import: pick Characters / Locations out of a project file
+- **Status:** DONE 2026-09-19 (changelog 2026.08.16.14). Author request: "add a function under
+  the Library menu item called Import. When the user selects Import, it will allow them to select a project
+  file (either zip or json). It will allow the user to select Library items (either Characters or Locations)
+  from that file and import them into the current project."
+- **Recon (2026-09-19):** Library is ONE store `comicGen.libObjects` = `[{id, type, name, desc}]` (type
+  'Character'|'Location'|'Action'; migrateLibObjects prunes Action, so only Character/Location are surfaced).
+  renderLibrary() (~line 3454) builds the 📚 Library menu (`#libObjects`) as two buckets each with a green +
+  add button. Project backups (File → Project, per-panel ⬇ Export, Export .zip) all carry `libObjects` (v2) —
+  or, for OLD v1 files, `charLibrary`/`locLibrary`/`actLibrary` arrays (applyImportedSettings migrates them).
+  Zip support already exists: unzipEntries() (~5860) returns {name: Uint8Array}; the settings file inside is
+  `comic-generator-settings.json`. Current whole-project import = doImportFile()/importSettingsFromFile()
+  (~6038/~6076) with a hasActiveProject() gate + 3-choice Save/Continue/Cancel modal. Panel selects reference
+  library items by `lib:${char|loc}:${id}`, so imported items should get FRESH ids to avoid collisions.
+- **Likely implementation:** new "Import" button/section in the 📚 Library menu + a hidden file input
+  (.json/.zip) → parse to the libObjects array (handle legacy v1 keys too) → a selection modal (checkbox list
+  grouped Characters/Locations, showing name + description, Select All / None, Import button) → append the
+  chosen items to `comicGen.libObjects` with new ids, then renderLibrary() + updatePanelSelects(). Nothing else
+  from the file is touched (no panels, settings, or images).
+- **DECISIONS (author, 2026-09-19):** (1) DUPLICATES — skip when the name AND description both match an
+  existing item; if the NAME matches but the description differs, highlight it and offer three choices:
+  append the new description to the current one, overwrite the current one, or import it under a new name.
+  (2) SELECTION UI — modal with checkbox list grouped Characters/Locations (good), AND the user can edit each
+  item's name/description before importing. (3) SCOPE — Characters and Locations; if the file contains saved
+  Action items, offer to import those too. Never touch panels, settings, or images. (4) OLD FILES — accept
+  legacy v1 backups (charLibrary/locLibrary/actLibrary arrays) as well. (5) MULTIPLE FILES — allow selecting
+  several files and merging their items into one list.
+- **NOTE (author, 2026-09-19):** UX handling = library items only on import (no art-style/seed changes).
 
 ### 2026-09-18 — Show each panel's seed in the panel header (user-editable)
 - **Status:** DONE 2026-09-18 (changelog 2026.08.16.13). Author request: "Is it possible to have each panel
