@@ -295,6 +295,11 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   **Library → Analysis (2026-09-19):** the 📊 Analysis button opens `#analysisOverlay` — a full-page
   panel × library cross-reference matrix with ✅ usage marks and per-panel descriptions editable in the grid
   — see BATCH 2026.08.16.15.
+  **Analysis → project defaults + per-panel style/size/seed (2026-09-19):** the Analysis header's
+  `#analysisGlobalBar` edits NSFW / default style / default size / seed (writing through to the real settings;
+  seed is per-PAGE, i.e. the page selected in the page selector), and every panel header shows compact
+  🎨/📐/🎲 `.an-chip` buttons that open in-place editors (`analysisSetPanelStyle/Size/Seed`, same DOM-vs-state
+  split as `analysisSetDesc`) — see BATCH 2026.08.16.16.
 - **Changelog:** `src/CHANGELOG.md` (newest first, format `## <ver> — <date> — <title>` + `- item`
   bullets). The About panel's async `renderChangelog()` fetches it at runtime and parses it (gracefully
   empty on failure). Versions `YYYY.MM.DD.R`. Prepending an entry is a CHANGELOG.md change (+ a matching
