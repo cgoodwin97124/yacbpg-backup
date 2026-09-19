@@ -4,6 +4,40 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.15 — 2026-09-19 — Library → Analysis (panel × library cross-reference matrix)
+- The 📚 Library menu has a new **📊 Analysis** button. It opens a full-page matrix that cross-references your
+  library items against every panel on a page: **👤 Characters**, **📍 Locations** (and **🎬 Actions**, if you
+  have any) along one axis, the page's **panels** along the other.
+- The **leftmost column** (or top row) shows each library item's **name and global description**; the **top
+  row** (or leftmost column) shows each panel's **representative-image thumbnail** (⭐ Cover if set, else its
+  first image; a "No image" placeholder otherwise).
+- Each intersection shows **✅** when that item is used in that panel. When it is, the panel's **per-panel
+  description** is editable right there — one field **per character slot** (so a character used in two slots
+  shows both), plus the location modifier. Empty cells offer a **＋ Add** button to drop that item straight
+  into the panel.
+- **⇄ Swap rows / columns** flips which axis is which. A **Page:** selector browses every page (you can edit
+  other pages too — changes are written to that page), and an **Edit global descriptions** checkbox (off by
+  default) makes the global descriptions editable inline.
+- The matrix scrolls both ways with a **sticky first row and first column**. Nothing outside the descriptions
+  you edit is changed — panels' selections only change when you click **＋ Add**.
+- Verified live on the "Cow in field" sample (✅/Add cells, per-slot editing, swap, page selector, sticky
+  headers) at desktop and 390px-phone widths.
+## 2026.08.16.14 — 2026-09-19 — Library → Import (bring Characters / Locations / Actions in from a project file)
+- The 📚 Library menu now has an **⬆ Import…** button. Pick one or more project files — a `.json` backup or a
+  full `.zip` (the settings inside; images are ignored) — and it reads the library objects out of them,
+  including old v1 backups (`charLibrary`/`locLibrary`/`actLibrary`).
+- A selection modal lists the found items grouped into **Characters / Locations / Actions** (the Actions group
+  appears only when the files contain any). Every row has a checkbox, an editable **name** and **description**,
+  and a status tag; there are **Select all** / **Select none** buttons and a live selected count.
+- **Duplicates:** an item whose name *and* description already exist is tagged "identical — skipped" and left
+  out. If the name matches but the description differs, the row is flagged "name already exists" and offers
+  three choices: **append** the new description to the existing one (default), **overwrite** the existing one,
+  or **import as a new item** (new name).
+- Nothing else in your project is touched — panels, settings, and images are left completely alone. Imported
+  items get fresh ids and appear immediately in the Library and in every panel's dropdowns.
+- Because the store now keeps Action items, a **🎬 Actions** bucket appears in the Library whenever any exist.
+- Verified live against the sample "Cow in field" project (a real `.zip` and a legacy `.json` merged in one
+  pass) plus synthetic duplicate/conflict cases; desktop and 390px-phone layouts checked.
 ## 2026.08.16.13 — 2026-09-18 — Per-panel Seed moves into the panel header (shows the resolved seed, pins on first run)
 - Each panel's **Seed** box now sits in the **panel header** — right next to its title, **Images** count, and
   **Style** — instead of being tucked inside the ⚙ Panel accordion. It behaves the same way (type a value to
