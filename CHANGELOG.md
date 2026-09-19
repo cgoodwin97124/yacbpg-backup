@@ -4,6 +4,20 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.17 — 2026-09-19 — Analysis: each panel's Action Prompt field (first field per panel)
+- Every panel column (or row) in the **📊 Library Analysis** matrix now shows that panel's **▶ Panel Action
+  Prompt** as an editable box — the same freeform "what happens" text as the panel's Action Prompt box on the
+  main page. It sits **first** among the panel's fields, directly under the "Panel N — title" line and above the
+  🎨 / 📐 / 🎲 chips.
+- Typing in it edits the panel live (on the current page it updates the real panel Action Prompt and the panel's
+  summary line; on a browsed page it's saved to that page). Boxes grow to fit their text automatically (capped,
+  scrollable beyond that).
+- Any **🎬 Action** library item cells for that panel refresh in place as you type — the ✅ / ＋ Add / — mark
+  updates immediately, and using ＋ Add fills the action box too.
+- Verified live on the "Cow in field" sample: field shows/edits/saves the action, stays in sync with the cell
+  editors and ＋ Add, updates an Action item's ✅→—→✅ as the text changes, and works on the current page and a
+  second page; desktop + 390px layouts checked (no overflow, no clipping).
+
 ## 2026.08.16.16 — 2026-09-19 — Analysis: project defaults + per-panel style/size/seed
 - The **📊 Analysis** overlay now has a **"Project defaults:"** bar at the top with the project's **NSFW**
   checkbox, **default art style**, **default image size**, and **seed** — all editable right there. Changes
