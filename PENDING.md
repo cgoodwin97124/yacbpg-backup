@@ -28,6 +28,19 @@ each section).
 
 ## ✅ DONE — implemented (history, newest first)
 
+### 2026-09-19 — Analysis: project defaults + per-panel style/size/seed in the matrix
+- **Status:** DONE 2026-09-19 (changelog 2026.08.16.16). Author request: "I'd like the Analysis page to show the
+  project's NSFW state and its default style, image size, and seed (all of these in the header), and to be able to
+  modify them from here. I'd also like each panel's column to show its style, size, and seed, and to be able to
+  edit them from here as well; make these as compact as possible. (Probably a small button for each under the
+  image, similar to each image's 'view in new tab/download/clear/protect/set representative' buttons in the main
+  view.)" Implemented: a "Project defaults:" bar in the Analysis header (NSFW, default style, default size, seed,
+  all editable and writing through to the real settings) + three compact 🎨/📐/🎲 chips under each panel header
+  that open in-place editors. Inherited values are dimmed/dashed; overrides are highlighted. Edits on a browsed
+  (non-current) page are written to that page's saved state. Verified live on the Cow sample, desktop + 390px.
+- **Assumption (no blocking question asked):** the header "seed" is per-PAGE in this app (File → Page Setup stores
+  it as `page.seed`), so it reads/writes the page selected in the Analysis page selector.
+
 ### 2026-09-19 — Library → Analysis: panel × library cross-reference matrix
 - **Status:** DONE 2026-09-19 (changelog 2026.08.16.15). Author idea: a new 📚 Library menu
   tool showing a matrix of the current page's panels vs. the whole library, marking at each intersection
