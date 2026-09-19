@@ -57,6 +57,11 @@ only live ephemerally or inside `index.html`'s comment block.
   - `src/AI-NOTES.md` — this file.
 - **Execution order caveat:** the Perchance engine evaluates the whole template (all pjs /
   square blocks) BEFORE any body `<script>` runs. The app IIFE therefore runs last.
+- **TEST DATA (2026-09-19):** the standard sample project for testing is **"Cow in field"** — 1 page, 4
+  panels (panel 1 filled), 2 library objects (Character "A cow" = Holstein, white with black spots; Location
+  "A pasture"). Its project .zip (settings + one panel-1 image) is stored in the GitHub backup repo at
+  `samples/cow-in-field.zip`. Load it via 📄 File → ⬆ Import Project when a populated project is needed;
+  making changes to it during testing is fine.
 
 ## 2. Boot / init sequence (bottom of the IIFE)
 
@@ -279,10 +284,17 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 - **View modes:** `#singleOverlay` (🔍 Focus moves the ACTUAL card into `#singleStage`,
   navigation via list/dropdown/prev-next/arrows/Esc) and `#storyboardOverlay` (▦ button →
   `.sb-cell` per panel from representative image, placeholders for empty).
-- **Library:** ONE `comicGen.libObjects` store (2026-08-14.7): entries `{id, type, name, desc}` where
-  `type` is a label ('Character'/'Location'/'Action'/custom); panel dropdowns list precreated options
-  (minus "none") + optgroup of saved objects matching the dropdown's type + "No Character Selected" LAST
-  (chars only). 📚 Library menu shows every object with a per-row Type select (incl. "＋ New Type…").
+- **Library:** ONE `comicGen.libObjects` store: entries `{id, type, name, desc}` where `type` is
+  'Character' | 'Location' | 'Action'. Panel dropdowns list precreated options (minus "none") + an optgroup
+  of saved objects of that type + "No Character Selected" LAST (chars only). 📚 Library menu shows the
+  objects as 👤 Characters / 📍 Locations buckets (plus a 🎬 Actions bucket when any Action item exists),
+  each row = name + desc + 🗑, with a green + to add. migrateLibObjects() migrates the legacy
+  charLibrary/locLibrary/actLibrary keys and, since 2026-09-19, KEEPS Action items instead of pruning them.
+  **Library → Import (2026-09-19):** the ⬆ Import… button reads Characters/Locations/Actions out of a
+  project .json/.zip (legacy v1 included) and merges the chosen ones into libObjects — see BATCH 2026.08.16.14.
+  **Library → Analysis (2026-09-19):** the 📊 Analysis button opens `#analysisOverlay` — a full-page
+  panel × library cross-reference matrix with ✅ usage marks and per-panel descriptions editable in the grid
+  — see BATCH 2026.08.16.15.
 - **Changelog:** `src/CHANGELOG.md` (newest first, format `## <ver> — <date> — <title>` + `- item`
   bullets). The About panel's async `renderChangelog()` fetches it at runtime and parses it (gracefully
   empty on failure). Versions `YYYY.MM.DD.R`. Prepending an entry is a CHANGELOG.md change (+ a matching
