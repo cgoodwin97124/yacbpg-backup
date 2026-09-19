@@ -4,6 +4,23 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.16 — 2026-09-19 — Analysis: project defaults + per-panel style/size/seed
+- The **📊 Analysis** overlay now has a **"Project defaults:"** bar at the top with the project's **NSFW**
+  checkbox, **default art style**, **default image size**, and **seed** — all editable right there. Changes
+  write straight through to the real settings (Edit → Art Style / NSFW, File → Page Setup size / seed), so the
+  main page and the Analysis view never disagree; headers/keyword chips update immediately.
+- Each **panel column** (or row) now shows three compact chips under its thumbnail — **🎨 style**, **📐 size**,
+  **🎲 seed** — using the same small-button style as each image's ✕ / protect / ⭐ chips. Click a chip to edit
+  it in place: style and size open a dropdown, custom size reveals W/H boxes with a ✓ apply button, and seed
+  opens a one-line text box (blank = follow the page seed).
+- Inherited values (using the project default) are shown dimmed with a dashed border; a panel's own overrides
+  are shown in normal color (seed overrides in blue). Hover any chip for an explanation + the resolved value.
+- Edits made while browsing **another page** in the Analysis page selector are written to that page's saved
+  state (the same way the per-panel descriptions already work); the currently-loaded page edits the live
+  controls. Nothing else about the project is changed.
+- Verified live on the "Cow in field" sample: NSFW / style / size / seed all round-trip to the real settings;
+  per-panel style, preset size, custom size (W×H), and seed all edit and persist, on both the current page and
+  a second page; desktop + 390px-phone layouts checked (bar wraps cleanly, no overflow).
 ## 2026.08.16.15 — 2026-09-19 — Library → Analysis (panel × library cross-reference matrix)
 - The 📚 Library menu has a new **📊 Analysis** button. It opens a full-page matrix that cross-references your
   library items against every panel on a page: **👤 Characters**, **📍 Locations** (and **🎬 Actions**, if you
