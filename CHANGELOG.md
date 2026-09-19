@@ -21,6 +21,10 @@ Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet li
 - Verified live on the "Cow in field" sample: NSFW / style / size / seed all round-trip to the real settings;
   per-panel style, preset size, custom size (W×H), and seed all edit and persist, on both the current page and
   a second page; desktop + 390px-phone layouts checked (bar wraps cleanly, no overflow).
+- Fix (same batch): **Backup to GitHub** could fail with `PUT 409 … does not match <sha>` on every file except
+  the ones that happened to have a fresh response, because GitHub's contents GET is cacheable for ~60&nbsp;s and
+  handed back a stale file SHA right after a previous backup. The contents-GET now uses `cache: 'no-store'`,
+  and a 409 triggers one re-read-and-retry before reporting failure.
 ## 2026.08.16.15 — 2026-09-19 — Library → Analysis (panel × library cross-reference matrix)
 - The 📚 Library menu has a new **📊 Analysis** button. It opens a full-page matrix that cross-references your
   library items against every panel on a page: **👤 Characters**, **📍 Locations** (and **🎬 Actions**, if you
