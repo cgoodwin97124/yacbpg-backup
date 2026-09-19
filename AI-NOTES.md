@@ -299,10 +299,10 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `#analysisGlobalBar` edits NSFW / default style / default size / seed (writing through to the real settings;
   seed is per-PAGE, i.e. the page selected in the page selector), and every panel header shows compact
   🎨/📐/🎲 `.an-chip` buttons that open in-place editors (`analysisSetPanelStyle/Size/Seed`, same DOM-vs-state
-  split as `analysisSetDesc`) — see BATCH 2026.08.16.16. Each panel header also shows its **▶ Panel Action
-  Prompt** as an editable `.an-act` box (FIRST field, above the chips) — `analysisSetPanelAction` /
-  `analysisSyncActionField` / `analysisRefreshActionCells` keep it and the Action-item cells in sync — see
-  BATCH 2026.08.16.17.
+  split as `analysisSetDesc`) — see BATCH 2026.08.16.16. The matrix also has a dedicated **▶ Panel Action Prompt**
+  ROW as its first body row (one editable `.an-act` box per panel; becomes the first COLUMN after ⇄ Swap) —
+  `analysisActionField` / `analysisSetPanelAction` / `analysisSyncActionField` / `analysisRefreshActionCells` keep
+  it and the Action-item cells in sync — see BATCH 2026.08.16.17.
 - **Changelog:** `src/CHANGELOG.md` (newest first, format `## <ver> — <date> — <title>` + `- item`
   bullets). The About panel's async `renderChangelog()` fetches it at runtime and parses it (gracefully
   empty on failure). Versions `YYYY.MM.DD.R`. Prepending an entry is a CHANGELOG.md change (+ a matching
