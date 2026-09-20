@@ -41,6 +41,34 @@ each section).
 
 ## ✅ DONE — implemented (history, newest first)
 
+### 2026-09-20 — Floating bottom buttons cover content: reserve bottom space (menu + main page)
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.19).
+- **Request.** Author: "the floating buttons at the bottom (Hide Panels, page navigator, Hide Menu) sometimes hide
+  selectors. When the Menu is on the side, the Hide Panels button hides parts of the bottom (the Generate All
+  Panels button, or the status message). Can we somehow add margin space at the bottom of the page (menu and main
+  page both) so that we can scroll to the point where those aren't covering things we need to access?"
+- **RECON (2026-09-20):** the three floating controls are viewport-fixed: `#panelsToggleBtn` (▧ Hide Panels —
+  `bottom:16px; left:16px; z-index:1000`), `#menuRevealBtn` (☰ Menu — `bottom:16px; right:16px` while the menu is
+  visible; when `body.menu-hidden` it moves to `top:12px; left:12px`), and `#pageNav` (page navigator —
+  `bottom:16px` centred; in `@media (orientation: portrait)` it is raised to `bottom:74px` so it clears the two
+  corner buttons). `body` has only `padding:20px`, so a scrolled-to-bottom page can never bring its last rows
+  above those buttons. In SIDE mode (`@media (orientation: landscape) { body.side-mode .menu-frame { position:
+  sticky; top:10px; max-height: calc(100vh - 20px) } }`) the left column's bottom edge sits ~10px above the
+  viewport bottom, and `.gen-actions` (⚡ GENERATE ALL PANELS ON PAGE + `.gen-row` + `#statusEl`) is the LAST child
+  of `.menu-frame` (`.menu-scroll` scrolls above it) — so the fixed buttons sit right on top of the generate bar
+  and its status line. In TOP mode the sticky 45dvh `.menu-frame` is at the top and `.canvas-frame` (the panel
+  grid) scrolls underneath, so only the page body needs extra room there.
+- **FIX (2026-09-20):** (1) reserve bottom space on the page: `body { padding-bottom: 96px }` (+
+  `@media (orientation: portrait) { body { padding-bottom: 156px } }` for the raised `#pageNav`), so the last
+  panel/row can be scrolled clear of the floating buttons. (2) shorten the side-mode menu column so its
+  `.gen-actions` bar (and status line) always ends ABOVE the floating buttons:
+  `body.side-mode .menu-frame { max-height: calc(100vh - 112px) }` (was `calc(100vh - 20px)`) — only bites when
+  the menu content is tall enough to fill the column, i.e. exactly when the bar would be covered. No JS changes;
+  CSS-only.
+- **NOTE (2026-09-20):** author also authorised clearing the leftover
+  `comicGen.panelState.preClobberBackup` localStorage key (blonde woman / elf / apartment project — the author has
+  their own copy). Deleted via `localStorage.removeItem(...)`; a data cleanup, not a code change.
+
 ### 2026-09-20 — Storyboard page navigator (multi-page)
 - **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
 - **Request.** Author: "The storyboard view should have a page navigator, if there's more than one page. It can
