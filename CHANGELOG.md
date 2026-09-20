@@ -4,6 +4,17 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.19 — 2026-09-20 — Floating bottom buttons no longer cover content
+- **Reserved space at the bottom of the page.** The page now keeps a strip of empty space at the very bottom, so you
+  can always scroll the last panel (and its dropdowns/buttons) up above the floating controls — **▧ Hide Panels**
+  (bottom-left), the **page navigator** (bottom-centre) and **✕ Hide Menu** (bottom-right). The strip is taller in
+  portrait, where the page navigator sits higher to clear the two corner buttons.
+- **Menu-on-the-side: the generate bar is never covered.** With the menu as a side column, the column is now sized
+  so its bottom — the **⚡ GENERATE ALL PANELS ON PAGE** / **⏸ Pause** / **■ Stop** row and the status line — always
+  ends above those floating buttons, and it re-measures itself when the window is resized or rotated. The generate
+  bar also no longer gets squeezed to nothing when the menu content is long: the menu list scrolls instead.
+- No buttons moved and nothing else changed — this is a spacing fix.
+
 ## 2026.08.16.18 — 2026-09-20 — Seed chips + header Generate, cross-page panel moves, page titles & reordering
 - **Seed chips in the panel header.** Each panel's header Seed entry now has two small square buttons: **⇤** copies
   the *preceding* panel's seed (or clears this panel's seed if the preceding seed is blank/random or −1), and **✕**
