@@ -13,6 +13,13 @@ author has greenlit go into the 🟢 START NOW section, everything awaiting "go 
 QUEUED section.** When a feature is implemented, move it to ✅ DONE with the changelog version. Keep
 those in sync with this doc.
 
+**STANDING DIRECTIVE (author-mandated 2026-09-20): RECON FIRST, ASK CLARIFYING QUESTIONS, THEN IMPLEMENT.**
+For every new change request: log it in PENDING (2026-08-13 rule) → recon the relevant existing code → ask the
+author any clarifying questions and WAIT for the answers → only then implement. Record the recon findings and the
+answers so they survive compaction; the per-request PENDING entries are their durable home, and durable
+architecture facts also belong here. Do NOT rely on a volatile scratch/ file (scratch/ is wiped between
+sessions).
+
 **STANDING DIRECTIVE (author-mandated 2026-08-15): BACK UP TO GITHUB ON EVERY "PRESS SAVE" REMINDER.**
 Until the author says otherwise, whenever a task finishes with the usual "press Save" reminder, ALSO
 run the GitHub backup in the same turn (it uses the saved owner/repo/token via `ghPush()` —
@@ -136,9 +143,16 @@ for the current page. Import/export round-trips `buildExportData(includeProtecti
 Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` based on
 `getPanelCount()`, 1–24).
 
-- **Header row:** `Panel N` title, `#panel-title-N` (display-only, never in prompt),
+- **Header row (2026-09-20):** title label `.panel-title` = `Panel N`, or `Page P, Panel N` when
+  `pageCount() > 1` (set by `updatePanelHeaderLabels()`, which MUST run after `restorePanelState()` — the
+  header HTML is built before `currentPage` is restored), `#panel-title-N` (display-only, never in prompt),
   Images select `#panel-img-count-N` (1–4), Style select `#panel-style-N`
-  ([Default (Global)] + ART_STYLES), ⇅ Move `#reorder-btn-N` + hidden picker `#panel-reorder-N`.
+  ([Default (Global)] + ART_STYLES), Size select `#panel-size-N` (+ `#panel-size-custom-N` W/H),
+  Seed `#panel-seed-N` + `<span class="seed-chips">` = ⇤ `#seed-copy-prev-N` (`copySeedFromPrevPanel`; copies the
+  preceding panel's RAW seed box value, clearing when it is blank/random/−1) + ✕ `#seed-clear-N`
+  (`clearPanelSeed`), header 🔄 Generate `.btn-header-gen` (`generateSinglePanel`, a DUPLICATE of the one in the
+  action row), ⇅ Move `#reorder-btn-N` + hidden picker `#panel-reorder-N` (positions 1..N + a "Move to another
+  page" optgroup of `pg-<n>` options — greyed when that page is full — + `newpage`; see §Pages).
   Below it: `.panel-summary` line (`.ps-char` / `.ps-loc` / `.ps-act`) refreshed by `updatePanelSummary(i)`
   (reads char/loc selects + action; action ellipsizes when too long).
 - **.panel-imgs grid:** four slots `#imgslot-panel-N-K` (hidden beyond imgCount; the SLOT is
@@ -277,13 +291,26 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 
 ## 10. Pages, view modes, library, changelog
 
-- **Pages:** `currentPage`, `panelState.pages`, `pageSession`. switchPage saves old page DOM +
+- **Pages:** `currentPage`, `panelState.pages`, `pageSession`. Each page = `{name (Page Title),
+  summary (Page Summary), panelCountSel, panelCountCustom, seed, 1..24}`. switchPage saves old page DOM +
   session, reloads new page (buildPanelGrid). addPage/deletePage; deleting the LAST panel of
   the ONLY page → `resetEverything(true)` (confirm-gated). Page selector labels from page
-  names.
+  titles. **Page options (2026-09-20, BATCH 2026.08.16.18):** `#pageNameInput` is the Page Title and
+  `#pageSummaryInput` (`onPageSummaryInput`) the Page Summary — both shown in the Storyboard; **⇅ Renumber
+  Page** (`#pageRenumberGroup`/`#pageRenumberBtn`/`#pageRenumberSel`, Page Setup, visible only with ≥2 pages) →
+  `renumberPageTo(fromKey,toPos)` splices the page into position `toPos` and renumbers EVERY page 1..N (remapping
+  `pageSession`/`currentPage`/`analysisPage`) while each page keeps its own data. **Cross-page panel move:**
+  `populateReorderSelects`' `pg-<n>`/`newpage` options → `movePanelToPage(i,target,mode)` (mode `prepend` when
+  target > src, `append` when target < src, `replace` for a new page): removes + renumbers the source page
+  (deleting it, confirm-gated, when it held only that panel), inserts into the target carrying its
+  `pageSession` images, then switches to the target. `movePanelToNewPage(i)` pre-creates the page and calls it
+  with `'replace'`.
 - **View modes:** `#singleOverlay` (🔍 Focus moves the ACTUAL card into `#singleStage`,
   navigation via list/dropdown/prev-next/arrows/Esc) and `#storyboardOverlay` (▦ button →
-  `.sb-cell` per panel from representative image, placeholders for empty).
+  `.sb-cell` per panel from representative image, placeholders for empty). The Storyboard also shows the page
+  Title (`#storyboardTitle`) + Summary (`#storyboardSummary` bar) and, with ≥2 pages, its own page navigator
+  `#storyboardNav` (◀ `storyboardNavDelta` + `#storyboardNavPages` + ▶) next to "← Back to page"
+  (`renderStoryboardPage`/`updateStoryboardNav`; `switchPage` calls `refreshStoryboardIfOpen()` so it follows).
 - **Library:** ONE `comicGen.libObjects` store: entries `{id, type, name, desc}` where `type` is
   'Character' | 'Location' | 'Action'. Panel dropdowns list precreated options (minus "none") + an optgroup
   of saved objects of that type + "No Character Selected" LAST (chars only). 📚 Library menu shows the
