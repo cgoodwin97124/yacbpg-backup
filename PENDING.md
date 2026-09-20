@@ -15,9 +15,22 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(Empty — nothing is greenlit right now.)
+(No greenlit requests waiting right now — every request logged so far has been implemented; see ✅ DONE below.)
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
+
+### 2026-09-20 — STANDING DIRECTIVE: recon + clarifying questions before implementing any request
+- **Status:** in force until the author says otherwise (process/directive — no changelog entry).
+- Recorded 2026-09-20 at the author's request ("after I enter a new change request (including this one), please
+  recon the code and ask me any clarifying questions if you have any, before continuing"). Every future session
+  must, on receiving a change request: (a) log it in this PENDING file first (existing 2026-08-13 rule), (b)
+  RECON the relevant code, (c) ASK any clarifying questions and WAIT for the answers before implementing, and
+  (d) record the recon findings + the answers so they survive compaction. Where to record them (author's open
+  question): the recon/Q&A live in the per-request PENDING entries (durable, request-scoped); durable
+  architecture facts this recon uncovers also go into AI-NOTES.md. Do NOT create a volatile scratch/ `.md` for
+  this — scratch/ is wiped between sessions, so a volatile file would lose the answers.
+- **Note:** this doc + the embedded doc blocks are the ONLY durable homes; the standing directive is also
+  mirrored in the top-of-file dev-notes and AI-NOTES §standings.
 
 ### 2026-08-15 — STANDING DIRECTIVE: back up to GitHub on every Save reminder
 - **Status:** in force until the author says otherwise (no changelog entry — process/directive, not a feature).
@@ -27,6 +40,133 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-09-20 — Storyboard page navigator (multi-page)
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "The storyboard view should have a page navigator, if there's more than one page. It can
+  be right next to the 'Back To Page' button."
+- **RECON (2026-09-20):** `#storyboardOverlay` / `.view-top` holds the `← Back to page` button +
+  `#storyboardTitle`; `openStoryboard()` renders the CURRENT page only, `closeStoryboard()` hides it. The
+  full-page page navigator (`#pageNav`, bottom-centre) is hidden while an overlay is open, so the storyboard
+  needs its own controls.
+- **IMPLEMENTED (2026-09-20):** `#storyboardNav` (◀ Prev + `#storyboardNavPages` numbered buttons + ▶ Next)
+  sits in the storyboard `.view-top`, hidden when there is only one page; `updateStoryboardNav()` re-renders it
+  and highlights the current page, `storyboardNavDelta(delta)` wraps via `switchPage` + `openStoryboard`.
+  Because switching re-renders the current page, the storyboard live-updates in place.
+
+### 2026-09-20 — Page reordering by renumbering the page
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "We need a way to reorder pages; if there are multiple pages, we should be able to
+  renumber a page, which moves it in the page order. Renumbering the page puts it in ahead of the previous page
+  with that number, and renumbers subsequent pages (e.g. if the pages are 1, 2, 3, 4, and 5, if we renumber page
+  4 to 2, then the previous pages 2 and 3 are renumbered to 3 and 4, respectively). All other page data remains
+  with the page."
+- **RECON (2026-09-20):** pages are keyed by number in `state.pages` (+ `pageSession`); `populatePageSel` /
+  `updatePageNav` / `pageLabel` render them sorted. Nothing renumbers keys today, and `deletePage` can leave
+  gaps, so the original label is preserved in `page.name` (= the page title) and moves with the page.
+- **IMPLEMENTED (2026-09-20):** a "Reorder Pages" control in File → Page Setup (`#pageRenumberGroup`, shown
+  only when there are ≥2 pages) with a `⇅ Renumber Page` button + a hidden position `<select>`
+  (`togglePageRenumberPicker` / `onPageRenumberSelect`) → `renumberPageTo(fromKey, toPos)`: the moved page is
+  spliced into the target POSITION and every page is renumbered 1..N in the new order, while each page's own
+  data (panels, seed, title, summary) stays with it. `pageSession` + `currentPage` (+ `analysisPage` when the
+  Analysis overlay is open) are remapped too.
+
+### 2026-09-20 — Panel header shows the page number ("Page 1, Panel 1") on multi-page projects
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "If there is more than one page, have the panel number also display the current page,
+  so instead of 'Panel 1' followed by the Panel title entry, it would say 'Page 1, Panel 1' followed by the
+  panel entry. This doesn't need to carry over to the Storyboard view."
+- **IMPLEMENTED (2026-09-20):** `buildPanelGrid`'s header label renders `Page <currentPage>, Panel <i>` when
+  `pageCount() > 1`, else `Panel <i>`. The Storyboard keeps its plain `Panel <i>` labels.
+
+### 2026-09-20 — Per-page Title + Summary, shown in the Storyboard
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "Each page should have an entry for a user editable, optional page title/summary, and
+  the page title should show in the Storyboard view."
+- **ASSUMPTION (no blocking question asked; noted 2026-09-20):** the app already had an optional per-page
+  `name` (shown in the page selector / navigator / Storyboard title), so it was RELABELLED to "Page Title" and
+  a NEW optional "Page Summary" textarea was added (`page.summary`). Both are editable in File → Page Setup;
+  the Storyboard shows the title in its heading and the summary in a bar under the controls.
+- **IMPLEMENTED (2026-09-20):** `#pageNameInput` ("Page Title") + new `#pageSummaryInput` ("Page Summary"),
+  both persisted (`collectPageData`/`restorePanelState`), carried by every page-preserving operation (added
+  `'summary'` to the resequence/duplicate/add/delete key lists, `defaultPageData`, `ensurePages` legacy
+  migration, and the export/`hasActiveProject` skip lists), and shown in the Storyboard (`#storyboardSummary`,
+  plus the title in `#storyboardTitle`).
+
+### 2026-09-20 — Panel header: seed clear/copy chips + panel Generate in the header
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **REQ 1 — seed chips.** Author: "a pair of chips next to the panel's Seed value in the header: one to clear the
+  panel's seed, and one to copy the preceding panel's seed; the latter will overwrite the current panel's seed
+  (including clearing it if the preceding panel's seed is empty)."
+- **REQ 2 — panel Generate in the header.** Author: "bring the Generate button for the entire panel up to the
+  panel's header, immediately after the panel's Seed entry."
+- **RECON (2026-09-20):** the panel header row is built in `buildPanelGrid()` (~line 5690) as
+  `.panel-header-row` = [Panel N title] [`#panel-title-N`] [Images: `#panel-img-count-N`] [Style:
+  `#panel-style-N`] [Size: `#panel-size-N`] [Seed: `#panel-seed-N` (`.panel-seed-input`, wrapped in a
+  `.panel-imgs-sel`) with class `.panel-header-row input.panel-seed-input`] [⇅ Move `#reorder-btn-N` +
+  hidden `#panel-reorder-N`]. The row is `display:flex; flex-wrap:wrap; gap:6px` so extra items just wrap.
+  Seed semantics: blank = follow the page seed; the box shows the RESOLVED seed as a placeholder
+  (`updatePanelSeedPlaceholders()`), and `getPanelSeed(i)`/`pinPanelSeedForRun(i)` (right after it, ~line 6450)
+  resolve panel > page > random. Existing "copy from previous panel" precedent = `.btn-copy-prev` (⇤, 22px
+  square, disabled on panel 1) calling `copyFromPrevPanel(i, kind, s)` (~line 5624) — it reads the previous
+  panel's DOM, is same-page only, and ends with `clearPanelPromptOverride`/`schedulePanelSave`. The panel-level
+  Generate button currently lives at the BOTTOM of the card in `.panel-header-btns`:
+  `<button class="btn-reroll" onclick="generateSinglePanel(${i})">🔄 Generate</button>` (~line 5751), next to
+  Show/Hide Menus and 🔍 Focus. `.btn-reroll` = red, uppercase, bold.
+- **QUESTIONS (asked 2026-09-20):** (1) Move the bottom Generate up to the header, or keep BOTH (header +
+  bottom)? (2) Chip style — reuse the small square ⇤/✕ look (like `.btn-copy-prev`/`.btn-line-del`) or the
+  `.btn-img-chip` pill look? (3) Copy-seed chip disabled on Panel 1 (no previous panel)? (4) When the previous
+  panel's seed box is blank (following the page seed), confirm "copy" CLEARS this panel's seed (i.e. copies the
+  raw box value, not the resolved placeholder).
+- **ANSWERS (author, 2026-09-20):** (1) Chip style — REUSE the small square ⇤/✕ look. (2) Copy-from-previous:
+  disabled on Panel 1 of PAGE 1 only. (3) Copy the previous panel's raw seed value if it has one (already
+  generated/entered); if that value is blank (random) or -1, the copy chip CLEARS this panel's seed. (4)
+  Generate — DUPLICATE it: keep the bottom one AND add one in the header immediately after the Seed entry.
+- **IMPLEMENTED (2026-09-20):** `.seed-chips` ⇤ `.btn-copy-prev` (`copySeedFromPrevPanel`) + ✕ `.btn-line-del`
+  (`clearPanelSeed`) inside the seed `.panel-imgs-sel`; header `<button class="btn-reroll btn-header-gen">🔄
+  Generate</button>` right after the seed entry (bottom one kept). Panel 1's ⇤ is disabled only on page 1
+  (`updateSeedChipStates`); on later pages it copies the last panel of the PREVIOUS page (read from stored
+  state), per the "preceding panel in document order" reading.
+
+### 2026-09-20 — Move a panel to another page (with "create new page")
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "When moving a panel, I'd like to be able to move it to another page, with the option to
+  create a new page to move it to. The selector should grey out the pages that are already at 24 panels."
+- **RECON (2026-09-20):** the Move UI is `#reorder-btn-N` (⇅ Move) toggling `#panel-reorder-N`, a `<select>` of
+  positions 1..`getPanelCount()` built by `populateReorderSelects()` (~line 5872); `onReorderSelect(i, sel)` →
+  `resequencePanel(from, to)` (~line 5917) reorders WITHIN the current page only (rebuilds `state.pages[
+  currentPage]` with a reordered key map, `remapPanelSession(order, total)` remaps `panelImages`, then
+  `buildPanelGrid()`). Pages live in `panelState.pages[n]` = `{name, panelCountSel, panelCountCustom, seed,
+  1..24}`, max 24 panels/page (`panelCountStateFor(n)`); a stored page's count is computed by
+  `analysisPanelCount(page)` (same rule: 'custom' → clamp 1..24, else parse). Cross-page precedent:
+  `duplicateToNewPage(i)` (~line 6003) creates a new numbered page, puts a copy of a panel at slot 1, switches
+  to it, and `addPage()` (~line 5419) creates an empty 4-panel page. Per-page generated images live in
+  `pageSession[pg].images` (current page's = the live `panelImages`); `switchPage`/`loadCurrentPage` swap them,
+  so a cross-page move has to move the panel's `pageSession` images too (or accept losing them). Page labels =
+  `pageLabel(page, n)`. There is currently NO empty page (min 1 panel), and deleting a page's last panel deletes
+  (or resets) the page — see `deletePanel`.
+- **Likely implementation:** give the Move picker a richer `<select>`: an `<optgroup>` of positions on the
+  current page (existing behaviour) + an `<optgroup>` of "→ <page label>" options for other pages, with the
+  24-panel pages rendered `disabled` (greyed) + an "＋ New page…" option. Choosing a page removes the panel from
+  the current page (closing the gap / renumbering) and appends it to the target page (or to a new page), moving
+  its images along.
+- **QUESTIONS (asked 2026-09-20):** (1) Landing position on the target page — append at the END, or should the
+  picker also let you choose a slot there? (2) After the move, stay on the current page or switch to the target
+  page? (3) If the panel is the ONLY one on its page, is that allowed (which page handling — leave an empty
+  page, delete the source page, or refuse)? (4) Do the panel's generated images travel with it to the other
+  page? (5) Should the existing same-page reorder keep working exactly as now (just with the page options
+  added)?
+- **ANSWERS (author, 2026-09-20):** (5) Landing position — moving to a PREVIOUS (earlier-numbered) page with
+  space APPENDS the panel at the END; moving to the FOLLOWING (later-numbered) page with ≤23 panels INSERTS it
+  at the BEGINNING (slot 1, others shift down). (6) After the move, SWITCH to the target page. (7) If the panel
+  is the only one on its page, DELETE the source page — on confirm. (8) Yes — the panel's existing images and
+  all its other data travel with it. (9) The existing same-page reorder stays exactly as it is.
+- **IMPLEMENTED (2026-09-20):** `populateReorderSelects` now adds a "Move to another page" `<optgroup>` (each
+  other page as `pg-<n>`, DISABLED/greyed when that page is already at 24 panels, labelled " (full)") plus an
+  "＋ New page…" option. `onReorderSelect` dispatches to the new `movePanelToPage(i, target, mode)` /
+  `movePanelToNewPage(i)`; mode = `prepend` when target > source, `append` when target < source, `replace`
+  for a freshly created page. The move relocates the panel data + its `pageSession` images, shifts/renumbers
+  the source page (and deletes it on confirm when it was the panel's only one), then switches to the target.
 
 ### 2026-09-19 — Analysis: add the Panel Action Prompt field (as the first field per panel)
 - **Status:** DONE 2026-09-19 (changelog 2026.08.16.17). Author request: "On the Library Analysis page, I'd like to
