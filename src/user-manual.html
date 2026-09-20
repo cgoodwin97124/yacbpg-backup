@@ -55,11 +55,13 @@
 <li><strong>❓ Help</strong> — about, the shortcut guide, and the version history (changelog, fetched live from the project files).</li>
 </ul>
 <h3>Pages</h3>
-<p>A project can have as many pages as you like. The page selector sits in the File menu; <strong>＋ Add Page</strong> appends a new page and <strong>🗑 Delete Page</strong> removes the current one (deleting the only page resets the whole project — you&#39;re asked first). Each page keeps its own panel setup, seed, name, and generated images.</p>
+<p>A project can have as many pages as you like. The page selector sits in the File menu; <strong>＋ Add Page</strong> appends a new page and <strong>🗑 Delete Page</strong> removes the current one (deleting the only page resets the whole project — you&#39;re asked first). Each page keeps its own panel setup, seed, <strong>Page Title</strong>, <strong>Page Summary</strong> (an optional note shown in the Storyboard view), and generated images.</p>
+<p><strong>Reordering pages.</strong> With more than one page, a <strong>⇅ Renumber Page</strong> control appears under the page selector. Pick a position and the current page moves there while every page is renumbered around it — e.g. with pages 1–5, renumbering page 4 to 2 makes the old pages 2 and 3 become 3 and 4. Each page&#39;s panels, title, summary, seed, and images stay with it.</p>
+<p><strong>Moving a panel to another page.</strong> A panel&#39;s <strong>⇅ Move</strong> picker also lists the other pages (pages already holding the maximum 24 panels are greyed out) plus <strong>＋ New page…</strong>. Moving to an earlier page appends the panel at the end of that page; moving to a later page puts it at the beginning; <strong>＋ New page…</strong> creates a page holding just that panel. The panel&#39;s settings and its generated images travel with it, and the view switches to its new page. If the panel was the only one on its page, you&#39;re asked to confirm deleting that now-empty page.</p>
 <h3>Panels</h3>
 <p>Each panel card contains:</p>
 <ul>
-<li><strong>Header row</strong> — &quot;Panel N&quot; label, an optional panel title, the <strong>Images</strong> count (1–4), a per-panel <strong>Style</strong> override, a per-panel <strong>Seed</strong> box, and a <strong>⇅ Move</strong> control to reorder panels on the page.</li>
+<li><strong>Header row</strong> — a label (on a multi-page project it reads <strong>Page P, Panel N</strong>; the Storyboard still numbers plain panels), an optional panel title, the <strong>Images</strong> count (1–4), a per-panel <strong>Style</strong> override, a per-panel <strong>Seed</strong> box with <strong>⇤</strong> copy-from-previous and <strong>✕</strong> clear buttons, a <strong>🔄 Generate</strong> button, and a <strong>⇅ Move</strong> control to reorder panels or move them to another page.</li>
 <li><strong>Info summary</strong> — a one-line summary of the panel&#39;s characters, location, and action.</li>
 <li><strong>Image slots</strong> — up to 4 images per panel. Each slot has its own small button row (see <em>Managing images</em>).</li>
 <li><strong>Action row</strong> — <strong>Show/Hide Menus</strong> (opens/collapses the panel&#39;s accordion menus with one button), <strong>🔍 Focus</strong> (single-panel view), and <strong>🔄 Generate</strong> (render just this panel).</li>
@@ -79,7 +81,7 @@
 <ul>
 <li><strong>Panel title</strong> is display-only — it never appears in the generated prompt.</li>
 <li><strong>Style</strong> overrides the global art style for that panel only (<strong>[Default (Global)]</strong> follows the Edit-menu preset).</li>
-<li><strong>Seed</strong> (in the panel header) pins the panel&#39;s randomness; leave blank to fall back to the global seed. An empty box shows, in grey, the seed the panel will use (the global seed + panel number − 1, or &quot;random&quot; if no global seed is set).</li>
+<li><strong>Seed</strong> (in the panel header) pins the panel&#39;s randomness; leave blank to fall back to the global seed. An empty box shows, in grey, the seed the panel will use (the global seed + panel number − 1, or &quot;random&quot; if no global seed is set). Next to it are two small buttons: <strong>⇤</strong> copies the preceding panel&#39;s seed (or clears this panel&#39;s seed if that one is blank/random) and <strong>✕</strong> clears this panel&#39;s seed. Panel 1 of the first page has no preceding panel, so its <strong>⇤</strong> is disabled; on later pages Panel 1&#39;s <strong>⇤</strong> copies the last panel of the previous page.</li>
 </ul>
 <h2>4. Generating images</h2>
 <p>Click <strong>⚡ GENERATE ALL PANELS ON PAGE</strong> to render every panel on the current page (the status line shows progress), <strong>🔄 Generate</strong> on a panel for just that panel, or <strong>🔄 Generate</strong> on an individual image slot for a single variation.</p>
@@ -155,7 +157,7 @@
 <li><strong>⬆ Import Project</strong> — restore from a JSON or ZIP export. Importing starts with a safety prompt (it will replace the current project). ZIP imports restore the images into the right panels.</li>
 </ul>
 <h2>9. Layout &amp; theming</h2>
-<p>The interface adapts to the screen: the menu sits on top normally, or as a <strong>side column</strong> on wide landscape screens (▤ Menu: Side). The <strong>☰ button</strong> hides the menu (a floating ☰ reappears to bring it back), and <strong>▧ Hide/Show Panels</strong> hides the whole panel grid while generation keeps running invisibly. <strong>▦ Storyboard</strong> shows one representative image per panel as a page overview; <strong>🔍 Focus</strong> works on a single panel at a time.</p>
+<p>The interface adapts to the screen: the menu sits on top normally, or as a <strong>side column</strong> on wide landscape screens (▤ Menu: Side). The <strong>☰ button</strong> hides the menu (a floating ☰ reappears to bring it back), and <strong>▧ Hide/Show Panels</strong> hides the whole panel grid while generation keeps running invisibly. <strong>▦ Storyboard</strong> shows one representative image per panel as a page overview (with the page&#39;s title and summary, and — on a multi-page project — its own ◀ / numbered pages / ▶ navigator next to &quot;← Back to page&quot;); <strong>🔍 Focus</strong> works on a single panel at a time.</p>
 <h2>10. How it&#39;s built (technical overview)</h2>
 <p>The generator is a Perchance generator made of two source files plus a small <code>src/</code> folder:</p>
 <ul>
