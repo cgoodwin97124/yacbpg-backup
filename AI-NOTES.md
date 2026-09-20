@@ -262,13 +262,25 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 
 - `.menu-frame` = sticky top bar (top mode) or left column (`body.side-mode`, landscape only).
   Contains `.menu-scroll` (the accordion groups) + `.gen-actions` (⚡ button + `#statusEl`).
+  `.gen-actions` is `flex:0 0 auto` (2026-09-20, changelog 2026.08.16.19) so it can NEVER be squeezed by a tall
+  `.menu-scroll` — the menu list scrolls instead and the generate bar + status stay visible.
+- **Reserved bottom space (2026-09-20, changelog 2026.08.16.19):** the viewport-fixed buttons at the bottom
+  (`#panelsToggleBtn` ▧ Hide Panels, `#pageNav`, `#menuRevealBtn` ☰/✕ Hide Menu) used to cover page content and,
+  in side mode, the menu's generate bar. `body { padding-bottom: 96px }` (portrait: `156px`, where `#pageNav`
+  sits at `bottom:74px`) gives the page scrollable clearance, and in side mode `syncSideMenuHeight()` sets
+  `#menuFrame`'s inline `max-height` to `innerHeight - menuFrame.offsetTop - reserve` (reserve ≈112px, adaptive,
+  floored at 80px) so the frame's bottom — i.e. `.gen-actions` + `#statusEl` — always ends above those buttons.
+  `offsetTop` already includes the app-header (37/82/126px depending on wrapping), which is why this is measured
+  in JS rather than a static `calc()`. Called from `applyLayoutMode`, `applyMenuVisible`, and `resize`/`load`/
+  `orientationchange`; the inline style is cleared outside side mode.
 - `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice
   persisted; sections start collapsed via `collapseGroupPanels`.
 - **Toggles** (all persist independently):
-  - `body.menu-hidden` — hides ONLY `.menu-scroll`; the Generate bar stays visible
-    (`body.menu-hidden .menu-frame {max-height:none}`; side mode: `flex:0 0 auto; width:auto`).
+  - `body.menu-hidden` — the CSS is `body.menu-hidden .menu-frame { display:none }`, i.e. it hides the WHOLE menu
+    frame INCLUDING the Generate bar (this contradicts the earlier "the generate bar stays visible" promise —
+    a documented latent issue, see the gotchas below; NOT changed in 2026-09-20's spacing fix).
     Floating `#menuRevealBtn` (☰) appears when header offscreen; bottom-LEFT when menu hidden,
-    bottom-RIGHT when open.
+    bottom-RIGHT when open (`syncSideMenuHeight` clears its inline max-height while the menu is hidden).
   - `body.panels-hidden` — hides `.canvas-frame` (all panel cards) via ▧ Hide/Show Panels header
     button. Generation is UNAFFECTED (writes to `panelImages`; the imgObserver just evicts
     srcs while hidden and restores on show).
@@ -379,12 +391,12 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 - Local state is shared localStorage but per-tab memory; a stale tab's auto-save can clobber
   good state. Prefer read-only evals when troubleshooting.
 - Mobile ■ Stop-button "missing" report (2026-08-13) was RESOLVED — NOT AN ISSUE (button present;
-  see src/ISSUES.md). Latent layout observations left as-is: `body.menu-hidden .menu-frame { display:none }`
-  hides the WHOLE generate bar with the menu (contradicts changelog 2026.08.13.2's "⚡ stays visible"
-  promise; fix = hide only `.menu-scroll`), and `.gen-actions` (`flex:0 1 auto; min-height:0`) inside the
-  45dvh `.menu-frame` can be flex-squeezed to nothing by tall `.menu-scroll` content on short screens
-  (fix = `flex:0 0 auto`). If the author ever reports "generate bar / Stop button missing on mobile",
-  these are the first suspects.
+  see src/ISSUES.md). One latent layout observation remains, left as-is: `body.menu-hidden .menu-frame
+  { display:none }` hides the WHOLE generate bar with the menu (contradicts changelog 2026.08.13.2's
+  "⚡ stays visible" promise; fix = hide only `.menu-scroll`). If the author ever reports "generate bar /
+  Stop button missing on mobile", that is the first suspect. The OTHER latent issue — `.gen-actions` being
+  flex-squeezed to nothing by tall `.menu-scroll` content — was FIXED 2026-09-20 (changelog 2026.08.16.19):
+  `.gen-actions` is now `flex:0 0 auto`.
 - The `main.pjs` `characters`/`locations` lists are READ via `getMaps()` (cached, polls until
   loaded) — never assume `root.characters` is ready synchronously.
 - Visual work: verify with `vision` (canvas is hard to see blind); while testing WebGL/canvas
