@@ -4,6 +4,32 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.18 — 2026-09-20 — Seed chips + header Generate, cross-page panel moves, page titles & reordering
+- **Seed chips in the panel header.** Each panel's header Seed entry now has two small square buttons: **⇤** copies
+  the *preceding* panel's seed (or clears this panel's seed if the preceding seed is blank/random or −1), and **✕**
+  clears this panel's seed. On Page 1 the ⇤ button of Panel 1 is disabled (nothing precedes it); on later pages
+  Panel 1's ⇤ copies the **last panel of the previous page**.
+- **Generate button in the panel header.** A **🔄 Generate** button now also sits in the panel header, right after
+  the Seed entry, doing exactly what the Generate button at the bottom of the card does.
+- **Move a panel to another page.** The **⇅ Move** picker now also lists a **"Move to another page"** group —
+  every other page (pages already at the 24-panel maximum are greyed out and marked "(full)") plus **"＋ New
+  page…"**. Moving to an *earlier* page appends the panel at the end of it; moving to a *later* page inserts it at
+  the beginning; "＋ New page" creates a page holding just that panel. The panel's data **and its generated images**
+  travel with it, the view switches to the destination page, and if the panel was the only one on its page you're
+  asked to confirm deleting that (now empty) page. Same-page reordering is unchanged.
+- **Page Title + Page Summary.** File → Page Setup now has a **Page Title** (the old "Page Name") and a new
+  optional **Page Summary** for each page. Both are saved with the page and shown in the Storyboard view (the
+  title in its heading, the summary in a bar beneath the controls).
+- **"Page N, Panel M" labels.** On a multi-page project, each panel's header now reads **Page N, Panel M** instead
+  of just **Panel M** (single-page projects are unchanged; the Storyboard keeps its plain "Panel M" labels).
+- **Reorder pages by renumbering.** File → Page Setup gains a **⇅ Renumber Page** control (shown when there is
+  more than one page). Move the current page to any position and every page is renumbered around it — e.g. with
+  pages 1–5, renumbering page 4 to 2 makes the old pages 2 and 3 become 3 and 4. All of a page's content (panels,
+  images in memory, title, summary, seed, panel count) stays with the page.
+- **Storyboard page navigator.** The Storyboard view now has its own **◀ / numbered pages / ▶** navigator next to
+  "← Back to page" whenever the project has more than one page, so you can page through the storyboard without
+  leaving it.
+
 ## 2026.08.16.17 — 2026-09-19 — Analysis: a dedicated Panel Action Prompt row across the panels
 - The **📊 Library Analysis** matrix now has a dedicated **▶ Panel Action Prompt** row as its **first body row**.
   Its first cell carries the label and each of the other cells holds that panel's editable action prompt — the
