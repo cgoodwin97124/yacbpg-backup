@@ -174,12 +174,12 @@ the real root cause of a "same" symptom is usually already recorded here.
   narrow widths. Nothing device-specific hides it.
 - **Resolution:** Author re-checked on mobile and confirmed the Stop button IS present → **Resolved — Not
   An Issue**. No code change.
-- **Gotchas / latent observations (no fix requested, left as-is):** (1) `body.menu-hidden .menu-frame {
+- **Gotchas / latent observations:** (1) `body.menu-hidden .menu-frame {
   display:none }` still hides the ENTIRE generate bar with the menu — contradicts CHANGELOG 2026.08.13.2's
   "⚡ stays visible when menu hidden" promise (a regression carried in by the older-index.html merge; the
-  fix would hide only `.menu-scroll`). (2) `.gen-actions { flex:0 1 auto; min-height:0 }` inside the
-  45dvh `.menu-frame` can be flex-squeezed to near-zero by tall `.menu-scroll` content on short screens
-  (phones) — `flex: 0 0 auto` would guarantee the generate row always shows.
+  fix would hide only `.menu-scroll`). STILL OPEN. (2) FIXED 2026-09-20 (changelog 2026.08.16.19):
+  `.gen-actions` is now `flex: 0 0 auto`, so a tall `.menu-scroll` can no longer flex-squeeze the generate
+  row/status to near-zero on short screens — the menu list scrolls instead.
 
 ## 2026-08-13 — Show / Collapse Menu buttons missing after reload
 - **Symptom:** Per-panel Show Menu (opens all of a panel's accordion menus at once) and the ⚙ Panel's
