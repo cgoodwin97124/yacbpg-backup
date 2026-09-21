@@ -15,7 +15,7 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(No greenlit requests waiting right now — the newest request (2026-09-20: full-screen Library / whole-menu overlay) is implemented; see ✅ DONE below.)
+(No greenlit requests waiting right now — every request logged so far has been implemented; see ✅ DONE below.)
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
@@ -41,6 +41,33 @@ each section).
 
 ## ✅ DONE — implemented (history, newest first)
 
+### 2026-09-20 — Menu hidden after leaving the full-screen menu + remove the floating menu button
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.21).
+- **Requests.** (1) "When I go to the full screen menus and then go Back to Page, the page menu is completely
+  hidden. I have to Hide Menu and then Show Menu in order to get it to return." (2) "I'd like to remove the
+  floating Show Menu button at the bottom right, and just have the Hide Menu button at the top toggle whether the
+  menu is hidden. Have it say Hide Menu when the menu is showing and Show Menu when the menu is hidden."
+- **RECON (2026-09-20):**
+  - BUG REPRODUCED: `openMenuFullscreen()` forced the menu visible when `body.menu-hidden` and remembered it in
+    `menuFullscreenRestoreHidden`; `closeMenuFullscreen()` then put the hidden state back. So if the menu was
+    hidden when the full-screen menu was opened (e.g. via the header's ⛶ Full Screen button, which sits right
+    next to ☰ Show Menu), "← Back to page" returned to a page with NO menu — the exact report. Verified live:
+    after Back, body had `menu-hidden`, `#menuFrame` display:none, header button read "☰ Show Menu". Every other
+    flow (menu already visible, portrait or landscape, opened from the header or the Library button) restores the
+    menu correctly.
+  - The floating button is ONE element, `#menuRevealBtn` (body-level), whose label and position change with
+    state: `body.hdr-offscreen #menuRevealBtn { display:block }` (shown when the header buttons scroll out of
+    view), `body:not(.menu-hidden) #menuRevealBtn { bottom:16px; right:16px }` + "✕ Hide Menu", and
+    `body.menu-hidden #menuRevealBtn { top:12px; left:12px }` + "☰ Show Menu"; its onclick is `toggleMenu()`.
+    `applyMenuVisible(visible)` sets both its and `#menuToggleBtn`'s labels; `refreshHdrOffscreen()`
+    (scroll/resize) toggles `body.hdr-offscreen` — which NO other CSS rule uses, so it becomes vestigial once
+    the floating button is gone.
+- **IMPLEMENTED.** (1) `openMenuFullscreen` still makes the menu visible when it was hidden, but closing no longer
+  re-hides it — "← Back to page" always returns to a page with the menu showing (drop
+  `menuFullscreenRestoreHidden`). (2) Delete `#menuRevealBtn` + its CSS block; the header `#menuToggleBtn`
+  becomes the only menu-visibility control and already flips its own label ☰ Hide Menu ↔ ☰ Show Menu.
+  TRADE-OFF (flagged to the author): with the floating button gone, if the menu is hidden while the header is
+  scrolled out of view, the only way to bring it back is to scroll to the top. VERSION 2026.08.16.21.
 ### 2026-09-20 — Full-screen Library overlay (and full-screen whole menu)
 - **Status:** DONE 2026-09-20 (changelog 2026.08.16.20).
 - **Request.** Author: "I'd like to add a button under Menu -> Library that will toggle showing the Library in a
