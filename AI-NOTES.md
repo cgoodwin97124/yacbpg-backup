@@ -265,7 +265,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `.gen-actions` is `flex:0 0 auto` (2026-09-20, changelog 2026.08.16.19) so it can NEVER be squeezed by a tall
   `.menu-scroll` — the menu list scrolls instead and the generate bar + status stay visible.
 - **Reserved bottom space (2026-09-20, changelog 2026.08.16.19):** the viewport-fixed buttons at the bottom
-  (`#panelsToggleBtn` ▧ Hide Panels, `#pageNav`, `#menuRevealBtn` ☰/✕ Hide Menu) used to cover page content and,
+  (`#panelsToggleBtn` ▧ Hide Panels, `#pageNav`) used to cover page content and,
   in side mode, the menu's generate bar. `body { padding-bottom: 96px }` (portrait: `156px`, where `#pageNav`
   sits at `bottom:74px`) gives the page scrollable clearance, and in side mode `syncSideMenuHeight()` sets
   `#menuFrame`'s inline `max-height` to `innerHeight - menuFrame.offsetTop - reserve` (reserve ≈112px, adaptive,
@@ -281,19 +281,26 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   - `body.menu-hidden` — the CSS is `body.menu-hidden .menu-frame { display:none }`, i.e. it hides the WHOLE menu
     frame INCLUDING the Generate bar (this contradicts the earlier "the generate bar stays visible" promise —
     a documented latent issue, see the gotchas below; NOT changed in 2026-09-20's spacing fix).
-    Floating `#menuRevealBtn` (☰) appears when header offscreen; bottom-LEFT when menu hidden,
-    bottom-RIGHT when open (`syncSideMenuHeight` clears its inline max-height while the menu is hidden).
+    Set/cleared ONLY by `applyMenuVisible(visible)`, whose sole control is the header `#menuToggleBtn`
+    (`.menu-toggle`, label ☰ Hide Menu ↔ ☰ Show Menu). `syncSideMenuHeight` clears the frame's inline max-height
+    while the menu is hidden. NOTE (2026-09-20, changelog 2026.08.16.21): the old floating `#menuRevealBtn`
+    (☰/✕, appeared when the header was offscreen) was DELETED at the author's request — `body.hdr-offscreen` is
+    now vestigial (nothing styles it; `refreshHdrOffscreen` still toggles it), and with the menu hidden you must
+    scroll back to the header to toggle it.
   - `body.panels-hidden` — hides `.canvas-frame` (all panel cards) via ▧ Hide/Show Panels header
     button. Generation is UNAFFECTED (writes to `panelImages`; the imgObserver just evicts
     srcs while hidden and restores on show).
   - `body.side-mode` — ▤ Menu: Top/Side header button.
 - Header buttons (upper-left): ▦ Storyboard, ☰ Hide/Show Menu, ▤ Menu: Side, ⛶ Full Screen (`.menu-fs-toggle`),
-  then ▧ Hide/Show Panels. ⛶ Full Screen → `toggleMenuFullscreen()`.
+  then ▧ Hide/Show Panels. ⛶ Full Screen → `toggleMenuFullscreen()`. The ☰ button is the ONLY menu-visibility
+  control (2026-09-20, changelog 2026.08.16.21 — its `.menu-toggle` label flips ☰ Hide Menu ↔ ☰ Show Menu).
 - **Full-screen menu overlay (`#menuOverlay`, 2026-09-20):** `.view-overlay` hosting the REAL `#menuFrame`
   (moved in on open, restored to `.page-layout` on close — see BATCH 2026.08.16.20). `openMenuFullscreen(section)`
   / `closeMenuFullscreen()` / `toggleMenuFullscreen(section)`; `#libFullscreenBtn` in the Library toolbar opens
   it on the Library tab. Esc or the overlay's `← Back to page` closes it. The markup sits just before
-  `#analysisOverlay` so Analysis still paints above it.
+  `#analysisOverlay` so Analysis still paints above it. Opening while `body.menu-hidden` shows the menu; closing
+  NEVER re-hides it (fixed 2026-09-20, changelog 2026.08.16.21 — the old restore-the-hidden-state behaviour is
+  what made the menu vanish after "← Back to page").
 
 ## 9. Image handling
 
