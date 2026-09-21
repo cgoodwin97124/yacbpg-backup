@@ -4,6 +4,15 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.21 — 2026-09-20 — Menu reappears after the full-screen view; the floating menu button is gone
+- **Fixed: the menu stayed hidden after leaving the full-screen menu.** If the menu happened to be hidden when you
+  opened the full-screen menu, returning with **← Back to page** left it hidden (the one case where the app needed
+  a second click to bring it back). Closing the full-screen menu now always returns you to a page with the menu
+  showing.
+- **The floating ☰ menu button at the bottom of the screen has been removed.** The **☰ Hide Menu** button at the
+  top is now the single control: it reads **Hide Menu** while the menu is showing and **Show Menu** while the menu
+  is hidden. (If you hide the menu while scrolled down, scroll back to the top of the page to show it again.)
+
 ## 2026.08.16.20 — 2026-09-20 — Full-screen menu (and full-screen Library)
 - **The whole menu can now open full-screen.** A new **⛶ Full Screen** button in the header (next to **▤ Menu: Side**
   and **☰ Hide Menu**) expands the menu — File, Edit, Library and Help — to fill the screen, which makes editing far
