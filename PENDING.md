@@ -15,7 +15,7 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(No greenlit requests waiting right now — every request logged so far has been implemented; see ✅ DONE below.)
+(No greenlit requests waiting right now — the newest request (2026-09-20: full-screen Library / whole-menu overlay) is implemented; see ✅ DONE below.)
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
@@ -40,6 +40,38 @@ each section).
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-09-20 — Full-screen Library overlay (and full-screen whole menu)
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.20).
+- **Request.** Author: "I'd like to add a button under Menu -> Library that will toggle showing the Library in a
+  full-screen overlay." Author's follow-up question: "Would it make more sense to allow the entire Menu
+  ( File / Edit / Library / Help ) to open in a full-screen overlay? I ask because I'm starting to have screen
+  real estate issues on my phone; I can't actually edit library objects there. Whatever the answer to this one is,
+  I do want the full-screen Library overlay."
+- **RECON (2026-09-20):** the Library is the ONE `comicGen.libObjects` store, rendered by `renderLibrary()` into the
+  single `#libObjects` container inside `#menuGroup-library` (`.library-section` = `.library-header` + `.lib-hint` +
+  `.lib-toolbar` [⬆ Import… `.btn-lib-import`, 📊 Analysis `.btn-lib-analysis`, `#libImportHint`] + hidden
+  `#libImportInput` + `#libObjects`; each row = name input + `.lib-desc` textarea + 🗑 `.btn-del-lib`). The
+  full-page overlay pattern is `.view-overlay` (fixed inset:0, z-index 10000) with a `.view-top` bar and
+  `openX()`/`closeX()` exported on `window`; the opaque overlay automatically covers the floating bottom buttons
+  (#panelsToggleBtn/#pageNav/#menuRevealBtn, z-index 1000/1001). Recon conclusion: build ONE generic full-screen
+  menu overlay that hosts the REAL `#menuFrame`, and have the Library button open that same mechanism scoped to
+  the Library tab — it delivers the requested Library overlay with a single source of truth AND fixes cramped
+  editing in every menu section on a phone.
+- **ANSWERS (author, 2026-09-20):** (1) "Editable, one source of truth. It should be the same live-editable library
+  and reusing the #libObjects list." (2) "Your recommendation works. Next to Import / Analysis." (3) "The overlay
+  should keep the Import / Analysis actions. Esc can also close it, but I want a Back to page button in it as
+  well."
+- **IMPLEMENTED (2026-09-20):** `#menuOverlay` (`.view-overlay`, markup just before `#analysisOverlay` so Analysis
+  still paints above it) with a `.view-top` (← Back to page + `#menuOverlayTitle`) and `#menuOverlayBody`;
+  `openMenuFullscreen(section)` moves the real `#menuFrame` into it (home remembered in `menuFrameHome`, restored
+  on close by `closeMenuFullscreen()`), plus `toggleMenuFullscreen(section)`. Entry points: header
+  `#menuFullscreenBtn` (`.menu-fs-toggle`, whole menu) and Library toolbar `#libFullscreenBtn` (`.btn-lib-fullscreen`,
+  Library tab). Esc closes; switching tabs stays fullscreen and expands the section (`expandGroupPanels`), and
+  re-clicking the active tab no longer empties the overlay. Full details in the BATCH 2026.08.16.20 dev-note.
+  Verified live at 866×604, 1920×1080 and 390×844.
+- **NOTE (2026-09-20):** a first cut put the general toggle in the `.menu-bar` as a 5th tab; that clipped the
+  stacked side-menu tabs on short viewports, so it moved to the header next to ☰ Hide Menu / ▤ Menu: Side.
 
 ### 2026-09-20 — Floating bottom buttons cover content: reserve bottom space (menu + main page)
 - **Status:** DONE 2026-09-20 (changelog 2026.08.16.19).
