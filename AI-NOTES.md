@@ -274,7 +274,9 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   in JS rather than a static `calc()`. Called from `applyLayoutMode`, `applyMenuVisible`, and `resize`/`load`/
   `orientationchange`; the inline style is cleared outside side mode.
 - `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice
-  persisted; sections start collapsed via `collapseGroupPanels`.
+  persisted; sections start collapsed via `collapseGroupPanels`. While `body.menu-fullscreen` it instead
+  refuses to close the active section and EXPANDS the group via `expandGroupPanels` (and refreshes
+  `#menuOverlayTitle`).
 - **Toggles** (all persist independently):
   - `body.menu-hidden` — the CSS is `body.menu-hidden .menu-frame { display:none }`, i.e. it hides the WHOLE menu
     frame INCLUDING the Generate bar (this contradicts the earlier "the generate bar stays visible" promise —
@@ -285,7 +287,13 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
     button. Generation is UNAFFECTED (writes to `panelImages`; the imgObserver just evicts
     srcs while hidden and restores on show).
   - `body.side-mode` — ▤ Menu: Top/Side header button.
-- Header buttons (upper-left): ▦ Storyboard, ☰ Hide/Show Menu, ▤ Menu: Side, ▧ Hide/Show Panels.
+- Header buttons (upper-left): ▦ Storyboard, ☰ Hide/Show Menu, ▤ Menu: Side, ⛶ Full Screen (`.menu-fs-toggle`),
+  then ▧ Hide/Show Panels. ⛶ Full Screen → `toggleMenuFullscreen()`.
+- **Full-screen menu overlay (`#menuOverlay`, 2026-09-20):** `.view-overlay` hosting the REAL `#menuFrame`
+  (moved in on open, restored to `.page-layout` on close — see BATCH 2026.08.16.20). `openMenuFullscreen(section)`
+  / `closeMenuFullscreen()` / `toggleMenuFullscreen(section)`; `#libFullscreenBtn` in the Library toolbar opens
+  it on the Library tab. Esc or the overlay's `← Back to page` closes it. The markup sits just before
+  `#analysisOverlay` so Analysis still paints above it.
 
 ## 9. Image handling
 
@@ -318,8 +326,9 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `pageSession` images, then switches to the target. `movePanelToNewPage(i)` pre-creates the page and calls it
   with `'replace'`.
 - **View modes:** `#singleOverlay` (🔍 Focus moves the ACTUAL card into `#singleStage`,
-  navigation via list/dropdown/prev-next/arrows/Esc) and `#storyboardOverlay` (▦ button →
-  `.sb-cell` per panel from representative image, placeholders for empty). The Storyboard also shows the page
+  navigation via list/dropdown/prev-next/arrows/Esc), `#storyboardOverlay` (▦ button →
+  `.sb-cell` per panel from representative image, placeholders for empty) and, since 2026-09-20,
+  `#menuOverlay` (⛶ Full Screen — the whole menu, Esced/Back-closed; BATCH 2026.08.16.20). The Storyboard also shows the page
   Title (`#storyboardTitle`) + Summary (`#storyboardSummary` bar) and, with ≥2 pages, its own page navigator
   `#storyboardNav` (◀ `storyboardNavDelta` + `#storyboardNavPages` + ▶) next to "← Back to page"
   (`renderStoryboardPage`/`updateStoryboardNav`; `switchPage` calls `refreshStoryboardIfOpen()` so it follows).
@@ -334,6 +343,9 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   **Library → Analysis (2026-09-19):** the 📊 Analysis button opens `#analysisOverlay` — a full-page
   panel × library cross-reference matrix with ✅ usage marks and per-panel descriptions editable in the grid
   — see BATCH 2026.08.16.15.
+  **Library → Full Screen (2026-09-20):** the ⛶ Full Screen button (`.btn-lib-fullscreen`, `#libFullscreenBtn`)
+  toggles `#menuOverlay` scoped to the Library tab — the same, live-editable `#libObjects` list, full-screen;
+  the Import/Analysis buttons come along. See BATCH 2026.08.16.20 / the full-screen menu overlay note in §8.
   **Analysis → project defaults + per-panel style/size/seed (2026-09-19):** the Analysis header's
   `#analysisGlobalBar` edits NSFW / default style / default size / seed (writing through to the real settings;
   seed is per-PAGE, i.e. the page selected in the page selector), and every panel header shows compact
