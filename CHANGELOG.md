@@ -4,6 +4,17 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.20 — 2026-09-20 — Full-screen menu (and full-screen Library)
+- **The whole menu can now open full-screen.** A new **⛶ Full Screen** button in the header (next to **▤ Menu: Side**
+  and **☰ Hide Menu**) expands the menu — File, Edit, Library and Help — to fill the screen, which makes editing far
+  easier on a phone or any cramped window. The tabs stay at the top so you can switch sections without leaving
+  full-screen, and each section opens with its panels expanded so there's no clicking to unfold them first.
+- **📚 Library → ⛶ Full Screen.** The Library toolbar now has a **⛶ Full Screen** button next to **⬆ Import…** and
+  **📊 Analysis** — it opens the same full-screen view already showing the Library, with the Import and Analysis
+  buttons available right there. It's a toggle: press it again (or **← Back to page**, or **Esc**) to return.
+- Nothing about your library changed — it's the exact same live-editable list, so anything you type full-screen is
+  saved immediately and shows up in the panel dropdowns just as before.
+
 ## 2026.08.16.19 — 2026-09-20 — Floating bottom buttons no longer cover content
 - **Reserved space at the bottom of the page.** The page now keeps a strip of empty space at the very bottom, so you
   can always scroll the last panel (and its dropdowns/buttons) up above the floating controls — **▧ Hide Panels**
