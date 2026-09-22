@@ -337,7 +337,13 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `pageSession` images, then switches to the target. `movePanelToNewPage(i)` pre-creates the page and calls it
   with `'replace'`.
 - **View modes:** `#singleOverlay` (🔍 Focus moves the ACTUAL card into `#singleStage`,
-  navigation via list/dropdown/prev-next/arrows/Esc), `#storyboardOverlay` (▦ button →
+  navigation via list/dropdown/prev-next/arrows/Esc; **2026-09-22:** anything that rebuilds `#comicGrid` —
+  `buildPanelGrid()` — snapshots `singleCard ? currentSingle : 0` as `singleResume`, drops the staged card via
+  `detachSingleStage()` (no duplicate `panel-card-N` ids survive), then re-opens with
+  `openSingleView(Math.min(singleResume, getPanelCount()))`; `closeSingleView`/`singleNavTo` put the card back
+  through `restoreSingleCardToGrid()`, which never calls `insertBefore` with an anchor that isn't a child of the
+  grid. Never wipe `#comicGrid` directly — always go through `buildPanelGrid()`. See BATCH 2026.08.16.23),
+  `#storyboardOverlay` (▦ button →
   `.sb-cell` per panel from representative image, placeholders for empty) and, since 2026-09-20,
   `#menuOverlay` (⛶ Full Screen — the whole menu, Esced/Back-closed; BATCH 2026.08.16.20). The Storyboard also shows the page
   Title (`#storyboardTitle`) + Summary (`#storyboardSummary` bar) and, with ≥2 pages, its own page navigator
