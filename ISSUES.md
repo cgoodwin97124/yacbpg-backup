@@ -10,6 +10,32 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
+## 2026-09-22 — ⧉ Duplicate in 🔍 Focus broke the page (fixed 2026.08.16.23)
+- **Symptom (author report):** with a project open, 🔍 Focus a panel → open its ⚙ Panel menu → click ⧉ Duplicate →
+  `singleNavTo … injectedScript:3498:26` / `openSingleView/li.onclick … injectedScript:3465:37`. Clicking
+  "← Back to page" then gave `NotFoundError: Node.insertBefore: Child to insert before is not a child of this
+  node` in `closeSingleView`, and after that EVERY click on the page raised an error until the page was reloaded.
+- **Root cause:** 🔍 Focus MOVES the real `#panel-card-N` into `#singleStage`, remembering the sibling it must be
+  put back before (`singleAnchor = card.nextElementSibling`). Duplicate — like Add Panel / Delete / page switch /
+  panel-count change — calls `buildPanelGrid()`, which does `grid.innerHTML = ''` and rebuilds all 24 cards, so
+  the moved card and its anchor were left detached from the new grid and `grid.insertBefore(singleCard,
+  singleAnchor)` threw. Two elements with the same `panel-card-N` id also coexisted (the staged old one + the
+  fresh one), which is what made every later click error inside
+  `PERCH.reAttachSpecificDomElementEventWithRoot`.
+- **Fix (2026.08.16.23):** `buildPanelGrid()` now remembers whether the Focus view was open, drops the staged
+  card first (`detachSingleStage()`, so no duplicate ids survive the rebuild) and re-opens the view on the fresh
+  cards afterwards (`openSingleView(Math.min(resume, getPanelCount()))`, or closes it if the page has no panels).
+  `restoreSingleCardToGrid()` — used by `closeSingleView` and `singleNavTo` — inserts only when the anchor really
+  is a child of the grid and drops a stale card otherwise, so no missed path can dead-end the page again.
+  `openSingleView` is re-entrant (it restores a previously staged card first) and `onPanelCountChange` re-opens
+  the view clamped, so shrinking the panel count while focused can't blank the stage or leave a stale nav list.
+- **Gotcha for future sessions:** anything that rebuilds `#comicGrid` destroys the focused card — never wipe the
+  grid directly, always go through `buildPanelGrid()` so the Focus view re-syncs. After a rebuild both `singleCard`
+  and `singleAnchor` are references into the OLD DOM; `restoreSingleCardToGrid()` is the only safe way to put the
+  card back (a raw `insertBefore` with a stale anchor is exactly the crash above).
+
+---
+
 ## 2026-08-16 — "Add" button doesn't add an Action to Panel Objects (fixed 2026.08.16.2)
 - **Symptom:** clicking the Add button while adding an Action to a panel's 🧩 Panel Objects did nothing — the
   Action never appeared.
@@ -62,21 +88,6 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 - **Gotcha:** html2canvas doesn't render the fixed #imgPreview, so it can't be vision-verified that way — verify
   with real-browser hit testing: temporarily set pointerEvents:auto on #imgPreview and confirm
   document.elementsFromPoint(center) returns imgPreviewImg first.
-
-
-# Comic Generator — Issue Log
-
-Log of reported issues and their resolutions, newest first.
-A future AI helper session should GREP THIS FILE before diagnosing anything —
-the real root cause of a "same" symptom is usually already recorded here.
-
-)
-  still fired; the user just couldn't see it.
-- **Fix:** `.img-preview` z-index 9999 → 10002 (above `.view-overlay` 10000 AND the password/manual overlays
-  10001; the GitHub backup overlay at 2147483647 still covers it, but that blocks hovering image boxes anyway).
-- **Gotcha:** html2canvas doesn't render the fixed `#imgPreview`, so it can't be vision-verified that way —
-  verify with real-browser hit testing: temporarily set `pointerEvents:auto` on `#imgPreview` and confirm
-  `document.elementsFromPoint(center)` returns `imgPreviewImg` first.
 
 ## 2026-08-14 — "another_upload_in_progress" blocks ALL saves forever on specific src/ files (platform bug + workaround)
 - **Symptom:** Save fails with "Couldn't save the src files: couldn't upload src/<file>: another_upload_in_progress"
