@@ -41,6 +41,30 @@ each section).
 
 ## ✅ DONE — implemented (history, newest first)
 
+### 2026-09-22 — Hide Generate All / Pause / Stop in full-screen menu mode
+- **Status:** DONE 2026-09-22 (changelog 2026.08.16.22).
+- **Request.** Author: "when the menu is in Full Screen mode, the Generate All Panels On Page / Pause / Stop
+  buttons should not be visible."
+- **RECON (2026-09-22):** those three buttons all live in `#menuFrame`'s LAST child, the `.gen-actions` bar
+  (`index.html` ~line 2047): `.gen-actions` > `.gen-row` > [`.btn-generate` GENERATE ALL PANELS ON PAGE,
+  `#globalPauseBtn` Pause, `#globalStopBtn` Stop] + a sibling `#statusEl.status`. CSS:
+  `.gen-actions { flex: 0 0 auto; min-height: 0; overflow-y: auto; padding-top: 12px; margin-top: 12px;
+  border-top: 2px solid #ffcc00 }` inside the flex-column `#menuFrame`, below the flex-1 `.menu-scroll`.
+  Since the full-screen overlay MOVES the real `#menuFrame` (changelog 2026.08.16.20), hiding it for
+  full-screen only needs a `body.menu-fullscreen .gen-actions` CSS rule — the DOM, the Pause/Stop disabled
+  state, and any running generation are all untouched (generation keeps running; the buttons just aren't shown;
+  the Focus view keeps its own `.focus-gen` Pause/Stop row). The `#statusEl` status line lives INSIDE
+  `.gen-actions`, so hiding the bar hides the status line too — hence the open question.
+- **ANSWER (author, 2026-09-22):** "Your default is good. Go ahead and implement." — i.e. hide the WHOLE
+  `.gen-actions` bar (buttons + status line), unconditionally (a running generation keeps going; leave
+  full-screen to pause/stop it).
+- **IMPLEMENTED (2026-09-22):** `body.menu-fullscreen .gen-actions { display: none }` (one CSS rule, next to the
+  other `body.menu-fullscreen` overrides) — no JS change, so the Pause/Stop disabled states and every handler are
+  untouched. Verified live: at 866×604 side-mode `.menu-scroll` clientHeight goes 177 → 536 in full-screen and
+  returns on close; no `.btn-generate`/`.btn-pause-global`/`.btn-stop-global` has a non-zero rect while
+  full-screen; no overflow/overlap at 866×604 or 390×844.
+  VERSION 2026.08.16.22.
+
 ### 2026-09-20 — Menu hidden after leaving the full-screen menu + remove the floating menu button
 - **Status:** DONE 2026-09-20 (changelog 2026.08.16.21).
 - **Requests.** (1) "When I go to the full screen menus and then go Back to Page, the page menu is completely
