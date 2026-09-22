@@ -19,6 +19,62 @@ each section).
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
+### 2026-09-22 — BUG REPORT: perchance error dialog "interactionPointerMoveHandler@…:34:3414"
+- **Status:** RECON DONE 2026-09-22 — questions for the author recorded below, awaiting answers (per the
+  2026-09-20 standing directive). Logged before any work, per the 2026-08-13 rule.
+- **Request.** Author: "Hi, I'm getting this error." + screenshot
+  (`scratch/message-attachments/pasted-image-20260922111138.png`).
+- **What the screenshot shows (transcribed verbatim):** the perchance "*An error occurred*" dialog — the variant
+  that reads "…its reported location is inside perchance's own runtime rather than your code — it may come from a
+  browser extension or the platform itself. If your generator is working fine you can likely ignore this:". Its
+  only stack line is `interactionPointerMoveHandler@?__generatorLastEditTime=1790045687825:34:3414`, followed by
+  the usual "Note: You may need to open your browser console to see the full error message. The keyboard shortcut
+  is Ctrl+Shift+J or Cmd+Option+J if using the Chrome browser, and you should see a red error message if you
+  scroll down." and a `close` button.
+- **Key limitation:** that dialog does NOT include the underlying exception message/type — only the platform's own
+  frame. The real error text only appears in the browser console. Without it we're guessing at the cause.
+- **RECON:** complete — see "RECON FINDINGS" below. **QUESTIONS FOR THE AUTHOR:** at the end of this entry;
+  awaiting answers before implementing anything (per the 2026-09-20 standing directive).
+- **RECON FINDINGS (2026-09-22):**
+  - The frame is in the ENGINE's own page-bootstrap script, NOT our code. Verified against the served page
+    (`https://da71b6561ab8d06c0f8758e7126559e7.perchance.org/f0vstb2fbe`, fetched + inspected): its line 34 is a
+    16865-char minified line and column 3414 lands INSIDE
+    `function interactionPointerMoveHandler(e){e.isTrusted&&(e.pointerType==="touch"||e.pointerType==="pen"||(sawMousePointerMove=!0,sawMousePointerDown&&sendInteractionSignals()))}`
+    (the identifier starts at col 3381; the body expression at ~3410). That function is the engine's "human
+    interaction signals" bot-detection helper, installed on every generator page via
+    `window.addEventListener("pointerdown"|"pointermove", handler, true)`. It only reaches `sendInteractionSignals()`
+    from the MOVE handler when a pointerdown happened FIRST (click, then move) — which matches the report.
+  - Our code cannot throw from inside that function (it's engine code we cannot modify), and the engine's own stack
+    cleaner strips everything below the first `PERCH.createPerchanceTree`/`PERCH.executeScriptTag` frame, so the
+    single line shown IS the innermost surviving engine frame. Confirmed our generator does NOT (a) call
+    `history.replaceState` — the engine overrides it to THROW when the pathname changes, a trap we avoid — nor
+    (b) dispatch synthetic pointer events, and (c) our own pointer handlers are clean: dispatching
+    pointerover/pointermove/pointerdown/pointerup on the live page produced ZERO console errors. The generator also
+    loads no third-party scripts (no external `<script src>`, no dynamic script creation).
+  - The dialog deliberately omits the exception message for engine-located errors (the `ctx.engineLocation`
+    variant renders only the friendly intro + the stack), so the real `TypeError: …` text is only in the browser
+    console — exactly what the dialog's own note tells the author to open.
+  - Not reproducible from the AI helper's preview: synthetic events are never `isTrusted`, so the engine handler
+    returns immediately (verified). The trigger is real/trusted input in the author's browser.
+  - **PLATFORM BUG REPORT FILED 2026-09-22 — id `923578bb`** (category preview-page, severity annoyance): asks the
+    platform to (a) try/catch that handler chain / always remove its listeners, and (b) include
+    `error.name + ": " + error.message` for engine-located errors. Append follow-ups with
+    `platform_bug_report({appendToReportId:"923578bb", note})` once the author supplies the console message.
+- **MOST LIKELY CAUSE:** a browser extension (or a platform-side bug) making `e.isTrusted`/`e.pointerType` access
+  throw inside the engine handler — the dialog's own text names extensions as the prime suspect. Nothing for the
+  generator's code to fix unless the author's console message says otherwise.
+- **QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement anything yet):**
+  1. Does the generator actually MISBEHAVE when this happens (does anything stop working), or is it only the
+     dialog? (The dialog itself says it can likely be ignored if the generator works fine.)
+  2. Please open the browser console (Ctrl+Shift+J, or Cmd+Option+J on Mac), then move the mouse again and copy the
+     RED error line — the actual exception message plus the full stack. That one line pins the cause.
+  3. Does it appear once, or on every mouse move after it first shows? In edit mode only, or also on the
+     saved/public page?
+  4. Which browser + OS, and does it still happen with extensions disabled / in a private window / a different
+     browser? If it vanishes, it's an extension.
+  5. Is there anything you want changed in the generator for this? (Engine-side there's nothing we can fix from
+     here beyond the platform report I filed.)
+
 ### 2026-09-20 — STANDING DIRECTIVE: recon + clarifying questions before implementing any request
 - **Status:** in force until the author says otherwise (process/directive — no changelog entry).
 - Recorded 2026-09-20 at the author's request ("after I enter a new change request (including this one), please
