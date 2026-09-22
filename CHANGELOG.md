@@ -4,6 +4,17 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.23 — 2026-09-22 — Panel actions no longer break the 🔍 Focus view
+- **Fixed bug:** in 🔍 Focus (single-panel) view, **⧉ Duplicate** — and any other action that rebuilds the panel
+  grid (Add Panel, Delete, switching page, changing the panel count) — threw `NotFoundError: Node.insertBefore:
+  Child to insert before is not a child of this node` and left the page erroring on every click until you
+  reloaded. The Focus view now re-opens by itself on the fresh card, so those actions just work while a panel is
+  focused; the view also can't be left showing nothing.
+- **Duplicate now says where the copy landed** in the status line (e.g. "Panel 1 duplicated — the copy is now
+  Panel 2 (it has no images yet)."), which is the visible confirmation in Focus view that the copy was inserted.
+- Housekeeping: removed a leftover duplicated header + fragment that had been sitting inside the embedded Issue
+  Log ever since the 2026-08-15 docs consolidation (it was being shipped in the GitHub ISSUES.md backup).
+
 ## 2026.08.16.22 — 2026-09-22 — Full-screen menu hides the generate bar
 - The full-screen menu no longer shows the bottom bar — **⚡ GENERATE ALL PANELS ON PAGE**, **⏸ Pause**, **■ Stop**
   and the status line are hidden there, so the section you're working in gets the whole screen. Everything in the
