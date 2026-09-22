@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.22 — 2026-09-22 — Full-screen menu hides the generate bar
+- The full-screen menu no longer shows the bottom bar — **⚡ GENERATE ALL PANELS ON PAGE**, **⏸ Pause**, **■ Stop**
+  and the status line are hidden there, so the section you're working in gets the whole screen. Everything in the
+  normal (non-full-screen) menu is unchanged.
+- A generation that's already running keeps running while you're in full-screen; leave full-screen to pause or
+  stop it.
+
 ## 2026.08.16.21 — 2026-09-20 — Menu reappears after the full-screen view; the floating menu button is gone
 - **Fixed: the menu stayed hidden after leaving the full-screen menu.** If the menu happened to be hidden when you
   opened the full-screen menu, returning with **← Back to page** left it hidden (the one case where the app needed
