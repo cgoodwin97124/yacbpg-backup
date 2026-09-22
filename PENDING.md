@@ -97,6 +97,34 @@ each section).
 
 ## ✅ DONE — implemented (history, newest first)
 
+### 2026-09-22 — ⧉ Duplicate in the 🔍 Focus view threw and broke the page
+- **Status:** DONE 2026-09-22 (changelog 2026.08.16.23).
+- **Request (author, 2026-09-22).** "With an open project (confirmed it happens in test project 'Cow in field'),
+  select Focus on a panel. Inside the panel, open the Panel menu. Select Duplicate. Expected result: it
+  duplicates the panel."
+- **ACTUAL (verbatim):** duplicate click → `singleNavTo@ line 55 > injectedScript:3498:26` /
+  `openSingleView/li.onclick … :3465:37`; then "← Back to page" → `NotFoundError: Node.insertBefore: Child to
+  insert before is not a child of this node` in `closeSingleView`, after which EVERY click errored until Ctrl-R.
+- **RECON (2026-09-22):** 🔍 Focus MOVES the real `#panel-card-N` into `#singleStage` and remembers
+  `singleAnchor = card.nextElementSibling`. Duplicate calls `buildPanelGrid()`, which does
+  `grid.innerHTML = ''` and rebuilds all 24 cards — so the staged card + its anchor were left detached from the
+  new grid and putting the card back threw NotFoundError. The staged old card and the fresh card also shared the
+  id `panel-card-N`, which is why every later click broke inside
+  `PERCH.reAttachSpecificDomElementEventWithRoot`. Duplicate itself actually succeeded — the throw came after
+  (nav click / close). The same latent bug applied to Add Panel, Delete, page switch and panel-count changes.
+- **IMPLEMENTED (2026.08.16.23):** `buildPanelGrid()` captures `singleResume`, calls new `detachSingleStage()`,
+  then re-opens at the end (`openSingleView(Math.min(singleResume, getPanelCount()))`, or `closeSingleView()`
+  when the page has no panels); new `restoreSingleCardToGrid()` replaces the raw `insertBefore` in
+  `closeSingleView` + `singleNavTo`; `openSingleView` is re-entrant; `onPanelCountChange` re-opens the view
+  clamped while focused; `duplicatePanel` now reports the copy's new number in the status line.
+- **VERIFIED (author's own Cow-in-field state; restored afterwards):** focus → duplicate keeps the overlay open on
+  the rebuilt card (nav 6 → 7) with exactly 24 unique `panel-card-N` ids; nav to another panel, close, Add Panel,
+  Delete, shrinking the count 6 → 4 while focused on 6, and open→close all produce ZERO window errors and leave
+  the grid in order 1..24; snapshot + vision of the focus view after a duplicate shows one card, one image slot,
+  no overlap.
+- **NOTE:** the author's other report (the `interactionPointerMoveHandler` platform dialog) is unrelated to this
+  fix — it stopped happening for them, and that entry remains in QUEUED awaiting their console line.
+
 ### 2026-09-22 — Hide Generate All / Pause / Stop in full-screen menu mode
 - **Status:** DONE 2026-09-22 (changelog 2026.08.16.22).
 - **Request.** Author: "when the menu is in Full Screen mode, the Generate All Panels On Page / Pause / Stop
