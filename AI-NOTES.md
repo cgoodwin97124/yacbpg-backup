@@ -263,7 +263,9 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 - `.menu-frame` = sticky top bar (top mode) or left column (`body.side-mode`, landscape only).
   Contains `.menu-scroll` (the accordion groups) + `.gen-actions` (⚡ button + `#statusEl`).
   `.gen-actions` is `flex:0 0 auto` (2026-09-20, changelog 2026.08.16.19) so it can NEVER be squeezed by a tall
-  `.menu-scroll` — the menu list scrolls instead and the generate bar + status stay visible.
+  `.menu-scroll` — the menu list scrolls instead and the generate bar + status stay visible. (EXCEPTION: in the
+  full-screen overlay the whole bar is hidden — `body.menu-fullscreen .gen-actions { display:none }`, 2026-09-22,
+  changelog 2026.08.16.22.)
 - **Reserved bottom space (2026-09-20, changelog 2026.08.16.19):** the viewport-fixed buttons at the bottom
   (`#panelsToggleBtn` ▧ Hide Panels, `#pageNav`) used to cover page content and,
   in side mode, the menu's generate bar. `body { padding-bottom: 96px }` (portrait: `156px`, where `#pageNav`
@@ -300,7 +302,9 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   it on the Library tab. Esc or the overlay's `← Back to page` closes it. The markup sits just before
   `#analysisOverlay` so Analysis still paints above it. Opening while `body.menu-hidden` shows the menu; closing
   NEVER re-hides it (fixed 2026-09-20, changelog 2026.08.16.21 — the old restore-the-hidden-state behaviour is
-  what made the menu vanish after "← Back to page").
+  what made the menu vanish after "← Back to page"). While full-screen, `body.menu-fullscreen .gen-actions
+  { display:none }` hides the whole ⚡ Generate / ⏸ Pause / ■ Stop / `#statusEl` bar (2026-09-22, changelog
+  2026.08.16.22), so `.menu-scroll` takes the frame's full height.
 
 ## 9. Image handling
 
