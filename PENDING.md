@@ -118,6 +118,11 @@ each section).
   PENDING.md / CHANGELOG.md / AI-NOTES.md / ISSUES.md / src/user-manual.html (read from the live DOM) DO.
   FIX: after the author presses **Save**, re-run `openGhBackup(); await ghPush(); ghClose();` so the repo's
   index.html catches up. When verifying, check the repo's index.html for `menuGenerateBtn` + `2026.09.23.2`.
+- **BACKUP NOTE RESOLVED (2026-09-23, 18:06 UTC):** the author pressed Save and the re-push succeeded — the
+  served page grew from 906692 to 971690 bytes, and the repo's `index.html` now contains `themeModeSel` +
+  `menuGenerateBtn` + `preferencesPanel` + `2026.09.23.3` (verified via the GitHub contents API). The gap
+  described in the note above is CLOSED; no outstanding backup action. Latest commit:
+  `backup 2026.09.23.3 — 2026-09-23T18:06:33.488Z`.
 - **SHIP 3 DONE (2026.09.23.3):** (7)/(8) the theme. Every hard-coded colour is now a CSS variable
   (`:root` table of 74 vars whose dark values equal the old literals → dark is unchanged, verified), plus
   `:root[data-theme="light"]` and a `@media (prefers-color-scheme: light){ :root:not([data-theme]) }` mirror;
@@ -250,6 +255,14 @@ each section).
   12. **Version**: this is a big change set — one release (e.g. 2026.08.16.25) or split? I recommend one release
      once all answers are in, unless you want the quick wins (items 2, 6, 7, 8 = Preferences move, one-click
      Library, remove the Library button) shipped first as 2026.08.16.25.
+- **RE-PUSH (2026-09-23, 18:06 UTC) — Status: DONE.** Request verbatim: "Saved.  Go ahead and re-push."
+  The author pressed Save; the public page grew from 906692 → 971690 bytes (now contains `themeModeSel` +
+  `menuGenerateBtn` + `preferencesPanel` + `2026.09.23.3`), and the GitHub backup was re-run with a
+  cache-busting `window.fetch` patch (7/7 files pushed, commit `backup 2026.09.23.3 —
+  2026-09-23T18:06:33.488Z`). GitHub contents-API verification: repo `index.html` = 971690 bytes with all
+  three ship-1/2/3 markers, `src/user-manual.html` = v2026.09.23.3, CHANGELOG head = `## 2026.09.23.3`,
+  PENDING has the SHIP 3 DONE bullet. **The backup gap is now CLOSED** (see the BACKUP NOTE RESOLVED bullet
+  above). No code changed for this request, so no version bump.
 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
