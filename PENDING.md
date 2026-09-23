@@ -15,9 +15,215 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-(No greenlit requests waiting right now — every request logged so far has been implemented; see ✅ DONE below.)
+### 2026-09-23 — FEATURE REQUEST (8 items): always-visible header · Preferences under Edit · always-fullscreen menus · Generate All/Pause/Stop as top-level menu items · theme & color scheme · one-click Library · drop the Library's Full Screen button
+- **Status:** IN PROGRESS — author greenlit 2026-09-23. **Quick wins shipped as 2026.09.23.1**
+  (Preferences -> Edit, one-click Library, new versioning scheme). **Header / menu / theme ship next as
+  2026.09.23.2.** The deferred 8b item (a separate app-settings JSON file) gets its OWN ship AFTER
+  header/menu/theme; until then the theme and any future Preferences -> Locale setting live in
+  `comicGen.panelState` so they travel in Save / Export / Import.
+- **Request (author, 2026-09-23, verbatim):** "Some more changes: * I'd like to have the app title bar and four
+  buttons next to it always visible. * I'd like Preferences to live under Edit rather than File. * I'd like to
+  have the menus always go full screen rather than needing to click the Full Screen button. I'd like to toggle
+  this behavior (full screen or current behavior) under Edit -> Preferences. * I'd like to have "Generate All
+  Panels On Page" renamed to Generate All. I'd like to move Generate All, Pause, and Stop, to the menu as top
+  level menu items, in the same size and style (including capitalization) as File, Edit, Library, and Help. The
+  Stop button can keep its color scheme (red button with white text), but Generate and Pause can be in white
+  text with their emojis preceding them as the other menu buttons. I'd like to have an option under Edit ->
+  Preferences whether to keep them visible when the rest of the rest of the menu items are hidden. * User
+  configurable color scheme and theme (light / dark / system if possible) under Preferences. * Currently, when
+  I click the Library menu button I have to click again to open the library proper.  I'd like to not have to
+  make that second click; clicking Library should just have it open. * I think the Full Screen button inside
+  Library is redundant and can be removed.  Keep the top bar Full Screen button though, and it should keep its
+  current functionality. As usual, perform all of the pre-implementation tasks before beginning work. Thank
+  you!"
+- **AUTHOR'S ANSWERS (2026-09-23, verbatim):**
+  1. "So far I don't see a need for the header to stay visible in the other full page views, but I may change
+     my mind on that. So let's make this configurable under Preferences. :)" — header becomes a sticky,
+     always-visible bar (while scrolling + in the full-screen menu), plus a Preferences toggle for "also keep
+     it visible in the other full-page views" (default OFF).
+  2. "Let's keep **Menu: Side** as is for now." — leave the Menu: Side toggle and all side-mode behaviour
+     untouched.
+  3. "Your recommendation is good." — ONE shared persisted switch: the Preferences "open menus full screen"
+     option and the header Full Screen button are the same state (label flips Full Screen / Exit Full Screen).
+  4. "Extra buttons inside the same row. Generate/Pause exactly matching the tabs. And I'm seeing white text in
+     amber buttons (see included screenshot); I want Generate and Pause to match this style." — Generate All /
+     Pause / Stop go INLINE in `#menuBar` as siblings of the four tab buttons and match them exactly. Two
+     screenshots confirm the tabs render as dark #2a2a2a fill + 2px #ffcc00 border + WHITE bold text (the
+     white is real: the platform's normalize.css `button:not([disabled]) { color: inherit }` out-specifies a
+     single-class button colour, so `.menu-btn`'s declared #ffcc00 never applies — do NOT "fix" the tabs).
+  5. "Your recommendation." — while the menu is hidden, Generate All / Pause / Stop appear in the header strip
+     next to the four header buttons (behind a Preferences toggle).
+  6. "Yes, leave untouched." — the Focus view's own Generate/Pause/Stop row is not changed.
+  7. "Your recommendation." — theme = Mode (Light / Dark / System) + a user-pickable accent, built on new CSS
+     custom properties; the default dark theme must stay pixel-identical.
+  8. "Yes, include it in the project!" — the theme is stored in `comicGen.panelState` so it travels in
+     Save / Export / Import, and it becomes an editable field in the JSON editor.
+  8b. "Actually, would it be worth it to create a separate JSON file for saved settings? Any app level
+     settings would live in there and are loaded when the page loads. Let's mark this for a separate
+     post-header/menu/theme code ship, and questions on this one can hold until after header/menu/theme ships,
+     unless it makes more sense to do this work at the same time you do header/menu/theme. I'll default to
+     your recommendation; no need to get my separate decision." — DECISION: separate ship AFTER
+     header/menu/theme (the visible work keeps moving, and the settings file then becomes the home for
+     app-level prefs, incl. the Locale item).
+  9. "Let's keep it, because we're keeping the Full Screen top button for now." — **the Library's Full Screen
+     button STAYS** (this supersedes the original bullet that asked to remove it). To handle in the
+     header/menu ship: with menus-always-full-screen that button would otherwise act as a second "exit full
+     screen" control — give it a sensible behaviour (its label already flips via
+     `updateMenuFullscreenLabels()`).
+  10. "Ship the quick wins first, then header/menu/theme. Also, lets have the versioning go YYYY.MM.DD.S, for
+     year/month/day/day's serial release number. A new day's work should start the day's release number at 1
+     and increment it for each release (single digits up to 10, unless you think 01, 02, 03, etc. would be
+     better; I'll default to your recommendation here). Additionally, regarding date/time, I'm in Pacific Time
+     (currently Pacific Standard Time, switching to Pacific Daylight Time when the US customarily switches).
+     This suggests adding a Preferences -> Locale item, which would live in the settings defaults (see item 8,
+     above)." — versioning becomes YYYY.MM.DD.S with S = 1, 2, 3... (NO zero padding: S is read by a human and
+     compared as a whole number; first release under the new scheme = 2026.09.23.1). Dates/times in the docs
+     use Pacific Time. The Preferences -> Locale item is DEFERRED to the settings-file ship.
+- **PLAN:** ship 1 (2026.09.23.1) = (2) Preferences -> Edit, (6) one-click Library, (10) versioning + docs.
+  (The Library Full Screen button stays, so item 7 now needs no work.) ship 2 (2026.09.23.2) = (1)/(5) sticky
+  always-visible header + its Preferences toggle, (3) menus full-screen by default behind one shared switch,
+  (4) Generate All / Pause / Stop as inline menu-bar items + the "keep visible when the menu is hidden"
+  toggle, (7)/(8) theme (Light / Dark / System + accent) on CSS variables, included in the project and the
+  JSON editor.
+- **SHIP 1 DONE (2026.09.23.1):** the Preferences panel moved from the end of File to the end of Edit
+  (`#preferencesPanel`); `switchMenu()` now expands the Library group so 📚 Library opens straight away; the
+  Library's ⛶ Full Screen button stays (item 7 dropped); the `YYYY.MM.DD.S` + Pacific-time conventions were
+  written into the index.html dev-notes and AI-NOTES §12. Verified live at 866x604 (File = Project + Page Setup,
+  Edit = Art Style / Presets / Keyword List / Project JSON / Reset / Preferences, Library opens with its list
+  visible and no second click, zero window errors).
+- **NEW AUTHOR DIRECTIVE (2026-09-23):** the AI may pause work mid-task and ask the author for input
+  (especially visual checks) whenever it reaches a genuine decision point — logged as its own directive entry
+  in the QUEUED section and in the index.html dev-notes.
+- **RECON (2026-09-23):**
+  - **1. Header / "title bar + four buttons".** `index.html:1880` `<div class="app-header">` = a flex row whose
+    LEFT side is `.header-btns` with exactly four buttons — `▦ Storyboard` (`openStoryboard()`), `☰ Hide Menu`
+    (`#menuToggleBtn`, `toggleMenu()`), `▤ Menu: Side` (`#layoutToggleBtn`, `toggleLayout()`), `⛶ Full Screen`
+    (`#menuFullscreenBtn`, `toggleMenuFullscreen()`) — and whose RIGHT side is `<h1>` + `#projectNameEl`
+    (`.project-name`). CSS `index.html:1440-1441` (plain flex, no `position`). The header is currently NOT
+    sticky, so it scrolls out of view on a long page; `▧ Hide Panels` (`#panelsToggleBtn`,
+    `position:fixed; bottom:16px; left:16px`) and `#pageNav` (fixed, bottom-centre) are separate body-level
+    elements and are NOT part of the four. Note the OLD `body.hdr-offscreen` machinery + the floating
+    `#menuRevealBtn` were removed on 2026-09-20 (changelog 2026.08.16.21), so nothing re-shows the header
+    controls once they scroll away — the class and `refreshHdrOffscreen()`/`initHeaderObserver()` no longer
+    exist in code (only in old dev notes). In SIDE mode (`.menu-frame` `position:sticky; top:10px`) and TOP
+    mode (`top:0`) the menu frame is sticky, the header is not.
+  - **2. Menu-section visibility.** `body.menu-hidden .menu-frame { display:none }` (index.html:1450); every
+    other full-page view (`#singleOverlay`, `#storyboardOverlay`, `#analysisOverlay`, `#menuOverlay`,
+    `#jsonEditorOverlay`, `#manualOverlay`) is `position:fixed; inset:0; z-index:10000` (`.view-overlay`
+    index.html:1592) so it COVERS the header entirely. `#menuOverlay` (the full-screen menu) additionally
+    adopts the real `#menuFrame` element into `#menuOverlayBody` (`openMenuFullscreen()`, index.html:5171) and
+    sets `body.menu-fullscreen`; CSS at 1843-1846 restyles the frame to fill the overlay and hides
+    `.gen-actions`.
+  - **3. Preferences** currently = one `config-panel` at the END of `#menuGroup-file` (index.html:2022-2025),
+    header `<h2>Preferences</h2>`, holding exactly one control: `#hidePasswordPref` (persisted
+    `comicGen.hidePasswordPref`, `onHidePasswordPrefChange()`). New Preferences options therefore need a home
+    in `#menuGroup-edit` (which today holds Art Style & Keywords, the preset panel, the keyword list and Reset
+    to Defaults).
+  - **4. Generate All / Pause / Stop.** Markup `index.html:2141` — `.gen-actions` (the LAST child of
+    `#menuFrame`, CSS 1485, `border-top:2px solid #ffcc00`) > `.gen-row` (flex, 1552) > [`.btn-generate`
+    `⚡ GENERATE ALL PANELS<br>ON PAGE ⚡` → `generateComicPage()`; `.btn-pause-global` `#globalPauseBtn`
+    `⏸ Pause` → `pauseGenerations()` (disabled unless a run is in progress); `.btn-stop-global`
+    `#globalStopBtn` `■ Stop` → `haltGenerations()` (red `#ff4d4d` / white, uppercase)] + `#statusEl.status`.
+    The Focus view has its OWN `.focus-gen` row (`#focusPauseBtn`/`#focusStopBtn`/`#focusStatusEl`) mirroring
+    these — leave that alone unless told otherwise. `body.menu-fullscreen .gen-actions { display:none }`
+    (1846, changelog 2026.08.16.22) is the rule that must be revisited once the buttons move into the menu bar.
+  - **5. Menu bar.** `#menuBar` (index.html:1897-1902) = four `<button class="menu-btn" data-menu=…>` —
+    `📄 File`, `🎨 Edit`, `📚 Library`, `❓ Help` — each `switchMenu(name)`. CSS `.menu-bar` (1822: flex, wrap,
+    gap 6px) and `.menu-btn` (1823-1825: `flex:1 1 76px; background:#2a2a2a; color:#ffcc00; border:2px solid
+    #ffcc00; padding:9px 4px; font-weight:bold; font-size:0.82rem`, `.active` = amber fill). i.e. the four
+    existing buttons are AMBER text (not white), and in full-screen mode `.menu-bar` becomes a
+    `flex-direction:row; flex-wrap:wrap` row with `.menu-btn { flex:1 1 auto; width:auto }` (1844-1845); in SIDE
+    mode it stacks vertically (`body.side-mode .menu-bar { flex-direction:column; align-items:stretch }`).
+  - **6. "Menus always full screen".** Today full-screen is opt-in per click: `toggleMenuFullscreen()`
+    (5201) ⇄ `openMenuFullscreen(section)` (5171) / `closeMenuFullscreen()` (5187), state = `body.menu-fullscreen`
+    + `#menuOverlay.hidden` + `#menuFrame` re-parented into the overlay and put back from the remembered
+    `menuFrameHome`; Esc is wired at 5214. `switchMenu()` (9117) collapses a freshly-opened group via
+    `collapseGroupPanels()`, and while `body.menu-fullscreen` it EXPANDS the group instead (`expandGroupPanels`)
+    — which is precisely why the second click is needed in the normal (non-full-screen) menu.
+  - **7. Library second click.** `#menuGroup-library` (index.html:2091) contains ONE `.library-section`
+    (header `<h2>Library</h2>` + `.lib-toolbar` + `#libObjects`). `setupMenuCollapse()` turns every
+    `.config-panel`/`.library-section`/`.help-panel` header into an accordion toggle
+    (`toggleMenuCollapse`, 9100) and `collapseGroupPanels` (9104) sets `data-collapsed="1"` on all of them the
+    first time a non-full-screen group is shown — so clicking `📚 Library` shows the Library section COLLAPSED
+    and you must click its header (the second click the author is describing). `switchMenu` also early-returns
+    when the group is already open (unless full-screen), so clicking `📚 Library` twice does nothing.
+  - **8. Library Full Screen button.** `#libFullscreenBtn` (`.btn-lib-fullscreen`, index.html:2099) sits in the
+    Library `.lib-toolbar` next to `⬆ Import…` / `📊 Analysis` and calls `toggleMenuFullscreen('library')`;
+    `updateMenuFullscreenLabels()` (5155) relabels BOTH `#menuFullscreenBtn` and `#libFullscreenBtn`, so
+    removal must also drop it from that loop + the `.btn-lib-fullscreen` CSS + the Help text that advertises it
+    (`#menuGroup-help` item 5, index.html:2116) and the user manual (src/user-manual.html §9).
+  - **9. Theme / color scheme.** There are NO CSS custom properties anywhere (`:root` / `--name` = 0 matches):
+    the —187 KB `<style>` (index.html:1418-1856) hardcodes **376 hex colors across 68 distinct values** +
+    20 `rgba(...)` shadows. The recurring roles: accent amber `#ffcc00` (44 uses — borders, labels, menu-btn,
+    panel-card borders), white text `#fff` (27) / on-accent dark `#111` (19) / `#000` (12), green `#4dff88`
+    (27 — project name, storyboard chip, page nav, kw-mode), surfaces `#2a2a2a` (13), `#1a1a1a` (11 body bg),
+    `#333` (14) inputs, `#444` (19) borders/hovers, `#3a3a3a` (7), `#222` (5), greys `#555/#666/#888/#bbb/#ddd`
+    (9/6/6/6/6), danger red `#ff4d4d` (14) / `#ff3333` (7) hover, blue `#4d9fff` (12), purple `#c8a2ff` (8),
+    amber variants `#ffcc66` (9) / `#ffd95e` / `#ffb84d` (6) / `#ff8a4d`. A theme therefore means introducing
+    CSS variables for those roles and swapping —376 literals (plus the rgba shadows) — a mechanical but
+    wide-reaching refactor that must keep every screen visually identical in the default (dark) theme.
+  - **10. Persistence plumbing** available for new prefs: `comicGen.*` localStorage keys written directly, and
+    per-setting load/save helpers next to each control (e.g. `hidePasswordPref`). Anything the author wants in
+    the File→Export document must be added to `collectPanelState()`/`applyImportedSettings()` AND classified in
+    the JSON editor's `jsonFieldClass` (see AI-NOTES §13).
+- **QUESTIONS FOR THE AUTHOR (asked 2026-09-23, awaiting answers):**
+  1. **"Always visible" header — which situations?** My reading: make `.app-header` STICKY so the title + the
+     four buttons stay on screen while you scroll (today they scroll away on a long page), AND keep them
+     visible while the full-screen menu is open (today `#menuOverlay` covers them). Should that also apply to
+     the other full-page views (Storyboard, Focus, Library, Analysis, JSON editor, manual) — i.e. a permanent
+     top strip on every screen — or only to scrolling + the menu?
+  2. **Header contents**: keep all four buttons in every case (Storyboard / Hide Menu / Menu: Side / Full
+     Screen)? And if menus become always-full-screen (item 3), is `▤ Menu: Side` still wanted (it only affects
+     the non-full-screen menu), or should it be hidden/removed in that mode?
+  3. **Always-full-screen menus**: should the new Preferences toggle change the DEFAULT only (the header ⛶
+     button still opens/closes full-screen for the current session), or should the ⛶ button and the pref be
+     the SAME persisted switch (button flips the pref; label shows ⛶ / ⤡)? I recommend the latter (one source
+     of truth). Also: with "always full screen" ON, what should the menu look like — header strip at the top,
+     then the File/Edit/Library/Help row, then the section (i.e. the current full-screen overlay, just opened
+     automatically)?
+  4. **Generate All / Pause / Stop placement**: as three extra buttons in the SAME row as File/Edit/Library/Help
+     (`.menu-bar`), or a separate row directly under it styled identically? And note the existing four buttons
+     are AMBER text on dark — do you want Generate/Pause to literally use white text (slightly different from
+     the tabs), or to match the tabs exactly (amber)? I recommend a separate row under the tabs, matching the
+     tab styling exactly, with Generate/Pause white-text as you asked (and Stop keeping red/white).
+  5. **Status line**: keep `#statusEl` where it is (bottom of the menu, under the tabs area) once the buttons
+     move to the top? And should Pause/Stop keep their current disabled-until-running behaviour?
+  6. **"Keep them visible when the rest of the menu is hidden"**: when you press `☰ Hide Menu`, where should
+     Generate All / Pause / Stop appear — (a) in the header strip next to the four buttons, or (b) as a small
+     floating bar at the bottom (where the old floating ☰ button used to live)? I recommend (a).
+  7. **Focus view's Generate/Pause/Stop** (the `.focus-gen` row inside 🔍 Focus): leave untouched? I assume yes.
+  8. **Theme scope**: is "user configurable color scheme" (a) Mode only — Light / Dark / System — plus a
+     user-pickable ACCENT color (the amber role), or (b) a full palette editor (page background, panel
+     surface, borders, text, each accent)? I recommend (a) now (Light/Dark/System + accent picker, maybe a
+     secondary "highlight" picker), with the CSS-variable foundation in place so a full editor can come later.
+  9. **Theme persistence/exports**: save the theme in localStorage only, or also inside `comicGen.panelState`
+     so it travels in 💾 Save / Export / Import and becomes an editable field in the 🧩 JSON editor? I
+     recommend including it (and making it editable in the JSON editor).
+  10. **Library single click**: should the Library section simply always open EXPANDED (recommended), and with
+     always-full-screen on, should clicking `📚 Library` open the full-screen overlay already showing the
+     Library (recommended)?
+  11. **Removing the Library ⛶ Full Screen button**: OK to also remove its mention from the in-app Help text
+     and the user manual? (The header ⛶ button keeps its current behaviour.)
+  12. **Version**: this is a big change set — one release (e.g. 2026.08.16.25) or split? I recommend one release
+     once all answers are in, unless you want the quick wins (items 2, 6, 7, 8 = Preferences move, one-click
+     Library, remove the Library button) shipped first as 2026.08.16.25.
+
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
+
+### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
+- **Status:** ACTIVE (author-mandated 2026-09-23, in force until the author says otherwise). Docs-only — no
+  changelog entry.
+- **Directive (author, 2026-09-23, verbatim):** "Oh, I have suggestion about the AI workflow. If this works for
+  you, if you ever get to a point during work that you need my input on something (especially visual checks) you
+  have my permission to pause work and ask. You can add this as a new top level directive as well."
+- **How to apply it:** when a genuine decision point appears mid-implementation (an ambiguous instruction, a
+  visual/UX choice that can't be resolved from the existing code, a trade-off with no obviously-right answer),
+  STOP, finish the current safe step, and ask the author in the chat reply instead of guessing. This is the
+  natural companion to the 2026-09-20 directive (recon + ask BEFORE starting); it now also covers DURING the
+  work. Still prefer "make a reasonable choice and note it briefly" for small/mechanical things (naming, minor
+  spacing) — the directive is for real decision points, not for trivia the author would rather not be pinged
+  about.
 
 ### 2026-09-22 — BUG REPORT: perchance error dialog "interactionPointerMoveHandler@…:34:3414"
 - **Status:** RECON DONE 2026-09-22 — questions for the author recorded below, awaiting answers (per the
