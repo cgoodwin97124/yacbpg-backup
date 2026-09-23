@@ -383,14 +383,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
-### 2026-09-23 — FEATURE REQUEST (2 items): recursive panel reflow when duplicating on a full page · scrub `-1` seeds on import
-- **Status:** RECON DONE, AWAITING ANSWERS — logged 2026-09-23. Not greenlit yet (no explicit "go ahead"); the author has been asked the clarifying questions listed below and the AI is holding until they answer (standing directive 2026-09-20).
-- **Request 1 — duplicate a panel when the page is full.** Today, duplicating a panel on a page that already has 24 panels offers to start a new page with the copy as its first panel. The author wants that replaced by an automatic reflow:
-  - No free later page → advise the user that a new page is being created, then let the overflow reflow automatically and insert the duplicate after the panel being duplicated.
-  - A later page exists → automatically reflow the 25th panel onto the next page and advise the user, with **Ok / Cancel** choices.
-  - Recurse through any number of full pages. The author's worked example: three pages of 24, duplicating panel 6 on page 1 → create page 4; move page 3's panel 24 → page 4 panel 1; move page 2's panel 24 → page 3 as its panel 1; move page 1's panel 24 → page 2 as its panel 1; insert the duplicate of panel 6 as page 1 panel 7.
-  - Advise succinctly ("a new page will be created and panels reflowed") with Ok / Cancel.
-- **Request 2 — `-1` seeds on import.** Any imported project whose project seed or any panel seed is `-1` must have that value quietly removed (→ random). No confirmation needed.
 
 ### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
 - **Status:** ACTIVE (author-mandated 2026-09-23, in force until the author says otherwise). Docs-only — no
@@ -483,6 +475,23 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-09-23 — FEATURE REQUEST (2 items): recursive panel reflow when duplicating on a full page · scrub `-1` seeds on import
+- **Status:** ✅ DONE — shipped as **2026.09.23.9** (2026-09-23); both items implemented, verified with synthesised import fixtures, and documented (DEV-NOTES batch + CHANGELOG + user manual + in-app Help).
+- **Request 1 — duplicate a panel when the page is full.** Today, duplicating a panel on a page that already has 24 panels offers to start a new page with the copy as its first panel. The author wants that replaced by an automatic reflow:
+  - No free later page → advise the user that a new page is being created, then let the overflow reflow automatically and insert the duplicate after the panel being duplicated.
+  - A later page exists → automatically reflow the 25th panel onto the next page and advise the user, with **Ok / Cancel** choices.
+  - Recurse through any number of full pages. The author's worked example: three pages of 24, duplicating panel 6 on page 1 → create page 4; move page 3's panel 24 → page 4 panel 1; move page 2's panel 24 → page 3 as its panel 1; move page 1's panel 24 → page 2 as its panel 1; insert the duplicate of panel 6 as page 1 panel 7.
+  - Advise succinctly ("a new page will be created and panels reflowed") with Ok / Cancel.
+- **Request 2 — `-1` seeds on import.** Any imported project whose project seed or any panel seed is `-1` must have that value quietly removed (→ random). No confirmation needed.
+- **Answers (author, 2026-09-23):** (1) the ORIGINAL last panel is the one pushed to the next page, and the copy keeps the slot immediately after the panel it copies — so duplicating Panel 24 leaves the copy at 24 and pushes the original Panel 24; (2) ＋ Add Panel gets the same recursive reflow, with the new panel going immediately after the panel clicked; (3) the −1 scrub is import-only and must never touch a seed the user typed.
+- **Implementation notes (2026.09.23.9):**
+  - New `reflowInsertOnFullPage(i, panel, img)` plus `sortedPageKeys()` / `pageImagesOf()` / `setPageImagesFor()` / `planReflow()` sit beside `duplicatePanel`; `duplicatePanel` and `addPanel` now share the full-page branch (confirm → reflow). The old `duplicateToNewPage()` was deleted; ＋ Add Page is untouched.
+  - It rebuilds the source page at 24 panels with the new panel at `min(i+1, 24)`, pushes the page's original last panel to position 1 of the next page, and cascades onward while each next page is full, creating a page (max key + 1) when none follows. Everything about a panel — settings, descriptions, seeds, protection and its generated images — travels with it; `currentPage` stays put so the user sees the result where they clicked.
+  - Confirm text: "<Sheet> is full (the 24-panel maximum). Duplicating Panel N will [create a new page and ]reflow X panel(s) onto the following page(s). Continue?" — Ok/Cancel, Cancel only writes a status line.
+  - `scrubMinusOneSeeds()` runs inside `applyImportedSettings()` just before the settings are saved, so it covers both the .json and .zip import paths; `-1`, `'-1'` and `' -1 '` are cleared on the page (project) seed, panel seeds 1..24 and the legacy flat shape. `42` / `92` / blank are untouched.
+  - Verified: [24,10] duplicate → 1 panel moves, next page at 11, no new page; [24,24] duplicate → new page created, 24/24/1; ＋ Add on [24,10] → blank inserted at 7, 1 move; Cancel → nothing changes; duplicating Panel 24 of a full page → the original (with its image) goes to the new page and the copy stays at 24 with no images; a page that is not full → unchanged, no dialog; the author's 3x24 example reproduces exactly (24/24/24/1). Pages 2/3/4 panel 1 rendered the images that had been on the previous page's panel 24, proving images travel.
+  - Known side effect: the editor preview shares the generator's real browser storage, so importing the test fixtures replaced the preview's own project (panelState + library list). The preview was reset to defaults and the author informed; AI-NOTES now carries a "snapshot `comicGen.*` before destructive tests" gotcha.
 
 ### 2026-09-23 — POLISH (2 items): fix the decorative panel-summary separator contrast · move the embedded changelog to GitHub
 - **Status:** ✅ DONE — shipped as **2026.09.23.8** (2026-09-23); both items implemented, verified live, and documented (DEV-NOTES batch + CHANGELOG entry + user manual).
