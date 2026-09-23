@@ -4,6 +4,18 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.1 — 2026-09-23 — Preferences moves to Edit, one-click Library, and a new version numbering scheme
+- **Preferences now lives under 🎨 Edit** instead of the bottom of 📄 File. It still holds the "Ask for a password
+  when hiding the panels" option — and it's where the new look-and-feel preferences (themes, always-visible
+  header, full-screen menus, and so on) will appear.
+- **📚 Library opens straight away.** Clicking 📚 Library now shows your library list immediately — no second click
+  on the "Library" heading to unfold it. 📄 File, 🎨 Edit and ❓ Help still open collapsed so you can see their
+  sections at a glance.
+- **New version numbering: `YYYY.MM.DD.S`** — the date plus that day's release number, restarting at 1 each day
+  (this release is 2026.09.23.1). Nothing about your project changes; it just makes the history easier to follow.
+- Housekeeping: the Library's **⛶ Full Screen** button stays (you asked to keep it), and the standing rules about
+  release numbering/dates now live in the developer notes at the top of `index.html`.
+
 ## 2026.08.16.24 — 2026-09-23 — Edit → 🧩 Open JSON Editor: your whole project as an editable document
 - **New: a full-page JSON editor for your project**, opened from **Edit → 🧩 Open JSON Editor**. It shows the
   entire project — every page and panel, your saved characters/locations, the global art-style keywords, the size
