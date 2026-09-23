@@ -91,6 +91,26 @@ each section).
   written into the index.html dev-notes and AI-NOTES §12. Verified live at 866x604 (File = Project + Page Setup,
   Edit = Art Style / Presets / Keyword List / Project JSON / Reset / Preferences, Library opens with its list
   visible and no second click, zero window errors).
+- **SHIP 2 DONE (2026.09.23.2):** (1)/(5) `.app-header` is now sticky (`position:sticky; top:0; z-index:9000`)
+  with `syncHdrHeight()` publishing its height as `--hdr-h` so `.menu-frame` parks under it; new Preferences
+  toggle `comicGen.hdrAllViews` (`applyHdrAllViews()`) makes the header a fixed strip on the OTHER full-page
+  views too (`body.hdr-all-views`, per answer 1, default OFF). (3) menus open full-screen by DEFAULT via
+  `comicGen.menuFullscreen` (default ON); `syncMenuMode()` moves the real `#menuFrame` into `#menuOverlay`
+  whenever the pref is on and the menu is visible, `applyMenuFullscreenPref(on, section)` is the single setter
+  the prefs checkbox, the header ⛶ button and the Library ⛶ button all use, `updateMenuFullscreenLabels()`
+  reads the PREF (not `isMenuFullscreen()`), and `requestCloseMenuFullscreen()` = `applyMenuVisible(false)` for
+  the overlay's `← Back to page` + Esc. `body.menu-fullscreen .app-header` is `position:fixed; z-index:10005`
+  so the header sits ABOVE the overlay, and overlays get `padding-top: calc(var(--hdr-h) + 14px)`; the old
+  `body.menu-fullscreen .gen-actions { display:none }` was REMOVED so the status line stays visible. (4)
+  ⚡ Generate All / ⏸ Pause / ■ Stop are now `<button class="menu-btn …">` siblings of the four tabs INSIDE
+  `#menuBar` (ids `#menuGenerateBtn` / `#globalPauseBtn` / `#globalStopBtn`); `.menu-btn.menu-action` is a
+  TWO-CLASS `color:#fff` (needed to beat normalize's `button:not([disabled]) { color: inherit }`) and
+  `.menu-stop` is red+white; the new `comicGen.genAlwaysVisible` pref + `placeGenButtons()` move the three into
+  `#hdrGenCtr` in the header strip when the menu is hidden. The Focus view's own row was left untouched
+  (answer 6). All three new prefs (`comicGen.menuFullscreen`, `comicGen.genAlwaysVisible`, `comicGen.hdrAllViews`)
+  are persisted, and included in `buildExportData()` / `applyImportedSettings()` / the JSON editor's
+  `JSON_OPEN_FLAGS` + apply path. Verified live at 866x604 and 390x844 (7 menu buttons, header pinned at
+  top:0 while scrolling, `--hdr-h` 94→181 when the gen buttons move into the header, zero window errors).
 - **NEW AUTHOR DIRECTIVE (2026-09-23):** the AI may pause work mid-task and ask the author for input
   (especially visual checks) whenever it reaches a genuine decision point — logged as its own directive entry
   in the QUEUED section and in the index.html dev-notes.
