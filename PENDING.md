@@ -476,6 +476,17 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 
 ## ✅ DONE — implemented (history, newest first)
 
+### 2026-09-23 — BUG: Save produced no feedback at all; the generator stayed on 2026.09.23.8 (DONE — 2026.09.23.9)
+- **Status:** ✅ DONE (2026.09.23.9). Author, verbatim: "Saved!  Go ahead and re-push." then "It didn't
+  give me any feedback that it was saving, the dot didn't clear, and there were no messages."
+- **Notes:** the root cause was the editor tab's save machinery returning silently (see the ISSUES.md
+  entry of the same date) — the generator was fine, the .9 code was already in the editor, and the pending
+  src file was correctly queued. It was cured by leaving and re-entering edit mode. While hunting it the
+  author confirmed the files-panel dot on `src/user-manual.html`, so the manual was renamed to
+  `src/manual.html` (a fresh name escapes the per-file upload lock) and all index.html references were
+  repointed. The repo was then re-pushed (index.html 583,894 B, main.pjs, src/manual.html); the stale repo
+  `src/user-manual.html` and the one-off `safety/` copy were deleted.
+
 ### 2026-09-23 — FEATURE REQUEST (2 items): recursive panel reflow when duplicating on a full page · scrub `-1` seeds on import
 - **Status:** ✅ DONE — shipped as **2026.09.23.9** (2026-09-23); both items implemented, verified with synthesised import fixtures, and documented (DEV-NOTES batch + CHANGELOG + user manual + in-app Help).
 - **Request 1 — duplicate a panel when the page is full.** Today, duplicating a panel on a page that already has 24 panels offers to start a new page with the copy as its first panel. The author wants that replaced by an automatic reflow:
