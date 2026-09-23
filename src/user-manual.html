@@ -34,7 +34,7 @@
 <body>
 <div class="page">
 <h1>Yet Another Comic Book Page Generator</h1>
-<h3>Design Document — version 2026.08.16.24</h3>
+<h3>Design Document — version 2026.09.23.1</h3>
 <p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
 <hr>
 <h2>1. What it is</h2>
@@ -50,8 +50,8 @@
 <h3>The menu groups</h3>
 <ul>
 <li><strong>📄 File</strong> — Save… / Save as… (writes your project to a file), Export Project (JSON or ZIP), Import Project, set the <strong>Image Count for All Panels</strong>, manage pages (add/delete), and set the <strong>Image Size</strong>.</li>
-<li><strong>📝 Edit</strong> — global keywords (positive/negative), art style + color palette presets, the global seed, the NSFW mode toggle, and <em>Reset to Defaults</em>.</li>
-<li><strong>📚 Library</strong> — manage your own saved <strong>Characters</strong> and <strong>Locations</strong> (name + description), which appear at the top of the panel dropdowns. The <strong>⬆ Import…</strong> button brings saved items in from a project file (<code>.json</code> or <code>.zip</code>): pick which Characters/Locations (and Actions, if any) to import, edit them, and resolve any name clashes. The <strong>⛶ Full Screen</strong> button shows this same Library — the very same live list, so anything you type is saved at once — in a full-screen overlay, which is much roomier on a phone or a small window; it also keeps the Import and Analysis buttons, and you leave it with <strong>← Back to page</strong>, the <strong>⛶</strong>/<strong>⤡</strong> toggle, or <strong>Esc</strong>. The same overlay can show the <em>whole</em> menu (see below). The <strong>📊 Analysis</strong> button opens a full-page matrix of your library items against a page&#39;s panels — a ✅ shows where an item is used, the per-panel description can be edited in the grid, and <strong>＋ Add</strong> drops an unused item into a panel. Its header also edits the project&#39;s <strong>NSFW</strong> state, <strong>default art style</strong>, <strong>default image size</strong>, and <strong>seed</strong>, a <strong>▶ Panel Action Prompt</strong> row across the top (or column down the left after swapping) lets you read and edit each panel&#39;s action prompt right in the grid, and each panel also shows compact <strong>🎨 style</strong> / <strong>📐 size</strong> / <strong>🎲 seed</strong> buttons you can click to change that panel (changes on other pages are saved to that page).</li>
+<li><strong>📝 Edit</strong> — global keywords (positive/negative), art style + color palette presets, the global seed, the NSFW mode toggle, <em>Reset to Defaults</em>, and <strong>⚙ Preferences</strong> (the app-wide options, such as asking for a password when hiding the panels — and, coming soon, themes and menu behaviour).</li>
+<li><strong>📚 Library</strong> — opens straight to your list of saved <strong>Characters</strong> and <strong>Locations</strong> (name + description), which appear at the top of the panel dropdowns. The <strong>⬆ Import…</strong> button brings saved items in from a project file (<code>.json</code> or <code>.zip</code>): pick which Characters/Locations (and Actions, if any) to import, edit them, and resolve any name clashes. The <strong>⛶ Full Screen</strong> button shows this same Library — the very same live list, so anything you type is saved at once — in a full-screen overlay, which is much roomier on a phone or a small window; it also keeps the Import and Analysis buttons, and you leave it with <strong>← Back to page</strong>, the <strong>⛶</strong>/<strong>⤡</strong> toggle, or <strong>Esc</strong>. The same overlay can show the <em>whole</em> menu (see below). The <strong>📊 Analysis</strong> button opens a full-page matrix of your library items against a page&#39;s panels — a ✅ shows where an item is used, the per-panel description can be edited in the grid, and <strong>＋ Add</strong> drops an unused item into a panel. Its header also edits the project&#39;s <strong>NSFW</strong> state, <strong>default art style</strong>, <strong>default image size</strong>, and <strong>seed</strong>, a <strong>▶ Panel Action Prompt</strong> row across the top (or column down the left after swapping) lets you read and edit each panel&#39;s action prompt right in the grid, and each panel also shows compact <strong>🎨 style</strong> / <strong>📐 size</strong> / <strong>🎲 seed</strong> buttons you can click to change that panel (changes on other pages are saved to that page).</li>
 <li><strong>❓ Help</strong> — about, the shortcut guide, and the version history (changelog, fetched live from the project files).</li>
 </ul>
 <h3>Pages</h3>
@@ -187,6 +187,7 @@
 <p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
 <h2>12. Recent changes (changelog highlights)</h2>
 <ul>
+<li><strong>2026.09.23.1</strong> — <strong>Preferences</strong> moved from File to the bottom of <strong>Edit</strong>; clicking <strong>📚 Library</strong> now opens your library list straight away (no second click on the heading); new version numbering, <code>YYYY.MM.DD.S</code>.</li>
 <li><strong>2026.08.16.24</strong> — new <strong>Edit &rarr; 🧩 Open JSON Editor</strong>: your whole project as one editable, validated JSON document, with Find/Replace (Regex + Match case) confined to the editable fields, locked/greyed read-only fields, line numbers, an optional syntax-highlighting toggle, <strong>↩ Undo last apply</strong> plus a 10-step Ctrl+Z buffer, and ‹ Prev / Next › navigation through any problems.</li>
 <li><strong>2026.08.13.9</strong> — Stop button activates during <em>any</em> generation (batch, single panel, or single image) and deactivates when nothing is running; per-image Open/Save/Clear/Protect/Cover buttons returned to their spot directly under each image; Show Menu button became a single <strong>Show/Hide Menus</strong> toggle.</li>
 <li><strong>2026.08.13.8</strong> — ⟳ persistence for Location and Action Prompt (alongside characters), cross-page propagation capped at the next page&#39;s panel 1, and ✕ delete buttons on every character/location/action line.</li>
@@ -204,7 +205,7 @@
 </ul>
 
 <hr>
-<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.08.16.24. Written 2026-08-14 (the JSON-editor section was added 2026-09-23). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
+<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.09.23.1. Written 2026-08-14 (the JSON-editor section was added 2026-09-23). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
 </div>
 </body>
 </html>
