@@ -9,6 +9,37 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — also still embedded in index.html as `#embeddedChangelog`,
 which is what renders Help → About and the version number shown there).
 
+## BATCH 2026.09.23.7 — collapsible per-panel character/location lines; Library/menu tidy-up
+- Author request (2 items, then an expansion): (1) in the Library tab, show everything directly under the
+  top-level Library tab, and make the OTHER menu groups' sections default to CLOSED; (2) a panel's
+  character/location description can go stale relative to the library — the author wanted either a re-select or a
+  "refresh from library" chip. The author then REPLACED item 2's fix with a redesign: make each character/
+  location line COLLAPSIBLE (collapsed = just the name; expanded = the read-only library description + an
+  editable per-panel extra description), stop auto-filling, and let a panel generate from a name alone.
+- `switchMenu(name)` now expands ONLY the library group (`name === 'library'`), so File/Edit/Help open with
+  their sections collapsed in BOTH modes; `openMenuFullscreen()` mirrors that. Full screen no longer
+  force-expands every section — THAT behaviour was the author's "all of the other menu item groups are
+  defaulting to open" (the inline menu already collapsed them; only full screen did not).
+- Library group: the collapsible "Library" header and the `⛶ Full Screen` button (`#libFullscreenBtn`) are
+  GONE. `setupMenuCollapse()` no longer wraps `.library-section` — its `h3` fallback would otherwise latch onto
+  the first `.lib-bucket` ("👤 Characters") heading and turn the bucket title into the collapse toggle. Classic
+  trap: a section with no dedicated header picks up whatever heading it contains.
+- Panel lines are now `.pl-line[data-pl-key][data-collapsed]` > `.pl-line-head` (toggle + select + ⇤ + ✕) +
+  `.pl-line-body` (read-only `.pl-libdesc` + editable `.po-desc`). See AI-NOTES §5.
+- **Long-standing prompt bug found and fixed:** `buildPanelPrompt` pushes `resolveDesc(sel)` (the library
+  description, resolved LIVE from `comicGen.libObjects`) AND `extra.value`, while the select handler used to
+  auto-fill an EMPTY extra box with a copy of that same description — so a saved character/location with a
+  description was sent to the model TWICE. Verified live: a probe character whose desc was `ZZUNIQUEDESC`
+  produced "…, ZZUNIQUEDESC, ZZUNIQUEDESC" in the built prompt. Auto-fill removed; `migratePanelExtraCopies(page)`
+  (called beside `migratePanelExtras(page)` in `restorePanelState`, so it runs per page as it loads) clears a box
+  whose text EXACTLY equals the selected library item's current description. Custom text is left alone.
+- **Location-only panels were being skipped:** `hasContent` was `charParts.length > 0 || locParts.length > 0 || …`
+  but `locParts` was a DEAD variable that was never pushed to, so a description-less location contributed
+  nothing (a description-less CHARACTER did, via charParts). Replaced with `hasLocSelected`. A saved "Holstein
+  cow" with no description — the author's own example — now renders.
+- Verified live: no console/perchance errors; 24 panels x 4 lines, all folded by default; built-in and library
+  descriptions both display read-only; toggling works; no duplication; the migration clears the old copy while
+  keeping custom text; no horizontal overflow at 390px; light and dark themes both legible.
 ## BATCH 2026.09.23.6 — internal docs moved out of index.html into this repo
 - The four internal docs (dev-notes / PENDING / AI-NOTES / ISSUES) no longer ship inside
   index.html; it now carries only a compact "docs live on GitHub" pointer comment at the top.
