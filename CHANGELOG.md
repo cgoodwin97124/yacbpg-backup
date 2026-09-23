@@ -4,6 +4,10 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.5 — 2026-09-23 — Fixed the full-screen menu's "← Back to page" button
+- **Bug fix:** the **← Back to page** button inside the full-screen menu threw "requestCloseMenuFullscreen is not defined" when clicked. The function existed and the Esc shortcut used it correctly, but it had never been published to the page's global scope, so the button's inline handler couldn't see it. It is now exported like its neighbours, so the button (and Esc) closes the full-screen menu normally.
+- I then audited **every** inline button handler in the app for the same class of mistake — 186 handlers in the source, 1,635 handler calls in the live page — and this was the only one.
+
 ## 2026.09.23.4 — 2026-09-23 — Readable buttons in dark mode, a friendlier default color mode, and the Focus button renamed
 - **Dark-mode contrast pass.** The coloured buttons now use slightly deeper fills so their white text is clearly readable — the blues were the worst offender (about 2.7:1) and now sit comfortably above the 4.5:1 guideline. That covers the teal View / JSON-editor / Back-to-page buttons, the blue Add-to-Library / Copy-prompt / Backup / Show-or-Hide-Menus buttons, the green +/Add buttons, and the red Generate / Re-roll / Clear / Stop / Delete / ✕ buttons. Hover shades moved down with the base fills; the hues, the layout and the overall look are unchanged. Light mode is untouched.
 - **Fixed a real bug in dark mode:** the tiny per-panel seed chips — ⇤ copy-previous-seed (blue) and ✕ clear-seed (red) — were being drawn as **amber text on red/blue** (about 2.2:1) because they inherited the panel's accent colour from the platform stylesheet. They are now white, like every other coloured chip, and the ⇅ Move chip (the same problem, amber-on-grey) is fixed too. Light mode already had these fixes; dark mode had been missed.
