@@ -4,6 +4,10 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.14 — 2026-09-23 — A floating ＋ Add Page button in the bottom-right corner
+- **A new ＋ Add Page button floats in the bottom-right corner of the screen.** It creates a new empty page (4 panels) and switches to it — exactly what 📄 File → Page Setup → ＋ Add Page does — so you never have to open the menu just to start a page.
+- It is drawn in the same green style as **▧ Hide Panels** and the page navigator bar (dark fill, bright-green border and text), mirrored into the corner opposite ▧ Hide Panels.
+- **It steps out of its own way:** whenever the panel-selection bar or the page navigator would sit on top of it (as they do on a phone), the button rises just above them and settles back into the corner when they are gone.
 ## 2026.09.23.13 — 2026-09-23 — Copy, Cut, and Paste whole panels, images and all
 - **📋 Copy and ✂ Cut join the selection bar.** With panels selected, the bar at the bottom of the screen now shows **📋 Copy**, **✂ Cut** and **✕ Clear** beside the count. **Select all** moved to **Edit → Panel Selection**, which now carries Select all panels / 📋 Copy / ✂ Cut / ✕ Clear selection.
 - **📋 Paste appears on every panel header while the clipboard holds something.** Pasting inserts the copied panels *before* the panel you paste on — contiguously, keeping each panel’s title, characters, modifiers, location, action, seed, image count, style, size, protection and prompt override **and its generated images** — then reflows anything that no longer fits onto the following page, creating a new page at the end if needed (it asks first, like Duplicate).
