@@ -434,3 +434,69 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 - When a task changes code: finish with a fresh `browser_refresh`/`browser_eval`, confirm no
   `syntaxErrors`/`perchanceErrors`, then update THIS file, the index.html dev-note block, and
   (if user-visible) a `src/CHANGELOG.md` entry.
+- **OVERLAY MARKUP GOTCHA (2026-09-23):** the full-page overlays must each be a direct child of
+  `#output-container`. A single missing `</div>` nests the following overlays inside an earlier `hidden`
+  wrapper, and `hidden` on an ancestor hides the whole subtree regardless of the child's `display` — the
+  overlay's JS keeps working while it is completely invisible (`getBoundingClientRect()` 0×0, `offsetParent`
+  null, a `vision`/snapshot capture of it returns an empty ~6-byte data URL). After ANY overlay markup edit
+  verify `document.getElementById('jsonEditorOverlay').parentElement.id === 'output-container'` and a non-zero
+  rect. This is exactly what hid the JSON editor + GitHub dialog until 2026.08.16.24.
+
+## 13. JSON editor (`#jsonEditorOverlay`, added 2026.08.16.24)
+
+- **Purpose:** Edit → 🧩 Open JSON Editor shows the WHOLE project as one formatted JSON document, so the author
+  can bulk-edit values (or hand the doc to an external editor) without touching the UI. Opened by
+  `openJsonEditor()`, closed by `closeJsonEditor()`; all `jsonEditor*` functions are exported on `window`.
+- **Document shape:** `buildExportData(true)` minus `exportedAt` =
+  `{version, settings:<collectPanelState()>, preset, libObjects, layoutMode, menuVisible, panelsVisible,
+  activeMenu}`. `settings` is the live `comicGen.panelState` shape (see §3). Generated images and
+  `panelPromptOverrides` are NOT in it (session-only), and GitHub creds are never included. On open the text is
+  re-serialised from the live state, so the editor is always opened from the truth; `jsonBaselineDoc` is that
+  parsed snapshot and every comparison (dirty check, change count, validation) is against it.
+- **Editing rules:** `jsonFieldClass(path)` returns `'edit'` or `'lock'` per leaf. Editable: globals
+  (projectName, imageSize*, guidanceScale, previewDelay, previewOn, globalPos, globalNeg, nsfw), `preset.*`,
+  page fields (name, summary, panelCountSel, panelCountCustom, seed), panel title/seed/loc/locExtra/action/
+  style/imgCount/chars[].sel|extra/extras[].type|sel|desc/protectSlots[] and `promptOverride.pos|neg`, library
+  `type|name|desc`. Locked (greyed at 0.38 opacity, edits reported as "is read-only — change it from the app,
+  not here."): everything else — the two `version`s, `settings.currentPage`, library entries' non-listed keys,
+  array/object STRUCTURE (adding, removing or reordering entries is rejected with a readable message).
+  Select-backed fields are also checked against the live `<select>` options (`jsonOptionProblem`).
+- **Parser:** `jsonParse` is a hand-written position-aware recursive-descent parser (no `JSON.parse`) because the
+  editor needs character ranges per token/value/key + a map of which offsets sit inside string escapes, so a
+  later edit can be clamped to a valid string boundary. It returns `{error, doc, scalars, valRanges, keyRanges}`.
+- **Render technique:** `.json-gutter` (line numbers) + `.json-mirror` (`<pre>`, coloured spans + mark overlays)
+  sit under a fully TRANSPARENT `.json-area` textarea (transparent `color`, `caret-color:#ffcc00`) at the same
+  13px/20px monospace metrics; `jsonEditorInput()` re-renders the mirror, `jsonEditorSyncScroll()` copies
+  `scrollTop` to mirror + gutter. Marks: `.json-locked`, `.json-match`/`.json-match-cur`, `.json-problem`/
+  `.json-problem-cur`. `jsonMarksHtml` is an O(N) boundary sweep over sorted mark edges (naive per-char
+  intersection took 1.5s on an 83KB doc; the sweep does it in ~36ms) and syntax colouring is skipped entirely
+  above `JSON_SYNTAX_MAX_CHARS` (220,000 chars) via the Syntax highlighting checkbox (locks/matches/problems
+  still render; the hint line explains why).
+- **Find/Replace:** only iterates `jsonEditStrings` (scalars with `kind === 'string'` AND
+  `jsonFieldClass(path) === 'edit'`), so keys, locked values and `null`s can never be matched or replaced. Plain
+  or RegExp (`jsonRegex`), `jsonMatchCase` toggle, `jsonEditorFindNext(±1)` wraps and selects the match in the
+  textarea, `jsonEditorReplaceOne()` inserts a `jsonEscapeString()`-escaped replacement, and
+  `jsonEditorReplaceAll()` confirms first when there is more than one match (naming the count) then replaces
+  right-to-left so offsets stay valid.
+- **Validation → Apply:** `jsonValidateNow()` is the single source of truth — it parses, walks the doc against
+  `jsonBaselineDoc`, writes `#jsonProblemEl` ("Invalid JSON — see the highlighted spot." / "N problem(s) — step
+  through them with ‹ Prev / Next ›." / "Valid — N field(s) changed, ready to apply." / "Valid — no changes
+  yet."), fills `jsonProblems` (each `{start, end, message}`) and disables ✔ Apply when there are problems or
+  nothing changed. It is called from a debounced (220ms) `jsonEditorInput()` — so in tests wait ~300ms after
+  setting `jsonArea.value` + calling `jsonEditorInput()` before reading the status. `jsonEditorProblem(±1)`
+  cycles the problems and selects the offending range.
+- **Apply / Reload / Undo:** every programmatic change goes through `jsonBeforeProgrammaticChange()` /
+  `jsonFinishProgrammaticChange()` which push a `{text, sel}` frame onto the undo stack (`JSON_UNDO_MAX = 10`,
+  Ctrl+Z / Ctrl+Y) and coalesce typing. `jsonEditorApply()` validates, then pushes the pre-apply state
+  (`jsonApplySnapshot` = panelState + libObjects + preset), writes `savePanelStateShape()` + `saveLibraryObjects()`
+  + preset, replays the app's render path (`buildPanelGrid`, `renderLibrary`, `updatePanelSelects`,
+  `updatePanelVisibility`, `renderKeywordChips`, `resetControls`, layout/menu flags, `populatePageSel`,
+  `updateDeletePageBtn`, `updateProjectNameDisplay`, `schedulePanelSave`), and DELIBERATELY does not wipe
+  `panelImages`/`pageSession`/`panelPromptOverrides` (unlike `applyImportedSettings`). `settings.currentPage` is
+  forced back to the live page on apply. `jsonEditorReload()` rebuilds from the live project (discarding edits,
+  with a confirm when dirty); `jsonEditorUndoApply()` restores `jsonApplySnapshot` and re-renders.
+- **Close:** Esc / ← Back to page / `closeJsonEditor()`; confirms when the document is dirty. The overlay's
+  keydown handler is attached in `openJsonEditor()` and removed on close.
+- **Boot guard:** `panelStateRestored` (declared next to `savePanelState()`) starts false and is set true as the
+  last statement of `restorePanelState()`; `savePanelState()` returns early while it is false, so a load-time JS
+  error can no longer let the debounced save write a defaulted `collectPanelState()` over page 1.
