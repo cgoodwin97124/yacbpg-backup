@@ -680,7 +680,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   srcdoc page are intentionally NOT themed (a dark tooltip is conventional; CSS variables do not cross document
   boundaries).
 
-## 15. Panel multi-selection (added 2026.09.23.11 — phase 1 of 3)
+## 15. Panel multi-selection (added 2026.09.23.11; phases 2 and 3 shipped 2026.09.23.12 / 2026.09.23.13)
 
 SESSION-ONLY. `panelSelection` (a `Set` of 1-based panel numbers) + `selectionAnchor` (the last
 individually-ticked panel, used for Shift-ranges). Nothing about it is collected into
@@ -738,10 +738,20 @@ individually-ticked panel, used for Shift-ranges). Nothing about it is collected
   the page is back to its pre-delete count or the following pages run out; a page emptied by that pull is
   deleted after a native `confirm()` that the dialog already warned about. Selecting every panel on a page
   deletes the page instead (with the strong project-reset confirm when it is the only page).
-- **Planned (P3):** Copy / Cut / Paste — a selection bar (Copy / Cut / Clear + "N selected") shown only
-  while something is selected, plus a Paste chip on each panel header shown only while the buffer is
-  non-empty; Cut is consumed by Paste, Copy persists until replaced, and Paste inserts the group
-  contiguously *before* the clicked panel using the full-page reflow. See `PENDING.md`.
+- **Copy / Cut / Paste (2026.09.23.13 — phase 3; the feature is now complete):** `panelClipboard` (an array
+  of `{panel, img}` deep snapshots, plus `panelClipboardCut`) lives in memory only — like the selection it is
+  never collected, exported or saved. `copySelectionToClipboard(mode)` fills it from the current DOM state,
+  `panelCopyAction()` / `panelCutAction()` back the `#selectionBar` buttons, and `panelPasteAction(i)`
+  (the `📋 Paste` chip, `#panel-paste-btn-N`, second child of `.panel-header-row`, kept in sync by
+  `updatePasteUI()`) inserts the buffer *before* panel `i` by rebuilding `entries` and calling
+  `cascadePageSequence` — so the block is contiguous and the overflow cascades exactly like Duplicate, with
+  one `batchReflowPlan(n)` confirm on a full page. `img` is the source panel’s `panelImages[i]` slot array, so
+  a paste keeps the generated images (Duplicate passes `img: null` instead). Cut removes the selection with
+  `performBatchDelete(false)` (the dialog-free core of Delete Only); when every panel of the page is selected
+  it routes through `showChoiceDialog` instead — multi-page `deletePage(true)`, single page
+  `emptyPageAfterCut()` — and Cancel keeps the panels in the clipboard. A cut is cleared by the first
+  successful Paste; a copy survives. `cascadePageSequence` → `loadCurrentPage` already clears the selection,
+  so Paste does not re-select (approved decision 5: every batch op clears, except Move).
 
 ## DOC LAYOUT (2026.09.23.6)
 
