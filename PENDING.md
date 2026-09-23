@@ -15,159 +15,6 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-### 2026-09-23 — FEATURE REQUEST (2 items): Library-tab sections flat/open while the other menu groups default collapsed · COLLAPSIBLE per-panel Character/Location lines (read-only library description + editable per-panel text)
-- **Status:** IN PROGRESS — pre-implementation, round 2. Logged before any work, per the 2026-08-13 rule.
-  RECON round 1 done; the author answered the Item-2 questions and EXPANDED Item 2 into a redesign
-  (collapsible Character/Location lines). Re-running recon + questions for the expanded request, per the
-  2026-09-20 standing directive and the author's "Go ahead and rerun the pre-implementation tasks given this
-  new/expanded request". **Item 1's three questions are STILL UNANSWERED** — re-asked below.
-- **Request (author, 2026-09-23, verbatim):**
-  ```
-  One minor thing I've noticed and one minor thing that's been bothering me for a while:
-
-  Minor thing I just noticed:
-  * Under the Library menu, I'd like to have everything under the Library group just live directly under the
-    top level Library menu tab.  All of the other menu item groups are defaulting to open; I'd like those
-    defaulting to closed.
-
-  Minor thing that's been bothering me a while:
-  * Under each panel's Panel Library, sometimes a character or location description is stale; if I want to
-    regenerate it from the app's library, at the moment I need to delete it from the Panel Library and then
-    reselect it.  What I'd like is to either just be able to reselect it, or to have a chip next to it that
-    regenerates it from the app's library.
-
-  Go ahead and perform the usual pre-implementation procedures.
-  ```
-- **AUTHOR'S ANSWERS (2026-09-23, verbatim):**
-  ```
-  1. Your rec.  Ask before overwrite.
-  2. Show only when panel text differs from library text.  Though now that I'm thinking about it... see below.
-  3. At the moment no, but the below request might make this moot.
-  4. Correct.
-
-  I'd like to change the panel behavior slightly.  Each character and location line should be collapsible, and
-  when collapsed (the default behavior) only shows the name.  Opening up the line shows the library's
-  description (not editable from here) and the per-panel text for that item (editable from here).  I think this
-  would eliminate the need to refresh, because we'd be seeing the library's description.  The panel's prompt for
-  the character or location would pull both the library's description and the panel description.  We can allow
-  the panel to generate if there's at least a character name, even without a library description, panel
-  description, location name or description, or action prompt; if we do that, it's the image generator's best
-  guess what we get, but that's acceptable to me.  (For example, we could have a character in the library called
-  "Holstein cow" with no description; selecting it would of course have no description in the "library
-  description" space, and if we leave the per-panel text, location, and action prompts blank we'll get the
-  generator's idea of what that represents. Which IMO is acceptable and desired behavior.)
-
-  Go ahead and rerun the pre-implementation tasks given this new/expanded request.
-  ```
-  → Answers 1–3 (the ↻ refresh chip, "ask before overwrite", and the staleness flag) are SUPERSEDED by the
-    expanded design — with the library description always shown AND always fed into the prompt, there is nothing
-    left to "refresh". Answer 4 (Characters + Locations only) stands.
-- **RECON FINDINGS (2026-09-23):** see below.
-- **QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet):** see below.
-
-#### RECON — item 1 (Library group vs. the other menu groups)
-- The menu is four `.menu-group` blocks — `menuGroup-file|edit|library|help`. `setupMenuCollapse()`
-  (`index.html:6147`) wraps every `.config-panel` / `.library-section` / `.help-panel` inside a group into a
-  collapsible `.menu-collapse-body`; its header becomes `.menu-collapse-toggle` (▾ open / ▸ closed) and
-  `data-collapsed="1"` hides the body (`index.html:166`).
-- `switchMenu(name)` (`index.html:6179`) decides the default when a group is OPENED:
-  `if (document.body.classList.contains('menu-fullscreen') || name === 'library') expandGroupPanels(group); else collapseGroupPanels(group);`
-- **NORMAL (non-fullscreen) menu — verified live 2026-09-23:** Library's one section is EXPANDED
-  (`Library=0`); File (`Project=1, Page Setup=1`), Edit (6 sections `=1`) and Help (3 sections `=1`) all
-  default COLLAPSED. So in the normal menu only Library is open already.
-- **FULL-SCREEN menu — verified live 2026-09-23:** opening any group expands ALL of its sections
-  (`Project=0`, `Page Setup=0`, Edit all `=0`, Library `=0`). This is the state that matches the author's
-  "all of the other menu item groups are defaulting to open" — i.e. the author is using full-screen menus.
-- Library group markup (`index.html:806`): ONE `.library-section` titled "Library" holding a toolbar
-  (`⬆ Import…`, `📊 Analysis`, `⛶ Full Screen`) + `#libObjects` (the 👤 Characters / 📍 Locations buckets).
-  Note the Library still carries its own `⛶ Full Screen` button (the author once called it redundant).
-
-#### RECON — item 2 (stale per-panel character/location descriptions)
-- Library items = `comicGen.libObjects`, an array of `{ id, type: 'Character'|'Location'|'Action', name, desc }`;
-  `desc` is the reusable library description.
-- Each panel's 📖 Panel Library renders three Character rows + one Location row + the Action box. A Character
-  row (`charRowHtml`, `index.html:3003`) = `<select id="panel-char-select-{i}-{s}">` +
-  `<textarea id="panel-char-extra-{i}-{s}" placeholder="Freeform description (library desc auto-fills)">` +
-  a `⇤` copy-from-previous-panel chip + a `✕` remove chip. The Location row (`locRowHtml`, `index.html:3012`)
-  is identical with `panel-loc-select-{i}` / `panel-loc-extra-{i}`.
-- Library choices have value `lib:char:<id>` / `lib:loc:<id>`; the special `none` option is
-  "No Character Selected".
-- **The bug's mechanism** — the delegated change handler (`index.html:4599`–`4618`) auto-fills the panel
-  textarea from the library `desc` ONLY when the textarea is EMPTY:
-  `if (extra && !extra.value) { … extra.value = le.desc }`. So once the box holds any text (auto-filled once,
-  or hand-typed), it never refreshes; and re-picking the SAME option fires no `change` event at all — which is
-  exactly why the author has to delete the row and re-select it.
-- The panel description IS what feeds the image prompt (`buildPanelPrompt` reads `panel-char-extra-*` /
-  `panel-loc-extra-*`, `index.html:4532`/`4538`), so a stale box silently produces a stale prompt.
-
-#### RECON — item 2, EXPANDED design (2026-09-23, round 2: collapsible lines + read-only library text)
-- **KEY DISCOVERY — the prompt ALREADY pulls both texts.** `buildPanelPrompt(i)` (`index.html:4529`) does
-  `charParts.push(resolveDesc(sel.value, charMap)); charParts.push(extra.value);`, and `resolveDesc()`
-  (`index.html:4075`) resolves a `lib:char:<id>` selection LIVE from `comicGen.libObjects`. So the library
-  description AND the per-panel text are both already in the prompt — no prompt-building change is needed for
-  that part of the request. Locations are the same (`locDesc = resolveDesc(locKey, locMap)`, then `locExtra`).
-- **KEY DISCOVERY — the description is currently DUPLICATED.** The select-change handler (`handleGridInput`,
-  `index.html:4580`) auto-fills an EMPTY panel box with a full copy of the library description
-  (`if (extra && !extra.value) { … extra.value = le.desc }`). Verified live 2026-09-23: selecting a library
-  Character whose desc is `ZZUNIQUEDESC` into an empty slot leaves the box holding `ZZUNIQUEDESC` AND produces
-  `…, ZZUNIQUEDESC, ZZUNIQUEDESC` in the built prompt — the text appears TWICE. So today the box is a *copy* of
-  the library text, not an addition to it.
-- **KEY DISCOVERY — "generate with just a name" already works for Characters but NOT for Locations.**
-  Verified live 2026-09-23: a selected library Character with NO description → `hasContent === true` (panel
-  generates); a selected library Location with NO description → `hasContent === false` (panel SKIPPED).
-  Cause: `hasContent = charParts.length > 0 || locParts.length > 0 || …` (`index.html:4552`) and `charParts`
-  gets two pushes per selected character (so any selected character counts), while `locParts` is declared and
-  NEVER pushed to (dead variable, `index.html:4537`) — a selected location only contributes via `locDesc`, so
-  a description-less location contributes nothing.
-- **No data-shape change is required.** Panel state stores `chars:[{sel,extra}]` plus `loc`/`locExtra`
-  (`index.html:3308`, `3315`–`3321`; JSON-editor path rules `index.html:7276`); the library description is never
-  stored per panel — it is resolved live. So the redesign needs no new persisted fields, only presentation
-  (collapsible lines) plus removal of the auto-fill.
-- **Reusable mechanics found:** a row is `.po-row` (`display:grid; grid-template-columns:1fr 1.8fr 28px 32px`,
-  `index.html:396`) built by `charRowHtml`/`locRowHtml` (`index.html:3003`/`3012`); the panel accordions use the
-  `.panel-acc` + `data-collapsed="1"` + `togglePanelAcc()` pattern (`index.html:5174`) with CSS-gated bodies.
-  Rows are rebuilt by `renderPanelObjects(i, mode)` and the dropdowns by `updatePanelSelects()`, so any
-  collapsed/expanded state must live in a JS map keyed by slot to survive those re-renders.
-- **Migration concern:** because of the auto-fill, existing projects' saved `extra` values are (at least
-  partially) copies of the library description. Once the auto-fill stops, those copies stay in the box and keep
-  double-feeding the prompt. Needs an explicit decision (question 3 below).
-
-#### QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet)
-**Item 1 — Library group / menu defaults (re-asked — STILL UNANSWERED):**
-1. Just to confirm the trigger: you're seeing this in the FULL-SCREEN menu, right? In the normal
-   (non-fullscreen) menu File/Edit/Help already open collapsed and only Library is open — it's full-screen mode
-   that force-expands every section of the group you open. Plan: make File/Edit/Help default to COLLAPSED in
-   full-screen too, while Library stays expanded. OK?
-2. "everything under the Library group just live directly under the top level Library menu tab" — should I
-   REMOVE the collapsible "Library" header entirely (so the ⬆ Import… / 📊 Analysis toolbar and the
-   Characters/Locations lists are always visible, with no ▾/▸ toggle), or just keep the section
-   expanded-by-default as it is now (still clickable to collapse)? I read it as the former, but it changes the
-   Library header, so I want to confirm.
-3. While I'm in there: the Library still has its own "⛶ Full Screen" button (you called it redundant earlier).
-   Drop it now, or leave it?
-
-**Item 2 — EXPANDED design (answering these supersedes the earlier Item-2 Q1–Q3):**
-1. Collapsed line = the Character/Location **dropdown itself** (so the visible "name" stays the picker), plus the
-   `⇤` copy-from-previous-panel and `✕` remove chips; expanding reveals, below it, the read-only library
-   description and the editable per-panel text. Is that the right reading of "when collapsed only shows the
-   name", or do you want the collapsed line to be a plain name LABEL with a separate control for changing the
-   selection?
-2. Confirm I should STOP the auto-fill (so the per-panel box becomes a genuine addition, never a copy of the
-   library text) and drop the `↻` refresh chip entirely — your answers 1–3 then become moot, as you suspected.
-3. **Migration:** existing projects' saved per-panel boxes already contain the library text copied by the old
-   auto-fill. Left alone, they'd keep double-feeding the prompt. I propose a one-time cleanup on load: for a
-   slot whose selection is a `lib:` item and whose per-panel text EXACTLY equals that library item's current
-   description, clear the box (safe + idempotent; anything you actually edited is kept). OK — or would you
-   rather I leave existing boxes untouched and let you clear them by hand?
-4. Requirement "generate with at least a name": Characters already qualify (verified); Locations do NOT
-   (verified). I'll make a selected Character **or Location** name count as content even with no descriptions
-   and no action — i.e. a location-name-only panel generates too. Agreed? (Built-in presets like
-   "Hero (Cyber-Ninja)", which carry their own description, are unchanged.)
-5. Should each line's expanded/collapsed state survive a reload (saved with the panel), or just for the session
-   (every load starts fully collapsed, like the panel accordions)? Default I'd pick: session-only.
-6. When expanded on a BUILT-IN (non-`lib:`) choice such as "Hero (Cyber-Ninja)", I'd show that preset's
-   description from the generator's own lists as the read-only text. Fine?
-
 ### 2026-09-23 — FEATURE REQUEST (8 items): always-visible header · Preferences under Edit · always-fullscreen menus · Generate All/Pause/Stop as top-level menu items · theme & color scheme · one-click Library · drop the Library's Full Screen button
 - **Status:** IN PROGRESS — author greenlit 2026-09-23. **Quick wins shipped as 2026.09.23.1**
   (Preferences -> Edit, one-click Library, new versioning scheme). **Header / menu / theme ship next as
@@ -627,6 +474,169 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-09-23 — FEATURE REQUEST (2 items): Library-tab sections flat/open while the other menu groups default collapsed · COLLAPSIBLE per-panel Character/Location lines (read-only library description + editable per-panel text)
+- **Status:** DONE 2026-09-23 — shipped as **2026.09.23.7**.
+- **AUTHOR'S ANSWERS (round 2, 2026-09-23, verbatim):** "1. Your guess is correct. Collapsed line is the
+  dropdown itself with the chips, and expanding reveals the text. 2. Confirmed. 3. Your rec/guess is correct: if
+  the box text exactly equals the current description, clear it. 4. Agreed. 5. Session-only. 6. Yes, this is
+  fine. / Menu groups: 1. Confirmed. 2. Let's remove the collapsible header entirely and have the toolbar and
+  lists always visible. 3. We can drop it. / Go ahead and implement!"
+- **IMPLEMENTED (2026.09.23.7):** collapsible character/location lines (folded = name only; open = read-only
+  library description + editable per-panel extra description; fold state is session-only); the auto-fill was
+  removed; `migratePanelExtraCopies` clears a box that exactly duplicated its library description (custom text
+  kept); a location name alone now counts as content; the Library group is flat (no collapsible header) and lost
+  its `⛶ Full Screen` button; File/Edit/Help now default to collapsed sections in full-screen mode too. See
+  changelog 2026.09.23.7, DEV-NOTES BATCH 2026.09.23.7 and AI-NOTES §5/§8.
+- **NOTE:** the Library's own `⛶ Full Screen` button was ALSO item 8 of the 2026-09-23 eight-item request
+  ("drop the Library's Full Screen button") — now done, here.
+- **Request (author, 2026-09-23, verbatim):**
+  ```
+  One minor thing I've noticed and one minor thing that's been bothering me for a while:
+
+  Minor thing I just noticed:
+  * Under the Library menu, I'd like to have everything under the Library group just live directly under the
+    top level Library menu tab.  All of the other menu item groups are defaulting to open; I'd like those
+    defaulting to closed.
+
+  Minor thing that's been bothering me a while:
+  * Under each panel's Panel Library, sometimes a character or location description is stale; if I want to
+    regenerate it from the app's library, at the moment I need to delete it from the Panel Library and then
+    reselect it.  What I'd like is to either just be able to reselect it, or to have a chip next to it that
+    regenerates it from the app's library.
+
+  Go ahead and perform the usual pre-implementation procedures.
+  ```
+- **AUTHOR'S ANSWERS (2026-09-23, verbatim):**
+  ```
+  1. Your rec.  Ask before overwrite.
+  2. Show only when panel text differs from library text.  Though now that I'm thinking about it... see below.
+  3. At the moment no, but the below request might make this moot.
+  4. Correct.
+
+  I'd like to change the panel behavior slightly.  Each character and location line should be collapsible, and
+  when collapsed (the default behavior) only shows the name.  Opening up the line shows the library's
+  description (not editable from here) and the per-panel text for that item (editable from here).  I think this
+  would eliminate the need to refresh, because we'd be seeing the library's description.  The panel's prompt for
+  the character or location would pull both the library's description and the panel description.  We can allow
+  the panel to generate if there's at least a character name, even without a library description, panel
+  description, location name or description, or action prompt; if we do that, it's the image generator's best
+  guess what we get, but that's acceptable to me.  (For example, we could have a character in the library called
+  "Holstein cow" with no description; selecting it would of course have no description in the "library
+  description" space, and if we leave the per-panel text, location, and action prompts blank we'll get the
+  generator's idea of what that represents. Which IMO is acceptable and desired behavior.)
+
+  Go ahead and rerun the pre-implementation tasks given this new/expanded request.
+  ```
+  → Answers 1–3 (the ↻ refresh chip, "ask before overwrite", and the staleness flag) are SUPERSEDED by the
+    expanded design — with the library description always shown AND always fed into the prompt, there is nothing
+    left to "refresh". Answer 4 (Characters + Locations only) stands.
+- **RECON FINDINGS (2026-09-23):** see below.
+- **QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet):** see below.
+
+#### RECON — item 1 (Library group vs. the other menu groups)
+- The menu is four `.menu-group` blocks — `menuGroup-file|edit|library|help`. `setupMenuCollapse()`
+  (`index.html:6147`) wraps every `.config-panel` / `.library-section` / `.help-panel` inside a group into a
+  collapsible `.menu-collapse-body`; its header becomes `.menu-collapse-toggle` (▾ open / ▸ closed) and
+  `data-collapsed="1"` hides the body (`index.html:166`).
+- `switchMenu(name)` (`index.html:6179`) decides the default when a group is OPENED:
+  `if (document.body.classList.contains('menu-fullscreen') || name === 'library') expandGroupPanels(group); else collapseGroupPanels(group);`
+- **NORMAL (non-fullscreen) menu — verified live 2026-09-23:** Library's one section is EXPANDED
+  (`Library=0`); File (`Project=1, Page Setup=1`), Edit (6 sections `=1`) and Help (3 sections `=1`) all
+  default COLLAPSED. So in the normal menu only Library is open already.
+- **FULL-SCREEN menu — verified live 2026-09-23:** opening any group expands ALL of its sections
+  (`Project=0`, `Page Setup=0`, Edit all `=0`, Library `=0`). This is the state that matches the author's
+  "all of the other menu item groups are defaulting to open" — i.e. the author is using full-screen menus.
+- Library group markup (`index.html:806`): ONE `.library-section` titled "Library" holding a toolbar
+  (`⬆ Import…`, `📊 Analysis`, `⛶ Full Screen`) + `#libObjects` (the 👤 Characters / 📍 Locations buckets).
+  Note the Library still carries its own `⛶ Full Screen` button (the author once called it redundant).
+
+#### RECON — item 2 (stale per-panel character/location descriptions)
+- Library items = `comicGen.libObjects`, an array of `{ id, type: 'Character'|'Location'|'Action', name, desc }`;
+  `desc` is the reusable library description.
+- Each panel's 📖 Panel Library renders three Character rows + one Location row + the Action box. A Character
+  row (`charRowHtml`, `index.html:3003`) = `<select id="panel-char-select-{i}-{s}">` +
+  `<textarea id="panel-char-extra-{i}-{s}" placeholder="Freeform description (library desc auto-fills)">` +
+  a `⇤` copy-from-previous-panel chip + a `✕` remove chip. The Location row (`locRowHtml`, `index.html:3012`)
+  is identical with `panel-loc-select-{i}` / `panel-loc-extra-{i}`.
+- Library choices have value `lib:char:<id>` / `lib:loc:<id>`; the special `none` option is
+  "No Character Selected".
+- **The bug's mechanism** — the delegated change handler (`index.html:4599`–`4618`) auto-fills the panel
+  textarea from the library `desc` ONLY when the textarea is EMPTY:
+  `if (extra && !extra.value) { … extra.value = le.desc }`. So once the box holds any text (auto-filled once,
+  or hand-typed), it never refreshes; and re-picking the SAME option fires no `change` event at all — which is
+  exactly why the author has to delete the row and re-select it.
+- The panel description IS what feeds the image prompt (`buildPanelPrompt` reads `panel-char-extra-*` /
+  `panel-loc-extra-*`, `index.html:4532`/`4538`), so a stale box silently produces a stale prompt.
+
+#### RECON — item 2, EXPANDED design (2026-09-23, round 2: collapsible lines + read-only library text)
+- **KEY DISCOVERY — the prompt ALREADY pulls both texts.** `buildPanelPrompt(i)` (`index.html:4529`) does
+  `charParts.push(resolveDesc(sel.value, charMap)); charParts.push(extra.value);`, and `resolveDesc()`
+  (`index.html:4075`) resolves a `lib:char:<id>` selection LIVE from `comicGen.libObjects`. So the library
+  description AND the per-panel text are both already in the prompt — no prompt-building change is needed for
+  that part of the request. Locations are the same (`locDesc = resolveDesc(locKey, locMap)`, then `locExtra`).
+- **KEY DISCOVERY — the description is currently DUPLICATED.** The select-change handler (`handleGridInput`,
+  `index.html:4580`) auto-fills an EMPTY panel box with a full copy of the library description
+  (`if (extra && !extra.value) { … extra.value = le.desc }`). Verified live 2026-09-23: selecting a library
+  Character whose desc is `ZZUNIQUEDESC` into an empty slot leaves the box holding `ZZUNIQUEDESC` AND produces
+  `…, ZZUNIQUEDESC, ZZUNIQUEDESC` in the built prompt — the text appears TWICE. So today the box is a *copy* of
+  the library text, not an addition to it.
+- **KEY DISCOVERY — "generate with just a name" already works for Characters but NOT for Locations.**
+  Verified live 2026-09-23: a selected library Character with NO description → `hasContent === true` (panel
+  generates); a selected library Location with NO description → `hasContent === false` (panel SKIPPED).
+  Cause: `hasContent = charParts.length > 0 || locParts.length > 0 || …` (`index.html:4552`) and `charParts`
+  gets two pushes per selected character (so any selected character counts), while `locParts` is declared and
+  NEVER pushed to (dead variable, `index.html:4537`) — a selected location only contributes via `locDesc`, so
+  a description-less location contributes nothing.
+- **No data-shape change is required.** Panel state stores `chars:[{sel,extra}]` plus `loc`/`locExtra`
+  (`index.html:3308`, `3315`–`3321`; JSON-editor path rules `index.html:7276`); the library description is never
+  stored per panel — it is resolved live. So the redesign needs no new persisted fields, only presentation
+  (collapsible lines) plus removal of the auto-fill.
+- **Reusable mechanics found:** a row is `.po-row` (`display:grid; grid-template-columns:1fr 1.8fr 28px 32px`,
+  `index.html:396`) built by `charRowHtml`/`locRowHtml` (`index.html:3003`/`3012`); the panel accordions use the
+  `.panel-acc` + `data-collapsed="1"` + `togglePanelAcc()` pattern (`index.html:5174`) with CSS-gated bodies.
+  Rows are rebuilt by `renderPanelObjects(i, mode)` and the dropdowns by `updatePanelSelects()`, so any
+  collapsed/expanded state must live in a JS map keyed by slot to survive those re-renders.
+- **Migration concern:** because of the auto-fill, existing projects' saved `extra` values are (at least
+  partially) copies of the library description. Once the auto-fill stops, those copies stay in the box and keep
+  double-feeding the prompt. Needs an explicit decision (question 3 below).
+
+#### QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet)
+**Item 1 — Library group / menu defaults (re-asked — STILL UNANSWERED):**
+1. Just to confirm the trigger: you're seeing this in the FULL-SCREEN menu, right? In the normal
+   (non-fullscreen) menu File/Edit/Help already open collapsed and only Library is open — it's full-screen mode
+   that force-expands every section of the group you open. Plan: make File/Edit/Help default to COLLAPSED in
+   full-screen too, while Library stays expanded. OK?
+2. "everything under the Library group just live directly under the top level Library menu tab" — should I
+   REMOVE the collapsible "Library" header entirely (so the ⬆ Import… / 📊 Analysis toolbar and the
+   Characters/Locations lists are always visible, with no ▾/▸ toggle), or just keep the section
+   expanded-by-default as it is now (still clickable to collapse)? I read it as the former, but it changes the
+   Library header, so I want to confirm.
+3. While I'm in there: the Library still has its own "⛶ Full Screen" button (you called it redundant earlier).
+   Drop it now, or leave it?
+
+**Item 2 — EXPANDED design (answering these supersedes the earlier Item-2 Q1–Q3):**
+1. Collapsed line = the Character/Location **dropdown itself** (so the visible "name" stays the picker), plus the
+   `⇤` copy-from-previous-panel and `✕` remove chips; expanding reveals, below it, the read-only library
+   description and the editable per-panel text. Is that the right reading of "when collapsed only shows the
+   name", or do you want the collapsed line to be a plain name LABEL with a separate control for changing the
+   selection?
+2. Confirm I should STOP the auto-fill (so the per-panel box becomes a genuine addition, never a copy of the
+   library text) and drop the `↻` refresh chip entirely — your answers 1–3 then become moot, as you suspected.
+3. **Migration:** existing projects' saved per-panel boxes already contain the library text copied by the old
+   auto-fill. Left alone, they'd keep double-feeding the prompt. I propose a one-time cleanup on load: for a
+   slot whose selection is a `lib:` item and whose per-panel text EXACTLY equals that library item's current
+   description, clear the box (safe + idempotent; anything you actually edited is kept). OK — or would you
+   rather I leave existing boxes untouched and let you clear them by hand?
+4. Requirement "generate with at least a name": Characters already qualify (verified); Locations do NOT
+   (verified). I'll make a selected Character **or Location** name count as content even with no descriptions
+   and no action — i.e. a location-name-only panel generates too. Agreed? (Built-in presets like
+   "Hero (Cyber-Ninja)", which carry their own description, are unchanged.)
+5. Should each line's expanded/collapsed state survive a reload (saved with the panel), or just for the session
+   (every load starts fully collapsed, like the panel accordions)? Default I'd pick: session-only.
+6. When expanded on a BUILT-IN (non-`lib:`) choice such as "Hero (Cyber-Ninja)", I'd show that preset's
+   description from the generator's own lists as the read-only text. Fine?
+
 
 ### 2026-09-23 — FEATURE REQUEST: JSON editor in a full-page overlay (Edit menu) with Find/Replace
 - **Status:** DONE 2026-09-23 (changelog 2026.08.16.24). Shipped as **Edit → 🧩 Open JSON Editor** — a full-page
