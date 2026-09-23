@@ -6,7 +6,7 @@ so it never has to re-analyze the whole codebase from scratch.
 
 **MAINTENANCE RULE (author-mandated): update this file at the END of every operation.**
 Every change session must also (existing rules): add a dev-note block to the top-of-file
-comment in `index.html`, prepend a CHANGELOG entry in `src/CHANGELOG.md`, and update `src/ISSUES.md`
+comment in `index.html`, prepend a CHANGELOG entry in the repo's `CHANGELOG.md`, and update `ISSUES.md`
 when diagnosing/resolving a bug. **LOG EVERY REQUEST FIRST (author-mandated 2026-08-13): before
 starting ANY work on an author request, add a date-stamped entry to `src/PENDING.md` — requests the
 author has greenlit go into the 🟢 START NOW section, everything awaiting "go ahead" into the 🕒
@@ -49,8 +49,10 @@ only live ephemerally or inside `index.html`'s comment block.
   - `index.html` — the ENTIRE app. Top = giant HTML comment of dev notes (read before
     editing; newest entries near the top). Then `<style>`, then the body markup, then
     then ONE big IIFE `<script>` with all logic.
-  - `src/CHANGELOG.md` — version history for Help > About (newest first; the About panel fetches and
-    parses it at runtime via `renderChangelog()`).
+  - `CHANGELOG.md` (repo root — NOT src/, that name wedges the platform save flow) — version history for
+    Help > About. Since 2026.09.23.8 the About panel fetches it from the repo the FIRST time the About
+    section is expanded (`loadFullChangelog()`) and falls back to the tiny embedded `#embeddedVersion`
+    stamp (`renderChangelog()`) when that fails.
   - `src/user-manual.html` — the shipped USER MANUAL (static standalone HTML, no perchance deps; opens in an
     in-app overlay via Help → 📖 Open User Manual → `openUserManual()`: fetch → `<iframe#manualFrame>` srcdoc).
     This is the ONLY way to open it — NEVER `window.open`/anchor to a `src/` asset: (a) a plain relative URL
@@ -86,7 +88,8 @@ only live ephemerally or inside `index.html`'s comment block.
 10. `buildPanelGrid()` — builds all 24 panel cards; internally calls `updatePanelSelects()`,
     `updatePanelVisibility()`, `restorePanelState()` (restores saved DOM values)
 11. `populatePageSel()`, `updateDeletePageBtn()`, `updateProjectNameDisplay()`,
-    `renderChangelog()`
+    `renderChangelog()` — renders ONLY the bundled `#embeddedVersion` stamp synchronously; the full list
+    is fetched lazily by `loadFullChangelog()` when the About section is first expanded
 12. seed + preview listeners; `restoreSaveState()` (IndexedDB save handle)
 
 ## 3. Data & persistence model
@@ -431,10 +434,22 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   ROW as its first body row (one editable `.an-act` box per panel; becomes the first COLUMN after ⇄ Swap) —
   `analysisActionField` / `analysisSetPanelAction` / `analysisSyncActionField` / `analysisRefreshActionCells` keep
   it and the Action-item cells in sync — see BATCH 2026.08.16.17.
-- **Changelog:** `src/CHANGELOG.md` (newest first, format `## <ver> — <date> — <title>` + `- item`
-  bullets). The About panel's async `renderChangelog()` fetches it at runtime and parses it (gracefully
-  empty on failure). Versions `YYYY.MM.DD.R`. Prepending an entry is a CHANGELOG.md change (+ a matching
-  dev-note block in index.html).
+- **Changelog:** `CHANGELOG.md` in the REPO ROOT (newest first, format `## <ver> — <date> — <title>` +
+  `- item` bullets). There is NO embedded copy any more — that was `#embeddedChangelog` until 2026.09.23.8.
+  Help → About renders instantly from the tiny bundled `#embeddedVersion` stamp (`renderChangelog()`, one
+  entry) and `loadFullChangelog()` fetches the real file on the FIRST expand of the About section (never at
+  page load). Versions `YYYY.MM.DD.S`. A release means: (a) prepend the entry to CHANGELOG.md in the repo
+  via the Contents API, and (b) update `#embeddedVersion` in index.html to that same first heading.
+- **Changelog fetch order (2026.09.23.8):** `changelogFetchTargets()` yields two unauthenticated, CORS-open
+  URLs — first `api.github.com/repos/<o>/<r>/contents/CHANGELOG.md` with `Accept:
+  application/vnd.github.v3.raw` (~60s cache, so a just-pushed changelog shows up almost immediately), then
+  `raw.githubusercontent.com/<o>/<r>/main/CHANGELOG.md`. Do NOT rely on raw.githubusercontent for freshness:
+  it is edge-cached ~5 MINUTES and a `?cb=<ts>` query does NOT bust it (measured — the API served the new
+  85-entry file while raw still served the previous 84).
+- **Changelog bullets render limited inline Markdown** via `appendInlineMarkdown()` — recursive `**bold**` →
+  `<strong>` and `` `code` `` → `<code>`, either able to contain the other; unmatched markers are emitted
+  literally; DOM nodes only, never innerHTML. Entries are authored as Markdown, so without this the About
+  panel prints the raw `**` and backticks (it did until 2026.09.23.8).
 
 ## 11. Export / import / save
 
@@ -459,8 +474,8 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   serial release, starting at 1 and incrementing (NO zero padding — 1, 2, ... 10 — because a human reads and
   compares S as a whole number). A new day restarts at `.1`. The author is in US PACIFIC time, so every
   date/time written into the changelog, these notes and the PENDING queue uses Pacific (PST/PDT). The Help →
-  About version comes from the FIRST `## ` heading of `#embeddedChangelog`, so a new release must be added there
-  (never to a second copy).
+  About version comes from the FIRST `## ` heading of the repo's `CHANGELOG.md` (the bundled
+  `#embeddedVersion` stamp is only the offline fallback), so a new release is prepended there.
 - **BUTTON COLOURS BAIT (found 2026-09-23):** the platform ships normalize.css with
   `button:not([disabled]) { color: inherit }`, whose specificity (0,1,1) BEATS a single-class rule like
   `.menu-btn { color: #ffcc00 }` (0,1,0) — so the File/Edit/Library/Help tabs actually render WHITE (the body
@@ -530,7 +545,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   are the normal verification.
 - When a task changes code: finish with a fresh `browser_refresh`/`browser_eval`, confirm no
   `syntaxErrors`/`perchanceErrors`, then update THIS file, the index.html dev-note block, and
-  (if user-visible) a `src/CHANGELOG.md` entry.
+  (if user-visible) a `CHANGELOG.md` entry in the repo root (+ the matching `#embeddedVersion` stamp).
 - **OVERLAY MARKUP GOTCHA (2026-09-23):** the full-page overlays must each be a direct child of
   `#output-container`. A single missing `</div>` nests the following overlays inside an earlier `hidden`
   wrapper, and `hidden` on an ancestor hides the whole subtree regardless of the child's `display` — the
@@ -649,14 +664,14 @@ As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
 - `DEV-NOTES.md` — the development log + gotchas (was the top-of-file comment in index.html).
 - `AI-NOTES.md` (this file), `PENDING.md`, `ISSUES.md` — were `<script type="text/plain">` blocks
   in index.html; now only in this repo.
-- `CHANGELOG.md` — lives here AND is still embedded in index.html as `#embeddedChangelog`, because
-  `renderChangelog()` renders it into Help → About and `#aboutVersion` is parsed from its FIRST
-  `## ` heading. Keep the two copies in sync.
+- `CHANGELOG.md` — lives here ONLY (since 2026.09.23.8). Help → About fetches it on demand (see §12);
+  index.html keeps just the `#embeddedVersion` stamp, which must repeat the file's first `## ` heading.
 
 index.html keeps a compact pointer comment at the top describing where the docs are and how to
-read/write them. `ghPush()` was left unchanged — its docMap skips missing/empty blocks, so it now
-pushes main.pjs / index.html / src/user-manual.html / CHANGELOG.md and no longer touches
-PENDING.md / AI-NOTES.md / ISSUES.md (edit those via the Contents API).
+read/write them. `ghPush()` pushes main.pjs / index.html / src/user-manual.html and nothing else — its
+old embedded-docs docMap was DELETED in 2026.09.23.8, so CHANGELOG.md / PENDING.md / AI-NOTES.md /
+ISSUES.md are edited directly via the Contents API. Do NOT let ghPush push CHANGELOG.md again: the
+embedded stamp would overwrite the real file.
 
 The repo is PUBLIC (read + fork; push = owner only), so raw reads need no token:
 https://raw.githubusercontent.com/cgoodwin97124/yacbpg-backup/main/<file>
