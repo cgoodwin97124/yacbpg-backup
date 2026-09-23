@@ -10,7 +10,39 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
-## 2026-09-22 — ⧉ Duplicate in 🔍 Focus broke the page (fixed 2026.08.16.23)
+## 2026-09-23 — Unclosed `#newProjectOverlay` made the JSON editor invisible (fixed 2026.08.16.24)
+- **Symptom:** the new full-page JSON editor (`#jsonEditorOverlay`) was in the DOM and all of its JS worked
+  (open/close, find/replace, validate, Apply), but nothing on screen ever changed: `getBoundingClientRect()` was
+  0×0 and `offsetParent` was null. The GitHub backup dialog (`#ghBackupOverlay`) and the four embedded
+  `<script type="text/plain">` doc blocks were in the same boat — the gh dialog "worked" only because pushes are
+  driven programmatically, so nobody noticed it had never been visible.
+- **Root cause:** `<div id="newProjectOverlay" …>` (just above the overlays) had been left without its `</div>`
+  since an earlier session — its intended closer was a stray `</div>` far below, immediately before
+  `#embeddedIssues`, so everything in between (the new editor overlay, the gh dialog, the doc blocks) was parsed
+  as a CHILD of that `hidden` container. `hidden` on an ancestor hides the whole subtree no matter what
+  `display` a descendant sets, which is why the inline `display:flex` on `#ghBackupOverlay` didn't save it.
+- **Fix (2026.08.16.24):** added the missing `</div>` right after `#newProjectOverlay`'s `.import-confirm-box`
+  (where it had always belonged) and deleted the stray one before `#embeddedIssues`.
+  `#importConfirmOverlay`, `#newProjectOverlay`, `#jsonEditorOverlay`, `#ghBackupOverlay` and
+  `#libImportOverlay` are now all direct children of `#output-container` and each renders full-screen.
+- **Gotcha for future sessions:** after ANY overlay markup edit, verify the parent chain
+  (`getElementById('jsonEditorOverlay').parentElement.id === 'output-container'`) AND a non-zero
+  `getBoundingClientRect()`. A mis-nested overlay is invisible while its JavaScript looks perfectly healthy, and
+  neither `vision` nor the snapshot helper can see it (capturing the overlay returns an empty ~6-byte data URL,
+  which is the tell-tale sign of a `display:none` ancestor).
+
+---
+
+## 2026-09-23 — A load-time error could overwrite page 1 with a blank default (guarded 2026.08.16.24)
+- **Hazard (found while testing the JSON editor):** the boot sequence schedules a debounced `schedulePanelSave()`.
+  If any JS error aborted the IIFE before `restorePanelState()` finished (it runs late in boot), that timer still
+  fired and `savePanelState()` wrote a defaulted `collectPanelState()` over `comicGen.panelState` — silently
+  wiping the live project's page 1 (and everything the DOM hadn't yet been told about).
+- **Fix (2026.08.16.24):** `let panelStateRestored = false;` next to `savePanelState()`, which now returns early
+  while it's false; `restorePanelState()` sets it to `true` as its very last statement. Boot-order rule: the flag
+  may only be set after the saved state has been applied to the DOM (`loadCurrentPage()` / `buildPanelGrid()`).
+- **Gotcha for future sessions:** the same pattern applies to any other "collect the DOM and persist it" timer —
+  a failed load must never be allowed to look like a deliberate empty state.
 - **Symptom (author report):** with a project open, 🔍 Focus a panel → open its ⚙ Panel menu → click ⧉ Duplicate →
   `singleNavTo … injectedScript:3498:26` / `openSingleView/li.onclick … injectedScript:3465:37`. Clicking
   "← Back to page" then gave `NotFoundError: Node.insertBefore: Child to insert before is not a child of this
