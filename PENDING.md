@@ -16,7 +16,7 @@ each section).
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-09-23 — Floating "＋ Add Page" button in the bottom-right corner
-- **Status:** 🟢 GREENLIT — author said "Let’s add…" (implement immediately). Ships as 2026.09.23.14.
+- **Status:** ✅ **DONE 2026.09.23.14** — implemented, verified in the live preview and pushed.
 - **Request (author, 2026-09-23, verbatim):** "Let’s add a floating \"Add Page\" button, in the same color
   scheme as the page navigator, to the bottom right corner of the screen." Follow-up: "Let’s make it in the
   same visual style as the Hide Panels and page navigator buttons as well."
@@ -25,6 +25,12 @@ each section).
   `var(--green)` border, `var(--green-text)` bold label, same radius / padding / shadow / hover. It rises
   above `#selectionBar` while that bar is visible, because the bar is nearly full-width on a phone and would
   otherwise cover it.
+- **Implementation (2026.09.23.14):** `#addPageFab` (a `＋ Add Page` button pinned `right:16px / bottom:16px` at
+  `z-index:1000`) calling the existing `addPage()`, styled from the `#panelsToggleBtn` / `#pageNav` recipe, plus
+  `positionAddPageFab()` — a small fixed-point loop that lifts it above `#selectionBar` / `#pageNav` /
+  `#panelsToggleBtn` when their boxes would overlap (called from `updateSelectionUI`, `resize` and
+  `orientationchange`). No new persisted state and no show/hide logic (the opaque full-page overlays cover it).
+  See `DEV-NOTES.md` (BATCH 2026.09.23.14).
 
 ### 2026-09-23 — BATCH (3 items): default images-per-panel is remembered · New Panel on a full page uses the Duplicate reflow · PANEL SELECTION (multi-select + batch ops)
 - **Status:** item 1 ✅ DONE (2026.09.23.10); item 2 ✅ DONE — it was already implemented in 2026.09.23.9; item 3 🟢 GREENLIT, RECON ANSWERS RECEIVED 2026-09-23 ("all of your recommendations are good") — **PHASE 1 SHIPPED as 2026.09.23.11** (selection + highlight + Shift-range + Select all + batch Duplicate / Add / Move) and **PHASE 2 SHIPPED as 2026.09.23.12** (batch Generate / Generate All From Here / Clear / Clear Images / Delete with the Ok / Only-This-Panel / Cancel dialog and Delete &amp; Refill); phase 3 (Copy / Cut / Paste) **SHIPPED as 2026.09.23.13** — item 3 is now COMPLETE (all three phases done).
