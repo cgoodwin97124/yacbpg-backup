@@ -448,6 +448,17 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   and they inherited the parent's colour; the tail block re-pins them under `:root[data-theme="light"]` /
   `:root:not([data-theme])` (specificity 0,2,0) for light mode only. If you add a coloured chip whose text matters,
   give it a two-class selector or add it to that block.
+- **DARK-MODE CONTRAST PASS (added 2026.09.23.4, full story in the index.html dev-notes BATCH 2026.09.23.4):**
+  every coloured button fill used with WHITE text was darkened in the DARK theme so white clears 4.5:1 —
+  --teal/--teal-2, --blue/--blue-2/--blue-3/--blue-4, --red/--red-2, --green-3/--green-4 (light values
+  unchanged). The normalize colour-inheritance bug that made the seed chips amber-on-red/blue is now fixed for
+  BOTH themes via ".panel-imgs-sel .btn-copy-prev:not(:disabled), .panel-imgs-sel .btn-line-del { color:#fff }",
+  and the ⇅ Move chip via ".btn-reorder:not(.active) { color: var(--text) }". A new --on-purple var (#111 dark,
+  #fff light) is the text colour for purple fills (used by Import Project). The default color mode is now
+  system (init fallback changed), and the Focus view's generate button reads "⚡ Generate All"
+  (text-transform:none). Still intentionally below 4.5 in dark: the decorative .ps-sep • separators. If you add
+  a bright fill behind white/amber text, re-run the audit pattern (walk text nodes, compare each computed
+  colour with its nearest opaque background) — BATCH 2026.09.23.4 has the numbers.
 - **THEME / COLOUR SYSTEM (added 2026.09.23.3, full build story in the index.html dev-notes BATCH 2026.09.23.3):**
   the style sheet opens with `:root{ 74 vars }` (dark = the old literals), then `:root[data-theme="light"]{ ... }`,
   then a mirrored `@media (prefers-color-scheme: light){ :root:not([data-theme]){ ... } }` — see AI-NOTES §14 below
