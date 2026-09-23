@@ -53,11 +53,11 @@ only live ephemerally or inside `index.html`'s comment block.
     Help > About. Since 2026.09.23.8 the About panel fetches it from the repo the FIRST time the About
     section is expanded (`loadFullChangelog()`) and falls back to the tiny embedded `#embeddedVersion`
     stamp (`renderChangelog()`) when that fails.
-  - `src/user-manual.html` — the shipped USER MANUAL (static standalone HTML, no perchance deps; opens in an
+  - `src/manual.html` (renamed from `src/user-manual.html` on 2026.09.23.9 — the platform's per-file upload lock is keyed to the filename; see DEV-NOTES) — the shipped USER MANUAL (static standalone HTML, no perchance deps; opens in an
     in-app overlay via Help → 📖 Open User Manual → `openUserManual()`: fetch → `<iframe#manualFrame>` srcdoc).
     This is the ONLY way to open it — NEVER `window.open`/anchor to a `src/` asset: (a) a plain relative URL
     resolves against Perchance's injected `<base href="https://perchance.org/<name>">` and 404s on
-    perchance.org, and (b) even the absolute `location.origin + '/src/user-manual.html'` is refused by the
+    perchance.org, and (b) even the absolute `location.origin + '/src/manual.html'` is refused by the
     service worker ("No src manifest available for this page" — top-level `src/` navigation is unsupported).
     See src/ISSUES.md 2026-08-14 (both entries). A snapshot doc — footer notes it may lag Help → About.
   - `src/PENDING.md` — open feature-request queue (newest first; read before planning new work; implement
@@ -690,7 +690,7 @@ As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
   index.html keeps just the `#embeddedVersion` stamp, which must repeat the file's first `## ` heading.
 
 index.html keeps a compact pointer comment at the top describing where the docs are and how to
-read/write them. `ghPush()` pushes main.pjs / index.html / src/user-manual.html and nothing else — its
+read/write them. `ghPush()` pushes main.pjs / index.html / src/manual.html and nothing else — its
 old embedded-docs docMap was DELETED in 2026.09.23.8, so CHANGELOG.md / PENDING.md / AI-NOTES.md /
 ISSUES.md are edited directly via the Contents API. Do NOT let ghPush push CHANGELOG.md again: the
 embedded stamp would overwrite the real file.
