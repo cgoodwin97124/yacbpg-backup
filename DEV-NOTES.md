@@ -48,6 +48,32 @@ Rename applied: `src/user-manual.html` → `src/manual.html`.
 - Un-wedging rules restated: never hard-reload right after writing a src/ file (that kills the in-flight
   sync and wedges that filename); if a src file ever wedges again, RENAME it rather than recreating it.
 
+## BATCH 2026.09.23.10 — a remembered "Images per Panel" default
+- Author request, part of the 3-item "next tasks" batch, greenlit for immediate implementation ("if there are no
+  questions you can implement this one immediately … implement using your recommendations and alert me"): the number
+  of images per panel should be settable and default to that on the next open, or at least travel in the project's JSON.
+- What changed: 📄 File → Page Setup's control (formerly "Image Count for All Panels") is now **Images per Panel** and
+  its value is a real setting rather than only an apply-button. New top-level state field `imgCountDefault` (declared
+  next to `guidanceScale`/`imageSizeSel` in `collectPanelState()`) → it rides in `comicGen.panelState`, in Export/Import
+  `.json` + `.zip`, and in the JSON editor, where it is editable (it lives under `settings`, so `jsonFieldClass` already
+  allows it) and validated with `jsonOptionProblem('bulkImgCountSel', val)`.
+- Mechanism: a module-level `imgCountDefaultPref` mirrors the setting in the page; `imgCountOptionHtml()` renders the
+  per-panel `<option>`s with the default marked `selected` (used by `buildPanelGrid`), and the panel-restore line now
+  falls back to it — `if (ic) ic.value = (p.imgCount && [...ic.options].some(o => o.value === p.imgCount)) ? p.imgCount : imgCountDefaultPref;`
+  Wiring: `onBulkImgCountChange()` (new; exported to `window`) saves the default as soon as the select changes,
+  `applyAllImageCount()` records it too, and `resetEverything()` puts it (and every panel) back to 1. Help text (in-app
+  Help ▸ Fill in each panel, and the control's own hint) and `src/manual.html` (File bullet, Export-contents row,
+  version, changelog) were updated.
+- Deliberate behaviour: changing the default does NOT retroactively rewrite panels that already have their own count —
+  it only decides what NEW / blank panels start at. Verified live: with one panel's stored `imgCount` removed, that
+  panel came back as the default (3) after a reload while panels 1 and 12 kept their stored 1; the exact original state
+  was written back afterwards.
+- Not done, offered to the author: an app-wide `localStorage` mirror so the default would also carry into a brand-new
+  project. It is project-scoped for now, so Reset to Defaults means 1 — matching how `guidanceScale` resets to 7.
+- The batch's other two items: "New Panel on a full page uses the Duplicate reflow" was already implemented in
+  2026.09.23.9 (verified, no change needed); **Panel Selection** is greenlit but ON HOLD pending the author's answers to
+  the RECON questions (logged in PENDING.md).
+
 ## BATCH 2026.09.23.9 — full-page panel reflow (Duplicate / ＋ Add Panel) + the −1 seed scrub
 - Author request (2 items; recon + questions first, per the standing directive): (1) duplicating a panel on a full
   page should no longer offer "start a new page with a copy" — the overflow should reflow onward recursively;
