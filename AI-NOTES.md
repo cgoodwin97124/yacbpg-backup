@@ -440,8 +440,22 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `button:not([disabled]) { color: inherit }`, whose specificity (0,1,1) BEATS a single-class rule like
   `.menu-btn { color: #ffcc00 }` (0,1,0) — so the File/Edit/Library/Help tabs actually render WHITE (the body
   colour) despite their declared amber. The author likes that look, so do NOT "fix" it. When a button's colour
-  genuinely matters, use a two-class selector (`.menu-btn.menu-action { color:#fff }`) or the author-provided
-  `#id`. `background`/`border` are unaffected because normalize doesn't set them.
+  genuinely matters, use a two-class selector (`.menu-btn.menu-action { color: var(--text) }`, which is also
+  theme-aware — it is white in dark, near-black in light) or the author-provided `#id`. Note the LIGHT-READABILITY
+  tail block in the style sheet exists exactly because of this trap: `.btn-line-del`, `.btn-reroll`, `.btn-danger`,
+  `.btn-copy`, `.btn-copy-prompt`, `.btn-del-lib`, `.btn-stop-global`, `.btn-img-clear`, `.btn-img-reroll` and
+  `.btn-copy-prev:not(:disabled)` are single-class rules, so their declared text colour was ALSO being thrown away
+  and they inherited the parent's colour; the tail block re-pins them under `:root[data-theme="light"]` /
+  `:root:not([data-theme])` (specificity 0,2,0) for light mode only. If you add a coloured chip whose text matters,
+  give it a two-class selector or add it to that block.
+- **THEME / COLOUR SYSTEM (added 2026.09.23.3, full build story in the index.html dev-notes BATCH 2026.09.23.3):**
+  the style sheet opens with `:root{ 74 vars }` (dark = the old literals), then `:root[data-theme="light"]{ ... }`,
+  then a mirrored `@media (prefers-color-scheme: light){ :root:not([data-theme]){ ... } }` — see AI-NOTES §14 below
+  for the variable families and the JS API. Rules for editing: colour literals belong in the `:root` table, NOT
+  inline in a rule; use `--text`-family names for text, `--surface`/`--well`-family names for fills, and `--*-text`
+  for a hue used as text (a bright green that is readable on #1a1a1a is unreadable on #ffffff). Add BOTH the dark
+  value and a light override (the light value has to be added twice — once in the `[data-theme="light"]` block, once
+  in the media block). `rgba()` shadows/scrims stay literal by design. `background`/`border` are unaffected because normalize doesn't set them.
 - Everything is inside the IIFE; only `window.X = X` exports are reachable from inline
   handlers/evals. Export what a test needs.
 - id suffixes: `El`/`Btn`/`Ctn`/`Input` (e.g. `statusEl`, `rerollBtn`). Use the `hidden`
@@ -546,4 +560,48 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   keydown handler is attached in `openJsonEditor()` and removed on close.
 - **Boot guard:** `panelStateRestored` (declared next to `savePanelState()`) starts false and is set true as the
   last statement of `restorePanelState()`; `savePanelState()` returns early while it is false, so a load-time JS
-  error can no longer let the debounced save write a defaulted `collectPanelState()` over page 1.
+## 14. Theme & colour system (added 2026.09.23.3)
+
+- **One variable table, two themes.** The `<style>` block starts with `:root{ --hdr-h + 74 colour vars }` (the DARK
+  theme; every value is exactly the literal the app used before, which is why dark is unchanged), followed by
+  `:root[data-theme="light"]{ ... }` and an identical mirror inside
+  `@media (prefers-color-scheme: light){ :root:not([data-theme]){ ... } }` (that mirror is what makes the "System"
+  pref flash-free before any JS runs).
+- **Variable families:** `--bg`, `--surface`, `--surface-2…5`, `--well(-2…7)`, `--hover(-2,-3)`, `--grey-btn`,
+  `--act-cell`, `--teal(-2)`, `--red/--red-2/--red-deep`, `--green/--green-2…5`, `--green-deep(-2)`,
+  `--blue/--blue-2…4`, `--purple/--purple-2/--purple-3`, `--accent`, `--accent-soft`, `--accent-2…5`,
+  `--accent-pulse`, `--accent-outline`, `--accent-deep`, `--accent-ink` = **fills** (a value used as a
+  background/border); `--text`, `--text-2…12` = **foreground greys** (the higher N, the dimmer); `--ink`,
+  `--ink-2` = **text on bright fills** (dark in BOTH themes, e.g. black on the amber Generate button);
+  `--green-text`, `--red-text`, `--red-text-soft`, `--blue-text`, `--purple-text` = those hues used as *text*
+  (much darker in light mode); `--border`, `--border-2…8`; `--on-danger` = white text on a `--red` fill.
+- **JS API:** `applyTheme()` (the single entry point — sets/removes `data-theme` on `<html>` and writes the accent
+  vars as INLINE `--accent*` custom properties on `documentElement`), `themeEffectiveMode()` (resolves
+  system→light/dark), `accentVarsFor(hex, mode)` (derives the whole accent family from the one picked colour;
+  in light mode it increases the black mix until the accent clears ~4.2:1 against white), `mixHex`/`hexToRgb`/
+  `relLum`/`contrastAgainst` helpers, `applyThemeFromProject({mode, accent})`, `syncThemeControls()`,
+  `persistTheme()`, and the UI entry points `onThemeModeChange()`, `onAccentInput()`, `onAccentChange(hex)`.
+  All are exported on `window`.
+- **Prefs + storage.** State lives in module vars `themeModePref` (`'system' | 'light' | 'dark'`, default `'dark'`)
+  and `themeAccent` (`''` = the built-in amber family, otherwise `#rrggbb`). They are mirrored to
+  `comicGen.themeMode` / `comicGen.accent` (localStorage) AND to `settings.theme` inside `collectPanelState()`, so
+  the theme travels in Save/Export/Import; `applyImportedSettings()` and `jsonApplyDoc()` call
+  `applyThemeFromProject()`. `jsonFieldClass` locks the `settings.theme` object but leaves `mode`/`accent` editable.
+- **Boot order:** a hidden `<span>` square block immediately before `<style>` (runs during template render, i.e.
+  before the first paint) sets `data-theme` from localStorage, resolving `system` with `matchMedia`. Later, the
+  main IIFE's boot section loads the pref and calls `applyTheme()` (which also syncs the Preferences controls and
+  the inline accent vars). Changing the OS appearance re-applies while the pref is `system` (a `change` listener on
+  `THEME_MEDIA`).
+- **UI:** `#preferencesPanel` (end of Edit) → `.pref-sub` "Theme" → `<select id="themeModeSel">` +
+  `<div class="accent-row" id="accentRow">` with eight `<button class="accent-swatch" data-accent="…"
+  style="background:…">` presets (plus `''` = default), `<input type="color" id="themeAccentInput">` and a Reset
+  button. `.accent-swatch.active` marks the current one. The row wraps cleanly at 390px.
+- **Gotchas:** (1) never put a raw colour in a rule — add it to the `:root` table and to both light mirrors;
+  (2) `--accent` in light mode must stay dark enough for text (currently #9a6b00 ≈ 4.7:1 on white) — the CSS
+  defaults and the JS-derived values for a CUSTOM accent are computed independently, so keep them in the same
+  contrast ballpark; (3) the light theme needs a light override for every dark var it does not want to inherit, and
+  any var left out simply keeps its dark value; (4) a light-mode contrast audit is the cheap regression check —
+  walk every visible text node, compute the ratio against its nearest opaque background, and flag < 3.4 (the dark
+  theme has ~53 such nodes by design/legacy, light should stay near zero); (5) `poTip` and the user-manual iframe's
+  srcdoc page are intentionally NOT themed (a dark tooltip is conventional; CSS variables do not cross document
+  boundaries).
