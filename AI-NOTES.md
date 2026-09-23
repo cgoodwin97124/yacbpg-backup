@@ -96,7 +96,7 @@ only live ephemerally or inside `index.html`'s comment block.
 
 **localStorage keys**
 - `comicGen.panelState` — versioned `{version:2, projectName, imageSizeSel/W/H, guidanceScale,
-  previewDelay, previewOn, globalPos, globalNeg, nsfw, currentPage, pages:{N: pageData}}`.
+  imgCountDefault, previewDelay, previewOn, globalPos, globalNeg, nsfw, currentPage, pages:{N: pageData}}`.
   pageData = `{name, panelCountSel, panelCountCustom, seed, 1..24: panelEntry}`.
   panelEntry = `{chars:[{sel,extra}]x3, title, protectSlots:[bool x4], loc, locExtra, action, seed,
   imgCount, style, promptOverride, extras:[{type, sel, desc}]}` (2026-08-15.1 — `extras` holds arbitrary
@@ -588,7 +588,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   re-serialised from the live state, so the editor is always opened from the truth; `jsonBaselineDoc` is that
   parsed snapshot and every comparison (dirty check, change count, validation) is against it.
 - **Editing rules:** `jsonFieldClass(path)` returns `'edit'` or `'lock'` per leaf. Editable: globals
-  (projectName, imageSize*, guidanceScale, previewDelay, previewOn, globalPos, globalNeg, nsfw), `preset.*`,
+  (projectName, imageSize*, guidanceScale, imgCountDefault, previewDelay, previewOn, globalPos, globalNeg, nsfw), `preset.*`,
   page fields (name, summary, panelCountSel, panelCountCustom, seed), panel title/seed/loc/locExtra/action/
   style/imgCount/chars[].sel|extra/extras[].type|sel|desc/protectSlots[] and `promptOverride.pos|neg`, library
   `type|name|desc`. Locked (greyed at 0.38 opacity, edits reported as "is read-only — change it from the app,
