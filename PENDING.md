@@ -15,6 +15,12 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-23 — POLISH (2 items): fix the decorative panel-summary separator contrast · move the embedded changelog to GitHub
+- **Status:** IN PROGRESS — the author said "go ahead" for both on 2026-09-23 (the two optional items offered right after 2026.09.23.7 shipped). Shipping as **2026.09.23.8**.
+- **Item 1 — `.ps-sep` contrast.** The `·` separators in a panel summary line (`.panel-summary .ps-sep`) were `var(--text-10)` (#666666) on the panel surface (#2a2a2a): a **2.50:1** ratio, the last sub-4.5:1 text node left in dark mode. Now `var(--text-8)` (#999999) → **5.04:1** dark (5.03:1 light on `--bg`), still dimmer than the item names themselves so the visual hierarchy is unchanged.
+- **Item 2 — changelog moved to GitHub.** `#embeddedChangelog` (~60 KB — the biggest remaining embedded doc block) is gone from `index.html`. Help → About now fetches `CHANGELOG.md` from the repo (`raw.githubusercontent.com/<owner>/<repo>/main/CHANGELOG.md`; owner/repo from localStorage, falling back to the project repo) the first time the About section is expanded — NOT on page load — and a tiny bundled `#embeddedVersion` stamp (one `## <ver> — <date> — <title>` line plus a note that the history lives online) renders instantly as the offline/error fallback. A "View on GitHub ↗" link and a status line sit under the About blurb.
+- **Item 2 follow-ons.** `ghPush` no longer pushes `CHANGELOG.md` (the embedded stamp would overwrite the live file) and reads the commit-message version from `#embeddedVersion`. The top-of-file doc comment and `src/user-manual.html` were updated: the changelog source of truth is now `CHANGELOG.md` in the repo, edited via the Contents API.
+
 ### 2026-09-23 — FEATURE REQUEST (8 items): always-visible header · Preferences under Edit · always-fullscreen menus · Generate All/Pause/Stop as top-level menu items · theme & color scheme · one-click Library · drop the Library's Full Screen button
 - **Status:** IN PROGRESS — author greenlit 2026-09-23. **Quick wins shipped as 2026.09.23.1**
   (Preferences -> Edit, one-click Library, new versioning scheme). **Header / menu / theme ship next as
