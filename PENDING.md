@@ -265,8 +265,15 @@ each section).
   above). No code changed for this request, so no version bump.
 
 ### 2026-09-23 — Dark-mode coloured-chip contrast (the "53 low-contrast nodes" I offered to fix)
-- **Status:** RECON DONE, AWAITING the author's scope decision (logged before implementing, per the standing
-  "pre-implementation tasks" workflow). No code changed yet.
+- **Status:** DONE 2026-09-23 (changelog 2026.09.23.4). Author's answer (verbatim): "Your rec. And it covers the
+  two small offers too. Go ahead and implement!" — i.e. bucket 1 + the saturated fills (my recommendation) plus
+  BOTH small offers. SHIPPED: (1) the seed-chip amber-inheritance bug fixed for all themes (⇤ copy-previous-seed
+  and ✕ clear-seed now white), plus the same trap on the ⇅ Move chip; (2) the dark --teal*/--blue*/--red*/
+  --green-3/4 fills darkened so their white text clears 4.5:1 (light untouched); (3) the Import Project button
+  given the new theme-aware --on-purple text colour; (4) default color mode 'dark'->'system' (first-time
+  visitors match their device — verified live); (5) Focus view button -> "⚡ Generate All" (mixed-case,
+  text-transform:none). The decorative .ps-sep dots were left as-is per my rec. Post-fix dark audit: 9 nodes
+  under 4.5, all intentional (8 decorative dots + 1 exempt disabled chip). Verified live, then backed up.
 - **Request (author, 2026-09-23, verbatim):** "Yes please!" — answering my offer "the light-theme contrast
   audit exposed ~53 low-contrast amber-on-red chip nodes in dark mode; I deliberately left dark untouched.
   Want me to fix those?" (My earlier "53 amber-on-red" phrasing was imprecise — see RECON.)
