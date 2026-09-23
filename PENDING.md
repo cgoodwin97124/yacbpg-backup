@@ -15,12 +15,6 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-### 2026-09-23 — POLISH (2 items): fix the decorative panel-summary separator contrast · move the embedded changelog to GitHub
-- **Status:** IN PROGRESS — the author said "go ahead" for both on 2026-09-23 (the two optional items offered right after 2026.09.23.7 shipped). Shipping as **2026.09.23.8**.
-- **Item 1 — `.ps-sep` contrast.** The `·` separators in a panel summary line (`.panel-summary .ps-sep`) were `var(--text-10)` (#666666) on the panel surface (#2a2a2a): a **2.50:1** ratio, the last sub-4.5:1 text node left in dark mode. Now `var(--text-8)` (#999999) → **5.04:1** dark (5.03:1 light on `--bg`), still dimmer than the item names themselves so the visual hierarchy is unchanged.
-- **Item 2 — changelog moved to GitHub.** `#embeddedChangelog` (~60 KB — the biggest remaining embedded doc block) is gone from `index.html`. Help → About now fetches `CHANGELOG.md` from the repo (`raw.githubusercontent.com/<owner>/<repo>/main/CHANGELOG.md`; owner/repo from localStorage, falling back to the project repo) the first time the About section is expanded — NOT on page load — and a tiny bundled `#embeddedVersion` stamp (one `## <ver> — <date> — <title>` line plus a note that the history lives online) renders instantly as the offline/error fallback. A "View on GitHub ↗" link and a status line sit under the About blurb.
-- **Item 2 follow-ons.** `ghPush` no longer pushes `CHANGELOG.md` (the embedded stamp would overwrite the live file) and reads the commit-message version from `#embeddedVersion`. The top-of-file doc comment and `src/user-manual.html` were updated: the changelog source of truth is now `CHANGELOG.md` in the repo, edited via the Contents API.
-
 ### 2026-09-23 — FEATURE REQUEST (8 items): always-visible header · Preferences under Edit · always-fullscreen menus · Generate All/Pause/Stop as top-level menu items · theme & color scheme · one-click Library · drop the Library's Full Screen button
 - **Status:** IN PROGRESS — author greenlit 2026-09-23. **Quick wins shipped as 2026.09.23.1**
   (Preferences -> Edit, one-click Library, new versioning scheme). **Header / menu / theme ship next as
@@ -480,6 +474,21 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+
+### 2026-09-23 — POLISH (2 items): fix the decorative panel-summary separator contrast · move the embedded changelog to GitHub
+- **Status:** ✅ DONE — shipped as **2026.09.23.8** (2026-09-23); both items implemented, verified live, and documented (DEV-NOTES batch + CHANGELOG entry + user manual).
+- **Item 1 — `.ps-sep` contrast.** The `·` separators in a panel summary line (`.panel-summary .ps-sep`) were `var(--text-10)` (#666666) on the panel surface (#2a2a2a): a **2.50:1** ratio, the last sub-4.5:1 text node left in dark mode. Now `var(--text-8)` (#999999) → **5.04:1** dark (5.03:1 light on `--bg`), still dimmer than the item names themselves so the visual hierarchy is unchanged.
+- **Item 2 — changelog moved to GitHub.** `#embeddedChangelog` (~60 KB — the biggest remaining embedded doc block) is gone from `index.html`. Help → About now fetches `CHANGELOG.md` from the repo (`raw.githubusercontent.com/<owner>/<repo>/main/CHANGELOG.md`; owner/repo from localStorage, falling back to the project repo) the first time the About section is expanded — NOT on page load — and a tiny bundled `#embeddedVersion` stamp (one `## <ver> — <date> — <title>` line plus a note that the history lives online) renders instantly as the offline/error fallback. A "View on GitHub ↗" link and a status line sit under the About blurb.
+- **Item 2 follow-ons.** `ghPush` no longer pushes `CHANGELOG.md` (the embedded stamp would overwrite the live file) and reads the commit-message version from `#embeddedVersion`. The top-of-file doc comment and `src/user-manual.html` were updated: the changelog source of truth is now `CHANGELOG.md` in the repo, edited via the Contents API.
+
+- **Implementation notes (2026.09.23.8):**
+  - Item 1 was a one-line CSS change: `.ps-sep` moved from `--text-10` to `--text-8` (2.50:1 → 5.04:1, measured with a WCAG luminance calculation in page_eval and confirmed visually from a 3x capture). It is still dimmer than the item names it separates, so the summary line hierarchy is unchanged.
+  - Item 2: the 62,582-char `#embeddedChangelog` block was replaced by a tiny `#embeddedVersion` stamp (one heading + one bullet). Help → About renders the stamp instantly, then fetches the real `CHANGELOG.md` from the repo the FIRST time the About section is expanded — never at page load (confirmed with a `preambleJs` fetch logger showing zero changelog requests at load).
+  - Two read URLs are tried: the GitHub Contents API first (`Accept: application/vnd.github.v3.raw`, ~60 s cache), then `raw.githubusercontent.com`. Measured while shipping: raw is edge-cached for ~5 minutes and a `?cb=<ts>` query does NOT bust it (the API served the new 85-entry file while raw still served the previous 84) — hence the API-first order. If both fail, a ⚠️ "Could not load the full history" status and a "View on GitHub ↗" link appear next to the bundled stamp.
+  - `ghPush` no longer pushes CHANGELOG.md (the embedded-docs docMap was deleted, so it pushes only main.pjs / index.html / src/user-manual.html) and it takes the commit-message version from `#embeddedVersion` now.
+  - Bonus fix found while verifying with `vision`: changelog bullets are Markdown and the About panel had ALWAYS printed the raw asterisk/backtick markers. New `appendInlineMarkdown()` renders bold and inline code (recursively, DOM nodes only) — 165 `<strong>` + 34 `<code>` nodes and zero stray markers across all 235 bullets. Four historical bullets had a dangling unmatched `**` (they were truncated when first written); those markers were dropped from CHANGELOG.md.
+  - index.html: 460,851 → 403,805 chars (−57 KB); the served page loses the same escaped text.
+  - The repo copy of `index.html` is pushed from the SERVED page, so it only reflects this release after the author presses Save.
 
 ### 2026-09-23 — FEATURE REQUEST (2 items): Library-tab sections flat/open while the other menu groups default collapsed · COLLAPSIBLE per-panel Character/Location lines (read-only library description + editable per-panel text)
 - **Status:** DONE 2026-09-23 — shipped as **2026.09.23.7**.
