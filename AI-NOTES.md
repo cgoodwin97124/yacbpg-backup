@@ -203,7 +203,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
        `panel-add-select`. Do not resurrect it.
   2. **📝 Prompt** — `.btn-prompt` (toggle `#prompt-editor-N` with `#prompt-pos-N`/`#prompt-neg-N`),
      `.btn-copy-prompt`
-  3. **⚙ Panel** — `Collapse Menu` (.btn-panel-menu), ⧉ Duplicate (`#panel-dup-btn-N` → `panelDuplicateAction`; batches the selection), ＋ Add Panel (`#panel-add-btn-N` → `panelAddAction`),
+  3. **⚙ Panel** — `Collapse Menu` (.btn-panel-menu), 🔄 Generate (`#panel-gen-btn-N` → `panelGenerateAction`; batches the selection), ⚡ Generate All From Here (`#panel-genfrom-btn-N` → `panelGenerateFromHereAction`), ⧉ Duplicate (`#panel-dup-btn-N` → `panelDuplicateAction`; batches the selection), ＋ Add Panel (`#panel-add-btn-N` → `panelAddAction`),
      🗑 Clear Images (`.btn-clear-images`, hidden unless ≥2 images), 🗑 Clear, 🗑 Delete,
      `.panel-acc-stack` > `#panel-seed-N`
   4. **💾 Files** — ↗ Open All, ⬇ Save All (.zip), ⬇ Export
@@ -714,9 +714,34 @@ individually-ticked panel, used for Shift-ranges). Nothing about it is collected
   (the approved spec keeps the selection for Move only); Duplicate and Add clear it.
 - **Esc:** a `document` keydown listener clears the selection, but bails if any `[id$="Overlay"]` element is
   visible so it cannot steal Esc from the Focus view / JSON editor / manual.
-- **Planned (P2 / P3):** batch Generate / Generate All From Here / Clear / Clear Images / Delete with
-  Ok / Cancel / Only-this-panel dialogs, and Copy / Cut / Paste with a Paste chip on each panel header that
-  appears only while the buffer is non-empty. See `PENDING.md` for the approved spec.
+- **Batch Generate (2026.09.23.12):** `generateComicPage(startPanel, panelList)` takes an optional SECOND
+  argument — a list of panel numbers — and iterates exactly those (the one-argument path is unchanged, and a
+  list run shows `${step}/${list.length}` progress and sets `resumePanel` to the panel just attempted).
+  `panelGenerateAction` (the new ⚙ Panel 🔄 Generate button) batches the selection; otherwise it calls
+  `generateSinglePanel`. `panelGenerateFromHereAction` starts the batch run at the FIRST selected panel and
+  runs to the end of the page. Blank panels return `'skipped'` before any API call — the cheap way to test
+  a batch run.
+- **Batch Clear / Clear Images / Delete (2026.09.23.12):** `panelClearAction`, `panelClearImagesAction`,
+  `panelDeleteAction` each fall through to the existing single-panel function when fewer than two panels are
+  selected. The multi-panel forms confirm through `showChoiceDialog` — see below — and offer
+  `🎯 Only This Panel`, which performs the single-panel action and leaves the selection alone.
+- **`showChoiceDialog(opts)` (2026.09.23.12):** a generic multi-button dialog on the import-confirm chrome
+  (`#choiceOverlay` → `.import-confirm-overlay` / `.import-confirm-box` / `#choiceBody` / `#choiceHint` /
+  `#choiceBtns`). It resolves to the picked `value` or `null`; `choiceDialogPick(null)` cancels and the Esc
+  handler closes it before touching the selection. Buttons are built with `createElement` + `onclick`, so
+  nothing needs a `window.*` export, and they use the dialog's own `choice-danger` / `choice-plain` /
+  `choice-neutral` classes because the app's `.btn-*` classes render at inconsistent heights.
+- **Delete & Refill (2026.09.23.12):** `batchDeletePanels()` builds the dialog
+  (`Delete & Refill` / `Delete Only` / `Only This Panel` / `Cancel`, minus the refill option on a
+  single-page project) and `performBatchDelete(refill)` re-collects the state before acting (the dialog is
+  async). Refill repeatedly pulls the FIRST panel of the next page up to the end of the source page until
+  the page is back to its pre-delete count or the following pages run out; a page emptied by that pull is
+  deleted after a native `confirm()` that the dialog already warned about. Selecting every panel on a page
+  deletes the page instead (with the strong project-reset confirm when it is the only page).
+- **Planned (P3):** Copy / Cut / Paste — a selection bar (Copy / Cut / Clear + "N selected") shown only
+  while something is selected, plus a Paste chip on each panel header shown only while the buffer is
+  non-empty; Cut is consumed by Paste, Copy persists until replaced, and Paste inserts the group
+  contiguously *before* the clicked panel using the full-page reflow. See `PENDING.md`.
 
 ## DOC LAYOUT (2026.09.23.6)
 
