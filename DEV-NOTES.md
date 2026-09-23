@@ -9,6 +9,43 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.23.14 — floating ＋ Add Page button (bottom-right)
+
+Author request (2026-09-23, verbatim): "Let’s add a floating \"Add Page\" button, in the same color scheme as
+the page navigator, to the bottom right corner of the screen." Follow-up correction: "Let’s make it in the same
+visual style as the Hide Panels and page navigator buttons as well."
+
+Deliberately built out of existing machinery:
+- `#addPageFab` is a plain body-level `<button>` sitting right after `#pageNav` (both are viewport-fixed, so the
+  DOM position is cosmetic) with `onclick="addPage()"` — the SAME function File → Page Setup’s button calls, so
+  there is nothing to keep in sync and no new persisted state.
+- The CSS copies `#panelsToggleBtn` property-for-property (radius 6, padding 10px 14px, font-size 0.9rem, the
+  same `0 4px 12px rgba(0,0,0,0.6)` shadow and `:hover { background: var(--hover) }`), mirrored to `right: 16px`
+  instead of `left: 16px`, at `z-index: 1000` — below the page nav (1001) and far below the selection bar, above
+  the page content.
+- `positionAddPageFab()` is the only new logic. It starts from `bottom: 16px` and then, in up to 4 passes, lifts
+  the button to `r.top - 12 - fh` for any of `#selectionBar` / `#pageNav` / `#panelsToggleBtn` whose bounding box
+  it would intersect (both axes tested, with a small margin). The loop must RE-EVALUATE after each lift: measured
+  at 390 × 844, clearing the selection bar (753..830) alone put the button at 699..741 — straight inside the page
+  navigator (726..770) — so a single-pass version still collided. Converged result: button 672..714, zero
+  collisions, 12px gap. Desktop needs nothing: at 866px the centred bar (236..630) never reaches the button
+  (734..850), so it stays exactly 16px from both edges.
+- No show/hide logic was added: Focus / Storyboard / Library-fullscreen / Analysis / the JSON editor and the
+  user manual are all opaque full-page overlays at `z-index >= 10000` and the dialogs sit at 11000/12000, so they
+  cover the fixed button automatically. (Same reason the page nav and ▧ Hide Panels need none.)
+- Called from `updateSelectionUI()` (the bar’s visibility AND its wrapped height change there), from `resize` and
+  `orientationchange` (registered beside the other layout listeners inside `initHeaderObserver`), plus once at
+  init. Also exported on `window` for testing.
+
+Verified live 2026-09-23 (viewports 866 × 563 and 390 × 844): the FAB’s computed style is identical to
+`#panelsToggleBtn`’s in every measured property (background rgb(26,26,26), colour rgb(77,255,136), 2px green
+border, radius 6px, padding 10px 14px, weight 700, the same shadow) and it renders as the expected rounded green
+button reading "＋ Add Page". Clicking it added Page 2, switched to it, printed "Page 2 added (4 empty
+panels)." and revealed the page navigator with 2 numbered buttons (2 active). At 390 × 844, with a panel
+selected AND a multi-page project, it cleared all three bottom bars (bar 753..830, nav 726..770, toggle
+786..828) and stayed fully inside the viewport. The author’s project state was snapshotted before the click and
+restored afterwards (7671 bytes, 1 page, `currentPage: 1`).
+
 ## BATCH 2026.09.23.13 — panel multi-selection, phase 3 (Copy / Cut / Paste) — the feature is COMPLETE
 
 Author greenlit phase 3 ("Let’s do it!") 2026-09-23. Delivered exactly per the approved spec (decisions 10 /
