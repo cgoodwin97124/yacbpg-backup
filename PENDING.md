@@ -19,6 +19,58 @@ each section).
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
+### 2026-09-23 — FEATURE REQUEST: JSON editor in a full-page overlay (Edit menu) with Find/Replace
+- **Status:** AWAITING AUTHOR ANSWERS (logged + recon'd 2026-09-23 per the 2026-08-13 / 2026-09-20 rules — do NOT
+  implement until the author answers).
+- **Request (author, 2026-09-23, verbatim):** "Would it be possible to add a simple JSON editor in a full-page
+  overlay? It should live under the Edit menu. The main functions I want are the ability to Find/Replace with an
+  option for a global replace, and for the only editable fields in this JSON editor to be the ones the user could
+  edit elsewhere in the app (i.e. panel titles, seed values, library data). Please ask any clarifying questions
+  you need answers to before implementing. Thank you!"
+- **RECON (2026-09-23):**
+  - **Edit menu:** `#menuGroup-edit` (index.html ~1975) currently holds 4 blocks — Art Style & Keywords
+    (`#globalPos`/`#globalNeg`/`#nsfwCheck`), Presets (`#presetStyle`/`#presetPalette` → `comicGen.preset`),
+    Full Keyword List (read-only chips), Reset to Defaults. A new `help-panel`/`config-panel` block with the
+    open-editor button goes there.
+  - **Full-page overlay precedent:** `.view-overlay` — `#singleOverlay`, `#storyboardOverlay`, `#analysisOverlay`,
+    `#menuOverlay` — each `.view-overlay` > `.view-top` (`← Back to page` + `.view-title` + toolbar) + body;
+    `#analysisOverlay` (~2175) is the closest model (full-page tool with its own toolbar and an "Edit …" checkbox
+    gating its edits). z-index: `.view-overlay` 10000, `#manualOverlay` (`.manual-overlay`) 10001. New overlay
+    markup goes next to the others (before `<script>`), needs Esc handling + exports on `window`.
+  - **What's actually persisted** (AI-NOTES §state): `comicGen.panelState` = `{version:2, projectName,
+    imageSizeSel, imageSizeW, imageSizeH, guidanceScale, previewDelay, previewOn, globalPos, globalNeg, nsfw,
+    currentPage, pages:{N: {name, summary, panelCountSel, panelCountCustom, seed, 1..24: {chars:[{sel,extra}]×3,
+    title, protectSlots:[bool×4], loc, locExtra, action, seed, imgCount, style, promptOverride,
+    extras:[{type,sel,desc}]}}}}`; `comicGen.libObjects` = `[{id,type,name,desc}]`; `comicGen.preset` =
+    `{style,palette}`; UI prefs `activeMenu`/`layoutMode`/`menuVisible`/`panelsVisible`/`hidePasswordPref`.
+    **GitHub creds (`comicGen.githubOwner/Repo/Token/LastBackup`) must NEVER appear in this editor.**
+  - **An export JSON shape already exists:** `buildExportData()` / `exportSettings()` (File → Export →
+    `comic-generator-settings.json` = `{version, exportedAt, settings:<collectPanelState()>, preset, libObjects,
+    layoutMode, menuVisible, panelsVisible, activeMenu}`), applied back by `importSettingsFromFile()` (~8547 →
+    ~8446). The editor should probably use THAT shape so it round-trips with File → Export/Import.
+  - **Editable elsewhere (candidate editable set):** per panel — title, seed, chars, loc, locExtra, action,
+    extras, imgCount, style, promptOverride, protectSlots; per page — name, summary, seed, panelCountSel,
+    panelCountCustom; globals — globalPos, globalNeg, nsfw, imageSize*, guidanceScale, previewDelay, previewOn;
+    library — name/desc/type (and adding/removing); preset — style/palette. **Not editable anywhere:** `version`,
+    library `id`s, `exportedAt`.
+  - **NOT in the JSON at all:** generated images (in-memory only: `panelImages` / `pageSession[N].images`; only
+    the ZIP export carries them) and `panelPromptOverrides` (session-only) — so the editor can't edit those.
+  - **Apply plumbing to reuse:** `savePanelStateShape(state)` (+ `loadCurrentPage()`, `populatePageSel()`,
+    `updateDeletePageBtn()`) for panelState; `saveLibraryObjects()` + `renderLibrary()` + `updatePanelSelects()`
+    for the library; the globals' own DOM controls + `schedulePanelSave()`/`renderKeywordChips()`/
+    `updatePanelVisibility()`/`applyPreset()` where relevant.
+- **QUESTIONS FOR THE AUTHOR (asked 2026-09-23, awaiting answers):** see the reply in chat; recorded here so the
+  answers survive compaction —
+  1. Document scope (whole project in the File→Export shape / current page only / project + library split).
+  2. Exact editable set (just titles+seeds+library, or every field that has a control somewhere in the app).
+  3. Read-only fields: shown greyed/locked, or hidden entirely.
+  4. Find/Replace: "global" = replace-all vs one-at-a-time; plain text vs regex; case sensitivity; and whether a
+     replace may touch read-only parts (keys/values) or only editable values.
+  5. Apply semantics: explicit Apply button with validation (vs live), what happens on invalid JSON, and any undo.
+  6. Structure edits allowed (add/remove library objects, pages, panels) or value edits only.
+  7. Editor surface: plain monospace textarea with pretty-printed JSON (recommended, dependency-free) vs a
+     highlight/line-number editor; and whether it snapshots the live state with a Reload button.
+
 ### 2026-09-22 — BUG REPORT: perchance error dialog "interactionPointerMoveHandler@…:34:3414"
 - **Status:** RECON DONE 2026-09-22 — questions for the author recorded below, awaiting answers (per the
   2026-09-20 standing directive). Logged before any work, per the 2026-08-13 rule.
