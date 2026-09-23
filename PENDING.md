@@ -321,7 +321,21 @@ each section).
   others. Recorded as a rule in AI-NOTES + the dev-notes.
 
 ### 2026-09-23 — QUESTION: can the four in-app doc blocks live only on GitHub (with a dev-notes pointer)?
-- **Status:** ANSWERED 2026-09-23 — awaiting the author's decision. No code changed yet.
+- **Status:** DONE 2026-09-23 (changelog 2026.09.23.6). Author: "the three files plus dev-notes", then
+"make whatever outstanding changes there are for the doc move". IMPLEMENTED: the top-of-file dev-notes
+comment + the TROUBLESHOOTING note became DEV-NOTES.md (created 2026.09.23.6); the PENDING / AI-NOTES /
+ISSUES `<script type="text/plain">` blocks were DELETED from index.html — each was verified byte-identical to
+its repo copy BEFORE deletion, so nothing was lost; #embeddedChangelog stays embedded (it renders Help →
+About and supplies the version number). index.html went 819426 → 455047 bytes (-44%); the served page should
+drop from ~986KB to ~650KB. A compact "PROJECT DOCS LIVE ON GITHUB" pointer comment now sits at the top of
+index.html: repo URL, how to READ (raw.githubusercontent.com, no token — the repo is public now), how to
+WRITE (Contents API + comicGen.githubToken / .githubOwner / .githubRepo from localStorage), and the rules
+that still apply (never create these .md files in src/; do not re-add the blocks; versioning YYYY.MM.DD.S
+Pacific; log every request here FIRST; end every task with the Save reminder + ghPush backup). ghPush was
+left UNCHANGED — its docMap skips missing/empty blocks, so it pushes main.pjs / index.html /
+src/user-manual.html / CHANGELOG.md and no longer touches this file, AI-NOTES.md or ISSUES.md. The repo was
+made PUBLIC the same day (read + fork; push = owner only) and the ⬆ Backup to GitHub dialog no longer claims
+a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives HERE, not in index.html.
 - **Question (author, 2026-09-23, verbatim):** "I remember that on the Perchance side we had problems when the
   in-app doc blocks were broken out as .md files. Would it be possible for those to live entirely on Github and
   to leave a note in dev-notes for future AI instances to look there? Or are there technical reasons to keep
