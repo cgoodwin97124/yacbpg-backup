@@ -264,6 +264,39 @@ each section).
   PENDING has the SHIP 3 DONE bullet. **The backup gap is now CLOSED** (see the BACKUP NOTE RESOLVED bullet
   above). No code changed for this request, so no version bump.
 
+### 2026-09-23 — Dark-mode coloured-chip contrast (the "53 low-contrast nodes" I offered to fix)
+- **Status:** RECON DONE, AWAITING the author's scope decision (logged before implementing, per the standing
+  "pre-implementation tasks" workflow). No code changed yet.
+- **Request (author, 2026-09-23, verbatim):** "Yes please!" — answering my offer "the light-theme contrast
+  audit exposed ~53 low-contrast amber-on-red chip nodes in dark mode; I deliberately left dark untouched.
+  Want me to fix those?" (My earlier "53 amber-on-red" phrasing was imprecise — see RECON.)
+- **RECON (2026-09-23):** ran a full dark-mode audit (every visible text node vs its nearest opaque background;
+  flag < 3.4): **53 nodes / 20 groups**, in three distinct buckets.
+  1. **The real bug — AMBER text on a coloured fill (8 nodes).** Root cause: `.panel-imgs-sel { color:
+     var(--accent) }` (around line 1895) wraps the per-panel seed chips, and normalize.css's
+     `button:not([disabled]) { color: inherit }` (specificity 0,1,1) makes the `<button>`s INHERIT that amber
+     `#ffcc00`, out-specifying `.btn-line-del { color: var(--on-danger) }` and `.btn-copy-prev { color:
+     var(--text) }` (both 0,1,0). Result: 4 × `#seed-clear-N.btn-line-del` = amber on `--red` #ff4d4d (≈2.18),
+     4 × `#seed-copy-prev-N.btn-copy-prev` = amber on `--blue-3` #4d7fff (≈2.47). This is the SAME normalize trap the
+     LIGHT-READABILITY tail block already fixes — but that block is scoped to `:root[data-theme="light"]` (and
+     its light-media mirror), so dark was left broken. The disabled `#seed-copy-prev-1` (grey 2.0) is exempt
+     (disabled controls aren't held to contrast).
+  2. **WHITE text on a saturated fill (~44 nodes, all only slightly under 3.4).** `.btn-view` / `.btn-copy-prompt`
+     white on `--teal` #2a9d8f ≈3.32 (9 nodes), `.btn-add-lib` / `.btn-view.menu-show` white on `--blue`
+     #4d9fff ≈2.72 (14), `.btn-reroll` / `.btn-img-reroll` / `.btn-img-clear` / `#globalStopBtn` /
+     `#deletePageBtn` / `.btn-reroll.btn-header-gen` white on `--red` #ff4d4d ≈3.30 (~16). Fixing these means
+     DARKENING `--teal`/`--blue`/`--red` in dark (or switching those buttons to dark ink text) — a visible
+     change to the app's signature button colours, not a pure bug-fix.
+  3. **Dim greys (8 nodes).** `.ps-sep` `--text-10` #666 on `--surface` #2a2a2a ≈2.47 — the `•` separators in
+     the panel summary; purely decorative.
+- **QUESTION (awaiting author):** scope = (A) just bucket 1 (fix the amber chips — unambiguously correct; I'd
+  pin `.panel-imgs-sel .btn-line-del` + `.panel-imgs-sel .btn-copy-prev:not(:disabled)` to `#fff`, which also
+  matches the light theme and every other red button in the app), or (B) A **plus** bucket 2 (also darken
+  `--teal`/`--blue`/`--red` in dark so white button text clears 4.5, which visibly darkens the View / Add /
+  Generate / red buttons)? Bucket 3 (decorative `•`) I'd leave unless asked. Also: does "Yes please!" also
+  include the two small offers (default mode → "Match my device", and renaming Focus's "⚡ GENERATE ALL PANELS
+  ON PAGE" → "⚡ Generate All")? Ship everything as ONE version (`2026.09.23.4`) once the scope is confirmed.
+
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
