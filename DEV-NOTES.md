@@ -6,8 +6,52 @@ and `ISSUES.md`) because ~360KB of internal documentation was being downloaded b
 
 Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `PENDING.md`
 (the request queue — LOG EVERY REQUEST THERE FIRST), `ISSUES.md` (bug log), `CHANGELOG.md`
-(user-facing version history — also still embedded in index.html as `#embeddedChangelog`,
-which is what renders Help → About and the version number shown there).
+(user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
+index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
+
+## BATCH 2026.09.23.8 — About loads the changelog from the repo; readable panel-summary separators
+- Author request (the two optional items offered right after 2026.09.23.7 shipped): (1) raise the contrast
+  of the decorative `.ps-sep` "·" separators in a panel's summary line — the last sub-4.5:1 text node in
+  dark mode; (2) move the ~60KB `#embeddedChangelog` block out of index.html into the repo and have
+  Help → About fetch `CHANGELOG.md` instead. The author said "go ahead" for both.
+- Item 1: `.panel-summary .ps-sep` was `var(--text-10)` (#666666) on the panel surface (#2a2a2a) = **2.50:1**.
+  Now `var(--text-8)` (#999999) = **5.04:1** in dark (5.03:1 in light against --bg), still dimmer than the
+  item names (--text-3 = 10.57:1), so the hierarchy is unchanged. Measured with a WCAG relative-luminance
+  calculation in page_eval and confirmed with `vision` on a 3x capture of a real `.panel-summary`.
+- Item 2: the `#embeddedChangelog` `<script type="text/plain">` block (62,582 chars) is replaced by a tiny
+  `#embeddedVersion` stamp holding only the current release's `## <ver> — <date> — <title>` heading plus one
+  bullet. New JS: `ghRepoInfo()`, `changelogFetchTargets()`, `changelogSourceMd()`, `parseChangelog()`,
+  `setChangelogStatus()`, `renderChangelogEntries()`, `renderChangelog()` (sync — stamp only) and
+  `loadFullChangelog()` (async — the real file). A new `.changelog-status` line above `#changelogCtn`
+  carries the loading/loaded/⚠️ message and a "View on GitHub ↗" link.
+- LAZY BY DESIGN: `renderChangelog()` runs at init and renders ONLY the bundled stamp; the network fetch
+  happens on the FIRST expand of the About section, hooked in `toggleMenuCollapse()` (only when a panel that
+  contains `#changelogCtn` goes to `data-collapsed="0"`) and in `expandGroupPanels()` (guarded by
+  `group.querySelector('#changelogCtn')`). Verified with a `preambleJs` fetch-logger that the page makes
+  ZERO changelog requests at load. `changelogFullLoaded` memoises per page load.
+- GOTCHA (measured): `raw.githubusercontent.com` is edge-cached for ~5 MINUTES and a `?cb=<timestamp>` query
+  does NOT bust it — right after the CHANGELOG push, the Contents API served the new 85-entry file while raw
+  still served the previous 84. So the About panel now tries the **Contents API first**
+  (`api.github.com/repos/<o>/<r>/contents/CHANGELOG.md` with `Accept: application/vnd.github.v3.raw` —
+  CORS-open and unauthenticated for this public repo, ~60s cache, no token needed) and falls back to raw.
+  ghPush's commit-message version now reads `#embeddedVersion`, and its `docMap` (which used to push the four
+  embedded docs) was DELETED — ghPush no longer touches CHANGELOG.md / PENDING.md / AI-NOTES.md / ISSUES.md.
+- Also fixed (found by `vision` while verifying the About panel): changelog bullets are Markdown and the
+  About panel had ALWAYS printed the raw `**bold**` and backtick markers. New `appendInlineMarkdown()`
+  renders `**bold**` → `<strong>` and `` `code` `` → `<code>`, recursively (either can contain the other;
+  unmatched markers stay literal; DOM nodes only, never innerHTML). Result: 165 `<strong>` + 34 `<code>`
+  nodes and ZERO stray markers across all 235 rendered bullets. 4 historical bullets had an ODD number of
+  `**` markers (they were truncated when first written) — those 4 dangling markers were dropped from
+  CHANGELOG.md.
+- Impact: index.html 460,851 → 403,805 chars (the served page drops the same ~57KB of escaped text).
+- Verified live: no console/perchance errors; About shows the stamp instantly then 85 entries plus the
+  "Loaded live from the project repo." status and link once expanded; a simulated-offline run (fetch stubbed
+  to reject) showed the ⚠️ "Could not load the full history" status, the single stamp entry, and
+  `#aboutVersion` = 2026.09.23.8; no horizontal overflow at 390px with the Help group + About open
+  (`documentElement.scrollWidth == clientWidth`); phone-width capture reviewed with `vision`; left in the
+  default state (dark theme, accent #ffcc00, File menu open, 0 expanded sections).
+- NOTE: the repo's index.html is pushed from the SERVED page (the last SAVED build), so it only picks up
+  this release after the author presses Save — as always, re-run ghPush after they save.
 
 ## BATCH 2026.09.23.7 — collapsible per-panel character/location lines; Library/menu tidy-up
 - Author request (2 items, then an expansion): (1) in the Library tab, show everything directly under the
@@ -43,8 +87,9 @@ which is what renders Help → About and the version number shown there).
 ## BATCH 2026.09.23.6 — internal docs moved out of index.html into this repo
 - The four internal docs (dev-notes / PENDING / AI-NOTES / ISSUES) no longer ship inside
   index.html; it now carries only a compact "docs live on GitHub" pointer comment at the top.
-  Exactly ONE embedded doc block remains: `#embeddedChangelog` (Help → About + the version
-  number, parsed from its FIRST `## ` heading).
+  Exactly ONE embedded doc block remained at that point: `#embeddedChangelog` (Help → About + the
+  version number, parsed from its FIRST `## ` heading). That one is gone as of 2026.09.23.8 too —
+  only a tiny `#embeddedVersion` stamp is left.
 - Why: index.html was ~819KB, of which ~422KB (52%) was internal documentation (dev-notes
   comment 161.5KB + PENDING 116KB + CHANGELOG 60KB + AI-NOTES 54KB + ISSUES 30KB). Because the
   platform embeds/escapes the whole file, the served page was ~986KB — downloaded by every visitor.
@@ -752,11 +797,12 @@ which is what renders Help → About and the version number shown there).
     the SAVED code — the dialog warns to press Save first); index.html ← fetch(location.href) = the LIVE page (raw
     index.html is NOT fetchable at runtime; the live page is a self-contained archive incl. all embedded docs —
     ~1.4MB in the editor, smaller in production); src/user-manual.html ← relative fetch (shipped src files fetch
-    fine; src/changelog.js is dead/not shipped → excluded); the four embedded docs ← #embeddedPENDING /
-    #embeddedAINOTES / #embeddedChangelog / #embeddedIssues .textContent → PENDING.md / AI-NOTES.md / CHANGELOG.md /
-    ISSUES.md. Push = GitHub Contents API (PUT /repos/{owner}/{repo}/contents/{path}, base64 via
+    fine; src/changelog.js is dead/not shipped → excluded). It used to also push the four embedded docs
+    (#embeddedPENDING / #embeddedAINOTES / #embeddedChangelog / #embeddedIssues .textContent); that docMap
+    was REMOVED in 2026.09.23.8 — no such blocks exist now, and pushing the stamp would clobber the real
+    CHANGELOG.md. Push = GitHub Contents API (PUT /repos/{owner}/{repo}/contents/{path}, base64 via
     btoa(unescape(encodeURIComponent(s))), GET-first to resolve sha, no branch = default branch). Commit message
-    "backup <latest-ver> — <ISO timestamp>" parsed from #embeddedChangelog. GitHub API is CORS-open from the page
+    "backup <latest-ver> — <ISO timestamp>" parsed from #embeddedVersion (as of 2026.09.23.8). GitHub API is CORS-open from the page
     (verified); the singular perchance getGenerator endpoint is CORS-blocked — use getGeneratorsAndDependencies.
     Verified live: dialog open/close, settings round-trip, auth-error handling.
     SECURITY FOLLOW-UP (author question "does public mean anyone can commit?"): NO — the token lives only in the
