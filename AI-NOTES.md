@@ -169,23 +169,34 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   🔍 Focus (.btn-view) → 🔄 Generate (.btn-reroll). (■ Stop is NOT per-panel — it's ONE global button in the
   Generate bar: `#globalStopBtn` in `.gen-actions/.gen-row`, always visible, enabled during ANY generation.)
 - **Four accordions** (`.panel-acc[data-collapsed="1"]` default; toggle via `togglePanelAcc`):
-  1. **🧩 Panel Objects** (2026-08-15.1; replaced the old 📖 Panel Library sub-accordions) — ONE accordion
-     per panel (`#panel-objects-N`, rendered by `renderPanelObjects(i, mode, force)`, mode 'state'|'dom'):
-     ⚠️ warning (too many objects may confuse the image AI; no limit enforced), column headers, one row
-     per object — Type select (same options as the main menu, incl. "＋ New Type…") + Identity select
-     (`#panel-char-select-N-S`/`#panel-loc-select-N`/`#panel-act-lib-N`) + Freeform Description
-     (`#panel-char-extra-N-S`/`#panel-loc-extra-N`/`#panel-act-N`) + ⟳ persist (char/loc/act primary rows
-     only) + red ✕ delete. Primary rows REUSE the old ids so handleGridInput/propagate/restore/collect all
-     still work; empty slots render NO row. Arbitrary extra objects live in `panelEntry.extras` and render
-     as `.po-extra-row` with ids `panel-extra-type/sel/desc-N-IDX` (no ⟳, read by collectPageData).
-     Type routing: `onPanelObjTypeChange(i, kind, el)`/`onPanelExtraTypeChange(i, idx, el)` move a row
-     (Character→first empty char slot else extras, Location→loc slot else extras, Action→action box else
-     extras, custom→extras), clearing the source via deletePanelChar/Loc/Act; `ensurePanelObjectRow(i,kind)`
-     creates a missing target row so ⟳ chains/cross-page carry still land on previously-empty slots.
-     Add bar (`#panel-add-select-N`): "Create new…" options → `createLibraryEntry(type)` + `routeObject`
-     (auto-places); "Add from library…" → `#panel-add-picker-N` (`#panel-add-id-N`+`#panel-add-desc-N`+Add).
-     Picking a library object auto-fills the row's Freeform Description from `entry.desc`; desc-only rows
-     (loc with "No Location Selected") survive re-renders.
+  1. **📖 Panel Library** (`#panel-objects-N`, rendered by `renderPanelObjects(i, mode, force)`, mode
+     'state'|'dom') — `> .pl-subhead` headings 👤 Characters / 📍 Location / 🎬 Panel Action Prompt.
+     As of 2026.09.23.7 there are exactly THREE character rows + ONE location row + the action box, and each
+     char/loc row is a collapsible `.pl-line[data-pl-key][data-collapsed]`:
+     - `.pl-line-head` = `.pl-line-toggle` (▸ folded / ▾ open, `togglePanelLine`) + the select
+       (`#panel-char-select-N-S` / `#panel-loc-select-N`) + ⇤ `.btn-copy-prev` (`copyFromPrevPanel`) +
+       ✕ `.btn-line-del` (`deletePanelChar`/`deletePanelLoc`).
+     - `.pl-line-body` — HIDDEN while `data-collapsed="1"` (the default, i.e. folded shows only the name) —
+       holds a read-only `.pl-libdesc` (`#panel-char-libdesc-N-S` / `#panel-loc-libdesc-N`) showing the selected
+       item's CURRENT library description, then the editable `.po-desc` extra text
+       (`#panel-char-extra-N-S` / `#panel-loc-extra-N`).
+     - Fold state lives in `plLineStateMap` (SESSION-ONLY; default folded) and is rendered by
+       `charRowHtml`/`locRowHtml`. `refreshPanelLineDesc`/`refreshAllPanelLineDescs` (re)write the read-only
+       text; callers: `handleGridInput` (select change), `renderPanelObjects`, `updatePanelSelects`,
+       `copyFromPrevPanel`, `deletePanelChar`/`deletePanelLoc`, `newPanelLibraryEntry`, and the 📚 Library
+       `descInput.oninput` (so editing a library description updates every panel's display as you type).
+       The built-in half of the lookup needs `builtinDescMaps`, filled once by `getMaps()` in the init block.
+     - The action box `#panel-act-N` stays a plain `.po-row` / `.po-desc.pl-act-wide` textarea (Enter =
+       generate) and is NOT collapsible.
+     - **Prompt assembly (2026.09.23.7):** `buildPanelPrompt` adds `resolveDesc(sel)` + the extra box for each
+       character, and `locDesc` + `locExtra` for the location — each exactly ONCE. Before this ship the select
+       handler auto-filled an empty extra box with a copy of the library description, so the description went
+       into the prompt TWICE; `migratePanelExtraCopies(page)` in `restorePanelState` clears those stale copies.
+       `hasContent` is now true when ANY character OR location is selected (`hasLocSelected`), even with no
+       descriptions and no action — the old code had a dead `locParts` variable that never counted a location.
+     - The older ".po-extra-row / panelEntry.extras / Type-routing" object system this section used to describe
+       (2026-08-15.1) is GONE from the code — grep confirms no `onPanelObjTypeChange` / `po-extra-row` /
+       `panel-add-select`. Do not resurrect it.
   2. **📝 Prompt** — `.btn-prompt` (toggle `#prompt-editor-N` with `#prompt-pos-N`/`#prompt-neg-N`),
      `.btn-copy-prompt`
   3. **⚙ Panel** — `Collapse Menu` (.btn-panel-menu), ⧉ Duplicate, ＋ Add Panel,
@@ -277,11 +288,17 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `offsetTop` already includes the app-header (37/82/126px depending on wrapping), which is why this is measured
   in JS rather than a static `calc()`. Called from `applyLayoutMode`, `applyMenuVisible`, and `resize`/`load`/
   `orientationchange`; the inline style is cleared outside side mode.
-- `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice
-  persisted; every group opens with its sections COLLAPSED via `collapseGroupPanels` — EXCEPT `library`, which
-  expands instead (2026.09.23.1), because the author didn't want a second click on the "Library" heading. While
-  `body.menu-fullscreen` it instead refuses to close the active section and EXPANDS the group via
-  `expandGroupPanels` (and refreshes `#menuOverlayTitle`).
+- `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice persisted. Every group
+  opens with its sections COLLAPSED via `collapseGroupPanels` — EXCEPT `library`, which expands
+  (`expandGroupPanels`, 2026.09.23.1) because the Library is meant to be readable straight away. **2026.09.23.7:**
+  the full-screen exception was REMOVED, so full screen now behaves like the inline menu. Previously
+  `body.menu-fullscreen` expanded every section of whichever group you opened, which the author read as "all of
+  the other menu item groups are defaulting to open". While full-screen, switching to the already-open section
+  still refuses to close it; `updateMenuFullscreenLabels()` refreshes `#menuOverlayTitle` and the ⛶ label.
+- The Library group (2026.09.23.7) has NO collapsible "Library" header and NO `⛶ Full Screen` button.
+  `setupMenuCollapse()` skips `.library-section` (its `h3` fallback would otherwise adopt the first
+  `.lib-bucket` heading as the toggle) and `updateMenuFullscreenLabels()` only touches `#menuFullscreenBtn`,
+  so the toolbar + Characters/Locations lists are always visible. `openMenuFullscreen()` expands only Library.
 - **Where the Preferences panel lives:** `#preferencesPanel` (`.config-panel`, `<h2>Preferences</h2>`) is the LAST
   panel of `#menuGroup-edit` as of 2026.09.23.1 (it used to be the last panel of `#menuGroup-file`). It holds
   `#hidePasswordPref` today; the theme / header / menu preferences land here next. Nothing queries it by parent,
@@ -313,15 +330,15 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `comicGen.genAlwaysVisible` is on (the header grows to ~181px, ResizeObserver republishes `--hdr-h`).
 - **Full-screen menu overlay (`#menuOverlay`, 2026-09-20):** `.view-overlay` hosting the REAL `#menuFrame`
   (moved in on open, restored to `.page-layout` on close — see BATCH 2026.08.16.20). `openMenuFullscreen(section)`
-  / `closeMenuFullscreen()` / `toggleMenuFullscreen(section)`; `#libFullscreenBtn` in the Library toolbar opens
-  it on the Library tab. Esc or the overlay's `← Back to page` closes it. The markup sits just before
+  / `closeMenuFullscreen()` / `toggleMenuFullscreen(section)`; the header's ⛶ `#menuFullscreenBtn` is the only trigger
+  since 2026.09.23.7 (the Library's own `#libFullscreenBtn` was removed). Esc or the overlay's `← Back to page` closes it. The markup sits just before
   `#analysisOverlay` so Analysis still paints above it. Opening while `body.menu-hidden` shows the menu; closing
   NEVER re-hides it (fixed 2026-09-20, changelog 2026.08.16.21 — the old restore-the-hidden-state behaviour is
   what made the menu vanish after "← Back to page"). **PREF-DRIVEN since 2026.09.23.2:** `syncMenuMode()` decides
   between the overlay and the inline frame on every menu-visible change ("pref ON + menu visible → overlay");
   `applyMenuFullscreenPref(on, section)` is the single setter that stores `comicGen.menuFullscreen` and calls
-  `syncMenuMode()`, and `toggleMenuFullscreen(section)` merely flips the pref (so the header ⛶ button and the
-  Library ⛶ button are the same persisted switch — answer 3). `updateMenuFullscreenLabels()` labels the two
+  `syncMenuMode()`, and `toggleMenuFullscreen(section)` merely flips the pref (so the header ⛶ button is that
+  persisted switch; the Library's duplicate button was removed in 2026.09.23.7). `updateMenuFullscreenLabels()` labels the two
   buttons from the PREF (⛶ Full Screen ↔ ⤡ Exit Full Screen), not from `isMenuFullscreen()`. The overlay's
   `← Back to page` and Esc call `requestCloseMenuFullscreen()` = `applyMenuVisible(false)`. `body.menu-fullscreen
   .app-header` becomes `position:fixed; z-index:10005` (header stays on top of the overlay) and
