@@ -320,6 +320,42 @@ each section).
   missing) and STATIC (all 186 on* attributes in the source vs the window.X = list: the same single miss). No
   others. Recorded as a rule in AI-NOTES + the dev-notes.
 
+### 2026-09-23 — QUESTION: can the four in-app doc blocks live only on GitHub (with a dev-notes pointer)?
+- **Status:** ANSWERED 2026-09-23 — awaiting the author's decision. No code changed yet.
+- **Question (author, 2026-09-23, verbatim):** "I remember that on the Perchance side we had problems when the
+  in-app doc blocks were broken out as .md files. Would it be possible for those to live entirely on Github and
+  to leave a note in dev-notes for future AI instances to look there? Or are there technical reasons to keep
+  them in index.html?"
+- **RECON (2026-09-23):**
+  - The remembered problem was perchance's OWN src/ storage, not GitHub: writing PENDING.md / AI-NOTES.md /
+    CHANGELOG.md / ISSUES.md / src/README.md into src/ wedges the platform save flow
+    (another_upload_in_progress) and the sync is killed by the next hard reload (see the FILE-CLEANUP 2026-08-15
+    + src rules in the dev-notes). GitHub is entirely outside perchance, so that problem does NOT apply to docs
+    living in the repo — and these four files are ALREADY on GitHub (ghPush writes them).
+  - Who actually READS the blocks — only two places: (1) renderChangelog() reads #embeddedChangelog → the
+    Help → About → Version History list AND the version number (#aboutVersion = the first `## ` heading), and
+    ghPush derives the commit-message version from it too; (2) ghPush()'s docMap reads #embeddedPENDING /
+    #embeddedAINOTES / #embeddedIssues / #embeddedChangelog ONLY to write the four .md files to GitHub.
+    NOTHING in the app ever displays PENDING / AI-NOTES / ISSUES.
+  - renderChangelog() already falls back to fetch('src/CHANGELOG.md'), but src/ cannot hold it (the src/ rule).
+  - BLOCKER for a full move: the backup repo cgoodwin97124/yacbpg-backup is PRIVATE (verified: unauthenticated
+    API + raw.githubusercontent both 404; with the token: private:true, default branch main). So the app cannot
+    fetch the docs from GitHub at runtime without embedding a token in the PUBLIC source — never do that. That
+    is the real technical reason to keep the CHANGELOG embedded: otherwise Version History + the About version
+    number break for every visitor (and offline), and only the author's browser (which holds the token) sees them.
+  - Sizes: source index.html 814745 = dev-notes comment 161502 + the four blocks 260523 (PENDING 116244,
+    CHANGELOG 59806, AI-NOTES 54405, ISSUES 30068) + the app 392720. The served page (986652) is the platform
+    document with the whole source escaped (~172KB of boilerplate + escaping overhead).
+- **ANSWER / RECOMMENDATION:** yes, it is possible. Move PENDING + AI-NOTES + ISSUES (200717 bytes — all
+  internal, never displayed) to GitHub-only and KEEP the CHANGELOG embedded. ghPush needs NO code change: it
+  already skips missing/empty blocks, so it would keep pushing main.pjs / index.html / src/user-manual.html and
+  simply leave the four .md files to be maintained on GitHub (by the AI, via comicGen.githubToken in this
+  browser's localStorage). Optionally move the 161502-byte dev-notes comment to a DEV-NOTES.md as well, leaving
+  a compact invariants + pointer note in index.html. TRADEOFFS: the docs stop travelling with the generator
+  source; GitHub becomes the single source of truth (today index.html + GitHub are two copies); a future AI
+  session must fetch them from GitHub, so it needs the token still in localStorage. NOT recommended: moving the
+  changelog out too (breaks Version History for visitors/offline, since the repo is private).
+
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
 ### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
