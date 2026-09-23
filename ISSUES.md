@@ -10,6 +10,29 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
+## 2026-09-23 — "Save" did nothing at all (no feedback, dot never cleared) — the EDITOR TAB, not the generator (fixed 2026.09.23.9)
+- **Symptom:** Save clicked → no "saving…", no error, no toast; the src file-panel dot never clears; the
+  platform keeps serving the previous build. Nothing in the generator's own code was ever at fault.
+- **Root cause:** the editor page's save entry point bails out SILENTLY (console.warn only) in three
+  states: (1) `window.__editorReady !== true` or the CodeMirror editors missing → "save ignored while
+  editor content is still loading"; (2) `window.__saveInFlight` left set by a hung earlier save → "save
+  ignored: a save is already in flight"; (3) `app.saveGenerator` is still the stub that throws "save
+  machinery failed to initialize" until `loadAppExtras()` (`appExtras.js`) resolves. `_goToEditModeInner`
+  additionally sets `saveBtn.style.pointerEvents="none"` while the editor is loading. Every one of these
+  looks exactly like "the button does nothing".
+- **Diagnosis path (repeatable):** clear the generator side cheaply first — `document.__perchanceInternal`
+  on the preview gives `renderedContentStamp` (which `index.html` length the editor is rendering),
+  `srcDebug` and `srcTrace` (pending src files); the SAVED src tree is readable by fetching
+  `https://<publicId>.perchance.org/src/@<generatorName>/<path>` DIRECTLY (bypasses the service worker, so
+  it is the server's copy rather than the editor's pending one); and the iframe can trigger a save with
+  `window.parent.postMessage({type:"saveKeyboardShortcut"},"https://perchance.org")` (parent
+  `handleIframeSaveRequest()`). If that is silently ignored too, the stuck state is in the editor page.
+- **Fix:** leave edit mode and re-enter it (re-runs `_goToEditModeInner` → `__editorReady = true`), then
+  Save. Fallback: reload the Perchance tab. No generator code change was needed.
+- **Gotcha:** a files-panel "dot" that never clears = the wedged-upload state (2026-08-14 entry). The lock
+  is tied to the FILENAME — recreating the same name re-wedges — so RENAME the file
+  (`src/user-manual.html` → `src/manual.html` on 2026.09.23.9) instead of recreating it.
+
 ## 2026-09-23 — Unclosed `#newProjectOverlay` made the JSON editor invisible (fixed 2026.08.16.24)
 - **Symptom:** the new full-page JSON editor (`#jsonEditorOverlay`) was in the DOM and all of its JS worked
   (open/close, find/replace, validate, Apply), but nothing on screen ever changed: `getBoundingClientRect()` was
