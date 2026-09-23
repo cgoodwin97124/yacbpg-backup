@@ -34,7 +34,7 @@
 <body>
 <div class="page">
 <h1>Yet Another Comic Book Page Generator</h1>
-<h3>Design Document — version 2026.09.23.5</h3>
+<h3>Design Document — version 2026.09.23.6</h3>
 <p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
 <hr>
 <h2>1. What it is</h2>
@@ -188,6 +188,7 @@
 <p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
 <h2>12. Recent changes (changelog highlights)</h2>
 <ul>
+<li><strong>2026.09.23.6</strong> — the generator&#39;s internal development documentation (dev-notes, request queue, AI notes, issue log — about 360KB of text) moved out of the shipped page to the project&#39;s GitHub repository, which makes the page noticeably smaller to load. Nothing changes in the app itself. The GitHub repo is now <strong>public</strong> (read-only for visitors, forkable if you want your own copy), and the <strong>⬆ Backup to GitHub</strong> dialog no longer claims that a private repo is required.</li>
 <li><strong>2026.09.23.5</strong> — fixed the full-screen menu&#39;s <strong>← Back to page</strong> button, which could report “requestCloseMenuFullscreen is not defined” when clicked (the function was simply never published to the page, though the Esc key worked). Every inline button handler in the app was then audited for the same problem — this was the only one.</li>
 <li><strong>2026.09.23.4</strong> — <strong>readability pass in dark mode</strong>: the colored buttons (teal / blue / red / green) now use slightly deeper fills so their white text is clearly readable (the blues were the worst), and the tiny <strong>⇤ copy-previous-seed</strong> / <strong>✕ clear-seed</strong> / <strong>⇅ Move</strong> chips no longer render as amber text on red/blue/grey. The <strong>default color mode is now “Match my device”</strong> (it used to be Dark), the <strong>Import Project</strong> button got a readable text color, and the Focus view’s big button is now <strong>⚡ Generate All</strong>.</li>
 <li><strong>2026.09.23.3</strong> — <strong>Light / Dark / Match-my-device themes</strong> plus a user-pickable <strong>accent colour</strong> (8 presets + custom + Reset) under <strong>Edit → Preferences → Theme</strong>; the theme is saved in your project so it travels with Save / Export / Import and is editable in the JSON editor. The default at that time was still dark.</li>
@@ -210,7 +211,7 @@
 </ul>
 
 <hr>
-<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.09.23.5. Written 2026-08-14 (the JSON-editor section was added 2026-09-23). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
+<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.09.23.6. Written 2026-08-14 (the JSON-editor section was added 2026-09-23). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
 </div>
 </body>
 </html>
