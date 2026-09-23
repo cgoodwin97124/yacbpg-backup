@@ -10,6 +10,29 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
+## 2026-09-23 — AI-worker test protocol CLOBBERED `comicGen.panelState` (recovered from the live DOM, byte-length identical)
+- **Symptom:** nothing visible in the app — this is a process failure. While testing 2026.09.23.13 the AI worker
+  snapshotted the project with `window.__snap = localStorage.getItem('comicGen.panelState')`, then a `page_refresh()`
+  reloaded the page. A later eval compared the live value with `window.__snap` (now `undefined`) and, since they
+  differed, ran `localStorage.setItem(KEY, snap)` — storing the literal string `"undefined"` (9 bytes) over the
+  author’s 7216-byte project state.
+- **Root cause:** in-page JS state (`window.*`) does NOT survive `page_refresh()`, but localStorage does. Any write
+  to localStorage derived from a `window` variable is therefore one reload away from writing `undefined`.
+- **Recovery:** the state was rebuilt from the live DOM (which the reload had re-populated from the still-intact
+  in-memory state) by dispatching an `input` event on a grid input → `handleGridInput` + `schedulePanelSave()`
+  → `collectPanelState()` → localStorage. The result was byte-length identical to the original (7216) and carried
+  the author’s real globals (`imgCountDefault: "3"`, theme dark / #ffcc00, both keyword lists), so nothing was
+  permanently lost. The author was told.
+- **Prevention (mandatory for every future session):** (1) read the snapshot INSIDE the same eval that writes it
+  back; (2) if a snapshot must cross a reload, park it under a SECOND localStorage key (e.g.
+  `comicGen.panelState.P3TEST`) — never a `window` variable — and delete that key afterwards; (3) never
+  `setItem` a value that could be `undefined`: assert `typeof v === 'string' && v.length > 0` first. Test flows
+  should keep the author’s state untouched where possible — the panel selection and the clipboard are in-memory,
+  so select / copy / Esc can be exercised freely; anything that mutates panels must restore, `page_refresh`, and
+  then RE-READ localStorage to prove the restore stuck.
+- **Also worth knowing:** `comicGen.libObjects` is the saved library and `resetEverything()` / a test import can
+  destroy it — never exercise those paths in the shared preview.
+
 ## 2026-09-23 — "Save" did nothing at all (no feedback, dot never cleared) — the EDITOR TAB, not the generator (fixed 2026.09.23.9)
 - **Symptom:** Save clicked → no "saving…", no error, no toast; the src file-panel dot never clears; the
   platform keeps serving the previous build. Nothing in the generator's own code was ever at fault.
