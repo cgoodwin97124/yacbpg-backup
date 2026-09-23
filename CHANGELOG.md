@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.3 — 2026-09-23 — Light / Dark / System themes and a color accent you choose
+- **New: the whole app can be light.** **Edit → Preferences → Theme** now has a **Color mode** setting — **Light**, **Dark**, or **Match my device**. Every colour in the interface (page, panel cards, menus, header, buttons, the Library, Storyboard, Analysis, the JSON editor) is theme-aware, so switching is instant and complete. The default is **Dark**, so the app looks exactly as it always has until you change it.
+- **New: pick your accent color.** The same panel has an **Accent color** row: eight ready-made swatches (amber, blue, green, purple, teal, pink, orange, red), a custom colour box, and a **Reset** button. The accent is the highlight colour used for borders, active buttons, headings and labels everywhere. If you pick a pale colour, the light theme automatically deepens it just enough to stay readable on white.
+- **It's part of your project.** Your theme is saved with everything else, so 💾 Save / Export / Import carries it and importing a project applies its theme; it's also editable in the 🧩 JSON editor (`settings.theme.mode` and `settings.theme.accent`).
+- **No flash on load** — the theme is applied while the page is still being built, so you never see a dark flash before a light theme or vice versa.
+- **Fixed in light mode:** the small colored chips — ⇤ copy-previous-seed, ✕ clear-seed, ⇅ Move, 📋 Copy — and the red buttons (Delete, Stop, Re-roll, Clear image) were inheriting a low-contrast text colour from the platform stylesheet; they now use white/dark text explicitly. The default dark theme is unchanged, pixel for pixel.
+
 ## 2026.09.23.2 — 2026-09-23 — A header that stays put, Generate All / Pause / Stop in the menu, and full-screen menus by default
 - **The top header bar (the app title and the Storyboard / Hide Menu / Menu: Side / Full Screen buttons) now stays
   on screen.** It's pinned to the top of the window, so it no longer scrolls away when you're working on a long
