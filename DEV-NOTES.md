@@ -91,6 +91,86 @@ GOTCHAS / DECISIONS WORTH KNOWING
   horizontal overflow (`documentElement.scrollWidth === innerWidth`), and the selection bar sits centred at
   the bottom.
 
+## BATCH 2026.09.23.12 — panel multi-selection, phase 2 (batch Generate / Clear / Clear Images / Delete)
+
+Phase 2 of the panel-selection feature (see the 2026.09.23.11 block above and `PENDING.md` for the
+approved spec). Phase 3 — Copy / Cut / Paste — is still to come.
+
+WHAT SHIPPED
+- **Batch Generate.** `generateComicPage(startPanel, panelList)` gained an optional SECOND parameter: a
+  list of panel numbers. When it is a non-empty array the run iterates exactly those panels; the original
+  single-argument behaviour (including the `${i}/${totalPanels}` progress text and the `resumePanel`
+  arithmetic) is untouched, so ⚡ Generate All / Generate All From Here behave exactly as before. For a
+  list run the progress reads `${step}/${list.length}` and `resumePanel` is set to the panel just attempted
+  (so pressing ⚡ Generate All afterwards carries on from there to the end of the page).
+  `panelGenerateAction(i)` (the new ⚙ Panel 🔄 Generate button) generates the selection when more than one
+  panel is selected, else `generateSinglePanel(i)`. `panelGenerateFromHereAction(i)` starts the batch run
+  at the FIRST selected panel and runs to the end of the page (the union of "from here" over the
+  selection).
+- **A generic multi-button dialog.** `#choiceOverlay` reuses the import-confirm chrome — `.import-confirm-overlay`
+  (+ its `:not([hidden])` display rule), `.import-confirm-box`, `.ic-hint`, `.import-confirm-btns` — so Esc
+  and the full-screen backdrop behave like the other dialogs. `showChoiceDialog({title, paragraphs, hint,
+  buttons})` returns a Promise resolving to the picked `value` (or `null` for Cancel/Esc). The buttons are
+  built with `document.createElement` + `el.onclick`, so none of them needs a `window.*` export.
+  `choiceDialogPick(null)` cancels; the selection's Esc handler *first* closes an open choice dialog (it
+  used to jump straight to clearing the selection).
+- **Uniform dialog buttons.** The app's `.btn-view` / `.btn-clear` / `.btn-danger` have mismatched padding
+  (an import-dialog-style row rendered a 42px row above a 25px row — confirmed with
+  `getBoundingClientRect`), so the dialog has its own `#choiceBtns button` rules with `choice-danger` /
+  `choice-plain` / `choice-neutral` variants (red / blue / outlined) at a shared height.
+- **Clear / Clear Images / Delete batch actions.** `panelClearAction`, `panelClearImagesAction` and
+  `panelDeleteAction` are the new ⚙ Panel handlers; each falls through to the existing single-panel
+  function when fewer than two panels are selected, so nothing changes for the ordinary one-panel case.
+  Clear and Clear Images loop the existing `clearPanelImage` / `clearPanelImages` (each stops only its own
+  in-flight generations), then clear the selection. The multi-panel forms confirm through
+  `showChoiceDialog` with `🎯 Only This Panel` offered; picking it performs the single-panel action and
+  leaves the selection alone.
+- **Delete & Refill.** `batchDeletePanels()` computes the dialog (`Delete & Refill` / `Delete Only` /
+  `Only This Panel` / `Cancel`, or without the refill option on a single-page project), then
+  `performBatchDelete(refill)` does the work: it re-collects the state first (the dialog is async, so the
+  project may have changed while it was open), builds the surviving `{panel, img}` list, and — when
+  refilling — repeatedly pulls the FIRST panel of the next page (by key) to the end of the source page until
+  the source page is back to its pre-delete panel count or the following pages run out. A dry run over the
+  same walk feeds the dialog: the hint names the pages that will be emptied, and if any will be, a native
+  `confirm()` asks once before the pull is applied. The source page and every affected following page are
+  rebuilt through `pageObjectFromEntries`, saved, and re-loaded once at the end.
+- **Selecting every panel on a page** deletes the page instead: `batchDeletePanels` offers a single-purpose
+  dialog, and when that page is the only page it falls back to the same strong "reset the ENTIRE project"
+  confirm `deletePanel` uses (never a silent `resetEverything`).
+- **Clear Images stays reachable in batch mode.** `updatePanelAllButtons` and `updateSelectionUI` now
+  force-show `.btn-clear-images` on a selected panel while more than one panel is selected (its normal rule
+  hides it below 2 images), so the batch action is never hidden behind a panel that happens to have one
+  image.
+
+GOTCHAS FOUND WHILE TESTING (worth remembering)
+- **`#panelCount` only has the options 1 / 4 / 6 / 12 / 24 / custom.** Setting `sel.value = '2'` silently
+  produces `value === ''` (no matching option), and `getPanelCount()` then falls back to 4 — so a test that
+  "sets 2 panels" is really testing a 4-panel page. For an arbitrary count set `value = 'custom'` and fill
+  `#panelCountCustom`. (This cost a test round: the "a refill empties the next page" path silently did not
+  trigger because the second page was 4 panels, not 2.)
+- Empty panels are the cheap way to exercise a batch Generate end-to-end: `generateSinglePanel` returns
+  `'skipped'` for a panel with no content BEFORE it touches the image service, so a selection of blank
+  panels runs the whole queue (progress text, counters, pause/stop bookkeeping, selection release) without
+  generating anything or spending quota.
+- `analysisPanelCount()` clamps to a minimum of 1, so a following page can never be "empty" — refill takes
+  those pages down to zero by DELETING them, which is why the deletion confirm exists at all.
+
+VERIFIED LIVE (2026.09.23.12), then rolled back by restoring `comicGen.panelState`
+- Clear with 2 selected → dialog; `Only Panel 1` cleared just that panel and kept the selection; then
+  `Clear 2 Panels` cleared both and released the selection.
+- Clear Images with 3 selected → dialog; Esc closed it with nothing changed and the selection intact.
+- Delete on a 2-page project with 2 selected → `Delete & Refill` / `Delete Only` / `Only Panel 1` / Cancel;
+  repeated with the second page holding exactly 2 panels: the hint named Page 2 as about to be emptied, the
+  confirm fired, both of Page 2's panels were pulled up (their names verified) and **Page 2 was deleted**
+  (page keys went 1,2 → 1; status reported "Deleted 1 emptied page").
+- `Delete Only` on the same setup left the source page one shorter with no pull.
+- Selecting every panel of a page offered "Delete the N panels of Page X?" → `Delete Page` removed it and
+  the remaining pages renumbered.
+- Batch Generate with 3 blank panels selected → "Done: generated 0, skipped 3, failed 0.", ⏹ re-disabled,
+  selection released; `Generate All From Here` with 2 selected ran from the first to the end of the page.
+- 4-button dialog layout checked with `getBoundingClientRect` (two rows of two, no overflow:
+  scrollHeight === clientHeight) and rendered for vision.
+
 ## POST-2026.09.23.9 — "Save" silently did nothing; and the user manual was renamed
 
 Author report (2026-09-23, immediately after the .9 work was finished): pressing Save gave NO feedback at
