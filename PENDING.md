@@ -305,6 +305,21 @@ each section).
   ON PAGE" → "⚡ Generate All")? Ship everything as ONE version (`2026.09.23.4`) once the scope is confirmed.
 
 
+### 2026-09-23 — BUG: "requestCloseMenuFullscreen is not defined" (full-screen menu's "← Back to page" button)
+- **Status:** DONE 2026-09-23 (changelog 2026.09.23.5).
+- **Report (author, 2026-09-23, verbatim):** the perchance HTML error — "There was an error in the onclick
+  attribute of this element in your HTML panel: <button class="btn-view"
+  onclick="requestCloseMenuFullscreen()" ...>← Back to page</button>. Here's the error: ReferenceError:
+  requestCloseMenuFullscreen is not defined".
+- **RECON:** the function IS declared in the IIFE, immediately above the Esc keydown handler that also calls it
+  internally — so the internal Esc path worked while the inline onclick did not. It was simply never added to the
+  big window.<fn> = <fn> export list at the end of the IIFE. Introduced with ship 2 (2026.09.23.2); NOT a
+  2026.09.23.4 regression.
+- **FIX + AUDIT:** added "window.requestCloseMenuFullscreen = requestCloseMenuFullscreen;". Then audited for the
+  same class of bug two ways — LIVE DOM (every on* attribute: 1635 calls / 120 distinct functions, only this one
+  missing) and STATIC (all 186 on* attributes in the source vs the window.X = list: the same single miss). No
+  others. Recorded as a rule in AI-NOTES + the dev-notes.
+
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
 ### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
