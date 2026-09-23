@@ -355,6 +355,17 @@ each section).
   source; GitHub becomes the single source of truth (today index.html + GitHub are two copies); a future AI
   session must fetch them from GitHub, so it needs the token still in localStorage. NOT recommended: moving the
   changelog out too (breaks Version History for visitors/offline, since the repo is private).
+- **GITHUB PAT SCOPE (reference, 2026-09-23 — author asked "what permissions should I add for the fine-grained
+  PAT?"):** the app uses exactly THREE endpoints — `GET /repos/{owner}/{repo}` (ghTest "Test connection"),
+  `GET /repos/{owner}/{repo}/contents/{path}` (read the current file sha) and
+  `PUT /repos/{owner}/{repo}/contents/{path}` (write). No DELETE, no /git/ refs, no issues / pull requests /
+  actions / webhooks / admin calls anywhere. So a fine-grained PAT needs ONLY: Repository access = "Only select
+  repositories" → this one repo; Repository permissions = **Contents: Read and write** (Metadata: Read-only is
+  added automatically and cannot be removed); every other permission stays "No access". Contents write also
+  covers CREATING a new file and DELETING one — which is what moving the doc blocks to GitHub needs. NOT needed:
+  Administration (changing repo visibility is done by the human in Settings), Actions, Issues, Pull requests,
+  Webhooks, Secrets. Anyone who FORKS and wants to use the app's Backup dialog needs their own token with
+  Contents: Read+write on THEIR repo (worth a line in the repo README).
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
