@@ -4,6 +4,14 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.11 — 2026-09-23 — Select several panels at once for batch Duplicate, Add, and Move
+- **Panels can now be multi-selected.** Every panel's header row starts with a **checkbox** — tick it to select that panel, or **Shift-click** a checkbox to select the whole range back to the last one you ticked. Selected panels get a blue outline and a tint over the whole card.
+- **The ⚙ Panel menu then acts on the whole selection.** While anything is selected, the **⧉ Duplicate**, **＋ Add Panel** and **⇅ Move** buttons in the ⚙ Panel menu of any *selected* panel work on every selected panel at once, and their labels show the count (*⧉ Duplicate 3 Panels*). **Duplicate** puts a copy right after each selected panel (copies carry no images); **Add Panel** adds one new empty panel per selected panel, all together after the last of them; **Move** opens a picker that shifts the whole block — to a new position on the page, to the front or end of another page, or onto a brand-new page.
+- **A selection bar** at the bottom of the screen shows how many panels are selected, with **Select all** / **Clear** buttons (**Esc** clears too). **Edit → Panel Selection** has the same two buttons plus a short explanation.
+- **The selection is a working aid, not project data:** it is never saved and it clears when you switch pages. Clicking a panel's *body* never changes the selection — only its checkbox (or Esc) does. After a batch **Move** the moved panels stay selected, so you can shift them again.
+- On a page that is **full (24 panels)** the batch **Duplicate** / **Add Panel** still reflow exactly like the single-panel versions, but with **one** combined confirmation instead of one per panel.
+- *This is phase 1 of the panel-selection feature; batch Generate / Clear / Delete (with their Ok / Cancel / Only-this-panel dialogs) and Copy / Cut / Paste are the planned follow-ups.*
+
 ## 2026.09.23.10 — 2026-09-23 — Images per panel can be given a remembered default
 - **📄 File → Page Setup → "Images per Panel"** (the control formerly labelled *Image Count for All Panels*) is now a real **setting**, not just an apply-button: new and blank panels start at that count instead of always starting at 1.
 - The setting is **saved with the project** — it rides along in **Export / Import** (both `.json` and `.zip`) and is editable in the **JSON editor** — so it is still set the next time you open the app. Panels that already have their own count are left alone.
