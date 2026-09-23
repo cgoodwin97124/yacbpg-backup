@@ -399,6 +399,14 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   (deleting it, confirm-gated, when it held only that panel), inserts into the target carrying its
   `pageSession` images, then switches to the target. `movePanelToNewPage(i)` pre-creates the page and calls it
   with `'replace'`.
+- **Full-page reflow (2026.09.23.9, BATCH 2026.09.23.9):** `duplicatePanel(i)` and `addPanel(i)` no longer stop
+  on a page holding all 24 panels — they confirm, then call `reflowInsertOnFullPage(i, panel, img)`, which
+  rebuilds the source page at 24 panels with the incoming panel at `min(i+1,24)` and pushes the page's ORIGINAL
+  last panel to position 1 of the next page, cascading onward while each next page is full and creating a page
+  (max key + 1) when none follows. `currentPage` stays put; images travel with panels. Helpers:
+  `sortedPageKeys()`, `pageImagesOf()`/`setPageImagesFor()` (mutates the live `panelImages` in place for the
+  current page so `buildPanelGrid()` picks it up), `planReflow()` (dry run → `{moves, willCreate}` for the confirm
+  text). The old `duplicateToNewPage()` was deleted; `addPage()` is unchanged.
 - **View modes:** `#singleOverlay` (🔍 Focus moves the ACTUAL card into `#singleStage`,
   navigation via list/dropdown/prev-next/arrows/Esc; **2026-09-22:** anything that rebuilds `#comicGrid` —
   `buildPanelGrid()` — snapshots `singleCard ? currentSingle : 0` as `singleResume`, drops the staged card via
@@ -465,6 +473,11 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   (Save&Import / Continue / Cancel); import "nukes" protections + clears all sessions first;
   `applyImportedSettings` restores settings, libraries (BEFORE restorePanelState so lib-backed
   selections round-trip), layout, menuVisible/panelsVisible.
+- `scrubMinusOneSeeds(settings)` (2026.09.23.9) — called by `applyImportedSettings()` immediately before the
+  settings are written to `PANEL_STATE_KEY`, so it covers both import paths (.json and .zip) and the "save the
+  current project first?" branch. Clears `seed` when it is `-1`, `'-1'` or a padded `' -1 '`, on each page's
+  project seed, on panels 1..24, and on the settings object itself (the legacy flat shape `ensurePages()` accepts).
+  Nothing else is touched and a user-typed `-1` is never rewritten (only the import moment is scrubbed).
 - `saveSettings()` (silent, remembered handle) / `saveSettingsAs()` — File System Access API
   with download fallback; handle+name in IndexedDB.
 
@@ -546,6 +559,15 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 - When a task changes code: finish with a fresh `browser_refresh`/`browser_eval`, confirm no
   `syntaxErrors`/`perchanceErrors`, then update THIS file, the index.html dev-note block, and
   (if user-visible) a `CHANGELOG.md` entry in the repo root (+ the matching `#embeddedVersion` stamp).
+- **DESTRUCTIVE-TEST GOTCHA (2026-09-23):** the editor preview shares the generator's real origin, so
+  `comicGen.panelState` / `comicGen.libObjects` in the preview ARE the author's own in-browser project when they
+  use the editor. Importing synthetic fixtures (or `resetEverything()`) to test therefore REPLACES their data.
+  Snapshot the `comicGen.*` keys first and restore them afterwards (or at minimum run `resetEverything(true)` and
+  say so). This bit us while testing the 2026.09.23.9 reflow — the preview had to be reset to defaults.
+- **Import-test harness gotcha:** to test the import path, call
+  `importSettingsFromFile({target:{files:[new File([bytes],'t.zip')], value:''}})` and then poll. Poll for the
+  import to FINISH, and first CLEAR `#backupStatusEl` — otherwise `/Imported/` still matches the PREVIOUS
+  import's message and the test races ahead against stale state (it silently tested nothing).
 - **OVERLAY MARKUP GOTCHA (2026-09-23):** the full-page overlays must each be a direct child of
   `#output-container`. A single missing `</div>` nests the following overlays inside an earlier `hidden`
   wrapper, and `hidden` on an ancestor hides the whole subtree regardless of the child's `display` — the
