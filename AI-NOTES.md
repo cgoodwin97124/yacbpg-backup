@@ -624,3 +624,25 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   theme has ~53 such nodes by design/legacy, light should stay near zero); (5) `poTip` and the user-manual iframe's
   srcdoc page are intentionally NOT themed (a dark tooltip is conventional; CSS variables do not cross document
   boundaries).
+
+## DOC LAYOUT (2026.09.23.6)
+
+As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
+
+- `DEV-NOTES.md` — the development log + gotchas (was the top-of-file comment in index.html).
+- `AI-NOTES.md` (this file), `PENDING.md`, `ISSUES.md` — were `<script type="text/plain">` blocks
+  in index.html; now only in this repo.
+- `CHANGELOG.md` — lives here AND is still embedded in index.html as `#embeddedChangelog`, because
+  `renderChangelog()` renders it into Help → About and `#aboutVersion` is parsed from its FIRST
+  `## ` heading. Keep the two copies in sync.
+
+index.html keeps a compact pointer comment at the top describing where the docs are and how to
+read/write them. `ghPush()` was left unchanged — its docMap skips missing/empty blocks, so it now
+pushes main.pjs / index.html / src/user-manual.html / CHANGELOG.md and no longer touches
+PENDING.md / AI-NOTES.md / ISSUES.md (edit those via the Contents API).
+
+The repo is PUBLIC (read + fork; push = owner only), so raw reads need no token:
+https://raw.githubusercontent.com/cgoodwin97124/yacbpg-backup/main/<file>
+
+Do NOT re-add those three text/plain blocks, and never put these .md files in src/ (the platform
+save flow wedges on them — see DEV-NOTES.md).
