@@ -42,7 +42,7 @@ Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet li
 - **Fixed in light mode:** the small colored chips — ⇤ copy-previous-seed, ✕ clear-seed, ⇅ Move, 📋 Copy — and the red buttons (Delete, Stop, Re-roll, Clear image) were inheriting a low-contrast text colour from the platform stylesheet; they now use white/dark text explicitly. The default dark theme is unchanged, pixel for pixel.
 
 ## 2026.09.23.2 — 2026-09-23 — A header that stays put, Generate All / Pause / Stop in the menu, and full-screen menus by default
-- **The top header bar (the app title and the Storyboard / Hide Menu / Menu: Side / Full Screen buttons) now stays
+- The top header bar (the app title and the Storyboard / Hide Menu / Menu: Side / Full Screen buttons) now stays
   on screen.** It's pinned to the top of the window, so it no longer scrolls away when you're working on a long
   page, and it also stays visible while the menu is open full-screen — the menu now starts just below it.
 - **Menus open full screen from now on.** No more pressing ⛶ Full Screen every time: every menu section opens as a
@@ -82,7 +82,7 @@ Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet li
   (the `version` numbers, the current page, library ids, the document's structure) so an edit — or a Replace all —
   can never corrupt the project. Fields backed by a dropdown (image size, panel count, character/location
   selection) are checked against the same choices the app offers.
-- **Find / Replace inside the editable values only** — with **Regex** and **Match case** options, a **🔍 Find
+- **Find / Replace inside the editable values only** — with **Regex** and **Match case** options, a 🔍 Find
   next** that jumps to the next hit, **⇄ Replace** for one at a time, and **⇄ Replace all**, which asks first and
   tells you how many matches it is about to replace (Cancel leaves the document untouched, and Ctrl+Z undoes it).
 - **Validate, then Apply.** Nothing changes until you press **✔ Apply**, which validates the whole document first:
@@ -217,10 +217,10 @@ Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet li
 - The 📚 Library menu has a new **📊 Analysis** button. It opens a full-page matrix that cross-references your
   library items against every panel on a page: **👤 Characters**, **📍 Locations** (and **🎬 Actions**, if you
   have any) along one axis, the page's **panels** along the other.
-- The **leftmost column** (or top row) shows each library item's **name and global description**; the **top
+- The **leftmost column** (or top row) shows each library item's **name and global description**; the top
   row** (or leftmost column) shows each panel's **representative-image thumbnail** (⭐ Cover if set, else its
   first image; a "No image" placeholder otherwise).
-- Each intersection shows **✅** when that item is used in that panel. When it is, the panel's **per-panel
+- Each intersection shows **✅** when that item is used in that panel. When it is, the panel's per-panel
   description** is editable right there — one field **per character slot** (so a character used in two slots
   shows both), plus the location modifier. Empty cells offer a **＋ Add** button to drop that item straight
   into the panel.
