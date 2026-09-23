@@ -4,6 +4,11 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.10 — 2026-09-23 — Images per panel can be given a remembered default
+- **📄 File → Page Setup → "Images per Panel"** (the control formerly labelled *Image Count for All Panels*) is now a real **setting**, not just an apply-button: new and blank panels start at that count instead of always starting at 1.
+- The setting is **saved with the project** — it rides along in **Export / Import** (both `.json` and `.zip`) and is editable in the **JSON editor** — so it is still set the next time you open the app. Panels that already have their own count are left alone.
+- **Apply to all** still sets every panel's **Images** selector at once. **Reset to Defaults** puts both the default and every panel back to 1.
+
 ## 2026.09.23.9 — 2026-09-23 — Panel reflow on a full page, and imported -1 seeds become random
 - **Duplicating a panel on a full page no longer stops you.** Before, Duplicate on a page holding all 24 panels only offered to start a new page with the copy as its first panel. It now reflows instead: your page’s **last** panel is pushed to the **top of the next page**, and if that page is full too, its last panel is pushed onward the same way — cascading through as many full pages as there are, and creating a new page at the end when nothing is left to push into. The copy takes the slot the pushed panel vacated, so it still lands **immediately after the panel you duplicated**. For example, with three full pages, duplicating Panel 6 on Sheet 1 creates Sheet 4 and moves Sheet 3’s Panel 24 there, Sheet 2’s Panel 24 onto Sheet 3, Sheet 1’s Panel 24 onto Sheet 2, and leaves the copy as Sheet 1 Panel 7. You are asked to confirm first, and told how many panels will move; the page you are viewing stays put.
 - **＋ Add Panel does the same thing** on a full page: the empty panel goes immediately after the panel you clicked, and the overflow reflows onward.
