@@ -9,87 +9,76 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
-## BATCH 2026.09.23.11 — panel multi-selection, phase 1 (selection + batch Duplicate / Add / Move)
+## BATCH 2026.09.23.13 — panel multi-selection, phase 3 (Copy / Cut / Paste) — the feature is COMPLETE
 
-Author request (2026-09-23): "Panel Selection: This one has a lot of moving parts and a lot of verbiage
-from me, so definitely ask me clarifying questions." Eleven RECON recommendations were sent; the author
-replied **"all of your recommendations are good"**, so those eleven ARE the spec now — they are recorded
-in full in `PENDING.md`. Only phase 1 shipped; P2 (batch Generate / Clear / Clear Images / Delete + their
-dialogs) and P3 (Copy / Cut / Paste + the buffer) are still to come, with a review after each phase.
+Author greenlit phase 3 ("Let’s do it!") 2026-09-23. Delivered exactly per the approved spec (decisions 10 /
+11 recorded in `PENDING.md`): a selection bar hosting Copy / Cut / Clear + "N selected", a Paste chip on
+every panel header shown only while the buffer is non-empty, Cut consumed by the first Paste while Copy
+persists, and Paste inserting the buffer *before* the clicked panel through the full-page reflow.
 
-WHAT SHIPPED
-- `let panelSelection = new Set()` (1-based panel numbers) + `let selectionAnchor = null`, declared just
-  above `duplicatePanel`. There is exactly ONE classic `<script>` in index.html, so a plain top-level `let`
-  is visible to `loadCurrentPage` and friends — but it is NOT on `window` (only the explicitly exported
-  functions are; the new inline handlers were added to the export block by `window.deletePanel`).
-- `#panel-select-N.panel-select-cb` wrapped in `.panel-select-wrap`, the FIRST child of `.panel-header-row`,
-  with `onclick="onPanelSelectClick(N, event)"`. The handler reads `ev.target.checked`, which is the
-  POST-toggle value for a real click, so it must NOT also listen for `change` (that would double-fire).
-- `updateSelectionUI()` is the single render pass: it drops out-of-range indices (> `getPanelCount()`),
-  toggles `.panel-selected` on the card, sets each checkbox, rewrites the per-card button labels to include
-  the count when the panel is selected and `size > 1`, and updates `#selectionBar` / `#selectionBarCount`.
-  It is called at the END of `buildPanelGrid()`, so every rebuild re-syncs the UI to the in-memory set.
-- `panelDuplicateAction(i)` / `panelAddAction(i)` are the new handlers on the ⚙ Panel buttons; when
-  `panelSelection.size > 0 && panelSelection.has(i)` they call the batch function, otherwise the original
-  single-panel function. `size === 1` still routes through the batch function, which simply delegates to the
-  single-panel one (which clears the selection) — so a lone selected panel behaves exactly as before.
-- `cascadePageSequence(srcPage, entries)` — the general primitive, factored out of
-  `reflowInsertOnFullPage` (which is left untouched and is still what the single Duplicate / Add use).
-  `entries` is the whole new panel sequence for `srcPage` as `{panel, img}` objects and MAY exceed 24: the
-  first 24 become the page, the rest are PREPENDED to the next page (by key) and cascade the same way,
-  creating one page at the end if there is nothing left to push into. It rebuilds each page through
-  `pageObjectFromEntries` so the page's name/summary/seed and its `panelCountSel`/`panelCountCustom` are
-  always consistent. It does `stopAllGenerations()` → `collectPanelState()` → writes `pages` →
-  `savePanelStateShape` → `currentPage = srcPage` → `setPageImagesFor(srcPage, …)` → `loadCurrentPage()`
-  → `populatePageSel()` → `updateDeletePageBtn()`.
-- Batch ops: `batchDuplicatePanels` (a copy directly after each selected panel; copies carry NO images);
-  `batchAddPanels` (one empty panel per selected panel, all after the LAST selected one); and the Move set
-  `moveSelectionWithinPage(toPos)` (the block re-inserted so it STARTS at `toPos`),
-  `batchMoveToPage(targetPage, replaceTarget)` and `batchMoveToNewPage()`. `batchDuplicatePanels` /
-  `batchAddPanels` confirm ONCE via `batchReflowPlan(extra)` (is a reflow needed? will a page be created?
-  how many following pages are touched?) instead of once per panel.
+New state (in memory only, like the selection): `panelClipboard` (an array of `{panel, img}`) plus
+`panelClipboardCut`. `panel` is a deep JSON snapshot of the stored panel object (chars / title /
+protectSlots / loc / locExtra / action / seed / imgCount / style / sizeSel / sizeW / sizeH / promptOverride
+— exactly what `collectPageData()` produces) and `img` is that panel’s `panelImages[i]` slot array (data
+URLs), so a Paste carries the generated images too — unlike Duplicate, which deliberately passes `img: null`.
+Nothing here reaches `collectPanelState()`, Export, or localStorage.
 
-GOTCHAS / DECISIONS WORTH KNOWING
-- `analysisPanelCount()` CLAMPS to a minimum of 1 panel, so a page can never be empty — a freshly created
-  page already "has" one blank panel. `batchMoveToNewPage` therefore calls `batchMoveToPage(n, true)`, which
-  makes the moved block REPLACE that blank (the batch analogue of the single-panel
-  `movePanelToPage(i, n, 'replace')`). Without it you get a stray empty panel at the front — observed
-  live: 3 moved panels produced a 4-panel page.
-- The selection is cleared inside `loadCurrentPage()` (before `buildPanelGrid()`), which is how a page
-  switch, `addPage`, `deletePage`, and every single-panel structural op (duplicate / add / delete /
-  resequence / move-to-page) drop it. The batch **Move** paths therefore re-add their indices AFTER
-  `loadCurrentPage` runs and set `selectionAnchor` to the last moved panel — recommendation 5: Move keeps
-  the selection, everything else clears it.
-- `#selectionBar` is `position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px`. Verified with
-  `getBoundingClientRect` at 866×563 and at a 390×844 phone viewport: dead centre with a 14px bottom gap,
-  and no ancestor has a transform / filter / contain that would break `fixed` (the same "fixed-breaker"
-  walk `openGhBackup` does). Because the class sets `display: flex`, it needs its own
-  `.selection-bar[hidden] { display: none }` rule — an author `display` declaration beats the UA
-  `[hidden]` rule.
-- The selection highlight is HARD-CODED blue (`#4d9fff` border + a translucent `#4d9fff` tint
-  `linear-gradient` background-image) rather than an `--accent`-derived var: `--accent` is user-pickable and
-  can itself be blue. A translucent background-image also works on both themes without touching the three
-  theme var blocks. `.panel-select-cb` uses `accent-color: #4d9fff` for the native tick.
-- Esc clears the selection from a `document` keydown listener, but ONLY when no overlay is open — it bails
-  if any `[id$="Overlay"]` element is visible, otherwise it would steal Esc from the Focus view, the JSON
-  editor, the manual, etc.
-- `handleGridInput` ignores the new checkbox id safely (no regex matches it), and the grid's `change`
-  listener merely schedules a save — the selection itself is never collected into the project state, so it
-  cannot leak into Save / Export / Import.
-- Verified live on 2026.09.23.11: click → 1 selected; Shift-click → the range, with
-  "⧉ Duplicate 3 Panels" / "＋ Add 3 Panels" / "⇅ Move 3" on exactly the selected cards and the plain labels
-  on the others; a click on a panel body changes nothing; Esc clears; `localStorage['comicGen.panelState']`
-  is byte-identical before and after (proving the selection is session-only). Batch matrix: 4 panels →
-  Duplicate all → 8 interleaved (T1,T1,T2,T2,…) with the count field `custom`/8; Add with 2 selected → +2
-  empties after position 2; Move panels 1–2 to position 7 → order 3,4,5,6,7,8,1,2,9,10 with the selection
-  following to 7,8; Move 2 panels to a brand-new page → that page holds exactly 2; 24 panels + Duplicate 3
-  → ONE confirm, the page stays at 24 and 3 panels reflow to the next page; with no next page → a new page
-  is created holding exactly the 3. Every test ran against the author's LIVE project state and was rolled
-  back by restoring `comicGen.panelState` and reloading.
-- Vision-checked at desktop and phone widths: the checkbox is the leftmost header-row item, selected cards
-  read clearly blue against the amber default, the header row still wraps cleanly at 390px with no
-  horizontal overflow (`documentElement.scrollWidth === innerWidth`), and the selection bar sits centred at
-  the bottom.
+Functions: `clipboardCount()`, `clipboardText(count, withImgs)`, `copySelectionToClipboard(mode)`,
+`panelCopyAction()`, `panelCutAction()`, `emptyPageAfterCut()`, `panelPasteAction(i)`, `updatePasteUI()`. All
+are exported on `window` because the selection bar and every panel header use inline `onclick` handlers.
+
+Markup / CSS: `#selectionBar` is now count + 📋 Copy + ✂ Cut + ✕ Clear. The `.btn-paste-chip` button is the
+SECOND child of `.panel-header-row` (right after the select checkbox, before `.panel-title`) so it never
+displaces the title, and it carries `.btn-paste-chip[hidden] { display: none }` — the platform’s normalize
+stylesheet out-specifies a single-class button colour/display the same way it does for the menu tabs (see
+2026.09.23.2). `.selection-bar` gained `max-width: calc(100vw - 12px); width: max-content; flex-wrap: wrap;
+justify-content: center`. The `width: max-content` matters: a fixed `left: 50%` element shrink-to-fits
+against the space from the 50% mark to the right edge, so it measured just 195 px on a 390 px phone and
+wrapped to THREE rows; max-content clamps to the viewport instead (measured 378 × 77 at x = 6, two rows).
+
+Paste = rebuild `entries` (panels 1..total with the clipboard spliced in before index `i`) and call
+`cascadePageSequence(currentPage, entries)` — the primitive Duplicate / Add / Move already use, so the
+overflow cascades onto the following pages and a page is created at the end when needed. `batchReflowPlan(n)`
+drives the single combined `confirm()` on a full page. Because `cascadePageSequence` ends in
+`loadCurrentPage()` (which clears the selection), Paste does NOT re-select the pasted panels — matching
+approved decision 5 ("after a batch op the selection clears, except Move").
+
+Cut = copy, then remove. With a partial selection it calls `performBatchDelete(false)` — the dialog-free
+core of "Delete Only" — after `stopAllGenerations()`. When the whole page is selected that helper bails out
+(`kept.length === 0`), so Cut routes through `showChoiceDialog` instead: multi-page → `deletePage(true)`,
+single page → `emptyPageAfterCut()` (keeps name / summary / seed, leaves one blank panel,
+`panelCountSel = '1'`, images cleared). Cancelling the dialog keeps the panels in the clipboard and says so
+in the status line.
+
+Verified live 2026-09-23 in the preview (the author’s panel state was snapshotted first and restored after):
+- 6 panels, 2 of them with an image → select 2 + 3 → Copy → all 24 headers show "📋 Paste 2" → Paste before
+  Panel 5 → the page becomes 8 panels with the copies at 5 and 6, the image really renders in slot 1 of the
+  new Panel 5 (`img.src` === the copied data URL), status "Pasted 2 panels into Page 1 as Panels 5–6."
+- Cut 2 + 3 (with images) → 6 panels, "Cut 2 panels (with images)" → Paste before 5 → 8 panels,
+  "Moved 2 panels into Page 1 as Panels 5–6. The clipboard is now empty." and every Paste chip hides.
+- Esc clears the selection but leaves the clipboard (the chips stay visible).
+- 24-panel full page: Copy Panel 1 → Paste before Panel 24 → one `confirm()` ("…reflow the overflow onto the
+  following page and create a new page"), the copy lands at 24, Page 2 is created holding the old Panel 24,
+  and the status names Page 2.
+- Cross-page: with the buffer still holding a copy, switch to Page 2 and Paste before Panel 1 → it lands
+  there (the clipboard deliberately survives a page switch, unlike the selection).
+- Cut-all of a page: multi-page → "🗑 Cut & Delete Page" deleted Page 2 and switched to Page 1; single-page
+  → "🗑 Cut & Empty Page" left one blank panel at `panelCountSel = '1'`, and pasting the 24-panel buffer back
+  before Panel 1 restored 24 panels and created Page 2 for the overflow. Cancel leaves everything alone and
+  keeps the clipboard.
+- Layout: `.panel-header-row` scrollWidth === clientWidth at both 866 px and 1440 px card widths (the chip
+  fits inline and adds only +6 px of header height); no document horizontal overflow; the bar is one centred
+  row on desktop and two rows fully inside the viewport at 390 × 844.
+
+GOTCHA OF THE SESSION (full post-mortem in `ISSUES.md`): the AI worker’s own test protocol clobbered the
+author’s project state. `window.__snap = localStorage.getItem('comicGen.panelState')` does NOT survive a
+`page_refresh()`, but localStorage does — so a later eval’s `if (now !== snap) localStorage.setItem(KEY, snap)`
+wrote the literal string `"undefined"` (9 bytes) over the 7216-byte state. It was rebuilt from the live DOM
+(dispatch an `input` event on any grid input → `handleGridInput` + `schedulePanelSave` → `collectPanelState`)
+and came back byte-length identical (7216) with the author’s real globals intact (`imgCountDefault: "3"`,
+theme dark / #ffcc00, both keyword lists). Rules from now on: read the snapshot inside the SAME eval that
+writes it back; if a snapshot must cross a reload, park it in a SECOND localStorage key (never a `window`
+variable) and assert the value is a non-empty string before `setItem`.
 
 ## BATCH 2026.09.23.12 — panel multi-selection, phase 2 (batch Generate / Clear / Clear Images / Delete)
 
@@ -209,6 +198,88 @@ Rename applied: `src/user-manual.html` → `src/manual.html`.
   `src/user-manual.html` was deleted.
 - Un-wedging rules restated: never hard-reload right after writing a src/ file (that kills the in-flight
   sync and wedges that filename); if a src file ever wedges again, RENAME it rather than recreating it.
+
+## BATCH 2026.09.23.11 — panel multi-selection, phase 1 (selection + batch Duplicate / Add / Move)
+
+Author request (2026-09-23): "Panel Selection: This one has a lot of moving parts and a lot of verbiage
+from me, so definitely ask me clarifying questions." Eleven RECON recommendations were sent; the author
+replied **"all of your recommendations are good"**, so those eleven ARE the spec now — they are recorded
+in full in `PENDING.md`. Only phase 1 shipped; P2 (batch Generate / Clear / Clear Images / Delete + their
+dialogs) and P3 (Copy / Cut / Paste + the buffer) are still to come, with a review after each phase.
+
+WHAT SHIPPED
+- `let panelSelection = new Set()` (1-based panel numbers) + `let selectionAnchor = null`, declared just
+  above `duplicatePanel`. There is exactly ONE classic `<script>` in index.html, so a plain top-level `let`
+  is visible to `loadCurrentPage` and friends — but it is NOT on `window` (only the explicitly exported
+  functions are; the new inline handlers were added to the export block by `window.deletePanel`).
+- `#panel-select-N.panel-select-cb` wrapped in `.panel-select-wrap`, the FIRST child of `.panel-header-row`,
+  with `onclick="onPanelSelectClick(N, event)"`. The handler reads `ev.target.checked`, which is the
+  POST-toggle value for a real click, so it must NOT also listen for `change` (that would double-fire).
+- `updateSelectionUI()` is the single render pass: it drops out-of-range indices (> `getPanelCount()`),
+  toggles `.panel-selected` on the card, sets each checkbox, rewrites the per-card button labels to include
+  the count when the panel is selected and `size > 1`, and updates `#selectionBar` / `#selectionBarCount`.
+  It is called at the END of `buildPanelGrid()`, so every rebuild re-syncs the UI to the in-memory set.
+- `panelDuplicateAction(i)` / `panelAddAction(i)` are the new handlers on the ⚙ Panel buttons; when
+  `panelSelection.size > 0 && panelSelection.has(i)` they call the batch function, otherwise the original
+  single-panel function. `size === 1` still routes through the batch function, which simply delegates to the
+  single-panel one (which clears the selection) — so a lone selected panel behaves exactly as before.
+- `cascadePageSequence(srcPage, entries)` — the general primitive, factored out of
+  `reflowInsertOnFullPage` (which is left untouched and is still what the single Duplicate / Add use).
+  `entries` is the whole new panel sequence for `srcPage` as `{panel, img}` objects and MAY exceed 24: the
+  first 24 become the page, the rest are PREPENDED to the next page (by key) and cascade the same way,
+  creating one page at the end if there is nothing left to push into. It rebuilds each page through
+  `pageObjectFromEntries` so the page's name/summary/seed and its `panelCountSel`/`panelCountCustom` are
+  always consistent. It does `stopAllGenerations()` → `collectPanelState()` → writes `pages` →
+  `savePanelStateShape` → `currentPage = srcPage` → `setPageImagesFor(srcPage, …)` → `loadCurrentPage()`
+  → `populatePageSel()` → `updateDeletePageBtn()`.
+- Batch ops: `batchDuplicatePanels` (a copy directly after each selected panel; copies carry NO images);
+  `batchAddPanels` (one empty panel per selected panel, all after the LAST selected one); and the Move set
+  `moveSelectionWithinPage(toPos)` (the block re-inserted so it STARTS at `toPos`),
+  `batchMoveToPage(targetPage, replaceTarget)` and `batchMoveToNewPage()`. `batchDuplicatePanels` /
+  `batchAddPanels` confirm ONCE via `batchReflowPlan(extra)` (is a reflow needed? will a page be created?
+  how many following pages are touched?) instead of once per panel.
+
+GOTCHAS / DECISIONS WORTH KNOWING
+- `analysisPanelCount()` CLAMPS to a minimum of 1 panel, so a page can never be empty — a freshly created
+  page already "has" one blank panel. `batchMoveToNewPage` therefore calls `batchMoveToPage(n, true)`, which
+  makes the moved block REPLACE that blank (the batch analogue of the single-panel
+  `movePanelToPage(i, n, 'replace')`). Without it you get a stray empty panel at the front — observed
+  live: 3 moved panels produced a 4-panel page.
+- The selection is cleared inside `loadCurrentPage()` (before `buildPanelGrid()`), which is how a page
+  switch, `addPage`, `deletePage`, and every single-panel structural op (duplicate / add / delete /
+  resequence / move-to-page) drop it. The batch **Move** paths therefore re-add their indices AFTER
+  `loadCurrentPage` runs and set `selectionAnchor` to the last moved panel — recommendation 5: Move keeps
+  the selection, everything else clears it.
+- `#selectionBar` is `position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px`. Verified with
+  `getBoundingClientRect` at 866×563 and at a 390×844 phone viewport: dead centre with a 14px bottom gap,
+  and no ancestor has a transform / filter / contain that would break `fixed` (the same "fixed-breaker"
+  walk `openGhBackup` does). Because the class sets `display: flex`, it needs its own
+  `.selection-bar[hidden] { display: none }` rule — an author `display` declaration beats the UA
+  `[hidden]` rule.
+- The selection highlight is HARD-CODED blue (`#4d9fff` border + a translucent `#4d9fff` tint
+  `linear-gradient` background-image) rather than an `--accent`-derived var: `--accent` is user-pickable and
+  can itself be blue. A translucent background-image also works on both themes without touching the three
+  theme var blocks. `.panel-select-cb` uses `accent-color: #4d9fff` for the native tick.
+- Esc clears the selection from a `document` keydown listener, but ONLY when no overlay is open — it bails
+  if any `[id$="Overlay"]` element is visible, otherwise it would steal Esc from the Focus view, the JSON
+  editor, the manual, etc.
+- `handleGridInput` ignores the new checkbox id safely (no regex matches it), and the grid's `change`
+  listener merely schedules a save — the selection itself is never collected into the project state, so it
+  cannot leak into Save / Export / Import.
+- Verified live on 2026.09.23.11: click → 1 selected; Shift-click → the range, with
+  "⧉ Duplicate 3 Panels" / "＋ Add 3 Panels" / "⇅ Move 3" on exactly the selected cards and the plain labels
+  on the others; a click on a panel body changes nothing; Esc clears; `localStorage['comicGen.panelState']`
+  is byte-identical before and after (proving the selection is session-only). Batch matrix: 4 panels →
+  Duplicate all → 8 interleaved (T1,T1,T2,T2,…) with the count field `custom`/8; Add with 2 selected → +2
+  empties after position 2; Move panels 1–2 to position 7 → order 3,4,5,6,7,8,1,2,9,10 with the selection
+  following to 7,8; Move 2 panels to a brand-new page → that page holds exactly 2; 24 panels + Duplicate 3
+  → ONE confirm, the page stays at 24 and 3 panels reflow to the next page; with no next page → a new page
+  is created holding exactly the 3. Every test ran against the author's LIVE project state and was rolled
+  back by restoring `comicGen.panelState` and reloading.
+- Vision-checked at desktop and phone widths: the checkbox is the leftmost header-row item, selected cards
+  read clearly blue against the amber default, the header row still wraps cleanly at 390px with no
+  horizontal overflow (`documentElement.scrollWidth === innerWidth`), and the selection bar sits centred at
+  the bottom.
 
 ## BATCH 2026.09.23.10 — a remembered "Images per Panel" default
 - Author request, part of the 3-item "next tasks" batch, greenlit for immediate implementation ("if there are no
