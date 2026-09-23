@@ -292,7 +292,17 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `offsetTop` already includes the app-header (37/82/126px depending on wrapping), which is why this is measured
   in JS rather than a static `calc()`. Called from `applyLayoutMode`, `applyMenuVisible`, and `resize`/`load`/
   `orientationchange`; the inline style is cleared outside side mode.
-- `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice persisted. Every group
+- **Floating `＋ Add Page` FAB (2026.09.23.14):** `#addPageFab` (a body-level fixed button right after
+  `#pageNav`) calls the existing `addPage()`, so there is no new state and nothing to keep in sync. It is styled
+  like `#panelsToggleBtn` / the `#pageNav` bar (`var(--bg)` fill, 2px `var(--green)` border, `var(--green-text)`
+  bold label, radius 6, padding 10px 14px, same shadow and `:hover`), pinned `right:16px / bottom:16px` at
+  `z-index:1000`. `positionAddPageFab()` is the whole layout logic: start at `bottom:16px`, then in up to 4
+  passes lift the button above any of `#selectionBar` / `#pageNav` / `#panelsToggleBtn` it would overlap
+  (horizontal AND vertical test) and set an inline `bottom`. The fixed-point loop matters — on a 390px phone,
+  lifting it just clear of the selection bar put it straight into the page navigator’s box, so the test must be
+  re-run after each lift. Called from `updateSelectionUI()` plus `resize` / `orientationchange`. It needs no
+  hiding logic: every full-page overlay (Focus, Storyboard, Library, Analysis, JSON, manual) is opaque at
+  `z-index >= 10000`, so it covers the button automatically.- `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice persisted. Every group
   opens with its sections COLLAPSED via `collapseGroupPanels` — EXCEPT `library`, which expands
   (`expandGroupPanels`, 2026.09.23.1) because the Library is meant to be readable straight away. **2026.09.23.7:**
   the full-screen exception was REMOVED, so full screen now behaves like the inline menu. Previously
