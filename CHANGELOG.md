@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.13 — 2026-09-23 — Copy, Cut, and Paste whole panels, images and all
+- **📋 Copy and ✂ Cut join the selection bar.** With panels selected, the bar at the bottom of the screen now shows **📋 Copy**, **✂ Cut** and **✕ Clear** beside the count. **Select all** moved to **Edit → Panel Selection**, which now carries Select all panels / 📋 Copy / ✂ Cut / ✕ Clear selection.
+- **📋 Paste appears on every panel header while the clipboard holds something.** Pasting inserts the copied panels *before* the panel you paste on — contiguously, keeping each panel’s title, characters, modifiers, location, action, seed, image count, style, size, protection and prompt override **and its generated images** — then reflows anything that no longer fits onto the following page, creating a new page at the end if needed (it asks first, like Duplicate).
+- **A ✂ Cut is used up by the first Paste** (the Paste chips then disappear); a **📋 Copy stays on the clipboard** so you can paste it again and again until you copy something else.
+- **Cutting every panel of a page** offers to delete the page — or, on a single-page project, to empty it down to one blank panel — after a confirmation; cancelling still leaves the panels on the clipboard.
+- The clipboard is a working aid like the selection: it lives in this tab only, is never saved with the project, survives page switches, and is lost on reload.
+- The selection bar now wraps instead of overflowing on phone-width screens.
 ## 2026.09.23.12 — 2026-09-23 — Selected panels can be generated, cleared, or deleted together
 - **The ⚙ Panel menu now batches the rest of its actions across a selection.** With panels selected, **🔄 Generate** renders exactly the selected panels (progress, ⏸ Pause and ■ Stop work as usual), **⚡ Generate All From Here** starts at the first selected panel and runs to the end of the page, **🗑 Clear Images** removes every selected panel's images (keeping their characters, location, and action), and **🗑 Clear** resets the selected panels entirely. Every label shows the count.
 - **A new 🔄 Generate button** was added to the ⚙ Panel menu, beside ⚡ Generate All From Here, so the batch Generate lives with the other panel actions. With nothing selected it generates just that panel, exactly like the other Generate buttons.
