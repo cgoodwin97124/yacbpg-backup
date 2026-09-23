@@ -111,6 +111,29 @@ each section).
   are persisted, and included in `buildExportData()` / `applyImportedSettings()` / the JSON editor's
   `JSON_OPEN_FLAGS` + apply path. Verified live at 866x604 and 390x844 (7 menu buttons, header pinned at
   top:0 while scrolling, `--hdr-h` 94→181 when the gen buttons move into the header, zero window errors).
+- **BACKUP NOTE (2026-09-23, 17:52 UTC):** ship 2 was pushed to `cgoodwin97124/yacbpg-backup` (7 files).
+  IMPORTANT: `ghPush()` reads `index.html` from the PUBLIC generator page (`location.href`), which serves the
+  last SAVED version — at backup time that page was still the pre-2026.09.23.1 build (changelog head
+  2026.08.16.24, 906692 bytes), so the repo's `index.html` does NOT contain ship 1 or ship 2 yet, while
+  PENDING.md / CHANGELOG.md / AI-NOTES.md / ISSUES.md / src/user-manual.html (read from the live DOM) DO.
+  FIX: after the author presses **Save**, re-run `openGhBackup(); await ghPush(); ghClose();` so the repo's
+  index.html catches up. When verifying, check the repo's index.html for `menuGenerateBtn` + `2026.09.23.2`.
+- **SHIP 3 DONE (2026.09.23.3):** (7)/(8) the theme. Every hard-coded colour is now a CSS variable
+  (`:root` table of 74 vars whose dark values equal the old literals → dark is unchanged, verified), plus
+  `:root[data-theme="light"]` and a `@media (prefers-color-scheme: light){ :root:not([data-theme]) }` mirror;
+  new Preferences controls `#themeModeSel` (Match my device / Light / Dark, default **Dark**) and
+  `#accentRow` (8 preset swatches + `#themeAccentInput` + Reset); JS `applyTheme()`, `themeEffectiveMode()`,
+  `accentVarsFor()` (contrast-aware in light mode), `applyThemeFromProject()`, `onThemeModeChange()`,
+  `onAccentChange()`/`onAccentInput()` — all exported; persisted in `comicGen.themeMode`/`comicGen.accent`
+  AND in `settings.theme` (`collectPanelState`), applied by `applyImportedSettings`/`jsonApplyDoc`, editable
+  in the JSON editor; a pre-paint square block sets `data-theme` before the first paint (no flash). A
+  `LIGHT-READABILITY` tail block pins the single-class coloured chips (the normalize `color: inherit` trap)
+  in light mode only, and the red-fill rules use the new `--on-danger`. Verified: dark probes byte-identical
+  (body #1a1a1a / cards #2a2a2a / accent #ffcc00 / Stop #ff4d4d), light contrast audit 1 marginal node
+  (a disabled chip) vs 53 in dark, theme + custom accent survive a reload, panelState carries
+  `theme:{mode,accent}`, JSON editor shows the theme values as editable, phone 390x844 has no overflow.
+  Docs updated: changelog 2026.09.23.3, index.html dev-note BATCH 2026.09.23.3, AI-NOTES §14 + the
+  BUTTON COLOURS BAIT bullet, src/user-manual.html.
 - **NEW AUTHOR DIRECTIVE (2026-09-23):** the AI may pause work mid-task and ask the author for input
   (especially visual checks) whenever it reaches a genuine decision point — logged as its own directive entry
   in the QUEUED section and in the index.html dev-notes.
