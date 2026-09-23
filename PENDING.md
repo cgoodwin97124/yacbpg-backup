@@ -15,6 +15,17 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-23 — Floating "＋ Add Page" button in the bottom-right corner
+- **Status:** 🟢 GREENLIT — author said "Let’s add…" (implement immediately). Ships as 2026.09.23.14.
+- **Request (author, 2026-09-23, verbatim):** "Let’s add a floating \"Add Page\" button, in the same color
+  scheme as the page navigator, to the bottom right corner of the screen." Follow-up: "Let’s make it in the
+  same visual style as the Hide Panels and page navigator buttons as well."
+- **Plan:** a fixed `#addPageFab` (a `＋ Add Page` button) pinned bottom-right that calls the existing
+  `addPage()`, styled exactly like `#panelsToggleBtn` / the `#pageNav` bar — `var(--bg)` fill, 2px
+  `var(--green)` border, `var(--green-text)` bold label, same radius / padding / shadow / hover. It rises
+  above `#selectionBar` while that bar is visible, because the bar is nearly full-width on a phone and would
+  otherwise cover it.
+
 ### 2026-09-23 — BATCH (3 items): default images-per-panel is remembered · New Panel on a full page uses the Duplicate reflow · PANEL SELECTION (multi-select + batch ops)
 - **Status:** item 1 ✅ DONE (2026.09.23.10); item 2 ✅ DONE — it was already implemented in 2026.09.23.9; item 3 🟢 GREENLIT, RECON ANSWERS RECEIVED 2026-09-23 ("all of your recommendations are good") — **PHASE 1 SHIPPED as 2026.09.23.11** (selection + highlight + Shift-range + Select all + batch Duplicate / Add / Move) and **PHASE 2 SHIPPED as 2026.09.23.12** (batch Generate / Generate All From Here / Clear / Clear Images / Delete with the Ok / Only-This-Panel / Cancel dialog and Delete &amp; Refill); phase 3 (Copy / Cut / Paste) **SHIPPED as 2026.09.23.13** — item 3 is now COMPLETE (all three phases done).
 - **Item 1 (author, verbatim):** "Number of images per panel default setting can be saved: I'd like to be able to set the number of images per panel and have it default to that when I open the app next time, or at least have it saved to a project's JSON and have it default to that within that project. This one is probably low hanging fruit, and if there are no questions you can implement this one immediately. I trust your recommendations enough that if there's something you would need my input on for this function, implement using your recommendations and alert me."
