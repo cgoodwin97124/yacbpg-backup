@@ -9,6 +9,45 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## POST-2026.09.23.9 — "Save" silently did nothing; and the user manual was renamed
+
+Author report (2026-09-23, immediately after the .9 work was finished): pressing Save gave NO feedback at
+all ("it didn't give me any feedback that it was saving"), the src file-panel dot never cleared, and no
+error appeared — while the platform went on serving the .8 build.
+
+Diagnosis (from the live page and the platform's own code):
+- The generator was fine and the .9 code WAS in the editor: the preview's `renderedContentStamp` read
+  `otLen` 409688 (the .9 `index.html` length), and the src bridge reported the pending `src/manual.html`.
+- The blocker was the EDITOR TAB's save machinery, which fails SILENTLY (console.warn only, zero UI
+  feedback) in several states. In `appExtras.js`, `this.saveGenerator` returns early with "save ignored
+  while editor content is still loading" when `window.__editorReady !== true` (or the CodeMirror editors
+  are missing), and with "save ignored: a save is already in flight" when `window.__saveInFlight` was left
+  set by a hung earlier save. `_goToEditModeInner` (top-level page) also sets
+  `saveBtn.style.pointerEvents = "none"` while the editor loads and only restores it on failure; and until
+  `loadAppExtras()` resolves, `app.saveGenerator` is a stub that throws "save machinery failed to
+  initialize" into an uncaught promise.
+- The preview iframe can ask the editor to save — it posts `{type:"saveKeyboardShortcut"}` and the parent's
+  `handleIframeSaveRequest()` runs `saveGenerator()`. We sent it three times; every attempt was silently
+  ignored, which proved the stuck state was in the editor page, not the generator.
+- CURE (author-verified, immediate): LEAVE EDIT MODE AND RE-ENTER IT. That re-runs `_goToEditModeInner`
+  and sets `window.__editorReady = true`; Save then works. Falling back, reload the Perchance tab.
+- Useful probes for next time: the SAVED src tree (the server's copy rather than the editor's pending one)
+  is readable with a direct `https://<publicId>.perchance.org/src/@<generatorName>/<path>` fetch, which
+  bypasses the service worker (in-page `src/<path>` may be answered from the editor's pending store).
+  `document.__perchanceInternal.renderedContentStamp` / `srcDebug` / `srcTrace` show what the editor is
+  rendering and which src files it is holding.
+
+Rename applied: `src/user-manual.html` → `src/manual.html`.
+- The author confirmed the files-panel "dot" was showing on `user-manual.html`. Per the 2026-08-14
+  `another_upload_in_progress` entry in ISSUES.md that dot is the wedge, and the lock is tied to the FILE
+  NAME, so deleting-and-recreating the same name re-wedges it — it has to be renamed.
+- Follow-up in `index.html`: all five `src/user-manual.html` references now point at `src/manual.html`
+  (openUserManual's fetch, ghPush's fetch + pushed path, the backup dialog's help text, and the
+  top-of-file comment), so the backup now pushes `src/manual.html`. The stale repo copy
+  `src/user-manual.html` was deleted.
+- Un-wedging rules restated: never hard-reload right after writing a src/ file (that kills the in-flight
+  sync and wedges that filename); if a src file ever wedges again, RENAME it rather than recreating it.
+
 ## BATCH 2026.09.23.9 — full-page panel reflow (Duplicate / ＋ Add Panel) + the −1 seed scrub
 - Author request (2 items; recon + questions first, per the standing directive): (1) duplicating a panel on a full
   page should no longer offer "start a new page with a copy" — the overflow should reflow onward recursively;
