@@ -15,6 +15,92 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-23 — FEATURE REQUEST (2 items): Library tab flat/open while the other menu groups default collapsed · refresh a panel's character/location description from the library
+- **Status:** IN PROGRESS — pre-implementation. Logged before any work, per the 2026-08-13 rule (author:
+  "Go ahead and perform the usual pre-implementation procedures"). RECON complete; clarifying questions asked
+  (below), awaiting the author's answers before implementing (per the 2026-09-20 standing directive).
+- **Request (author, 2026-09-23, verbatim):**
+  ```
+  One minor thing I've noticed and one minor thing that's been bothering me for a while:
+
+  Minor thing I just noticed:
+  * Under the Library menu, I'd like to have everything under the Library group just live directly under the
+    top level Library menu tab.  All of the other menu item groups are defaulting to open; I'd like those
+    defaulting to closed.
+
+  Minor thing that's been bothering me a while:
+  * Under each panel's Panel Library, sometimes a character or location description is stale; if I want to
+    regenerate it from the app's library, at the moment I need to delete it from the Panel Library and then
+    reselect it.  What I'd like is to either just be able to reselect it, or to have a chip next to it that
+    regenerates it from the app's library.
+
+  Go ahead and perform the usual pre-implementation procedures.
+  ```
+- **RECON FINDINGS (2026-09-23):** see below.
+- **QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet):** see below.
+
+#### RECON — item 1 (Library group vs. the other menu groups)
+- The menu is four `.menu-group` blocks — `menuGroup-file|edit|library|help`. `setupMenuCollapse()`
+  (`index.html:6147`) wraps every `.config-panel` / `.library-section` / `.help-panel` inside a group into a
+  collapsible `.menu-collapse-body`; its header becomes `.menu-collapse-toggle` (▾ open / ▸ closed) and
+  `data-collapsed="1"` hides the body (`index.html:166`).
+- `switchMenu(name)` (`index.html:6179`) decides the default when a group is OPENED:
+  `if (document.body.classList.contains('menu-fullscreen') || name === 'library') expandGroupPanels(group); else collapseGroupPanels(group);`
+- **NORMAL (non-fullscreen) menu — verified live 2026-09-23:** Library's one section is EXPANDED
+  (`Library=0`); File (`Project=1, Page Setup=1`), Edit (6 sections `=1`) and Help (3 sections `=1`) all
+  default COLLAPSED. So in the normal menu only Library is open already.
+- **FULL-SCREEN menu — verified live 2026-09-23:** opening any group expands ALL of its sections
+  (`Project=0`, `Page Setup=0`, Edit all `=0`, Library `=0`). This is the state that matches the author's
+  "all of the other menu item groups are defaulting to open" — i.e. the author is using full-screen menus.
+- Library group markup (`index.html:806`): ONE `.library-section` titled "Library" holding a toolbar
+  (`⬆ Import…`, `📊 Analysis`, `⛶ Full Screen`) + `#libObjects` (the 👤 Characters / 📍 Locations buckets).
+  Note the Library still carries its own `⛶ Full Screen` button (the author once called it redundant).
+
+#### RECON — item 2 (stale per-panel character/location descriptions)
+- Library items = `comicGen.libObjects`, an array of `{ id, type: 'Character'|'Location'|'Action', name, desc }`;
+  `desc` is the reusable library description.
+- Each panel's 📖 Panel Library renders three Character rows + one Location row + the Action box. A Character
+  row (`charRowHtml`, `index.html:3003`) = `<select id="panel-char-select-{i}-{s}">` +
+  `<textarea id="panel-char-extra-{i}-{s}" placeholder="Freeform description (library desc auto-fills)">` +
+  a `⇤` copy-from-previous-panel chip + a `✕` remove chip. The Location row (`locRowHtml`, `index.html:3012`)
+  is identical with `panel-loc-select-{i}` / `panel-loc-extra-{i}`.
+- Library choices have value `lib:char:<id>` / `lib:loc:<id>`; the special `none` option is
+  "No Character Selected".
+- **The bug's mechanism** — the delegated change handler (`index.html:4599`–`4618`) auto-fills the panel
+  textarea from the library `desc` ONLY when the textarea is EMPTY:
+  `if (extra && !extra.value) { … extra.value = le.desc }`. So once the box holds any text (auto-filled once,
+  or hand-typed), it never refreshes; and re-picking the SAME option fires no `change` event at all — which is
+  exactly why the author has to delete the row and re-select it.
+- The panel description IS what feeds the image prompt (`buildPanelPrompt` reads `panel-char-extra-*` /
+  `panel-loc-extra-*`, `index.html:4532`/`4538`), so a stale box silently produces a stale prompt.
+
+#### QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet)
+**Item 1 — Library group / menu defaults:**
+1. Just to confirm the trigger: you're seeing this in the FULL-SCREEN menu, right? In the normal
+   (non-fullscreen) menu File/Edit/Help already open collapsed and only Library is open — it's full-screen mode
+   that force-expands every section of the group you open. Plan: make File/Edit/Help default to COLLAPSED in
+   full-screen too, while Library stays expanded. OK?
+2. "everything under the Library group just live directly under the top level Library menu tab" — should I
+   REMOVE the collapsible "Library" header entirely (so the ⬆ Import… / 📊 Analysis toolbar and the
+   Characters/Locations lists are always visible, with no ▾/▸ toggle), or just keep the section
+   expanded-by-default as it is now (still clickable to collapse)? I read it as the former, but it changes the
+   Library header, so I want to confirm.
+3. While I'm in there: the Library still has its own "⛶ Full Screen" button (you called it redundant earlier).
+   Drop it now, or leave it?
+
+**Item 2 — refreshing a panel's description from the library:**
+1. Recommended fix: a small `↻` chip on each Character and Location row that re-copies the library item's
+   CURRENT description into that panel's box, enabled only when a `lib:` item is selected. It overwrites
+   whatever is in the box. Is overwrite-on-click right, or should it ask first? (The alternative you floated —
+   making a re-select always re-fill — would wipe hand-edited per-panel text every time you re-pick the item,
+   so I'd avoid it unless you want that.)
+2. Should the chip flag staleness — e.g. only shown/highlighted (amber) when the panel's text actually differs
+   from the library's current text, and quiet when they match — or always visible when a library item is
+   selected?
+3. Want a bulk "↻ Refresh stale descriptions" action as well (in the Library toolbar and/or a panel's
+   📖 Panel Library header) to refresh every panel on the current page, or across all pages?
+4. Characters + Locations only (as described)? The panel Action box has no library link, so I'd leave it alone.
+
 ### 2026-09-23 — FEATURE REQUEST (8 items): always-visible header · Preferences under Edit · always-fullscreen menus · Generate All/Pause/Stop as top-level menu items · theme & color scheme · one-click Library · drop the Library's Full Screen button
 - **Status:** IN PROGRESS — author greenlit 2026-09-23. **Quick wins shipped as 2026.09.23.1**
   (Preferences -> Edit, one-click Library, new versioning scheme). **Header / menu / theme ship next as
