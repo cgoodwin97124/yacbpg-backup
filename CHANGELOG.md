@@ -4,6 +4,33 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.08.16.24 — 2026-09-23 — Edit → 🧩 Open JSON Editor: your whole project as an editable document
+- **New: a full-page JSON editor for your project**, opened from **Edit → 🧩 Open JSON Editor**. It shows the
+  entire project — every page and panel, your saved characters/locations, the global art-style keywords, the size
+  and guidance settings, the preset and the UI flags — as one formatted JSON document you can edit directly.
+- **Only the things you can change elsewhere are editable.** Everything else is shown **greyed out and locked**
+  (the `version` numbers, the current page, library ids, the document's structure) so an edit — or a Replace all —
+  can never corrupt the project. Fields backed by a dropdown (image size, panel count, character/location
+  selection) are checked against the same choices the app offers.
+- **Find / Replace inside the editable values only** — with **Regex** and **Match case** options, a **🔍 Find
+  next** that jumps to the next hit, **⇄ Replace** for one at a time, and **⇄ Replace all**, which asks first and
+  tells you how many matches it is about to replace (Cancel leaves the document untouched, and Ctrl+Z undoes it).
+- **Validate, then Apply.** Nothing changes until you press **✔ Apply**, which validates the whole document first:
+  invalid JSON is reported at the exact spot and any problem — a locked field, a bad value, a removed entry — is
+  listed with **‹ Prev / Next ›** navigation that selects the offending text. **🔄 Reload** throws your edits away
+  and rebuilds the document from the live project.
+- **Undo is built in:** **↩ Undo last apply** puts the project back exactly as it was before your last Apply, and
+  **Ctrl+Z / Ctrl+Y** (up to the last 10 edits) undo/redo your typing in the editor.
+- **Line numbers**, a syntax-highlighting checkbox you can turn off for very large documents, and 📋 Copy for the
+  whole document.
+- Generated images are not part of this document — they still only travel in the 💾 Export `.zip`.
+- **Fixed while shipping this:** a long-standing unclosed `<div>` had nested the new editor (and the GitHub backup
+  dialog) inside the hidden "new project" confirmation layer. Both now sit at the top level of the page where they
+  belong — the editor could not be displayed at all until this was fixed.
+- **Fixed (data-safety):** if the page ever failed to load its saved project (a script error before the boot step),
+  the automatic save could write a blank default project over page 1. Saving is now blocked until the saved
+  project has been read back in, so a load error can no longer overwrite your work.
+
 ## 2026.08.16.23 — 2026-09-22 — Panel actions no longer break the 🔍 Focus view
 - **Fixed bug:** in 🔍 Focus (single-panel) view, **⧉ Duplicate** — and any other action that rebuilds the panel
   grid (Add Panel, Delete, switching page, changing the panel count) — threw `NotFoundError: Node.insertBefore:
