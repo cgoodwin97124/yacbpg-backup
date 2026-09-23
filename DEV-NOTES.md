@@ -9,6 +9,53 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.23.9 — full-page panel reflow (Duplicate / ＋ Add Panel) + the −1 seed scrub
+- Author request (2 items; recon + questions first, per the standing directive): (1) duplicating a panel on a full
+  page should no longer offer "start a new page with a copy" — the overflow should reflow onward recursively;
+  (2) an imported project with −1 as a project or panel seed should be quietly made random. Author's answers: the
+  ORIGINAL last panel is the one pushed (the copy keeps the slot immediately after the panel it copies); ＋ Add
+  Panel gets the same recursive treatment; the −1 scrub is import-only and never touches a seed the user typed.
+- Author's worked example, which defines the behaviour: three pages of 24, duplicating Panel 6 on page 1 → create
+  page 4; move page 3's Panel 24 → page 4 panel 1; page 2's Panel 24 → page 3 panel 1; page 1's Panel 24 → page 2
+  panel 1; insert the copy as page 1 panel 7. End state 24/24/24/1.
+- Implementation: a page is `state.pages[n] = {name, summary, seed, panelCountSel, panelCountCustom, 1..24}` with
+  its images in `pageSession[n].images` keyed by panel position. New helpers beside `duplicatePanel`:
+  `sortedPageKeys()`, `pageImagesOf()`/`setPageImagesFor()` (the current page's LIVE `panelImages` object is
+  mutated in place so `buildPanelGrid()`/`loadCurrentPage()` see it), `planReflow()` (dry run → `{moves,
+  willCreate}` for the confirm wording) and `reflowInsertOnFullPage(i, panel, img)`.
+- `reflowInsertOnFullPage` works on ONE collected state and saves once: it rebuilds the source page at 24 panels
+  with the incoming panel at `min(i+1, 24)`, dropping the page's ORIGINAL last panel into `carry`; then, while
+  there is a `carry`, it finds the next existing page key, prepends the carry at position 1, and — if that page now
+  holds 25 — carries ITS last panel onward; if no next page exists it creates one (max key + 1) holding the carry at
+  panel 1. Images shift with their panels at every step (deep-copied across page boundaries). `currentPage` stays
+  put, so the user sees the result where they clicked. Note `movePanelToPage(i, target, 'prepend')` already did the
+  single-page half of this, which is why prepend-at-position-1 is the established semantic.
+- `duplicatePanel(i)` and `addPanel(i)` now share that full-page branch (confirm → reflow). `duplicateToNewPage()`
+  was DELETED (it was the old "new page with the copy" behaviour and had no other caller). `addPage()` (＋ Add Page)
+  is untouched. Confirm text: "<Sheet> is full (the 24-panel maximum). Duplicating Panel N will [create a new page
+  and ]reflow X panel(s) onto the following page(s). Continue?" — Cancel just writes a status line.
+- Item 2: `scrubMinusOneSeeds(settings)` is called inside `applyImportedSettings()` immediately before the settings
+  are written to PANEL_STATE_KEY, so it covers BOTH import paths (.json and .zip) and the "save current first?"
+  branch (they all converge there). It clears `seed` when it is `-1`, `'-1'` or a padded `' -1 '` — on the page
+  (project) seed, on panels 1..24, and on the settings object itself (the legacy flat shape `ensurePages()`
+  accepts). `'42'`, `'92'`, `''` etc. are untouched.
+- VERIFIED with synthesised project ZIPs imported through the real `importSettingsFromFile()` path (fake event →
+  applyImportedSettings + parseZipImages + repopulateImportedImages for real): [24,10] duplicate → 1 move, page 2
+  at 11 panels, no new page; [24,24] duplicate → new page, 24/24/1; [24,10] ＋ Add → blank inserted at 7, 1 move;
+  Cancel → nothing changes (only the status line); duplicate Panel 24 of a full page → the ORIGINAL (with its
+  image) goes to the new page and the copy stays at 24 with no images; a page that is NOT full → unchanged
+  behaviour, no dialog. Images demonstrably travel across pages (page 2/3/4 panel 1 rendered the image that had
+  been on the previous page's panel 24). Seed fixture: `-1` (number), `'-1'` and `' -1 '` all cleared, `'42'` and
+  `'92'` kept.
+- GOTCHA (cost a test cycle): the first fixture run silently tested NOTHING because the poll loop watched
+  `#backupStatusEl` for /Imported/ — which still held the PREVIOUS import's message, so it broke out instantly and
+  the action ran against stale state before the new import landed. Clear that element before importing, then wait
+  for it to change.
+- WARNING: those import tests overwrite the LIVE preview's project — the preview shares the generator's real
+  origin, so `comicGen.panelState` and `comicGen.libObjects` are also the author's own in-browser project. Both
+  got replaced by the fixtures; the preview was reset to defaults afterwards (and the author was told). Snapshot
+  the `comicGen.*` keys before any destructive test from now on.
+
 ## BATCH 2026.09.23.8 — About loads the changelog from the repo; readable panel-summary separators
 - Author request (the two optional items offered right after 2026.09.23.7 shipped): (1) raise the contrast
   of the decorative `.ps-sep` "·" separators in a panel's summary line — the last sub-4.5:1 text node in
