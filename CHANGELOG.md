@@ -4,6 +4,11 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.6 — 2026-09-23 — A much smaller page: the internal docs moved to GitHub
+- **The page loads smaller.** The generator's internal development documentation — the dev-notes log, the request queue, the AI architecture notes and the issue log, about **360KB of text** — used to be shipped inside this page, so every visitor downloaded it. It now lives in the project's GitHub repo instead. Nothing changes in the app: Help → About, the version history, and every feature work exactly as before.
+- **The project's GitHub repo is now public** (read-only for visitors): the source, the docs and the full version history are visible at github.com/cgoodwin97124/yacbpg-backup. Anyone may read it or **fork** it to build their own version — only the owner can push to it, so a fork is completely independent.
+- Fixed the wording in the **⬆ Backup to GitHub** dialog, which still said a private repo was required — it now works with a public or private repo.
+
 ## 2026.09.23.5 — 2026-09-23 — Fixed the full-screen menu's "← Back to page" button
 - **Bug fix:** the **← Back to page** button inside the full-screen menu threw "requestCloseMenuFullscreen is not defined" when clicked. The function existed and the Esc shortcut used it correctly, but it had never been published to the page's global scope, so the button's inline handler couldn't see it. It is now exported like its neighbours, so the button (and Esc) closes the full-screen menu normally.
 - I then audited **every** inline button handler in the app for the same class of mistake — 186 handlers in the source, 1,635 handler calls in the live page — and this was the only one.
