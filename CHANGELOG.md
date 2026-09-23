@@ -4,6 +4,27 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.23.2 — 2026-09-23 — A header that stays put, Generate All / Pause / Stop in the menu, and full-screen menus by default
+- **The top header bar (the app title and the Storyboard / Hide Menu / Menu: Side / Full Screen buttons) now stays
+  on screen.** It's pinned to the top of the window, so it no longer scrolls away when you're working on a long
+  page, and it also stays visible while the menu is open full-screen — the menu now starts just below it.
+- **Menus open full screen from now on.** No more pressing ⛶ Full Screen every time: every menu section opens as a
+  roomy full-page overlay (with the tabs still on screen and each section already expanded). Prefer the old
+  compact top/side menu? Turn off **🎨 Edit → Preferences → "Always open the menus full screen"**. The **⛶ Full
+  Screen** button in the header is the same setting — it reads **⤡ Exit Full Screen** while full-screen is on.
+- **⚡ Generate All / ⏸ Pause / ■ Stop are now menu items**, sitting in the row right beside File / Edit / Library /
+  Help and matching their size and style (**Stop** keeps its red button with white text). The old bottom bar is
+  gone; **Generate All Panels On Page** is now simply **⚡ Generate All**. The status line stays at the bottom of
+  the menu — and it now stays visible in full-screen mode too, so you can watch a run from there.
+- **New Preferences option: keep ⚡ Generate All / ⏸ Pause / ■ Stop visible while the menu is hidden.** They move
+  into the header bar, so you can start, pause or stop a run without showing the menu.
+- **New Preferences option: keep the header bar visible in the other full-page views too** (Storyboard, Focus,
+  Library, Analysis, the JSON editor and the user manual). Off by default, so those views still get the whole
+  screen.
+- Preferences (already under **🎨 Edit**) collects these options; they're stored with your project, so they come
+  back with 💾 Save / Export / Import and can be edited in the 🧩 JSON editor alongside the other UI flags.
+- The 🔍 Focus view's own Generate / Pause / Stop row is deliberately unchanged.
+
 ## 2026.09.23.1 — 2026-09-23 — Preferences moves to Edit, one-click Library, and a new version numbering scheme
 - **Preferences now lives under 🎨 Edit** instead of the bottom of 📄 File. It still holds the "Ask for a password
   when hiding the panels" option — and it's where the new look-and-feel preferences (themes, always-visible
