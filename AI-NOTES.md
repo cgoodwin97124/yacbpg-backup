@@ -261,11 +261,13 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 ## 8. Menu & layout system
 
 - `.menu-frame` = sticky top bar (top mode) or left column (`body.side-mode`, landscape only).
-  Contains `.menu-scroll` (the accordion groups) + `.gen-actions` (⚡ button + `#statusEl`).
+  Contains `.menu-scroll` (the accordion groups) + `.gen-actions` (`#statusEl` only since 2026.09.23.2 — the
+  Generate/Pause/Stop buttons moved into `#menuBar`). Its sticky `top` is `var(--hdr-h, 60px)` (top mode) /
+  `calc(var(--hdr-h, 60px) + 10px)` (side mode) so it parks directly under the pinned app header.
   `.gen-actions` is `flex:0 0 auto` (2026-09-20, changelog 2026.08.16.19) so it can NEVER be squeezed by a tall
-  `.menu-scroll` — the menu list scrolls instead and the generate bar + status stay visible. (EXCEPTION: in the
-  full-screen overlay the whole bar is hidden — `body.menu-fullscreen .gen-actions { display:none }`, 2026-09-22,
-  changelog 2026.08.16.22.)
+  `.menu-scroll` — the menu list scrolls instead and the status line stays visible. (The old
+  `body.menu-fullscreen .gen-actions { display:none }` was REMOVED 2026.09.23.2: the status line is now shown in
+  full-screen too, because the buttons it used to hide live in the menu bar.)
 - **Reserved bottom space (2026-09-20, changelog 2026.08.16.19):** the viewport-fixed buttons at the bottom
   (`#panelsToggleBtn` ▧ Hide Panels, `#pageNav`) used to cover page content and,
   in side mode, the menu's generate bar. `body { padding-bottom: 96px }` (portrait: `156px`, where `#pageNav`
@@ -293,8 +295,8 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
     while the menu is hidden. NOTE (2026-09-20, changelog 2026.08.16.21): the old floating `#menuRevealBtn`
     (☰/✕, appeared when the header was offscreen) was DELETED at the author's request — `body.hdr-offscreen` is
     now vestigial: `refreshHdrOffscreen()`/`initHeaderObserver()` were removed with it in 2026-09-20, so NOTHING
-    sets that class any more (verify before relying on it), and with the menu hidden you must
-    scroll back to the header to toggle it.
+    sets that class any more (verify before relying on it); since 2026.09.23.2 the sticky header keeps the
+    toggle on screen, so there's nothing to scroll back to.
   - `body.panels-hidden` — hides `.canvas-frame` (all panel cards) via ▧ Hide/Show Panels header
     button. Generation is UNAFFECTED (writes to `panelImages`; the imgObserver just evicts
     srcs while hidden and restores on show).
@@ -302,15 +304,42 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 - Header buttons (upper-left): ▦ Storyboard, ☰ Hide/Show Menu, ▤ Menu: Side, ⛶ Full Screen (`.menu-fs-toggle`),
   then ▧ Hide/Show Panels. ⛶ Full Screen → `toggleMenuFullscreen()`. The ☰ button is the ONLY menu-visibility
   control (2026-09-20, changelog 2026.08.16.21 — its `.menu-toggle` label flips ☰ Hide Menu ↔ ☰ Show Menu).
+- **Sticky app header (2026.09.23.2):** `.app-header` is `position:sticky; top:0; z-index:9000` with an amber
+  bottom border, so the title + the four buttons stay on screen while the page scrolls. `syncHdrHeight()`
+  writes its measured height to `--hdr-h` on `:root` (a ResizeObserver on the header, plus `resize`/`load`/
+  fonts; fallback `60px`), which is what `.menu-frame`'s sticky `top` and the full-screen overlays'
+  `padding-top` consume. The header also carries `<span class="hdr-gen-ctr" id="hdrGenCtr" hidden>`, the home
+  `placeGenButtons()` moves ⚡ Generate All / ⏸ Pause / ■ Stop into while the menu is hidden and
+  `comicGen.genAlwaysVisible` is on (the header grows to ~181px, ResizeObserver republishes `--hdr-h`).
 - **Full-screen menu overlay (`#menuOverlay`, 2026-09-20):** `.view-overlay` hosting the REAL `#menuFrame`
   (moved in on open, restored to `.page-layout` on close — see BATCH 2026.08.16.20). `openMenuFullscreen(section)`
   / `closeMenuFullscreen()` / `toggleMenuFullscreen(section)`; `#libFullscreenBtn` in the Library toolbar opens
   it on the Library tab. Esc or the overlay's `← Back to page` closes it. The markup sits just before
   `#analysisOverlay` so Analysis still paints above it. Opening while `body.menu-hidden` shows the menu; closing
   NEVER re-hides it (fixed 2026-09-20, changelog 2026.08.16.21 — the old restore-the-hidden-state behaviour is
-  what made the menu vanish after "← Back to page"). While full-screen, `body.menu-fullscreen .gen-actions
-  { display:none }` hides the whole ⚡ Generate / ⏸ Pause / ■ Stop / `#statusEl` bar (2026-09-22, changelog
-  2026.08.16.22), so `.menu-scroll` takes the frame's full height.
+  what made the menu vanish after "← Back to page"). **PREF-DRIVEN since 2026.09.23.2:** `syncMenuMode()` decides
+  between the overlay and the inline frame on every menu-visible change ("pref ON + menu visible → overlay");
+  `applyMenuFullscreenPref(on, section)` is the single setter that stores `comicGen.menuFullscreen` and calls
+  `syncMenuMode()`, and `toggleMenuFullscreen(section)` merely flips the pref (so the header ⛶ button and the
+  Library ⛶ button are the same persisted switch — answer 3). `updateMenuFullscreenLabels()` labels the two
+  buttons from the PREF (⛶ Full Screen ↔ ⤡ Exit Full Screen), not from `isMenuFullscreen()`. The overlay's
+  `← Back to page` and Esc call `requestCloseMenuFullscreen()` = `applyMenuVisible(false)`. `body.menu-fullscreen
+  .app-header` becomes `position:fixed; z-index:10005` (header stays on top of the overlay) and
+  `body.menu-fullscreen .view-overlay` gets `padding-top: calc(var(--hdr-h) + 14px)`. The old
+  `body.menu-fullscreen .gen-actions { display:none }` (2026-09-22, changelog 2026.08.16.22) was REMOVED in
+  2026.09.23.2: the status line now stays visible in full-screen, because the ⚡/⏸/■ buttons it used to hide
+  live in the menu bar now.
+- **⚡ Generate All / ⏸ Pause / ■ Stop in the menu bar (2026.09.23.2):** three more `<button class="menu-btn">`
+  siblings of the four tabs inside `#menuBar` — `<button class="menu-btn menu-action" id="menuGenerateBtn"
+  onclick="generateComicPage()">⚡ Generate All</button>`, `#globalPauseBtn` (`class="menu-btn menu-action"`),
+  `#globalStopBtn` (`class="menu-btn menu-stop"`, red fill + white text). They keep their old ids, so
+  `setPauseButtonEnabled` / `setStopButtonEnabled` / the Focus mirroring (`syncFocusControls`) are untouched —
+  only `syncFocusControls()`/`initFocusSync()`'s "the sidebar ⚡ button" lookup moved from `.btn-generate` to
+  `#menuGenerateBtn`. `.menu-action` must stay a TWO-class selector (`color:#fff`) to beat normalize's
+  `button:not([disabled]) { color: inherit }`. `#statusEl` stays at the bottom of the frame inside
+  `.gen-actions` (now its only child). Dead CSS from the move: `.gen-row`, `.gen-row .btn-generate`, and the
+  old `.gen-actions .btn-generate` sizing — `.btn-pause-global`/`.btn-stop-global` are still LIVE (the Focus
+  view's own buttons use them).
 
 ## 9. Image handling
 
