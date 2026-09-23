@@ -139,6 +139,7 @@ for the current page. Import/export round-trips `buildExportData(includeProtecti
 - `imgObserver` (IntersectionObserver) — evicts/restores `<img>` srcs
 - `gridHasListeners` — grid listeners attached once
 - `panelImages`, `panelPromptOverrides`, `panelSaveTimer`
+- `panelSelection` (a `Set` of 1-based panel numbers) + `selectionAnchor` — panel multi-selection. SESSION-ONLY: never collected into `collectPanelState()`, never exported, cleared inside `loadCurrentPage()` (see §15)
 - `mapsPromise` — cached `getMaps()` (charMap/locMap from `root.characters`/`root.locations`)
 
 ## 5. DOM structure of a panel card (built by `buildPanelGrid`)
@@ -146,7 +147,7 @@ for the current page. Import/export round-trips `buildExportData(includeProtecti
 Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` based on
 `getPanelCount()`, 1–24).
 
-- **Header row (2026-09-20):** title label `.panel-title` = `Panel N`, or `Page P, Panel N` when
+- **Header row (2026-09-20; selection checkbox added 2026.09.23.11):** selection checkbox `#panel-select-N.panel-select-cb` (inside `.panel-select-wrap`, the first child — `onPanelSelectClick`, Shift = range; see §15) → title label `.panel-title` = `Panel N`, or `Page P, Panel N` when
   `pageCount() > 1` (set by `updatePanelHeaderLabels()`, which MUST run after `restorePanelState()` — the
   header HTML is built before `currentPage` is restored), `#panel-title-N` (display-only, never in prompt),
   Images select `#panel-img-count-N` (1–4), Style select `#panel-style-N`
@@ -155,7 +156,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   preceding panel's RAW seed box value, clearing when it is blank/random/−1) + ✕ `#seed-clear-N`
   (`clearPanelSeed`), header 🔄 Generate `.btn-header-gen` (`generateSinglePanel`, a DUPLICATE of the one in the
   action row), ⇅ Move `#reorder-btn-N` + hidden picker `#panel-reorder-N` (positions 1..N + a "Move to another
-  page" optgroup of `pg-<n>` options — greyed when that page is full — + `newpage`; see §Pages).
+  page" optgroup of `pg-<n>` options — greyed when that page is full — + `newpage`; see §Pages). With more than one panel selected the same picker is rebuilt as a GROUP picker (`populateGroupReorderSelect`, with `sel._groupMode`) offering "Start at position N" / "→ another page" / "＋ New page…" and routing `onReorderSelect` to `moveSelectionWithinPage` / `batchMoveToPage` / `batchMoveToNewPage` (§15).
   Below it: `.panel-summary` line (`.ps-char` / `.ps-loc` / `.ps-act`) refreshed by `updatePanelSummary(i)`
   (reads char/loc selects + action; action ellipsizes when too long).
 - **.panel-imgs grid:** four slots `#imgslot-panel-N-K` (hidden beyond imgCount; the SLOT is
@@ -202,7 +203,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
        `panel-add-select`. Do not resurrect it.
   2. **📝 Prompt** — `.btn-prompt` (toggle `#prompt-editor-N` with `#prompt-pos-N`/`#prompt-neg-N`),
      `.btn-copy-prompt`
-  3. **⚙ Panel** — `Collapse Menu` (.btn-panel-menu), ⧉ Duplicate, ＋ Add Panel,
+  3. **⚙ Panel** — `Collapse Menu` (.btn-panel-menu), ⧉ Duplicate (`#panel-dup-btn-N` → `panelDuplicateAction`; batches the selection), ＋ Add Panel (`#panel-add-btn-N` → `panelAddAction`),
      🗑 Clear Images (`.btn-clear-images`, hidden unless ≥2 images), 🗑 Clear, 🗑 Delete,
      `.panel-acc-stack` > `#panel-seed-N`
   4. **💾 Files** — ↗ Open All, ⬇ Save All (.zip), ⬇ Export
@@ -678,6 +679,44 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   theme has ~53 such nodes by design/legacy, light should stay near zero); (5) `poTip` and the user-manual iframe's
   srcdoc page are intentionally NOT themed (a dark tooltip is conventional; CSS variables do not cross document
   boundaries).
+
+## 15. Panel multi-selection (added 2026.09.23.11 — phase 1 of 3)
+
+SESSION-ONLY. `panelSelection` (a `Set` of 1-based panel numbers) + `selectionAnchor` (the last
+individually-ticked panel, used for Shift-ranges). Nothing about it is collected into
+`collectPanelState()`, exported, or written to localStorage — it is a working aid that dies with the page.
+
+- **Entry point:** `#panel-select-N`, the first child of `.panel-header-row`,
+  `onclick="onPanelSelectClick(N, event)"`. Shift uses `selectionAnchor` to select/unselect a range on the
+  CURRENT page; a plain click sets the anchor (or nulls it when unticking). Clicking a panel's body never
+  touches the selection.
+- **Render:** `updateSelectionUI()` — called at the end of `buildPanelGrid()`, and by every mutation — drops
+  out-of-range indices, toggles `.panel-selected`, ticks/unticks the checkboxes, rewrites the ⚙ Panel button
+  labels to include the count when more than one panel is selected, and shows/hides `#selectionBar` with its
+  count. It also backs the Esc handler and `selectAllPanels()` / `clearPanelSelection()`.
+- **Batch entry points:** `panelDuplicateAction` / `panelAddAction` are the ⚙ Panel button handlers; they
+  branch on `panelSelection.size > 0 && panelSelection.has(i)`. A selection of exactly one panel still routes
+  through the batch function, which delegates to the single-panel function (which clears the selection).
+- **Core primitive:** `cascadePageSequence(srcPage, entries)` — see the DEV-NOTES block of 2026.09.23.11.
+  `entries` is the complete new sequence of `{panel, img}` for `srcPage` and may exceed 24; the overflow is
+  prepended to the following page and cascades, creating one page at the end if needed.
+  `pageObjectFromEntries(pages, pg, entries)` rebuilds one page (name/summary/seed + panel-count field) from
+  a slice, and is what keeps the count field honest.
+- **Batch ops:** `batchDuplicatePanels` (copy after each selected panel, no images), `batchAddPanels` (N
+  empties after the last selected panel), `moveSelectionWithinPage(toPos)` (the block re-inserted so it
+  starts at `toPos`), `batchMoveToPage(targetPage, replaceTarget)` (prepended when `target > currentPage`,
+  else appended; `replaceTarget` drops the target page's blank placeholder and is what `batchMoveToNewPage`
+  needs, because `analysisPanelCount` clamps to a minimum of 1), and `batchMoveToNewPage`.
+- **Confirmations:** `batchReflowPlan(extra)` reports whether a reflow is needed, whether a new page will be
+  created, and how many following pages are touched — the batch ops use it for ONE combined `confirm()`.
+- **Lifecycle:** the selection is cleared inside `loadCurrentPage()`, which covers page switches,
+  add/delete page and every single-panel structural op. The Move paths re-select their panels afterwards
+  (the approved spec keeps the selection for Move only); Duplicate and Add clear it.
+- **Esc:** a `document` keydown listener clears the selection, but bails if any `[id$="Overlay"]` element is
+  visible so it cannot steal Esc from the Focus view / JSON editor / manual.
+- **Planned (P2 / P3):** batch Generate / Generate All From Here / Clear / Clear Images / Delete with
+  Ok / Cancel / Only-this-panel dialogs, and Copy / Cut / Paste with a Paste chip on each panel header that
+  appears only while the buffer is non-empty. See `PENDING.md` for the approved spec.
 
 ## DOC LAYOUT (2026.09.23.6)
 
