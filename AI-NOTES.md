@@ -276,9 +276,14 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   in JS rather than a static `calc()`. Called from `applyLayoutMode`, `applyMenuVisible`, and `resize`/`load`/
   `orientationchange`; the inline style is cleared outside side mode.
 - `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice
-  persisted; sections start collapsed via `collapseGroupPanels`. While `body.menu-fullscreen` it instead
-  refuses to close the active section and EXPANDS the group via `expandGroupPanels` (and refreshes
-  `#menuOverlayTitle`).
+  persisted; every group opens with its sections COLLAPSED via `collapseGroupPanels` — EXCEPT `library`, which
+  expands instead (2026.09.23.1), because the author didn't want a second click on the "Library" heading. While
+  `body.menu-fullscreen` it instead refuses to close the active section and EXPANDS the group via
+  `expandGroupPanels` (and refreshes `#menuOverlayTitle`).
+- **Where the Preferences panel lives:** `#preferencesPanel` (`.config-panel`, `<h2>Preferences</h2>`) is the LAST
+  panel of `#menuGroup-edit` as of 2026.09.23.1 (it used to be the last panel of `#menuGroup-file`). It holds
+  `#hidePasswordPref` today; the theme / header / menu preferences land here next. Nothing queries it by parent,
+  and `setupMenuCollapse()` binds it automatically (it walks `.menu-group .config-panel` at init).
 - **Toggles** (all persist independently):
   - `body.menu-hidden` — the CSS is `body.menu-hidden .menu-frame { display:none }`, i.e. it hides the WHOLE menu
     frame INCLUDING the Generate bar (this contradicts the earlier "the generate bar stays visible" promise —
@@ -287,7 +292,8 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
     (`.menu-toggle`, label ☰ Hide Menu ↔ ☰ Show Menu). `syncSideMenuHeight` clears the frame's inline max-height
     while the menu is hidden. NOTE (2026-09-20, changelog 2026.08.16.21): the old floating `#menuRevealBtn`
     (☰/✕, appeared when the header was offscreen) was DELETED at the author's request — `body.hdr-offscreen` is
-    now vestigial (nothing styles it; `refreshHdrOffscreen` still toggles it), and with the menu hidden you must
+    now vestigial: `refreshHdrOffscreen()`/`initHeaderObserver()` were removed with it in 2026-09-20, so NOTHING
+    sets that class any more (verify before relying on it), and with the menu hidden you must
     scroll back to the header to toggle it.
   - `body.panels-hidden` — hides `.canvas-frame` (all panel cards) via ▧ Hide/Show Panels header
     button. Generation is UNAFFECTED (writes to `panelImages`; the imgObserver just evicts
@@ -395,6 +401,18 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
 
 ## 12. Conventions & gotchas (read before editing)
 
+- **VERSIONS & DATES (author-mandated 2026-09-23):** releases are numbered `YYYY.MM.DD.S` where S is that day's
+  serial release, starting at 1 and incrementing (NO zero padding — 1, 2, ... 10 — because a human reads and
+  compares S as a whole number). A new day restarts at `.1`. The author is in US PACIFIC time, so every
+  date/time written into the changelog, these notes and the PENDING queue uses Pacific (PST/PDT). The Help →
+  About version comes from the FIRST `## ` heading of `#embeddedChangelog`, so a new release must be added there
+  (never to a second copy).
+- **BUTTON COLOURS BAIT (found 2026-09-23):** the platform ships normalize.css with
+  `button:not([disabled]) { color: inherit }`, whose specificity (0,1,1) BEATS a single-class rule like
+  `.menu-btn { color: #ffcc00 }` (0,1,0) — so the File/Edit/Library/Help tabs actually render WHITE (the body
+  colour) despite their declared amber. The author likes that look, so do NOT "fix" it. When a button's colour
+  genuinely matters, use a two-class selector (`.menu-btn.menu-action { color:#fff }`) or the author-provided
+  `#id`. `background`/`border` are unaffected because normalize doesn't set them.
 - Everything is inside the IIFE; only `window.X = X` exports are reachable from inline
   handlers/evals. Export what a test needs.
 - id suffixes: `El`/`Btn`/`Ctn`/`Input` (e.g. `statusEl`, `rerollBtn`). Use the `hidden`
