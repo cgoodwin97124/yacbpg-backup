@@ -329,6 +329,14 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `body.menu-fullscreen .gen-actions { display:none }` (2026-09-22, changelog 2026.08.16.22) was REMOVED in
   2026.09.23.2: the status line now stays visible in full-screen, because the ⚡/⏸/■ buttons it used to hide
   live in the menu bar now.
+- **INLINE-HANDLER EXPORTS (rule + the 2026.09.23.5 fix):** every function referenced from an inline `on*` attribute
+  must have a matching `window.NAME = NAME;` line in the export block at the end of the IIFE.
+  `requestCloseMenuFullscreen` (added 2026.09.23.2) was declared and used internally by the Esc handler but never
+  exported, so the full-screen menu's "← Back to page" button threw a ReferenceError until 2026.09.23.5. Cheap
+  audit after adding handlers: (1) live DOM — walk elements with `on*` attributes, extract every `fn(` identifier
+  and require `typeof window[fn] === 'function'`; (2) static — every `on*="..."` attribute in the source vs the set
+  of names assigned by `window.X =`. Both found only that single miss (1,635 live calls / 120 distinct functions;
+  186 source handlers).
 - **⚡ Generate All / ⏸ Pause / ■ Stop in the menu bar (2026.09.23.2):** three more `<button class="menu-btn">`
   siblings of the four tabs inside `#menuBar` — `<button class="menu-btn menu-action" id="menuGenerateBtn"
   onclick="generateComicPage()">⚡ Generate All</button>`, `#globalPauseBtn` (`class="menu-btn menu-action"`),
