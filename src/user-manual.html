@@ -34,7 +34,7 @@
 <body>
 <div class="page">
 <h1>Yet Another Comic Book Page Generator</h1>
-<h3>Design Document — version 2026.08.13.9</h3>
+<h3>Design Document — version 2026.08.16.24</h3>
 <p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
 <hr>
 <h2>1. What it is</h2>
@@ -156,14 +156,25 @@
 <li><strong>⬇ Export Project</strong> — <strong>JSON</strong> (all settings + libraries + preferences) or <strong>ZIP</strong> (the same settings <strong>plus every generated image</strong> for every page). ZIP is the complete backup.</li>
 <li><strong>⬆ Import Project</strong> — restore from a JSON or ZIP export. Importing starts with a safety prompt (it will replace the current project). ZIP imports restore the images into the right panels.</li>
 </ul>
-<h2>9. Layout &amp; theming</h2>
+<h2>9. Editing the whole project as JSON (Project JSON Editor)</h2>
+<p><strong>Edit &rarr; 🧩 Open JSON Editor</strong> opens your entire project as one formatted JSON document in a full-page editor. It is the same data as <strong>⬇ Export Project &rarr; JSON</strong> — every page and panel, your saved characters/locations, the global keywords and size/guidance settings, the preset and the UI flags — so a document you edit here could equally be saved and opened in your own text editor.</p>
+<p><strong>Only the fields you can edit elsewhere in the app are editable.</strong> Everything else — the <code>version</code> numbers, the current page, library ids, and the document&#39;s structure — is shown <strong>greyed out and locked</strong>: editing it is refused with a clear message, so even a Replace all can never corrupt the project. Dropdown-backed values (image size, panel count, character/location selection) are checked against the same choices the app offers.</p>
+<ul>
+<li><strong>Find / Replace</strong> works inside the editable values only (never in keys or locked fields), with <strong>Regex</strong> and <strong>Match case</strong> options. <strong>🔍 Find next</strong> jumps to the next hit, <strong>⇄ Replace</strong> changes the highlighted one and moves on, and <strong>⇄ Replace all</strong> asks first and tells you how many matches it is about to change (Cancel leaves the document untouched).</li>
+<li><strong>✔ Apply</strong> validates the whole document before anything changes. Invalid JSON is reported at the exact spot and every problem — a locked field, a bad value, a removed entry — is listed: use <strong>‹ Prev / Next ›</strong> to step through them, which selects the offending text.</li>
+<li><strong>🔄 Reload</strong> throws your edits away and rebuilds the document from the live project (it asks first when the document has unsaved edits).</li>
+<li><strong>Undo:</strong> <strong>↩ Undo last apply</strong> puts the project back exactly as it was before your last Apply, while <strong>Ctrl+Z / Ctrl+Y</strong> undo and redo up to the last 10 edits you typed in the editor. <strong>Ctrl+F</strong> finds, <strong>Ctrl+S</strong> applies, and <strong>Esc</strong> (or <strong>← Back to page</strong>) closes — asking first if you have unsaved edits.</li>
+<li><strong>Line numbers</strong> run down the left; the <strong>Syntax highlighting</strong> checkbox can be switched off for very large documents (locked and error highlighting stays). <strong>📋 Copy</strong> puts the whole document on the clipboard.</li>
+</ul>
+<p>Generated images are <strong>not</strong> part of this document — they live only in the current session and travel only in the ZIP export. Your GitHub backup token is likewise never included.</p>
+<h2>10. Layout &amp; theming</h2>
 <p>The interface adapts to the screen: the menu sits on top normally, or as a <strong>side column</strong> on wide landscape screens (▤ Menu: Side). The <strong>☰ button</strong> in the header hides the menu and brings it back — it reads <strong>Hide Menu</strong> while the menu is showing and <strong>Show Menu</strong> while it&#39;s hidden (so scroll back up to the header to toggle it). <strong>▧ Hide/Show Panels</strong> hides the whole panel grid while generation keeps running invisibly. The floating controls at the bottom of the screen (▧ Hide Panels and the page navigator) never sit on top of your content — the page keeps an empty strip at the bottom you can scroll past, and with the menu on the side the menu column is sized so its <strong>⚡ Generate</strong> bar and status line always end above them. <strong>▦ Storyboard</strong> shows one representative image per panel as a page overview (with the page&#39;s title and summary, and — on a multi-page project — its own ◀ / numbered pages / ▶ navigator next to &quot;← Back to page&quot;); <strong>🔍 Focus</strong> works on a single panel at a time. <strong>⛶ Full Screen</strong> in the header blows the menu up to fill the screen — File, Edit, Library, and Help all get the room of a full page (the tabs stay on screen so you can switch), which is a lifesaver on a phone. The <strong>⛶ Full Screen</strong> button in the Library also opens it already showing your Characters/Locations. The bottom <strong>⚡ Generate</strong> bar isn&#39;t shown while the menu is full-screen, so the section gets the whole screen; a generation that&#39;s already running keeps going — leave full-screen to pause or stop it. Close the full-screen menu with <strong>← Back to page</strong> or <strong>Esc</strong>.</p>
-<h2>10. How it&#39;s built (technical overview)</h2>
+<h2>11. How it&#39;s built (technical overview)</h2>
 <p>The generator is a Perchance generator made of two source files plus a small <code>src/</code> folder:</p>
 <ul>
 <li><strong><code>main.pjs</code></strong> — a small Perchance-js file: the app title, the character/location lists, and the import of the text-to-image plugin (<code>generateImage</code>). Its top-level names become page globals.</li>
 <li><strong><code>index.html</code></strong> — the entire application: styling, the full HTML layout, and one big JavaScript module containing all the logic (UI building, generation pipeline, persistence, backup).</li>
-<li><strong><code>src/</code></strong> — auxiliary files shipped with the generator: the changelog, issue log, the AI worker&#39;s notes, and the feature-request queue.</li>
+<li><strong><code>src/</code></strong> — auxiliary files shipped with the generator (this user manual). The changelog, issue log, the AI worker&#39;s notes and the feature-request queue live as embedded <code>&lt;script type=&quot;text/plain&quot;&gt;</code> documents at the bottom of <code>index.html</code> (they had to move out of <code>src/</code> in 2026-08-14 — see the issue log).</li>
 </ul>
 <p><strong>The rendering pipeline</strong> (the heart of the app):</p>
 <ol>
@@ -174,15 +185,16 @@
 <li>Batch runs loop panel-by-panel, honoring protection, skipping empties, and checking for Stop/pause at each step. A single global ■ Stop aborts every in-flight image.</li>
 </ol>
 <p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
-<h2>11. Recent changes (changelog highlights)</h2>
+<h2>12. Recent changes (changelog highlights)</h2>
 <ul>
+<li><strong>2026.08.16.24</strong> — new <strong>Edit &rarr; 🧩 Open JSON Editor</strong>: your whole project as one editable, validated JSON document, with Find/Replace (Regex + Match case) confined to the editable fields, locked/greyed read-only fields, line numbers, an optional syntax-highlighting toggle, <strong>↩ Undo last apply</strong> plus a 10-step Ctrl+Z buffer, and ‹ Prev / Next › navigation through any problems.</li>
 <li><strong>2026.08.13.9</strong> — Stop button activates during <em>any</em> generation (batch, single panel, or single image) and deactivates when nothing is running; per-image Open/Save/Clear/Protect/Cover buttons returned to their spot directly under each image; Show Menu button became a single <strong>Show/Hide Menus</strong> toggle.</li>
 <li><strong>2026.08.13.8</strong> — ⟳ persistence for Location and Action Prompt (alongside characters), cross-page propagation capped at the next page&#39;s panel 1, and ✕ delete buttons on every character/location/action line.</li>
 <li><strong>2026.08.13.7</strong> — single global ■ Stop button (always visible, active during runs) replaced the per-panel hidden ones.</li>
 <li><strong>2026.08.13.6</strong> — panel info summary line and the cleaner &quot;No Location Selected&quot; dropdown option.</li>
 <li>Earlier — the panel accordion layout, side-menu option, hide/show menu &amp; panels toggles, and the multi-page model.</li>
 </ul>
-<h2>12. Notes &amp; limitations</h2>
+<h2>13. Notes &amp; limitations</h2>
 <ul>
 <li><strong>Images are session-only</strong> — reloading clears generated art (settings survive). Use ZIP export for a durable copy.</li>
 <li><strong>Local storage is per-browser</strong> — your project lives in the browser you used; a different browser or a cleared profile starts fresh (unless you import a backup).</li>
@@ -192,7 +204,7 @@
 </ul>
 
 <hr>
-<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.08.13.10. Written 2026-08-14. This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
+<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.08.16.24. Written 2026-08-14 (the JSON-editor section was added 2026-09-23). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
 </div>
 </body>
 </html>
