@@ -383,6 +383,15 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
+### 2026-09-23 — FEATURE REQUEST (2 items): recursive panel reflow when duplicating on a full page · scrub `-1` seeds on import
+- **Status:** RECON DONE, AWAITING ANSWERS — logged 2026-09-23. Not greenlit yet (no explicit "go ahead"); the author has been asked the clarifying questions listed below and the AI is holding until they answer (standing directive 2026-09-20).
+- **Request 1 — duplicate a panel when the page is full.** Today, duplicating a panel on a page that already has 24 panels offers to start a new page with the copy as its first panel. The author wants that replaced by an automatic reflow:
+  - No free later page → advise the user that a new page is being created, then let the overflow reflow automatically and insert the duplicate after the panel being duplicated.
+  - A later page exists → automatically reflow the 25th panel onto the next page and advise the user, with **Ok / Cancel** choices.
+  - Recurse through any number of full pages. The author's worked example: three pages of 24, duplicating panel 6 on page 1 → create page 4; move page 3's panel 24 → page 4 panel 1; move page 2's panel 24 → page 3 as its panel 1; move page 1's panel 24 → page 2 as its panel 1; insert the duplicate of panel 6 as page 1 panel 7.
+  - Advise succinctly ("a new page will be created and panels reflowed") with Ok / Cancel.
+- **Request 2 — `-1` seeds on import.** Any imported project whose project seed or any panel seed is `-1` must have that value quietly removed (→ random). No confirmation needed.
+
 ### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
 - **Status:** ACTIVE (author-mandated 2026-09-23, in force until the author says otherwise). Docs-only — no
   changelog entry.
