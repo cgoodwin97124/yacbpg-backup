@@ -277,7 +277,15 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   ("Stopped — generation cancelled."), deletes those slot images, sets status. The abort propagates: catch →
   'cleared' → generateSinglePanel returns early → loop breaks → finally restores UI.
 - `stopAllGenerations()` (used by page-switch/delete/resequence) marks `.paused`, NOT `.stopped`.
-- `'cleared'` card/box class also aborts in-flight renders silently (used by clear/resequence/
+- `'cleared'` card/box class also aborts in-flight renders silently
+- **Watchdog / unhandled rejection (2026.09.24.4):** `renderPanelSlot` awaits
+  `withRunSignal(withTimeout(pending, GENERATION_TIMEOUT_MS, runSignal ? runSignal.p : null))`. Before this, the
+  120s timeout promise kept ticking after a run was abandoned (pause / stop / visibility change) and then rejected
+  with no consumer — the engine reported it as an unhandled rejection ("Timed out after 120s — click Generate to
+  retry"). The `abortPromise` settles the race and clears the timer the moment the run signal fires, and
+  `raced.catch(() => {})` absorbs the residual case. The genuine stall path is unchanged (the awaiting caller
+  catches it and marks the box `.failed`).
+ (used by clear/resequence/
   duplicate/delete paths).
 - The `stopped` class is cleared wherever box states are reset (reroll, clears, reset).
 
