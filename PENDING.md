@@ -15,6 +15,52 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-24 — "Generated Prompt" accordion: a per-panel prompt history (up to 5 prompts + their seeds)
+- **Status:** RECON DONE 2026-09-24 — logged first (author-mandated). Questions sent to the author (entry
+  granularity, which seed, negative prompt, persistence, dedupe/duplicate/clear behaviour); implementation
+  starts on their answers.
+- **Request (author, 2026-09-24, verbatim):** "Under the panel's Prompt menu, I'd like to add an accordion
+  menu: generated prompt. When a panel is generated, its full prompt is copied into the field; this text
+  remains protected from *any* prompt changes, and there's a space for the seed used as well. Generated Prompt
+  will hold up to five prompts with seed. Its purpose is to act as a prompt history for that panel."
+- **RECON (2026-09-24):**
+  - Target home: the panel's `📝 Prompt` accordion — markup in `buildPanelGrid()` (index.html:3627–3641):
+    `.panel-acc-toggle` "📝 Prompt" → body with the `📝 Prompt` editor toggle (`togglePromptEditor`), the
+    `📋 Copy Prompt` chip (`copyPanelPrompt`), and the inline editor `#prompt-pos-i` / `#prompt-neg-i`.
+    `panelPromptOverrides[i] = {pos, neg}` is the live override, persisted per panel as
+    `promptOverride` (`collectPageData`, index.html:2879; restored at :3413) and wiped by
+    `clearPanelPromptOverride` on any interface change (that is the "resets when you change a character"
+    behaviour the new history must NOT have).
+  - Prompt assembly: `buildPanelPrompt(i)` (index.html:5076, ASYNC) returns
+    `{fullPrompt, negativePrompt, hasContent}` — effective global style keywords + palette + characters +
+    location + action, or the override when one exists. It is the single source of truth for what is actually
+    sent: called by `copyPanelPrompt` (:5107), `populatePromptEditor` (:5172), and by the two generation
+    entry points `generateSinglePanel` (:5347) and `generateSinglePanelSlot` (:5373).
+  - Seeds: `pinPanelSeedForRun(i)` (:5382) resolves the seed for a run — the panel's Seed box if set, else
+    page seed + (i−1), else a random value it PINS into the panel's box — and `renderPanelSlot` (:5232) sends
+    `opts.seed = seed + (k − 1)`, i.e. image k of a panel uses the panel seed plus a fixed slot offset.
+    `getPanelSeed(i)` (:5370) reads the same value without pinning. So after any generation the panel's Seed
+    box holds the base seed the run used.
+  - Generation entry points that would feed the history: `generateSinglePanel(i)` (a whole panel — 1..4
+    images in one `renderPanelSlot` loop) and `generateSinglePanelSlot(i, k)` (one image); `generateComicPage`
+    (:6708, "Generate All" / selection batches) just loops `generateSinglePanel`. `renderPanelSlot` is the only
+    place where prompt AND the actual seed are known together.
+  - Storage shape: per panel, i.e. a new `promptHistory` array inside `pages[N][i]` in
+    `comicGen.panelState` — collected by `collectPageData` and restored by `restorePanelState`, so it would
+    ride along in Save / Export / Import / the project ZIP automatically. The JSON editor
+    (`jsonFieldClass`) needs an explicit decision on whether these are editable values.
+  - Sizing: 5 prompts × 24 panels × ~0.5–1.5 KB ≈ 60–180 KB worst-case in `panelState` (localStorage has room;
+    the JSON editor shows the document but syntax colouring already pauses above 220k chars).
+- **QUESTIONS SENT (2026-09-24):** (1) one history entry per GENERATION EVENT (a panel Generate that renders
+  4 images = one entry) vs one per IMAGE (recommendation: per event); (2) which seed to store — the panel's
+  base seed (image N = base + N−1, which is what the Seed box shows) vs the exact per-image value
+  (recommendation: the base seed, with the +N−1 convention explained in the entry's tooltip); (3) include the
+  NEGATIVE prompt in each entry too (recommendation: yes, as a secondary line); (4) persist the history with
+  the project (survives reload, travels in Export/Import/JSON) vs session-only (recommendation: persist);
+  (5) the small calls — identical prompt+seed repeats move-to-top instead of duplicating, ⧉ Duplicate copies
+  the history, 🗑 Clear wipes it (🗑 Clear Images does not), each entry gets a 📋 Copy chip + a timestamp, and
+  nothing ever auto-applies an entry back into the live prompt.
+
 ### 2026-09-24 — "Copy (x) from previous panel" across page boundaries (skip panels with no example)
 - **Status:** ✅ **DONE 2026.09.24.1** — implemented, verified in the live preview, docs + GitHub backup pushed.
 - **Request (author, 2026-09-24, verbatim):** "I'd like the \"Copy (x) from previous panel\" to be available on
