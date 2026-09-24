@@ -58,6 +58,30 @@ each section).
   (5) the small calls — identical prompt+seed repeats move-to-top instead of duplicating, ⧉ Duplicate copies
   the history, 🗑 Clear wipes it (🗑 Clear Images does not), each entry gets a 📋 Copy chip + a timestamp, and
   nothing ever auto-applies an entry back into the live prompt.
+- **AUTHOR'S ANSWER (2026-09-24, verbatim):** "1. Per generation. 2. If we can store the exact seed of each seed,
+  yes. 3. Yes. 4. Yes. 5. Your suggestions are good." — i.e. one entry per generation event; store the EXACT
+  per-image seeds rather than just the panel's base seed (so answer 2 overrides my recommendation); include the
+  negative prompt; persist with the project; and all five small calls approved. Plus a new requirement: "I'd
+  actually like each entry to have its own generate button, and the tooltip specifies that it's generated from
+  this prompt. Generating from here doesn't reorder the entries."
+- **Implementation (2026.09.24.2):** a nested `🕘 Generated Prompt` accordion inside each panel's 📝 Prompt menu,
+  holding the newest five generations as `{pos, neg, seeds:[{k,seed}], at}` — the exact positive and negative text
+  that was sent plus the exact seed every image used. `readPanelItem`-style plumbing: state lives at
+  `pages[N][i].promptHistory` (collected by `collectPageData`, restored by `restorePanelState`, cleared by
+  `applyImportedSettings` / `resetEverything` / the six page-map reset sites), so it saves, exports and imports
+  with the project and shows greyed (read-only) in the 🧩 JSON editor. Capture happens per generation event via the
+  per-panel `promptHistoryRuns` map: `renderPanelSlot` pushes the actual `opts.seed` after each successful image,
+  and `commitPromptHistoryRun` writes one entry in the run's `finally`. Each entry has `📋 Copy` and its own
+  `🔄 Generate` (tooltip: "Generate this panel from this prompt — the exact prompt text and seed(s) saved in this
+  entry are used instead of the interface-built prompt. The saved history is left alone: nothing is added, moved or
+  reordered.") which passes the entry's prompt + per-slot seeds through
+  `generateSinglePanel(i, {pos, neg, seedForSlot})` / `renderPanelSlot`'s `seedOverride` — the panel's Seed box is
+  not touched and no history is written. Verified live (stubbed image service, throwaway state, author's state
+  restored): exact prompts and seeds recorded, de-dupe on repeats, newest-first ordering, the 5-entry cap, the
+  history-neutral `🔄 Generate`, `🗑 Clear` wiping it, `📋 Copy`, and a clean JSON-editor load/apply. Also guarded
+  against a generation that finishes AFTER a project reset writing into the fresh project (the run map is cleared by
+  every reset/import). Details in `DEV-NOTES.md` (BATCH 2026.09.24.2); the test-protocol disaster that happened
+  alongside this work is documented in `ISSUES.md` (2026-09-24).
 
 ### 2026-09-24 — "Copy (x) from previous panel" across page boundaries (skip panels with no example)
 - **Status:** ✅ **DONE 2026.09.24.1** — implemented, verified in the live preview, docs + GitHub backup pushed.
