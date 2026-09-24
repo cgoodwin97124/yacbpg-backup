@@ -9,6 +9,85 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.24.2 — 🕘 Generated Prompt: per-panel prompt + seed history
+
+Author request (2026-09-24, verbatim): "Under the panel's Prompt menu, I'd like to add an accordion menu: generated
+prompt. When a panel is generated, its full prompt is copied into the field; this text remains protected from *any*
+prompt changes, and there's a space for the seed used as well. Generated Prompt will hold up to five prompts with
+seed. Its purpose is to act as a prompt history for that panel."
+
+Author's answers (2026-09-24, verbatim): "1. Per generation. 2. If we can store the exact seed of each seed, yes.
+3. Yes. 4. Yes. 5. Your suggestions are good." plus a new requirement: "I'd actually like each entry to have its own
+generate button, and the tooltip specifies that it's generated from this prompt. Generating from here doesn't
+reorder the entries."
+
+### Data model
+- Per panel: `promptHistory` — an array (newest first, max `PROMPT_HISTORY_MAX` = 5) of
+  `{pos, neg, seeds: [{k, seed}], at}`. Lives inside `pages[N][i]` in `comicGen.panelState`, collected by
+  `collectPageData()` (`promptHistory: panelPromptHistory[i] || []`) and restored by `restorePanelState()`
+  (only when non-empty), exactly like the existing `promptOverride`. That means it rides in Save / Export /
+  Import / the .zip for free, and it is LOCKED (greyed) in the JSON editor because `jsonFieldClass` returns
+  `lock` for any path it does not explicitly allow — verified (`promptHistory` leaves are locked, Apply reports
+  "No changes to apply." on an untouched document).
+- In-memory map `panelPromptHistory` (mirrors `panelPromptOverrides`): reset at all six `panelPromptOverrides = {}`
+  sites, cleared in `applyImportedSettings` and `resetEverything` (delete-loops), populated in
+  `restorePanelState`. `clearPanelImage(i)` ("🗑 Clear") deletes the panel's entry; `clearPanelImages` does not.
+
+### Capture (one entry per generation EVENT, not per image)
+- `promptHistoryRuns` is a PER-PANEL map (`promptHistoryRuns[i] = {pos, neg, seeds: []}`), not a single global.
+  That matters: a user can start panel B's generation while panel A is still rendering, and a single shared
+  variable would let A's later slots push into B's run (A's `finally` then commits B's run and B loses it).
+  Keying by panel index removes the whole class of bug (`panelBusy[i]` already prevents two runs of the SAME
+  panel). `renderPanelSlot()` pushes `{k, seed: opts.seed}` after each successful `showPanelImage`, and
+  `generateSinglePanel` / `generateSinglePanelSlot` create the run and `commitPromptHistoryRun(i)` it in their
+  `finally` (so a partially-rendered run still records the images that WERE produced, and a no-content or
+  fully-protected run records nothing).
+- `addPromptHistoryEntry` de-dupes on an identical (pos, neg, seeds) — an identical repeat MOVES that entry back
+  to the top instead of adding a duplicate — then unshifts, truncates to 5, and persists immediately with
+  `savePanelStateShape(collectPanelState())` (once per generation event, not per image) so a page switch or a
+  rebuild can never lose the newest entry to the 250ms debounce.
+
+### Generating FROM an entry
+- `generateSinglePanel(i, runOverride)` grew an optional second argument: `{pos, neg, seedForSlot}`.
+  `renderPanelSlot` grew a matching `seedOverride` parameter: when it is a number ≥ 0 the slot uses EXACTLY that
+  seed (`opts.seed = seedOverride`, no `+ (k - 1)`) and — importantly — `pinPanelSeedForRun` is NOT called, so
+  the panel's Seed box is not touched. `seedForSlot(k)` returns the entry's recorded seed for slot k, or
+  `lastSeed + (k - lastK)` if the panel's image count has grown since. Because a run override DELETES
+  `promptHistoryRuns[i]`, the history is never written, reordered or duplicated by this path ✓ (the author's
+  explicit requirement).
+
+### UI
+- New nested accordion inside the `📝 Prompt` accordion body, reusing the established `.panel-acc-stack` nesting
+  pattern: `🕘 Generated Prompt` → a hint line + `#gp-list-<i>`. Entries are rendered LAZILY — `togglePanelAcc`
+  and `setPanelAccsCollapsed` (Show/Hide Menus) call the new `renderAccHistory(acc)`, which only renders when the
+  accordion is actually open and whose `[id^="gp-list-"]` lookup is pinned to its own `closest('.panel-acc')` so the
+  outer Prompt accordion does not render the inner block's list. Without that guard, opening any panel's Prompt
+  menu would build up to 5 × 2 read-only textareas per panel.
+- Each entry: `#N`, a seed label (`seed 123456` or `img 1: … · img 2: …`), a timestamp, `📋 Copy`, and
+  `🔄 Generate` whose tooltip states that the entry's prompt + seed(s) are used and the history is left alone.
+  The positive prompt is the main read-only textarea, the negative is a second smaller one (the author's "secondary
+  line" choice). Read-only textareas (not divs) so the text is selectable/copyable with a visible field boundary.
+
+### Gotcha found while shipping (process, not code)
+Testing this feature destroyed the author's live project + library — full post-mortem, timeline and the NEW
+MANDATORY TEST PROTOCOL are in `ISSUES.md` (2026-09-24). In short: the tests installed a synthetic project into the
+live `comicGen.panelState`, one eval left a NATIVE `confirm()` blocking the page, and the recovery path let a
+silent `newProject()` (which needs no confirmation when `hasActiveProject()` is false and deletes
+`comicGen.libObjects`) wipe everything. The new protocol: never write a synthetic project into the live state;
+if unavoidable, back it up to a WORKSPACE FILE as well as a second localStorage key and verify it reads back;
+stub `confirm`/`prompt`/`alert` AND neutralise `newProject` / `resetEverything` / `deletePage` /
+`deletePanel` before driving any UI.
+
+### Testing done (feature itself; synthetic state, author's state restored byte-for-byte)
+Stubbed `root.generateImage`. Verified: a per-panel run records ONE entry whose `pos`/`neg` are byte-identical to
+what was sent and whose `seeds` are the exact per-image values (`[{k:1,seed:111},{k:2,seed:112}]` for a 2-image
+panel with panel seed 111); the seed label reads `img 1: 111 · img 2: 112`; an identical repeat de-dupes to one
+entry; changing the action adds a second entry newest-first; clicking an entry's `🔄 Generate` produces
+byte-identical calls and leaves the history completely unchanged; the cap holds at 5; `🗑 Clear` empties both the
+panel's history and the persisted copy; `📋 Copy` works; the JSON editor opens the document with the history
+locked and applies cleanly with "No changes to apply."; the author's own state was restored and re-verified
+afterwards.
+
 ## BATCH 2026.09.24.1 — ⇤ copy-from-previous-panel crosses pages + skips blank panels
 
 Author request (2026-09-24, verbatim): "I'd like the \"Copy (x) from previous panel\" to be available on panel 1
