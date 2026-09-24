@@ -34,7 +34,7 @@
 <body>
 <div class="page">
 <h1>Yet Another Comic Book Page Generator</h1>
-<h3>Design Document — version 2026.09.24.3</h3>
+<h3>Design Document — version 2026.09.24.4</h3>
 <p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
 <hr>
 <h2>1. What it is</h2>
@@ -81,6 +81,7 @@
 <h3>🕘 Generated Prompt — the panel's prompt history</h3>
 <p>Inside each panel's <strong>📝 Prompt</strong> menu there is a second, collapsible section, <strong>🕘 Generated Prompt</strong>. Every time a panel generates — its own <strong>🔄 Generate</strong>, a single image's <strong>🔄 Generate</strong>, or <strong>⚡ Generate All</strong> — the app files the <strong>exact prompt text that was sent</strong> (positive and negative, including your preset style keywords, characters, location, action and any <strong>📝 Prompt</strong> override that was in force) together with the <strong>exact seed each image used</strong> and the time it ran. The newest five generations are kept, newest first.</p>
 <p>These entries are <strong>frozen snapshots</strong>: changing a panel's characters, location, action, the global keywords, the presets or the NSFW flag never alters them, and neither does editing the live prompt editor. They are the record of what actually produced your images — so if an image came out well after you have since changed the panel, you can still see (and copy) the exact words and seed that made it.</p>
+<p>Every entry also carries a <strong>small thumbnail of the image it produced</strong>, on the left of its header line. <strong>Hover over the thumbnail</strong> (or press and hold it on a touch screen) to see it larger — exactly like previewing a panel image — with a label naming the entry, its panel and its seed(s), e.g. <em>Saved prompt #2 · Panel 3 · seed 123456</em>. The thumbnail is a compact copy (~10 KB, 224px on its long side), so it is an <em>aide-mémoire</em> rather than a substitute for the full image, and it survives a page reload even though the generated images themselves do not. Thumbnails live in their own browser-storage slot (<code>comicGen.promptThumbs</code>) rather than in your project, so your project file, the JSON editor and Export / Import all stay lean; the app keeps the newest few hundred and drops the oldest first, and a thumbnail disappears with the entry it belongs to (replaced, pushed out of the five, or wiped by <strong>🗑 Clear</strong>).</p>
 <ul>
 <li><strong>📋 Copy</strong> puts that saved positive prompt on your clipboard.</li>
 <li><strong>🔄 Generate</strong> re-renders the panel <em>from that entry</em> — its saved prompt text and its saved seed(s) are used instead of whatever the panel currently says, so you get the same recipe again. It leaves the history exactly as it is: nothing is added, moved or reordered. 🔒 protected images are still respected, and the panel's own <strong>Seed</strong> box is left untouched.</li>
@@ -155,6 +156,10 @@
 <td>The one-step snapshot kept by <strong>New Project</strong> / <strong>Reset to Defaults</strong>, restored with <strong>↩ Restore Previous Project</strong>. It holds the project's settings <em>and</em> your saved library; the images it held are only restorable while the page has not been reloaded.</td>
 </tr>
 <tr>
+<td><code>comicGen.promptThumbs</code></td>
+<td>The thumbnails shown on the 🕘 Generated Prompt entries (keyed copies of the images, ~10 KB each, capped — the oldest are dropped first). Kept out of the project itself so it stays lean.</td>
+</tr>
+<tr>
 <td><code>comicGen.preset</code></td>
 <td>The active art style + palette.</td>
 </tr>
@@ -206,6 +211,7 @@
 <p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
 <h2>12. Recent changes (changelog highlights)</h2>
 <ul>
+<li><strong>2026.09.24.4</strong> — every <strong>🕘 Generated Prompt</strong> entry now shows a <strong>small thumbnail of the image it produced</strong> (hover, or press and hold on a touch screen, to see it larger, labelled with the entry, panel and seed). The thumbnails are compact (~10 KB) and live in their own browser-storage slot so your project stays lean, they are capped so storage can't creep, and they vanish with the entry they belong to. Also fixed: the <strong>“Timed out after 120s — click Generate to retry”</strong> error pop-up no longer appears. That came from a generation you had already walked away from (usually by switching tabs, which pauses the run): its 120-second watchdog was left with nobody listening, so the browser reported it as an unhandled error. The watchdog now shuts down the moment a run is paused or stopped, and a late timeout is absorbed quietly — a generation that really stalls while you watch still marks that panel as failed and tells you to press Generate.</li>
 <li><strong>2026.09.24.3</strong> — two safety nets against losing work. <strong>New Project</strong> and <strong>Reset to Defaults</strong> now keep a <strong>one-step snapshot</strong> of the project they clear, restorable with the new <strong>↩ Restore Previous Project</strong> button (in 📄 File, next to New Project, or under Reset to Defaults) — the snapshot keeps your pages, panels, seeds, keywords, prompt overrides, prompt histories, image protection <em>and</em> your saved library, and its images return too while the page is open. And <strong>nothing deletes your library by itself any more</strong>: New Project asks with an explicit, off-by-default “Also delete my saved library objects” checkbox, and deleting a saved character/location/action now always asks first, naming the item and how many panels use it.</li>
 <li><strong>2026.09.24.2</strong> — a new <strong>🕘 Generated Prompt</strong> section inside each panel's <strong>📝 Prompt</strong> menu keeps a <strong>history of the last five prompts that panel was actually generated with</strong>, each frozen exactly as it was sent — the full positive and negative text <em>and</em> the exact seed(s) each image used. Later edits to characters, keywords, presets or the live prompt editor never change them. Every entry has its own <strong>📋 Copy</strong> and <strong>🔄 Generate</strong>, the latter re-rendering the panel from that saved prompt and seed(s) without disturbing the history at all. The history is saved with the project (Export / Import / .zip), is read-only in the JSON editor, travels with <strong>⧉ Duplicate</strong>, and is wiped by <strong>🗑 Clear</strong> (but not by <strong>🗑 Clear Images</strong>).</li>
 <li><strong>2026.09.24.1</strong> — the <strong>⇤ copy-from-previous-panel</strong> buttons now reach <strong>across pages</strong> and <strong>skip panels that have nothing to copy</strong>. Panel 1 of page 2 (and every later page) can finally pull a character, location or action prompt from an earlier page, and every ⇤ now looks back to the <em>nearest earlier panel that actually has that item</em> instead of only the panel directly above it — so blank panels and blank pages are stepped over rather than copied as blank. If page 1 has panels 1–8 filled in and pages 2 onwards are empty, panel 1 of page 11 copies from page 1's panel 8. Each ⇤ names its source in its tooltip, and it is greyed out only when nothing before it in the whole project has that item. The <strong>Seed ⇤</strong> is unchanged.</li>
@@ -240,7 +246,7 @@
 </ul>
 
 <hr>
-<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.09.24.3. Written 2026-08-14 (the JSON-editor section, the collapsible character/location lines, the changelog moving to GitHub, the full-page panel reflow, the cross-page ⇤ copying, the Generated Prompt history and the Restore Previous Project / library safety nets were all added 2026-09-23/24). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
+<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.09.24.4. Written 2026-08-14 (the JSON-editor section, the collapsible character/location lines, the changelog moving to GitHub, the full-page panel reflow, the cross-page ⇤ copying, the Generated Prompt history and its thumbnails, and the Restore Previous Project / library safety nets were all added 2026-09-23/24). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
 </div>
 </body>
 </html>
