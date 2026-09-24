@@ -4,6 +4,12 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.24.1 — 2026-09-24 — ⇤ "Copy from the previous panel" reaches across pages and skips blank panels
+- **The ⇤ copy-from-previous-panel buttons now work on Panel 1 of page 2 and of every later page**, and every ⇤ on every panel now copies from the **nearest earlier panel that actually has that item** instead of only the panel directly above it. Blank panels — and whole blank pages — are stepped over rather than copied as blank.
+- Concretely: with page 1's panels 1–8 filled in and pages 2–10 left empty, **Panel 1 of page 11 copies from page 1's panel 8**. Characters, location and action prompt each resolve independently (and per character slot, so a panel's *second* character copies from the nearest earlier panel that has a second character).
+- Each ⇤ names its source in its tooltip — "Copy this character from Page 1, Panel 8" — and it is greyed out only when nothing before it anywhere in the project has that item (Panel 1 of page 1, for example). Clicking copies the item together with its freeform description/modifier, overwriting what that slot held.
+- The **Seed ⇤ is unchanged**: it still reads the previous page's last panel and keeps its "a blank seed follows the page seed" behaviour.
+
 ## 2026.09.23.14 — 2026-09-23 — A floating ＋ Add Page button in the bottom-right corner
 - **A new ＋ Add Page button floats in the bottom-right corner of the screen.** It creates a new empty page (4 panels) and switches to it — exactly what 📄 File → Page Setup → ＋ Add Page does — so you never have to open the menu just to start a page.
 - It is drawn in the same green style as **▧ Hide Panels** and the page navigator bar (dark fill, bright-green border and text), mirrored into the corner opposite ▧ Hide Panels.
