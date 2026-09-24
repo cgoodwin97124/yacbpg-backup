@@ -15,6 +15,42 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-24 — "Copy (x) from previous panel" across page boundaries (skip panels with no example)
+- **Status:** RECON DONE 2026-09-24 — logged first (author-mandated). Two confirm-questions sent to the author
+  (within-page skip + the Seed ⇤); implementation starts on their answer.
+- **Request (author, 2026-09-24, verbatim):** "I'd like the \"Copy (x) from previous panel\" to be available on
+  panel 1 of page 2 and subsequent pages. Generally speaking, I'd like the \"Copy (x) from previous panel\"
+  buttons to copy from the last panel on the last page that has an example of the item. So if page 1 has 24
+  panels, and only up to panel 8 is populated, and I create 10 empty pages after that, I'd like panel 1 of page
+  11 to be able to pull from panel 8 of page 1."
+- **RECON (2026-09-24):**
+  - The three target chips are the `⇤` buttons on the Characters rows (`charRowHtml`, index.html:2530), the
+    Location row (`locRowHtml`, :2553) and the Panel Action Prompt row (`actRowHtml`, :2572); each is
+    `onclick="copyFromPrevPanel(i, kind, s)"` and hard-`disabled` in the template whenever `i === 1`, so panel 1
+    of page 2+ is dead today.
+  - `copyFromPrevPanel(i, kind, s)` (index.html:3440) reads ONLY the DOM at panel `i-1` of the CURRENT page
+    (`panel-char-select-(i-1)-s`, `panel-loc-select-(i-1)`, `panel-act-(i-1)`) — it cannot reach another page.
+  - Panel numbers are PER PAGE (page objects hold `1..24`: `collectPageData()`/`collectPanelState()` write
+    `pages[N][i]`), so a cross-page copy must read the stored state instead of the DOM. Precedent exists:
+    `previousPanelSeedRaw(i)` (index.html:5377) already handles panel 1 of page ≥ 2 by reading the previous
+    page's LAST panel via `analysisPanelCount(prevPage)` out of `ensurePages(readPanelState())`, and
+    `updateSeedChipStates()` (:5413) is what enables that chip when `currentPage > 1`. Stored-page read helpers:
+    `analysisPanelCount` / `analysisCharSel` / `analysisCharExtra` / `analysisLocSel` / `analysisLocExtra` /
+    `analysisActText` (:1760–:1800). Natural refresh hook = `buildPanelGrid()`'s tail (:3632, next to
+    `updateSeedChipStates()`) plus the grid's existing `input`/`change` listener.
+  - The intended rule: walk the global panel sequence BACKWARDS from the clicked panel and copy from the nearest
+    panel that HAS an example of that item (character slot = a real selection ≠ `none`; location = selection
+    ≠ `none`; action = non-blank text), skipping empty/unpopulated panels. With page 1 panels 1–8 populated and
+    pages 2–10 empty, page 11 panel 1 resolves to page 1 panel 8.
+  - Consequence to confirm: applying the rule "generally" also changes the WITHIN-page behaviour (panel 5 would
+    copy panel 3's character when panel 4's slot is empty, where today it copies panel 4's empty `none`), and the
+    chip becomes disabled only when NO earlier panel anywhere has an example.
+- **QUESTIONS SENT (2026-09-24):** (1) confirm the within-page skip (recommendation: yes — "the last panel …
+  that has an example"); (2) should the Seed `⇤` — which already crosses pages but reads the previous page's
+  LAST panel without skipping back past empty pages — follow the same nearest-populated search, or keep its
+  deliberate "copy the previous panel's seed / blank follows the page seed" semantics (recommendation: keep as
+  is)?
+
 ### 2026-09-23 — Floating "＋ Add Page" button in the bottom-right corner
 - **Status:** ✅ **DONE 2026.09.23.14** — implemented, verified in the live preview and pushed.
 - **Request (author, 2026-09-23, verbatim):** "Let’s add a floating \"Add Page\" button, in the same color
