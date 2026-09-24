@@ -16,8 +16,7 @@ each section).
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-09-24 — "Copy (x) from previous panel" across page boundaries (skip panels with no example)
-- **Status:** RECON DONE 2026-09-24 — logged first (author-mandated). Two confirm-questions sent to the author
-  (within-page skip + the Seed ⇤); implementation starts on their answer.
+- **Status:** ✅ **DONE 2026.09.24.1** — implemented, verified in the live preview, docs + GitHub backup pushed.
 - **Request (author, 2026-09-24, verbatim):** "I'd like the \"Copy (x) from previous panel\" to be available on
   panel 1 of page 2 and subsequent pages. Generally speaking, I'd like the \"Copy (x) from previous panel\"
   buttons to copy from the last panel on the last page that has an example of the item. So if page 1 has 24
@@ -48,8 +47,24 @@ each section).
 - **QUESTIONS SENT (2026-09-24):** (1) confirm the within-page skip (recommendation: yes — "the last panel …
   that has an example"); (2) should the Seed `⇤` — which already crosses pages but reads the previous page's
   LAST panel without skipping back past empty pages — follow the same nearest-populated search, or keep its
-  deliberate "copy the previous panel's seed / blank follows the page seed" semantics (recommendation: keep as
-  is)?
+  deliberate "copy the previous panel's seed / blank follows the page seed" semantics ($1
+- **AUTHOR'S ANSWER (2026-09-24, verbatim):** "Your reading is good, and go with your recommendations on both." —
+  the within-page skip is approved (one uniform "nearest panel that has an example" rule) and the Seed ⇤ keeps
+  its existing behaviour.
+- **Implementation (2026.09.24.1):** `readPanelItem` / `panelItemIsSet` / `prevItemSource` resolve the source
+  panel by walking backwards through the panel sequence (the current page from the DOM, earlier pages from stored
+  `pages[pg][j]`, each page from its `analysisPanelCount`-th panel down); `copyFromPrevPanel` was rewritten on
+  that source but keeps its original write path, so nothing on an earlier page is ever touched.
+  `updateCopyPrevChipStates()` (+ `applyCopyPrevChips` / `copyPrevChipTitle` / `absorbPanelItems`) sets each
+  chip's `disabled` + a "Copy this character from Page 1, Panel 8" tooltip, hooked from `buildPanelGrid()` and
+  `updatePanelSummary()` so the chips stay live while you type; the three row templates lost their hard-coded
+  `i === 1` disable and gained ids. Verified live on a throwaway 4-page fixture (page 1 populated 1–3 and 5–8
+  with panel 4 blank, pages 2–4 blank, currentPage 4): page 4 panel 1 resolved to Page 1 Panel 8 (slot 1),
+  Page 1 Panel 1 (slot 2), greyed (slot 3), and Page 1 Panel 8 for the location and action prompt, with clicking
+  copying `hero|E8` / `city|L8` / `ACT8`; on page 1, panel 5 resolved to Panel 3 (skipping the blank panel 4)
+  and panel 24's click copied `hero|E8`; the author's 7,671-byte "Cow in field" state was restored
+  byte-for-byte. Details and the forward-scan gotcha: `DEV-NOTES.md` (BATCH 2026.09.24.1) + `ISSUES.md`
+  (2026-09-24).
 
 ### 2026-09-23 — Floating "＋ Add Page" button in the bottom-right corner
 - **Status:** ✅ **DONE 2026.09.23.14** — implemented, verified in the live preview and pushed.
