@@ -122,8 +122,7 @@ only live ephemerally or inside `index.html`'s comment block.
 - accordion open/closed state (`.panel-acc[data-collapsed]`), `.stopped`/`.paused` boxes
 - (The ⟳ persist chains `syncState['i-s']`/`'i-loc'`/`'i-act'` and the cross-page carry
   `carryNext[page]` were REMOVED 2026-08-16 (changelog 2026.08.16.11) — replaced by the per-row ⇤
-  copy-from-previous-panel button `copyFromPrevPanel(i, kind, s)`, which copies the corresponding
-  char/location/action from panel i−1 on demand. No auto-propagation or cross-page carry exists anymore.)
+  copy-from-previous-panel button `copyFromPrevPanel(i, kind, s)`, which, since 2026.09.24.1, resolves the source by walking BACKWARDS to the nearest earlier panel that HAS that item — earlier panels on the current page (from the DOM), then earlier pages from their last panel down (from stored `pages[pg][j]`) — so blank panels/pages are skipped and Panel 1 of page 2+ works (`prevItemSource` / `readPanelItem` / `panelItemIsSet`). No auto-propagation or cross-page carry exists anymore.)
 
 **Save pipeline:** grid `input`/`change` events → `handleGridInput(e)` + `schedulePanelSave()`
 (debounced 250ms) → `collectPanelState()` → localStorage. `collectPageData()` reads the live DOM
@@ -302,7 +301,20 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   lifting it just clear of the selection bar put it straight into the page navigator’s box, so the test must be
   re-run after each lift. Called from `updateSelectionUI()` plus `resize` / `orientationchange`. It needs no
   hiding logic: every full-page overlay (Focus, Storyboard, Library, Analysis, JSON, manual) is opaque at
-  `z-index >= 10000`, so it covers the button automatically.- `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice persisted. Every group
+  `z-index >= 10000`, so it covers the button automatically.
+- **⇤ cross-page copy-from-previous-panel (2026.09.24.1):** the per-row ⇤ chips
+  (`char-copy-prev-<i>-<s>` / `loc-copy-prev-<i>` / `act-copy-prev-<i>`) now copy from the NEAREST EARLIER
+  PANEL THAT HAS THAT ITEM, stepping over blank panels and across page boundaries (Panel 1 of page 2+ included).
+  `prevItemSource(kind, i, s)` does the backwards walk — the current page from the DOM, earlier pages from
+  `pages[pg][j]` using `analysisPanelCount(page)` — via `readPanelItem` (accessor) and `panelItemIsSet`
+  ("has an example" = a real selection ≠ `none`, or non-blank action text); `copyFromPrevPanel` writes the
+  result into the clicked panel exactly as before. `updateCopyPrevChipStates()` (called from `buildPanelGrid()`
+  and `updatePanelSummary()`, so it stays live while typing) sets each chip's `disabled` + a "Copy this … from
+  Page P, Panel N" tooltip by seeding a `last` map from earlier pages nearest-first with `fillOnly = true`, then
+  walking the CURRENT page FORWARD with `fillOnly` falsy (= overwrite; reusing the reverse "first hit wins" rule
+  there silently pins the map to the page's first populated panel). The Seed ⇤ is deliberately untouched (a blank
+  seed means "follow the page seed").
+- `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice persisted. Every group
   opens with its sections COLLAPSED via `collapseGroupPanels` — EXCEPT `library`, which expands
   (`expandGroupPanels`, 2026.09.23.1) because the Library is meant to be readable straight away. **2026.09.23.7:**
   the full-screen exception was REMOVED, so full screen now behaves like the inline menu. Previously
@@ -545,7 +557,7 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   real typing clears overrides). (The ✕ line-delete buttons bypass this by doing their own
   `clearPanelPromptOverride`/`updatePanelSummary`/`schedulePanelSave`.)
 - ⟳ chains and cross-page carry were REMOVED 2026-08-16 (changelog 2026.08.16.11) — replaced by the per-row
-  ⇤ copy-from-previous-panel button (`copyFromPrevPanel(i, kind, s)`); no auto-propagation exists anymore, and
+  ⇤ copy-from-previous-panel button (`copyFromPrevPanel(i, kind, s)`), which since 2026.09.24.1 resolves its source through `prevItemSource` (nearest earlier panel that HAS that item, across page boundaries, blank panels skipped — see the ⇤ cross-page bullet in §8); no auto-propagation exists anymore, and
   the ✕ delete buttons no longer touch chains (they just clear the line + prompt override + summary + save).
 - **TESTING GOTCHA (2026-08-15.1, full write-up in the index.html dev-notes):** `schedulePanelSave()` is
   debounced ~250ms. After mutating panel state in browser_eval you MUST wait >400ms THEN restore the
