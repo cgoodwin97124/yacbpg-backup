@@ -346,6 +346,15 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `promptHistoryRuns[i]` so nothing is written or reordered. Locked (greyed) in the JSON editor by default.
   See `DEV-NOTES.md` (BATCH 2026.09.24.2) and, for the test-protocol disaster that accompanied it, `ISSUES.md`
   (2026-09-24).
+- **🖼️ Generated Prompt thumbnails (2026.09.24.4):** each history entry carries `thumb` = a key into
+  `comicGen.promptThumbs` (`{key: dataUrl}`, capped at 240 entries / 1.4M chars, oldest evicted first), created by
+  `attachPromptHistoryThumb(i, entry, run)` from `panelImages[i][run.seeds[0].k - 1]` via a canvas downscale
+  (`buildPromptThumb`, 224px side, JPEG q0.6, ~10-12 KB) at the end of `addPromptHistoryEntry`.
+  `promptHistoryThumbHtml()` renders `<img class="gp-thumb">` (84x84, object-fit contain) at the start of
+  `.gp-head`; `previewDataFromTarget()` recognises `img.gp-thumb` so the standard hover / press-and-hold preview
+  (`showImagePreview` + the `.img-preview--thumb` size cap) enlarges it. `prunePromptThumbs()` keeps only keys
+  referenced by the live state or by the last New Project / Reset snapshot — which is why an
+  ↩ Restore Previous Project brings the thumbnails back with the entries.
 - **↩ Restore Previous Project — one-step snapshot of a cleared project (2026.09.24.3):** `captureUndoSnapshot(reason)`
   runs inside `resetEverything()` AFTER its confirmation and BEFORE any mutation, so it covers every reset path
   (the armed reset button, `doNewProject()`, deletePage's only-page case, deletePanel's only-panel case, and the
