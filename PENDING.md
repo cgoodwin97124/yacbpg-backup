@@ -15,6 +15,27 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-24 — BUG (non-critical): unhandled promise rejection "Timed out after 120s — click Generate to retry"
+- **Status:** 🚧 IN PROGRESS (2026.09.24.4)
+- **Author, 2026-09-24, verbatim:** "I keep getting this message: 'An error has occurred somewhere in your code
+  (in lists or HTML): An unhandled promise rejection occurred: Timed out after 120s — click Generate to retry
+  withTimeout/timeout injectedScript:2307:39 ... This error message has been sent to the AI helper message box.'
+  This isn't particularly critical, is it? It just means that we've lost an image in transit, correct? If that's
+  all it is, can we trap it or otherwise gracefully prevent it?"
+- **RECON:** to be filled in below once the code has been read (withTimeout / GENERATION_TIMEOUT_MS / the
+  renderPanelSlot -> generateSinglePanel catch chain).
+- **IMPLEMENTATION:** pending.
+
+### 2026-09-24 — FEATURE: a small thumbnail on each 🕘 Generated Prompt entry (hover / long-press to enlarge)
+- **Status:** 🚧 IN PROGRESS (2026.09.24.4)
+- **Author, 2026-09-24, verbatim:** "When a prompt gets filed under Generated Prompts, can we add a small
+  thumbnail of the image it generated? It can be maybe 8-16kb in file size. I'd like to be able to hover over it
+  and see it larger, even if it doesn't have as much detail; I'd just like to have an idea of what the prompt plus
+  seed generated."
+- **RECON:** to be filled in below once the code has been read (promptHistory entry shape, the existing
+  hover/long-press image preview, the state-storage budget).
+- **IMPLEMENTATION:** pending.
+
 ### 2026-09-24 — SAFETY NETS (2 items) + a doc note: one-step undo for New Project / Reset · the library can never be deleted without its own confirmation
 - **Status:** ✅ **DONE 2026.09.24.3** — implemented, verified in the live preview (all four reset paths, both library-deletion paths, the three restore modes), docs + GitHub backup pushed.
 - **Author, 2026-09-24, verbatim:** "Go ahead and implement them.  Also, put a note into wherever the right place is that \"Cow in field\" is my throwaway test project."
