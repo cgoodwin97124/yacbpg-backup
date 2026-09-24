@@ -116,6 +116,11 @@ only live ephemerally or inside `index.html`'s comment block.
 - `comicGen.activeMenu`, `comicGen.layoutMode`, `comicGen.menuVisible`,
   `comicGen.panelsVisible` — UI prefs ('1'/'0' for the toggles)
 - `comicGen.hidePasswordPref` — '1'/'0': require the (session-only) panels password (2026-08-14.7)
+- `comicGen.undoProject` — the one-step snapshot kept by New Project / Reset (`{at, reason, imgCount, doc}`, where
+  `doc` has the JSON-editor document shape). `comicGen.promptThumbs` — `{key: dataUrl}` of the small thumbnails
+  shown on 🕘 Generated Prompt entries (capped; deliberately OUTSIDE `panelState` so the project state, the JSON
+  editor document and Export / Import all stay lean). See 2026.09.24.3 / .4 below.
+
 
 **IndexedDB** `comicGenSaveState` — `{handle, name}` (File System Access handle for 💾 Save…)
 
