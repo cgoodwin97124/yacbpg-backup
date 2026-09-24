@@ -16,7 +16,7 @@ each section).
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-09-24 — SAFETY NETS (2 items) + a doc note: one-step undo for New Project / Reset · the library can never be deleted without its own confirmation
-- **Status:** /IN-PROGRESS/ (2026.09.24.3)
+- **Status:** ✅ **DONE 2026.09.24.3** — implemented, verified in the live preview (all four reset paths, both library-deletion paths, the three restore modes), docs + GitHub backup pushed.
 - **Author, 2026-09-24, verbatim:** "Go ahead and implement them.  Also, put a note into wherever the right place is that \"Cow in field\" is my throwaway test project."
   "Them" = the two safety nets offered after the AI-worker test protocol wiped the live project + library:
   (1) New Project / Reset keeps a one-step undo snapshot with a "restore previous project" item;
@@ -43,7 +43,29 @@ each section).
     travel separately via `collectAllPageImages()` (:3294) / `repopulateImportedImages()` (:6526).
   - The app already has a non-blocking promise-based dialog: `showChoiceDialog({title, paragraphs, hint,
     buttons})` (:4660, `#choiceOverlay`) used by the panel-selection batch operations.
-- **IMPLEMENTATION:** pending.
+- **IMPLEMENTATION (2026.09.24.3):**
+  - One-step snapshot: `comicGen.undoProject` + module `undoSnapshot` hold `{at, reason, imgCount, doc,
+    pageImages}`; `captureUndoSnapshot(reason)` runs in `resetEverything()` after the confirmation and before any
+    mutation (covers the armed reset button, New Project, deletePage only-page, deletePanel only-panel and
+    multi-select delete). `restoreUndoSnapshot()` -> confirm -> `applyUndoSnapshot()` = clear in-memory image /
+    override / prompt-history maps, clamp `currentPage`, `jsonApplyDoc(doc)`, then `repopulateImportedImages` when
+    the in-memory snapshot (images included) is still alive. Buttons: `#fileUndoProjectBtn` (📄 File, after New
+    Project) and `#resetUndoProjectBtn` + `#resetUndoHint` (Reset to Defaults), kept in sync by
+    `updateUndoRestoreControls()` (called at boot). The Reset panel no longer claims "this cannot be undone".
+  - Library: `deleteLibraryObject()` confirms via `showChoiceDialog`, naming the item and counting its panel
+    references (`countLibReferences()`); `doNewProject()` reads the new `#newProjectDelLibCheck` ("Also delete my
+    saved library objects", OFF by default) and passes it as `resetEverything(noConfirm, {delLib, reason})` — the
+    unconditional `localStorage.removeItem('comicGen.libObjects')` is gone; the reset confirmation is now the
+    app's standard choice dialog and spells out the library deletion (with its own button label); the new-project
+    overlay text now matches reality.
+  - Note: `docs` — see CHANGELOG / DEV-NOTES / AI-NOTES / ISSUES (the "Cow in field" throwaway-project note lives
+    in AI-NOTES §1 TEST DATA and in the ISSUES post-mortem follow-up).
+  - Verified live: delete-item dialog (Cancel keeps it, Delete removes it and reports the usage count), reset with
+    the library kept (3 objects intact) and with it deleted, restore in all three modes (in-memory with images,
+    in-memory without, stored-only after a reload), byte-identical project round-trip apart from the two panel
+    slots whose library item had been deliberately deleted mid-test, and both new UI surfaces visually checked
+    (snapdom + vision). The author's own state was backed up and restored byte-for-byte (7672 bytes, djb2
+    3579177367).
 ### 2026-09-24 — "Generated Prompt" accordion: a per-panel prompt history (up to 5 prompts + their seeds)
 - **Status:** ✅ **DONE 2026.09.24.2** — implemented, verified in the live preview, docs + GitHub backup pushed.
 - **Request (author, 2026-09-24, verbatim):** "Under the panel's Prompt menu, I'd like to add an accordion
