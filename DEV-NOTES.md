@@ -9,6 +9,62 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.24.4 — Generated Prompt thumbnails + the 120s watchdog unhandled rejection
+
+Author requests (2026-09-24, verbatim): (1) "I keep getting this message: 'An error has occurred somewhere in your
+code (in lists or HTML): An unhandled promise rejection occurred: Timed out after 120s — click Generate to retry
+withTimeout/timeout injectedScript:2307:39 ...' This isn't particularly critical, is it? It just means that
+we've lost an image in transit, correct? If that's all it is, can we trap it or otherwise gracefully prevent
+it?" (2) "When a prompt gets filed under Generated Prompts, can we add a small thumbnail of the image it
+generated? It can be maybe 8-16kb in file size. I'd like to be able to hover over it and see it larger, even if
+it doesn't have as much detail; I'd just like to have an idea of what the prompt plus seed generated."
+
+### 1. The 120s watchdog
+- `GENERATION_TIMEOUT_MS = 120000`, raced in `renderPanelSlot` as
+  `withRunSignal(withTimeout(pending, GENERATION_TIMEOUT_MS))`. The pause/stop/visibility paths call
+  `runSignal.fire()`, so `withRunSignal`'s race settles with 'abort' and the slot returns 'cleared' — but the
+  INNER withTimeout race was left pending. `pending.stop()` does not settle the plugin promise, so ~120s later the
+  timeout rejected with nobody awaiting it: an `unhandledrejection`, which the engine surfaces in its error dialog.
+  So the author's reading was right: NON-CRITICAL, one image from an already-abandoned run, press Generate again.
+- Fix (two layers): `withTimeout(promise, ms, abortPromise)` — `renderPanelSlot` passes the current `runSignal.p`,
+  so the watchdog settles (and its `finally` clears the timer) the instant a run is paused/stopped; and
+  `raced.catch(() => {})` marks the returned promise handled for the residual case (no/superseded abort promise).
+  Success/failure semantics are unchanged — a genuine stall still reaches the awaiting caller, which marks the box
+  `.failed` with "Generation failed: Timed out after 120s — click Generate to retry".
+- Verified live with a `preambleJs` that wrapped `setTimeout`/`clearTimeout` (recording the 120000ms timers) and
+  listened for `unhandledrejection`, plus a never-settling stubbed `root.generateImage`: pausing a real
+  `generateComicPage` run cleared its watchdog at +512ms (previously it would sit for 120s), and the residual
+  path (a direct `generateSinglePanel` with no armed run signal) produced NO unhandled rejection even 130s past
+  its timeout. No unhandled rejections were reported anywhere in the test window.
+
+### 2. Generated Prompt thumbnails
+- Where they live: `comicGen.promptThumbs` = `{key: dataUrl}`, deliberately separate from `panelState` — an entry
+  lives in `pages[N][i].promptHistory`, which is both persisted to localStorage on every panel save AND rendered
+  into the 🧩 JSON editor document, so base64 inside an entry would bloat both. The entry only stores a short
+  `thumb` key.
+- Size/caps: `PROMPT_THUMB_SIDE = 224`, `PROMPT_THUMB_QUALITY = 0.6` (canvas JPEG, letterboxed on #101010) —
+  measured ~11 KB for a deliberately busy 768x768 test panel; `PROMPT_THUMB_MAX = 240` entries and
+  `PROMPT_THUMB_BUDGET = 1400000` characters, oldest evicted first (unreferenced first), which covers a full
+  single page of 24 panels x 5 entries. `savePromptThumbStore()` keeps evicting if localStorage refuses the write
+  rather than ever leaving a broken store.
+- Creation: `attachPromptHistoryThumb(i, entry, run)` fires at the end of `addPromptHistoryEntry`, picks
+  `panelImages[i][run.seeds[0].k - 1]` (the first slot the run actually rendered), downscales it in
+  `buildPromptThumb()`, stores it and re-saves + re-renders. `promptHistoryThumbHtml()` prepends
+  `<img class="gp-thumb">` (84x84, `object-fit: contain`) to `.gp-head` with a `data-thumb-label` for the preview.
+- Preview reuse: `previewDataFromTarget()` now also matches `img.gp-thumb` (returns `{label, dataUrl, thumb:true}`),
+  and `showImagePreview()` renders `info.label` and toggles `.img-preview--thumb`, a CSS class that caps that
+  preview at `min(85vw, 420px)` instead of the panel images' 1100px. So hover delay / press-and-hold / the
+  "Enable image preview" checkbox all behave exactly like panel images.
+- Garbage collection: `prunePromptThumbs()` keeps only keys referenced by the live project state AND by the last
+  cleared-project snapshot (`undoSnapshot` or the stored `comicGen.undoProject` doc), so a snapshot restore brings
+  the thumbnails back with the entries. Called from `addPromptHistoryEntry`, `clearPanelImage`, `resetEverything`
+  and the end of `applyImportedSettings`.
+- Verified live (stubbed `root.generateImage`): the thumb renders (colourful, undistorted, correct label), hover
+  opens the preview with `img-preview--thumb`, `clearPanelImage` drops only that panel's thumbs, reset+restore
+  keeps the snapshot-referenced thumbs and re-renders them after restoring, a reload renders them from
+  localStorage, and a 390x844 phone viewport shows no horizontal overflow with the header wrapping tidily. The
+  author's own storage was backed up (second localStorage key + workspace file) and restored byte-for-byte.
+
 ## BATCH 2026.09.24.3 — safety nets: one-step project snapshot (↩ Restore Previous Project) + library deletions always confirmed
 
 Author request (2026-09-24, verbatim): "Go ahead and implement them.  Also, put a note into wherever the right
