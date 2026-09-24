@@ -9,6 +9,67 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.24.5 — one thumbnail PER generated image in the 🕘 Generated Prompt history + ↩ Restore Previous Project removed
+
+Author requests (2026-09-24, verbatim): (1) "Is it possible to get a thumbnail of each generated image, rather
+than just the first/representative image, in the filed prompt under Generated Prompts?" (2) "Also: I'd like to
+remove the Restore Previous Project function under Edit -> Reset to Defaults." Both greenlit immediately, and both
+logged in `PENDING.md` before any work started.
+
+### Thumbnails — one per generated image
+- RECON: the data was already there. `promptHistoryRuns[i]` is created by `generateSinglePanel` /
+  `generateSinglePanelSlot` as `{pos, neg, seeds: []}` and `renderPanelSlot` pushes `{k, seed}` for EVERY slot it
+  renders, so `addPromptHistoryEntry` has always received one seed record per image. Only the thumbnail side was
+  narrow: 2026.09.24.4's `attachPromptHistoryThumb(i, entry, run)` looked exclusively at `run.seeds[0].k` and
+  stored a single `entry.thumb` key. The fix is therefore entirely in the thumbnail pipeline.
+- DATA MODEL: `entry.thumbs = [{k, key}]`, ordered by `k`. The legacy single `entry.thumb` is still READ —
+  `promptHistoryEntryThumbs(entry)` folds it into `[{k: the first recorded seed's k, key}]`, and
+  `promptHistoryEntryThumbKeys(entry)` feeds that to `prunePromptThumbs()`, so old entries both render and stay
+  protected from eviction exactly like new ones. There is deliberately no migration pass: `attachPromptHistoryThumb`
+  simply adds the `k`s an entry is missing (and deletes `entry.thumb` once it has some), so a legacy entry heals
+  itself the next time that prompt is generated. Verified against the author's own legacy entry (panel 1, seeds
+  772347241-4): it still renders its one 224px thumbnail, with no number badge and the new per-image label.
+- SIZE BUDGET: a 4-image run would have cost ~44 KB of `comicGen.promptThumbs` at the old 224px side, and the store
+  is capped at 1.4M chars because localStorage is roughly 5 MB of UTF-16 per origin, shared with `panelState` and
+  everything else. So `buildPromptThumb(dataUrl, side)` now takes the side: a multi-image entry builds at
+  `PROMPT_THUMB_SIDE_MULTI` = 168px (≈7 KB), a single-image entry keeps `PROMPT_THUMB_SIDE` = 224px. A 4-image
+  entry therefore costs about what 2 used to.
+- RENDER: `promptHistoryThumbHtml(i, idx, entry)` now returns a `.gp-thumbs` flex-wrap row placed ABOVE `.gp-head`
+  (a 4-up row inside the header line would fight the seed label and the Copy/Generate buttons) holding one
+  `.gp-thumb-cell` per image. A cell gets a numbered `.gp-thumb-cap` badge only when the entry has more than one
+  image, so single-thumbnail entries look exactly as they did. Labels are per image ("Saved prompt #N · Panel i ·
+  image k (seed S)"), and the hover / press-and-hold preview path needed no changes at all because every `<img>`
+  still carries `class="gp-thumb"` + `data-thumb-label` (which `previewDataFromTarget` matches).
+- VERIFIED LIVE end-to-end with `root.generateImage` temporarily stubbed to a canvas data URL (so no real image
+  quota was spent) on a 3-image panel: 3 thumbnails rendered, badges 1/2/3, `data-thumb-label` per image with the
+  right seed, `panelState` recorded `thumbs: [{k:1},{k:2},{k:3}]` with `seeds` 100/101/102, and the store gained 3
+  keys while the author's adjacent legacy entry still rendered. Every `comicGen.*` key was then restored
+  byte-for-byte (djb2 hash comparison, no leftover keys) per the mandatory test protocol — see `ISSUES.md` for why
+  that protocol exists. A mock-up of the 4-up layout was also rendered and captured with `vision` to confirm the
+  row does not wrap at the panel's width, the badges sit in each tile's bottom-left corner, and the row sits above
+  the "#N" header line.
+
+### ↩ Restore Previous Project — removed
+- Removed whole rather than hidden: both buttons (`#fileUndoProjectBtn`, `#resetUndoProjectBtn` + `#resetUndoHint`),
+  the `.reset-undo-row` / `.undo-btn` CSS, the entire snapshot block (`UNDO_PROJECT_KEY`, `undoSnapshot`,
+  `undoSnapshotLabel`, `readStoredUndoSnapshot`, `hasUndoSnapshot`, `captureUndoSnapshot`,
+  `updateUndoRestoreControls`, `applyUndoSnapshot`, `restoreUndoSnapshot`), its boot call, the
+  `window.restoreUndoSnapshot` export, the `prunePromptThumbs` snapshot scan, the `reason` option threaded from
+  `doNewProject()` into `resetEverything()`, and every mention in the Reset panel description, the New-Project
+  overlay hint and the reset confirmation (which now reads "This cannot be undone.").
+- Deliberately left alone: `hasActiveProject()` (the Import flow uses it), `collectAllPageImages()` (Export .zip),
+  `repopulateImportedImages()` (Import), and every other safety net — `#newProjectDelLibCheck`, the
+  `deleteLibraryObject` confirmation and Export / Import. `resetEverything(noConfirm, opts)` keeps its signature
+  and `opts.delLib`; only `opts.reason` disappeared.
+- `comicGen.undoProject` is now inert. The author's browser still holds one (~8.7 KB). It was NOT deleted — the
+  test run's restore put every `comicGen.*` key back exactly as found, and their storage is not ours to prune; the
+  key is documented as dead in `AI-NOTES.md` instead and mentioned in the reply.
+- Docs scrubbed so a future session cannot re-add it by accident: `AI-NOTES.md` (§3 storage-key list + the feature
+  bullet, now flagged "REMOVED … do NOT re-add"), `CHANGELOG.md` (a new .5 entry, and the .3 entry retitled with a
+  note that its snapshot half was removed), `src/manual.html` (the `comicGen.undoProject` storage row and the
+  Restore bullet deleted, the thumbnails paragraph rewritten for per-image thumbnails, new changelog highlight,
+  footer bumped), and `#embeddedVersion` bumped to match the new CHANGELOG heading exactly.
+
 ## BATCH 2026.09.24.4 — Generated Prompt thumbnails + the 120s watchdog unhandled rejection
 
 Author requests (2026-09-24, verbatim): (1) "I keep getting this message: 'An error has occurred somewhere in your
