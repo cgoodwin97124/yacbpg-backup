@@ -66,11 +66,15 @@ only live ephemerally or inside `index.html`'s comment block.
   - `src/AI-NOTES.md` — this file.
 - **Execution order caveat:** the Perchance engine evaluates the whole template (all pjs /
   square blocks) BEFORE any body `<script>` runs. The app IIFE therefore runs last.
-- **TEST DATA (2026-09-19):** the standard sample project for testing is **"Cow in field"** — 1 page, 4
-  panels (panel 1 filled), 2 library objects (Character "A cow" = Holstein, white with black spots; Location
-  "A pasture"). Its project .zip (settings + one panel-1 image) is stored in the GitHub backup repo at
-  `samples/cow-in-field.zip`. Load it via 📄 File → ⬆ Import Project when a populated project is needed;
-  making changes to it during testing is fine.
+- **TEST DATA — "Cow in field" is the author's THROWAWAY test project (author, 2026-09-24, verbatim):** "No
+  worries about the loaded project. \"Cow in field\" is specifically a throwaway project meant to be used for
+  testing, and I have it safely saved on my hard drive. :)" The standard sample project: 1 page, 4 panels (panel 1
+  filled), 2 library objects (Character "A cow" = Holstein, white with black spots; Location "A pasture"). Its
+  project .zip (settings + one panel-1 image) lives in this repo at `samples/cow-in-field.zip` — load it via
+  📄 File → ⬆ Import Project whenever a populated project is needed. It exists to be wiped, overwritten and
+  re-imported by test runs, and the author keeps their own copy, so destroying the live preview state while
+  testing it is expected and needs no recovery — but back the bytes up first anyway (see the test protocol in
+  `ISSUES.md` 2026-09-24), and never assume the same for any other project.
 
 ## 2. Boot / init sequence (bottom of the IIFE)
 
