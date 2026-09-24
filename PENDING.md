@@ -15,6 +15,19 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-24 — FEATURE: a thumbnail for EVERY generated image in a 🕘 Generated Prompt entry (not just the first)
+- **Status:** 🟢 LOGGED 2026-09-24 — greenlit by the author, implementing as **2026.09.24.5**.
+- **Author, 2026-09-24, verbatim:** "Is it possible to get a thumbnail of each generated image, rather than just the first/representative image, in the filed prompt under Generated Prompts?"
+- **RECON (2026-09-24):** an entry already records `seeds: [{k, seed}, …]` — one per image the run generated (`renderPanelSlot` pushes `{k, seed}` for every slot) — but `attachPromptHistoryThumb(i, entry, run)` only ever looked at `run.seeds[0].k` and stored a single `entry.thumb` key, so an entry that generated 4 images showed 1 thumbnail. Fix: store one thumb per image (`entry.thumbs = [{k, key}, …]`), render them side by side, and keep reading the legacy single `entry.thumb` for already-saved entries.
+- **IMPLEMENTATION (2026.09.24.5):** `attachPromptHistoryThumb` builds every slot image the run produced; `promptHistoryThumbHtml` renders each as a labelled `.gp-thumb`; `promptHistoryThumbKeys`/`prunePromptThumbs` keep all of an entry's keys alive; legacy `entry.thumb` is folded into `entry.thumbs` on load.
+
+### 2026-09-24 — REMOVAL: remove the ↩ Restore Previous Project feature (File menu + Edit → Reset to Defaults)
+- **Status:** 🟢 LOGGED 2026-09-24 — greenlit by the author, implementing as **2026.09.24.5**.
+- **Author, 2026-09-24, verbatim:** "Also: I'd like to remove the Restore Previous Project function under Edit -> Reset to Defaults."
+- **RECON (2026-09-24):** the feature added in 2026.09.24.3 = the two `↩ Restore Previous Project` buttons (`#fileUndoProjectBtn` in 📄 File, `#resetUndoProjectBtn` + `#resetUndoHint` in the Reset panel), the `comicGen.undoProject` snapshot (`captureUndoSnapshot` / `undoSnapshot` / `applyUndoSnapshot` / `restoreUndoSnapshot` / `updateUndoRestoreControls` / `readStoredUndoSnapshot` / `hasUndoSnapshot`), the snapshot paragraph in the Reset and New-Project confirmations, and the snapshot scan inside `prunePromptThumbs` (it kept thumbnails alive for a restore — now pointless).
+- **SCOPE DECISION (2026-09-24):** remove the feature whole — UI, capture/restore machinery, the `comicGen.undoProject` key and its orphaned snapshot — rather than leaving dead machinery behind an invisible button. The separate, unrelated safety nets are untouched: the New-Project / Reset confirmations, `🗑 Delete` asking before removing a library object, and project export/backup.
+- **IMPLEMENTATION (2026.09.24.5):** pending.
+
 ### 2026-09-24 — BUG (non-critical): unhandled promise rejection "Timed out after 120s — click Generate to retry"
 - **Status:** ✅ **DONE 2026.09.24.4** — the watchdog can no longer produce an unhandled rejection; verified live with instrumented timers + an `unhandledrejection` listener (a paused run clears its 120s timer at +0.5s, and 130s after an abandoned timeout nothing is reported).
 - **Author, 2026-09-24, verbatim:** "I keep getting this message: 'An error has occurred somewhere in your code
