@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.24.2 — 2026-09-24 — 🕘 Generated Prompt — a per-panel prompt history (last five prompts + their seeds)
+- **Every panel now keeps a history of the last five prompts it was actually generated with**, in a new collapsible **🕘 Generated Prompt** section inside the panel's **📝 Prompt** menu. Each entry holds the **exact positive and negative prompt text that was sent** — preset style keywords, characters, location, action and any 📝 Prompt override included — plus the **exact seed every image in that generation used**, and when it ran.
+- **The entries are frozen snapshots.** Changing a panel's characters, location or action, the global keywords, the presets or the NSFW flag — or editing the live prompt editor — never alters them, so you can always see what actually produced an image.
+- Each entry has **📋 Copy** (copy that prompt to the clipboard) and its own **🔄 Generate**, which re-renders the panel from that entry's saved prompt text and seed(s) instead of the interface-built prompt — the same recipe again. **Generating from an entry leaves the history exactly as it is**: nothing is added, moved or reordered. 🔒 protected images are still respected and the panel's own Seed box is left alone.
+- Seeds are shown per image (**img 1: 123456 · img 2: 123457**) because image 2 uses the panel seed + 1, and so on.
+- The history is **saved with the project** — it survives reloads and rides in Export / Import and the project .zip — and it is read-only in the 🧩 JSON editor (shown greyed). **⧉ Duplicate** copies it with the panel; **🗑 Clear** wipes it while **🗑 Clear Images** leaves it alone. A reset / New Project starts it empty, and a generation that was already running when the project was reset can no longer write into the fresh project.
+
 ## 2026.09.24.1 — 2026-09-24 — ⇤ "Copy from the previous panel" reaches across pages and skips blank panels
 - **The ⇤ copy-from-previous-panel buttons now work on Panel 1 of page 2 and of every later page**, and every ⇤ on every panel now copies from the **nearest earlier panel that actually has that item** instead of only the panel directly above it. Blank panels — and whole blank pages — are stepped over rather than copied as blank.
 - Concretely: with page 1's panels 1–8 filled in and pages 2–10 left empty, **Panel 1 of page 11 copies from page 1's panel 8**. Characters, location and action prompt each resolve independently (and per character slot, so a panel's *second* character copies from the nearest earlier panel that has a second character).
