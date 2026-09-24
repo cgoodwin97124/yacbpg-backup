@@ -9,6 +9,39 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.24.3 — safety nets: one-step project snapshot (↩ Restore Previous Project) + library deletions always confirmed
+
+Author request (2026-09-24, verbatim): "Go ahead and implement them.  Also, put a note into wherever the right
+place is that \"Cow in field\" is my throwaway test project." — "them" = the two safety nets offered after an
+AI-worker test wiped the live project + library (see ISSUES.md 2026-09-24).
+
+Implementation:
+- `comicGen.undoProject` (localStorage) plus the module-level `undoSnapshot` hold the last cleared project:
+  `{at, reason, imgCount, doc, pageImages}` where `doc = jsonBuildDoc()` (= `buildExportData(true)` minus
+  `exportedAt`: settings + libObjects + preset + layout/UI flags) and the in-memory slot alone keeps
+  `pageImages = collectAllPageImages()` for the images.
+- `captureUndoSnapshot(reason)` runs inside `resetEverything()` AFTER its confirmation and BEFORE any mutation,
+  so it covers every reset path (armed reset button, New Project, deletePage only-page case, deletePanel
+  only-panel case, panel multi-select delete). Restore is `restoreUndoSnapshot()` -> confirm ->
+  `applyUndoSnapshot()`: clear `panelImages`/`pageSession`/`panelPromptOverrides`/`panelPromptHistory`, clamp
+  `currentPage` to a page the doc actually contains, then `jsonApplyDoc(doc)` (the JSON editor's own applier)
+  and, only when the in-memory snapshot exists, `repopulateImportedImages(pageImages)`.
+- `updateUndoRestoreControls()` (boot + after every capture) drives the two entry points: `#fileUndoProjectBtn`
+  (File menu, after New Project) and `#resetUndoProjectBtn` + `#resetUndoHint` (Reset to Defaults panel). A
+  stored-only snapshot (page reloaded) is labelled "settings + library, no images".
+- Library safety: `deleteLibraryObject()` now opens a `showChoiceDialog` that names the object and counts its
+  references (`countLibReferences()` = deep scan of `collectPanelState()` for `lib:<type>:<id>` strings);
+  `doNewProject()` reads the new `#newProjectDelLibCheck` and passes it to `resetEverything(noConfirm, {delLib,
+  reason})`; the old unconditional `localStorage.removeItem('comicGen.libObjects')` is gone, and
+  `resetEverything` now takes an explicit `delLib` instead of reading the reset panel's checkbox (that
+  cross-wiring is what allowed New Project to delete the library based on an unrelated checkbox).
+- Gotchas met while testing: menu sections start collapsed, so a snapdom capture of a collapsed `.help-panel`
+  is just its heading — click the `h3.menu-collapse-toggle` first; panel images are attached to `img.src` lazily
+  by an IntersectionObserver, so an off-screen panel's image is in `panelImages` but its `<img>` has no `src`.
+- Test protocol followed: the live `comicGen.panelState` / `libObjects` / `undoProject` bytes were copied to both
+  a second localStorage key and `scratch/author-state-backup.json` (hash-checked) before a synthetic project was
+  loaded, and restored + hash-verified byte-for-byte afterwards (7672 bytes, djb2 3579177367).
+
 ## BATCH 2026.09.24.2 — 🕘 Generated Prompt: per-panel prompt + seed history
 
 Author request (2026-09-24, verbatim): "Under the panel's Prompt menu, I'd like to add an accordion menu: generated
