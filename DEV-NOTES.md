@@ -9,6 +9,63 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.24.1 — ⇤ copy-from-previous-panel crosses pages + skips blank panels
+
+Author request (2026-09-24, verbatim): "I'd like the \"Copy (x) from previous panel\" to be available on panel 1
+of page 2 and subsequent pages. Generally speaking, I'd like the \"Copy (x) from previous panel\" buttons to
+copy from the last panel on the last page that has an example of the item. So if page 1 has 24 panels, and only
+up to panel 8 is populated, and I create 10 empty pages after that, I'd like panel 1 of page 11 to be able to
+pull from panel 8 of page 1."
+
+Author approved both recon questions (2026-09-24, verbatim): "Your reading is good, and go with your
+recommendations on both." — i.e. keep the within-page skip (one uniform "nearest panel that has an example" rule
+everywhere) and leave the Seed ⇤ alone.
+
+### What changed (index.html)
+- The three row templates (charRowHtml / locRowHtml / actRowHtml) lost their hard `disabled` + `i === 1`
+  tooltip and gained ids: `char-copy-prev-<i>-<s>`, `loc-copy-prev-<i>`, `act-copy-prev-<i>`. Enablement is
+  now computed at render/edit time, never baked into the markup.
+- NEW `readPanelItem(kind, s, pg, j, pages)` — one value accessor that reads the LIVE DOM when
+  `pg === currentPage` (`panel-char-select-<j>-<s>` + `panel-char-extra-…`, `panel-loc-select-<j>` +
+  `panel-loc-extra-…`, `panel-act-<j>`) and the STORED state otherwise (`pages[pg][j].chars[s-1].sel|extra`,
+  `.loc|.locExtra`, `.action`). `panelItemIsSet(kind, v)` is the "has an example" test: a real selection
+  ≠ `none`, or non-blank action text.
+- NEW `prevItemSource(kind, i, s)` — walks the global panel sequence BACKWARDS: panels `i-1..1` of the current
+  page from the DOM, then each earlier page from its `analysisPanelCount(page)`-th panel down from the stored
+  state, and returns the first panel that has an example (`{page, panel, value}`) or `null`.
+- `copyFromPrevPanel(i, kind, s)` rewritten on `prevItemSource`; the copy itself is still the same
+  option-exists-guarded select set + extra textarea write, ending in `refreshPanelLineDesc` /
+  `clearPanelPromptOverride` / `updatePanelSummary` / `schedulePanelSave`. Nothing on an earlier page is ever
+  written, so a previous page cannot be disturbed.
+- NEW `updateCopyPrevChipStates()` (+ `applyCopyPrevChips`, `copyPrevChipTitle`, `absorbPanelItems`): seeds a
+  `last` map by scanning earlier pages nearest-first (reverse panel order, `fillOnly = true` so the first hit
+  per kind wins, early-out once all four slots are known), then walks the CURRENT page forward applying each
+  chip's `disabled` + tooltip and re-absorbing every panel as the LATEST (`fillOnly` falsy = overwrite). Hooks:
+  `buildPanelGrid()`'s tail (next to `updateSeedChipStates()`) and `updatePanelSummary()` — the latter is what
+  every panel edit already calls (`handleGridInput`, `deletePanelChar/Loc/Act`, `clearPanel`,
+  `analysisSetDesc`, the import paths), so the chips stay live while you type, at the cost of one
+  O(pages ≤ current) pass per call. Exported as `window.updateCopyPrevChipStates`.
+
+### GOTCHA (cost one test round — see ISSUES.md 2026-09-24)
+The first cut used "fill only if unset" for BOTH scans. That is right for the reverse seeding scan but wrong for
+the forward scan, which then pins `last` to the page's FIRST populated panel (every later panel is skipped as
+"already set"), so every chip on the page claimed "Panel 1". The forward scan must OVERWRITE. The click path was
+correct all along, so asserting the copies alone does not catch this — assert the chip `disabled` + `title` too.
+
+### Testing (live preview; the author's real project left untouched)
+Built a throwaway 4-page state, rendered it with `window.buildPanelGrid()`, asserted, restored, and re-verified
+byte equality of `comicGen.panelState` (the author's state is parked in a SECOND localStorage key first — see
+the ISSUES.md test-protocol entry). Fixture: page 1 = 24 panels with 1, 2, 3, 5, 6, 7, 8 populated (panel 4
+deliberately blank; panel 1 also carries a second villain), pages 2–4 blank, currentPage 4.
+Verified — page 4 panel 1: slot 1 → "Page 1, Panel 8", slot 2 → "Page 1, Panel 1", slot 3 → greyed "No earlier
+panel has a character to copy", location + action → "Page 1, Panel 8"; clicking copied `hero|E8`, `city|L8`,
+`ACT8`; and panel 2's chip immediately retitled to "Page 4, Panel 1" (the live-update hook). Page 1: panel 1 all
+greyed; panel 4 → "Page 1, Panel 3"; panel 5 → "Page 1, Panel 3" (skips the blank panel 4 — the new
+behaviour); panel 5 slot 2 → "Page 1, Panel 1"; panels 9 and 24 → "Page 1, Panel 8"; clicking panel 24's chip
+copied `hero|E8`. The Seed chip on page 1 panel 1 is still OFF (unchanged by design).
+Restore verified: `localStorage['comicGen.panelState']` byte-identical to the original 7,671-byte single-page
+"Cow in field" state, `pageSel` = 1, 72 chips present (24 char slot-1 + 24 location + 24 action).
+
 ## BATCH 2026.09.23.14 — floating ＋ Add Page button (bottom-right)
 
 Author request (2026-09-23, verbatim): "Let’s add a floating \"Add Page\" button, in the same color scheme as
