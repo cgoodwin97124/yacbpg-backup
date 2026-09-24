@@ -16,9 +16,7 @@ each section).
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-09-24 — "Generated Prompt" accordion: a per-panel prompt history (up to 5 prompts + their seeds)
-- **Status:** RECON DONE 2026-09-24 — logged first (author-mandated). Questions sent to the author (entry
-  granularity, which seed, negative prompt, persistence, dedupe/duplicate/clear behaviour); implementation
-  starts on their answers.
+- **Status:** ✅ **DONE 2026.09.24.2** — implemented, verified in the live preview, docs + GitHub backup pushed.
 - **Request (author, 2026-09-24, verbatim):** "Under the panel's Prompt menu, I'd like to add an accordion
   menu: generated prompt. When a panel is generated, its full prompt is copied into the field; this text
   remains protected from *any* prompt changes, and there's a space for the seed used as well. Generated Prompt
