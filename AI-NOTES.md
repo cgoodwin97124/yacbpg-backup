@@ -333,6 +333,22 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `promptHistoryRuns[i]` so nothing is written or reordered. Locked (greyed) in the JSON editor by default.
   See `DEV-NOTES.md` (BATCH 2026.09.24.2) and, for the test-protocol disaster that accompanied it, `ISSUES.md`
   (2026-09-24).
+- **↩ Restore Previous Project — one-step snapshot of a cleared project (2026.09.24.3):** `captureUndoSnapshot(reason)`
+  runs inside `resetEverything()` AFTER its confirmation and BEFORE any mutation, so it covers every reset path
+  (the armed reset button, `doNewProject()`, deletePage's only-page case, deletePanel's only-panel case, and the
+  panel multi-select delete). It stores `{at, reason, imgCount, doc, pageImages}`: `doc = jsonBuildDoc()`
+  (settings + libObjects + preset + layout/UI flags) persisted to localStorage as `comicGen.undoProject`, plus
+  `pageImages = collectAllPageImages()` kept in memory only. `restoreUndoSnapshot()` (window-exported; the buttons
+  are `#fileUndoProjectBtn` in 📄 File — next to New Project — and `#resetUndoProjectBtn` + `#resetUndoHint` in the
+  Reset to Defaults panel, kept in sync by `updateUndoRestoreControls()`) confirms via `showChoiceDialog`, then
+  `applyUndoSnapshot()` clears the in-memory image/override/prompt-history maps, clamps `currentPage`, calls
+  `jsonApplyDoc(doc)` and — only if the in-memory snapshot is still alive — `repopulateImportedImages(pageImages)`.
+  Library safety in the same release: `deleteLibraryObject()` confirms via `showChoiceDialog` using
+  `countLibReferences(id)` (deep scan of `collectPanelState()` for `lib:<type>:<id>` values); `doNewProject()`
+  honours the new `#newProjectDelLibCheck` ("Also delete my saved library objects", OFF by default, count filled by
+  `newProject()`); and `resetEverything(noConfirm, {delLib, reason})` takes an explicit `delLib` instead of reading
+  the reset panel's checkbox — that cross-wiring is what let New Project delete the library from an unrelated
+  checkbox. See `DEV-NOTES.md` (BATCH 2026.09.24.3).
 - `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice persisted. Every group
   opens with its sections COLLAPSED via `collapseGroupPanels` — EXCEPT `library`, which expands
   (`expandGroupPanels`, 2026.09.23.1) because the Library is meant to be readable straight away. **2026.09.23.7:**
