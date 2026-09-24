@@ -16,25 +16,66 @@ each section).
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-09-24 — BUG (non-critical): unhandled promise rejection "Timed out after 120s — click Generate to retry"
-- **Status:** 🚧 IN PROGRESS (2026.09.24.4)
+- **Status:** ✅ **DONE 2026.09.24.4** — the watchdog can no longer produce an unhandled rejection; verified live with instrumented timers + an `unhandledrejection` listener (a paused run clears its 120s timer at +0.5s, and 130s after an abandoned timeout nothing is reported).
 - **Author, 2026-09-24, verbatim:** "I keep getting this message: 'An error has occurred somewhere in your code
   (in lists or HTML): An unhandled promise rejection occurred: Timed out after 120s — click Generate to retry
   withTimeout/timeout injectedScript:2307:39 ... This error message has been sent to the AI helper message box.'
   This isn't particularly critical, is it? It just means that we've lost an image in transit, correct? If that's
   all it is, can we trap it or otherwise gracefully prevent it?"
-- **RECON:** to be filled in below once the code has been read (withTimeout / GENERATION_TIMEOUT_MS / the
-  renderPanelSlot -> generateSinglePanel catch chain).
-- **IMPLEMENTATION:** pending.
+- **RECON (2026-09-24):**
+  - `GENERATION_TIMEOUT_MS = 120000` and `withTimeout(promise, ms)` = `Promise.race([promise, timeout]).finally(() =>
+    clearTimeout(timer))`, used once, in `renderPanelSlot`:
+    `await withRunSignal(withTimeout(pending, GENERATION_TIMEOUT_MS))`.
+  - The abandoned path: the `visibilitychange` handler (and pause / stop) call `runSignal.fire()`, so
+    `withRunSignal`'s race settles with 'abort' and the slot returns 'cleared' — but the INNER withTimeout race was
+    left pending. `pending.stop()` does not settle the plugin promise, so ~120s later the timeout rejected with no
+    consumer: an `unhandledrejection`, which the perchance engine reports in its error dialog. So the author's
+    reading was right — NON-CRITICAL, one image from an already-abandoned run (usually a tab switch mid-generation);
+    pressing Generate re-renders it.
+  - The watchdog is still needed for the genuine case (an image service that really stalls while the author is
+    watching): the awaiting caller catches it and marks that panel `.failed` with "Generation failed: Timed out after
+    120s — click Generate to retry".
+- **IMPLEMENTATION (2026.09.24.4):** `withTimeout(promise, ms, abortPromise)` — `renderPanelSlot` passes the current
+  `runSignal.p`, so the watchdog settles and CLEARS its timer the instant a run is paused / stopped; plus
+  `raced.catch(() => {})` marks the returned promise handled for the residual case (no / superseded abort promise).
+  Success and failure semantics are unchanged. Verified live with a `preambleJs` that wrapped
+  `setTimeout`/`clearTimeout` (recording the 120000ms timers) and listened for `unhandledrejection`, plus a
+  never-settling stubbed `root.generateImage`: pausing a real `generateComicPage` run cleared its watchdog at
+  +512ms, and the residual path produced no unhandled rejection even 130s past its timeout.
 
 ### 2026-09-24 — FEATURE: a small thumbnail on each 🕘 Generated Prompt entry (hover / long-press to enlarge)
-- **Status:** 🚧 IN PROGRESS (2026.09.24.4)
+- **Status:** ✅ **DONE 2026.09.24.4** — thumbnails render, enlarge on hover / press-and-hold, are pruned with their entries, survive reloads and return with a ↩ Restore Previous Project snapshot (224×224 JPEG ≈ 11 KB each, verified with a stubbed generator).
 - **Author, 2026-09-24, verbatim:** "When a prompt gets filed under Generated Prompts, can we add a small
   thumbnail of the image it generated? It can be maybe 8-16kb in file size. I'd like to be able to hover over it
   and see it larger, even if it doesn't have as much detail; I'd just like to have an idea of what the prompt plus
   seed generated."
-- **RECON:** to be filled in below once the code has been read (promptHistory entry shape, the existing
-  hover/long-press image preview, the state-storage budget).
-- **IMPLEMENTATION:** pending.
+- **RECON (2026-09-24):**
+  - The entry shape `{pos, neg, seeds:[{k,seed}], at}` is built by `addPromptHistoryEntry(i, run)` and lives in
+    `panelState` (`pages[N][i].promptHistory`) — which is persisted on every panel save AND rendered into the
+    🧩 JSON-editor document, so base64 image data was deliberately kept OUT of the entry (it would bloat both). The
+    entry stores only a short `thumb` key into a separate store.
+  - The app already has a hover / press-and-hold image preview: delegated `pointerover` / `touchstart` handlers ->
+    `previewDataFromTarget()` (hard-wired to `.panel-img-box`) -> `showImagePreview(info, center)` with `#imgPreview`
+    (respecting 📄 File → Image Preview Delay and the "Enable image preview" checkbox). Reusing it gives the
+    thumbnail identical behaviour for free.
+- **IMPLEMENTATION (2026.09.24.4):**
+  - Store: `comicGen.promptThumbs` = `{key: dataUrl}` + a module cache; `PROMPT_THUMB_MAX = 240` entries /
+    `PROMPT_THUMB_BUDGET = 1400000` chars (oldest, unreferenced-first eviction); `PROMPT_THUMB_SIDE = 224` /
+    `PROMPT_THUMB_QUALITY = 0.6` (~11 KB measured); `savePromptThumbStore()` keeps evicting if localStorage refuses a
+    write.
+  - Creation: `attachPromptHistoryThumb(i, entry, run)` at the end of `addPromptHistoryEntry` takes
+    `panelImages[i][run.seeds[0].k - 1]`, downscales it via `buildPromptThumb()`, stores it, sets `entry.thumb` and
+    re-saves + re-renders; `promptHistoryThumbHtml()` prepends `<img class="gp-thumb">` (84x84, object-fit contain)
+    to `.gp-head` with a `data-thumb-label`.
+  - Preview: `previewDataFromTarget()` recognises `img.gp-thumb`; `showImagePreview()` renders `info.label` and
+    toggles `.img-preview--thumb` (CSS caps that preview at min(85vw, 420px)).
+  - GC: `prunePromptThumbs()` keeps only keys referenced by the live state AND by the last New Project / Reset
+    snapshot, so ↩ Restore Previous Project restores the thumbnails with the entries; called from
+    `addPromptHistoryEntry`, `clearPanelImage`, `resetEverything` and the end of `applyImportedSettings`.
+  - Verified live (stubbed `root.generateImage`): thumbnail renders undistorted, hover opens the preview with the
+    right label, `clearPanelImage` drops only that panel's thumbs, reset + restore keeps and re-renders the
+    snapshot's thumbs, a reload renders them from localStorage, and a 390x844 viewport shows no overflow. The
+    author's own storage was backed up and restored byte-for-byte.
 
 ### 2026-09-24 — SAFETY NETS (2 items) + a doc note: one-step undo for New Project / Reset · the library can never be deleted without its own confirmation
 - **Status:** ✅ **DONE 2026.09.24.3** — implemented, verified in the live preview (all four reset paths, both library-deletion paths, the three restore modes), docs + GitHub backup pushed.
