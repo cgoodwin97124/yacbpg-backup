@@ -26,6 +26,53 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
   path (`prevItemSource`) was independently correct and passed every value test. Assert the chip's `disabled` +
   `title` too; a screen full of chips naming the same panel is the signature.
 
+## 2026-09-24 — AI-worker test protocol DESTROYED the author's live project + library (unrecoverable)
+- **Symptom:** while testing the 2026.09.24.1 "Generated Prompt" feature, the preview's `comicGen.panelState` ended up
+  as a brand-new default project (projectName "", one page, four empty panels) and the `comicGen.libObjects` key was
+  GONE, both while the author was away. The author's project ("Cow in field": 1 page / 4 panels with panel 1
+  configured, 7,671 bytes) and their one library object (~330 bytes) are NOT recoverable from the browser — there is no
+  other copy (localStorage only; the `comicGenSaveState` IDB store holds nothing but the optional File-System-Access
+  save handle, which was empty; no in-app autosave/crash snapshot exists).
+- **What the tests did (the trigger):** the AI-worker tests installed a synthetic throwaway project into the REAL
+  `comicGen.panelState` (after parking the author's state in a SECOND localStorage key, per the 2026-09-23 protocol) and
+  drove the app with `window.buildPanelGrid()` + `window.generateSinglePanel()` against a stubbed
+  `root.generateImage`. One eval then tampered with the JSON editor's textarea and clicked its close button, which
+  opens a NATIVE `confirm("discard changes?")` — that blocked the page, the harness reported "page stopped responding
+  for 15s", and the recovery path (auto-accepting the dialog + `page_refresh`) let the test run COMPLETE, i.e. it
+  restored the author's state into localStorage and then deleted the second-key backup (`comicGen.__testBackup`).
+  Immediately after that, `newProject()` ran while the project looked empty and wiped everything:
+  `if (hasActiveProject()) {show the overlay} else { doNewProject(); }` — and `doNewProject()` is
+  `resetEverything(true)` + `localStorage.removeItem('comicGen.libObjects')` with NO confirmation, NO snapshot and NO
+  undo. (Whether the stray `newProject()` came from the harness's freeze-recovery or a mis-targeted programmatic click
+  could not be determined; either way the wipe was silent and instant.)
+- **Evidence of that exact sequence:** the post-wipe state held ONE leftover prompt-history entry whose text contains the
+  test fixture's own strings ("RST", "Test action", the built-in hero's "cyber-ninja" description) — a generation that
+  was still in flight when the wipe happened, committing its history entry into the brand-new project afterwards.
+- **Root causes (two, both real):**
+  1. **App hazard:** `newProject()` destroys the project AND deletes the entire saved library with no confirmation when
+     `hasActiveProject()` is false, and no reset path keeps any undo copy. Any stray click on that button (or a
+     programmatic one) is catastrophic and silent. The library is app-wide data being deleted by a project action.
+  2. **AI-worker protocol failure:** mutating the live project state at all — especially while ALSO leaving a native
+     dialog free to block the page (the tool description explicitly says to stub `confirm`/`prompt`/`alert` BEFORE
+     auto-clicking UI that can raise them) — and relying on a same-origin localStorage key as the only backup.
+- **NEW MANDATORY TEST PROTOCOL (supersedes the 2026-09-23 entry below for state-mutating tests):**
+  1. **Do not write a synthetic project into the author's live state.** Test the real state READ-ONLY (drive the real
+     UI, read the DOM/storage, never write) wherever possible.
+  2. If a synthetic project is genuinely unavoidable: (a) back the author's state up to BOTH a second localStorage key
+     AND a workspace FILE (`execute_js` + `fs.writeTextFile`) and verify the file copy reads back byte-identical
+     BEFORE touching anything; (b) restore from the file copy immediately afterwards and verify bytes; (c) keep the
+     backup until the end of the whole session's work, not just the eval.
+  3. **Stub the native dialogs in the same page load, every time:** `window.confirm=()=>true; window.prompt=()=>null;
+     window.alert=()=>{};` — a live native dialog can block the page (the freeze that started this chain).
+  4. **Neutralise every destructive entry point for the duration of the test** — `window.newProject =
+     window.resetEverything = window.deletePage = window.doNewProject = () => {};` (these are the inline-onclick
+     targets, i.e. exactly what a stray click would hit). Restore them at the end.
+  5. Only `page_refresh` afterwards, and check the state bytes.
+- **Follow-ups for the author (asked, not yet approved):** (a) make New Project / Reset keep a one-step undo snapshot
+  ("restore the previous project"), (b) always confirm, and never touch the library without an explicit library-scoped
+  confirmation, (c) harden the run/commit path so a generation that finishes after a reset cannot write into the fresh
+  project.
+
 ## 2026-09-23 — AI-worker test protocol CLOBBERED `comicGen.panelState` (recovered from the live DOM, byte-length identical)
 - **Symptom:** nothing visible in the app — this is a process failure. While testing 2026.09.23.13 the AI worker
   snapshotted the project with `window.__snap = localStorage.getItem('comicGen.panelState')`, then a `page_refresh()`
