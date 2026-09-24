@@ -57,6 +57,15 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
   confirmation, (c) harden the run/commit path so a generation that finishes after a reset cannot write into the fresh
   project.
 
+- **Follow-up (author, 2026-09-24, verbatim):** "No worries about the loaded project. \"Cow in field\" is
+  specifically a throwaway project meant to be used for testing, and I have it safely saved on my hard drive. :)"
+  — no recovery was needed. **"Cow in field" is the author's sandbox/test project:** it exists to be wiped,
+  overwritten and re-imported by test runs, it is backed up on the author's own hard drive, and it is NOT real
+  work. Keep it in mind whenever a test needs a live project state — but the protocol below still applies to any
+  other project, and the safest habit is still to back the bytes up before touching them.
+- **Mitigations shipped in 2026.09.24.3:** New Project / Reset now keep a one-step snapshot restorable with the
+  new **↩ Restore Previous Project** button (📄 File, or the Reset to Defaults panel), and no path deletes saved
+  library objects without an explicit, item-named confirmation (see CHANGELOG / DEV-NOTES).
 ## 2026-09-24 — ⇤ chip ENABLEMENT pass scanned the wrong way (caught in development, never shipped)
 - **Symptom (while testing 2026.09.24.1):** on a page whose panels 1–8 were populated, every copy-from-previous
   chip on that page named the SAME source — "Panel 1" — instead of each panel's own nearest predecessor. The copy
