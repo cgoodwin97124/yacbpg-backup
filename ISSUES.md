@@ -10,6 +10,22 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
+## 2026-09-24 — ⇤ chip ENABLEMENT pass scanned the wrong way (caught in development, never shipped)
+- **Symptom (while testing 2026.09.24.1):** on a page whose panels 1–8 were populated, every copy-from-previous
+  chip on that page named the SAME source — "Panel 1" — instead of each panel's own nearest predecessor. The copy
+  action itself was right (clicking panel 5 copied panel 3, correctly skipping the blank panel 4); only the
+  tooltip + disabled state were wrong.
+- **Root cause:** `updateCopyPrevChipStates()` makes two scans. The reverse "seed" scan (earlier pages,
+  nearest-first) and the forward scan (current page) were both written with the same "if this kind is already
+  known, skip it" rule. That rule is only valid for the reverse scan — used forward it pins the map to the page's
+  FIRST populated panel and never advances it.
+- **Fix:** `absorbPanelItems(last, pg, j, pages, fillOnly)` — the reverse seeding scan passes `fillOnly = true`
+  (first hit wins), the forward scan passes it falsy so each panel OVERWRITES its kind's entry and `last` always
+  holds the nearest predecessor.
+- **Gotcha worth remembering:** asserting only the copy RESULT hides this whole class of bug, because the copy
+  path (`prevItemSource`) was independently correct and passed every value test. Assert the chip's `disabled` +
+  `title` too; a screen full of chips naming the same panel is the signature.
+
 ## 2026-09-23 — AI-worker test protocol CLOBBERED `comicGen.panelState` (recovered from the live DOM, byte-length identical)
 - **Symptom:** nothing visible in the app — this is a process failure. While testing 2026.09.23.13 the AI worker
   snapshotted the project with `window.__snap = localStorage.getItem('comicGen.panelState')`, then a `page_refresh()`
