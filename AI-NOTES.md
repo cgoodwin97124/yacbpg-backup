@@ -314,6 +314,21 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   walking the CURRENT page FORWARD with `fillOnly` falsy (= overwrite; reusing the reverse "first hit wins" rule
   there silently pins the map to the page's first populated panel). The Seed ⇤ is deliberately untouched (a blank
   seed means "follow the page seed").
+- **🕘 Generated Prompt — per-panel prompt/seed history (2026.09.24.2):** a nested accordion inside each
+  panel's 📝 Prompt menu (`#gp-list-<i>`, rendered lazily by `renderAccHistory` from `togglePanelAcc` /
+  `setPanelAccsCollapsed`). State: `pages[N][i].promptHistory = [{pos, neg, seeds:[{k,seed}], at}]` (newest first,
+  max 5 = `PROMPT_HISTORY_MAX`), mirrored in the in-memory `panelPromptHistory` map and written by
+  `collectPageData`; restored by `restorePanelState`; cleared at the six `panelPromptOverrides = {}` sites, in
+  `applyImportedSettings` and in `resetEverything`. Capture: `promptHistoryRuns` is a PER-PANEL map
+  (`promptHistoryRuns[i]`) started by `generateSinglePanel` / `generateSinglePanelSlot` and committed in their
+  `finally` via `commitPromptHistoryRun(i)` → `addPromptHistoryEntry(i, run)` (de-dupe identical, unshift,
+  truncate, then `savePanelStateShape(collectPanelState())` immediately). `renderPanelSlot` pushes the ACTUAL
+  `opts.seed` after each successful render. Re-generating from an entry goes through
+  `generateSinglePanel(i, {pos, neg, seedForSlot})` — `renderPanelSlot`'s `seedOverride` then uses the recorded
+  seed verbatim and skips `pinPanelSeedForRun` (so the panel's Seed box is untouched), and the override DELETES
+  `promptHistoryRuns[i]` so nothing is written or reordered. Locked (greyed) in the JSON editor by default.
+  See `DEV-NOTES.md` (BATCH 2026.09.24.2) and, for the test-protocol disaster that accompanied it, `ISSUES.md`
+  (2026-09-24).
 - `switchMenu(name)` — one `.menu-group` open at a time (File/Edit/Library/Help), choice persisted. Every group
   opens with its sections COLLAPSED via `collapseGroupPanels` — EXCEPT `library`, which expands
   (`expandGroupPanels`, 2026.09.23.1) because the Library is meant to be readable straight away. **2026.09.23.7:**
