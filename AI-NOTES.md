@@ -116,10 +116,12 @@ only live ephemerally or inside `index.html`'s comment block.
 - `comicGen.activeMenu`, `comicGen.layoutMode`, `comicGen.menuVisible`,
   `comicGen.panelsVisible` — UI prefs ('1'/'0' for the toggles)
 - `comicGen.hidePasswordPref` — '1'/'0': require the (session-only) panels password (2026-08-14.7)
-- `comicGen.undoProject` — the one-step snapshot kept by New Project / Reset (`{at, reason, imgCount, doc}`, where
-  `doc` has the JSON-editor document shape). `comicGen.promptThumbs` — `{key: dataUrl}` of the small thumbnails
-  shown on 🕘 Generated Prompt entries (capped; deliberately OUTSIDE `panelState` so the project state, the JSON
-  editor document and Export / Import all stay lean). See 2026.09.24.3 / .4 below.
+- `comicGen.promptThumbs` — `{key: dataUrl}` of the small thumbnails shown on 🕘 Generated Prompt entries, ONE
+  PER GENERATED IMAGE (capped; deliberately OUTSIDE `panelState` so the project state, the JSON editor document
+  and Export / Import all stay lean). See 2026.09.24.4 / .5 below.
+- `comicGen.undoProject` — the one-step New Project / Reset snapshot added in 2026.09.24.3 — **REMOVED in
+  2026.09.24.5**. Nothing reads or writes it any more (a stale copy may linger in a long-lived browser); do not
+  build on it.
 
 
 **IndexedDB** `comicGenSaveState` — `{handle, name}` (File System Access handle for 💾 Save…)
@@ -346,26 +348,28 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   `promptHistoryRuns[i]` so nothing is written or reordered. Locked (greyed) in the JSON editor by default.
   See `DEV-NOTES.md` (BATCH 2026.09.24.2) and, for the test-protocol disaster that accompanied it, `ISSUES.md`
   (2026-09-24).
-- **🖼️ Generated Prompt thumbnails (2026.09.24.4):** each history entry carries `thumb` = a key into
-  `comicGen.promptThumbs` (`{key: dataUrl}`, capped at 240 entries / 1.4M chars, oldest evicted first), created by
-  `attachPromptHistoryThumb(i, entry, run)` from `panelImages[i][run.seeds[0].k - 1]` via a canvas downscale
-  (`buildPromptThumb`, 224px side, JPEG q0.6, ~10-12 KB) at the end of `addPromptHistoryEntry`.
-  `promptHistoryThumbHtml()` renders `<img class="gp-thumb">` (84x84, object-fit contain) at the start of
-  `.gp-head`; `previewDataFromTarget()` recognises `img.gp-thumb` so the standard hover / press-and-hold preview
-  (`showImagePreview` + the `.img-preview--thumb` size cap) enlarges it. `prunePromptThumbs()` keeps only keys
-  referenced by the live state or by the last New Project / Reset snapshot — which is why an
-  ↩ Restore Previous Project brings the thumbnails back with the entries.
-- **↩ Restore Previous Project — one-step snapshot of a cleared project (2026.09.24.3):** `captureUndoSnapshot(reason)`
-  runs inside `resetEverything()` AFTER its confirmation and BEFORE any mutation, so it covers every reset path
-  (the armed reset button, `doNewProject()`, deletePage's only-page case, deletePanel's only-panel case, and the
-  panel multi-select delete). It stores `{at, reason, imgCount, doc, pageImages}`: `doc = jsonBuildDoc()`
-  (settings + libObjects + preset + layout/UI flags) persisted to localStorage as `comicGen.undoProject`, plus
-  `pageImages = collectAllPageImages()` kept in memory only. `restoreUndoSnapshot()` (window-exported; the buttons
-  are `#fileUndoProjectBtn` in 📄 File — next to New Project — and `#resetUndoProjectBtn` + `#resetUndoHint` in the
-  Reset to Defaults panel, kept in sync by `updateUndoRestoreControls()`) confirms via `showChoiceDialog`, then
-  `applyUndoSnapshot()` clears the in-memory image/override/prompt-history maps, clamps `currentPage`, calls
-  `jsonApplyDoc(doc)` and — only if the in-memory snapshot is still alive — `repopulateImportedImages(pageImages)`.
-  Library safety in the same release: `deleteLibraryObject()` confirms via `showChoiceDialog` using
+- **🖼️ Generated Prompt thumbnails (2026.09.24.4; ONE PER IMAGE since 2026.09.24.5):** each history entry carries
+  `thumbs` = `[{k, key}]` — one per image the run produced — each `key` indexing `comicGen.promptThumbs`
+  (`{key: dataUrl}`, capped at 240 entries / 1.4M chars, oldest evicted first). `attachPromptHistoryThumb(i, entry,
+  run)` builds one thumb per seed in `run.seeds` from `panelImages[i][k - 1]` via a canvas downscale
+  (`buildPromptThumb(dataUrl, side)` — 224px side for a single-image entry, `PROMPT_THUMB_SIDE_MULTI` = 168px when
+  an entry has several, JPEG q0.6) at the end of `addPromptHistoryEntry`. `promptHistoryThumbHtml()` renders each
+  as `<img class="gp-thumb">` (84x84, object-fit contain) inside a `.gp-thumb-cell` (with a numbered
+  `.gp-thumb-cap` badge only when there is more than one) in a `.gp-thumbs` flex row placed ABOVE `.gp-head`;
+  `previewDataFromTarget()` recognises `img.gp-thumb` so the standard hover / press-and-hold preview
+  (`showImagePreview` + the `.img-preview--thumb` size cap) enlarges it, labelled per image
+  ("Saved prompt #N · Panel i · image k (seed S)"). `prunePromptThumbs()` keeps only keys referenced by the live
+  state. LEGACY (do not break): entries written by 2026.09.24.4 have a single `entry.thumb` key instead of
+  `entry.thumbs`; `promptHistoryEntryThumbs()` / `promptHistoryEntryThumbKeys()` fold it into
+  `[{k: first recorded seed's k, key}]` so those entries still render AND stay protected from pruning, and
+  `attachPromptHistoryThumb` only ever adds the missing `k`s and then deletes `entry.thumb`. The author's live
+  project has one such legacy entry (panel 1, "The cow is standing in the field.").
+- **↩ Restore Previous Project — REMOVED 2026.09.24.5 (author's request); do NOT re-add it.** Gone: the whole
+  snapshot mechanism (`captureUndoSnapshot` / `undoSnapshot` / `applyUndoSnapshot` / `restoreUndoSnapshot` /
+  `updateUndoRestoreControls` / `readStoredUndoSnapshot` / `hasUndoSnapshot`), the `comicGen.undoProject` key and
+  both buttons (`#fileUndoProjectBtn` in 📄 File, `#resetUndoProjectBtn` + `#resetUndoHint` in the Reset panel). Its
+  hook in `prunePromptThumbs` (keeping a cleared project's thumbnails alive for a restore) went with it.
+  The library-safety half of 2026.09.24.3 MUST STAY: `deleteLibraryObject()` confirms via `showChoiceDialog` using
   `countLibReferences(id)` (deep scan of `collectPanelState()` for `lib:<type>:<id>` values); `doNewProject()`
   honours the new `#newProjectDelLibCheck` ("Also delete my saved library objects", OFF by default, count filled by
   `newProject()`); and `resetEverything(noConfirm, {delLib, reason})` takes an explicit `delLib` instead of reading
