@@ -15,6 +15,35 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-24 — SAFETY NETS (2 items) + a doc note: one-step undo for New Project / Reset · the library can never be deleted without its own confirmation
+- **Status:** /IN-PROGRESS/ (2026.09.24.3)
+- **Author, 2026-09-24, verbatim:** "Go ahead and implement them.  Also, put a note into wherever the right place is that \"Cow in field\" is my throwaway test project."
+  "Them" = the two safety nets offered after the AI-worker test protocol wiped the live project + library:
+  (1) New Project / Reset keeps a one-step undo snapshot with a "restore previous project" item;
+  (2) library objects are never deleted without a library-specific confirmation; and (3) a note recording
+  that "Cow in field" is the author's THROWAWAY TEST PROJECT (they have it saved on their hard drive, so a
+  wipe of the live preview state needs no recovery).
+- **Author decision (2026-09-24):** the New Project overlay has always *promised* "your saved characters,
+  locations, and action prompts are kept", while `doNewProject()` silently deleted `comicGen.libObjects` —
+  that mismatch is what destroyed the library. Fixed by turning the promise into a choice: a new
+  "Also delete my saved library objects" checkbox in the New Project overlay, UNCHECKED by default.
+- **RECON (2026-09-24):**
+  - Reset path: `resetEverything(noConfirm)` (index.html:7243) reads `#resetDelLibCheck` from the reset
+    panel itself (so `doNewProject()` -> `resetEverything(true)` deleted the library based on an unrelated
+    checkbox), and its confirm is a native `confirm()`. `doNewProject()` (index.html:6766) then also did
+    `localStorage.removeItem('comicGen.libObjects')` unconditionally.
+  - Callers of `resetEverything(true)`: deletePage (only-page case, :3165), panel multi-select delete
+    (:4786), deletePanel (only-panel case, :5040), doNewProject (:6767) — plus the armed reset button (:834).
+  - The only other library-deletion site is `deleteLibraryObject(id)` (:1277), wired to the Library list's
+    per-row trash button (:1368). Library *import* only merges/appends (never deletes), and
+    `migrateLibObjects()` only drops legacy-type junk.
+  - Snapshot primitives already exist for the JSON editor: `jsonBuildDoc()` (:7974) = `buildExportData(true)`
+    minus `exportedAt` (settings + libObjects + preset + layout/UI flags) and `jsonApplyDoc(doc)` (:8684)
+    which writes the settings, the library, the preset, rebuilds the grid and re-applies the flags. Images
+    travel separately via `collectAllPageImages()` (:3294) / `repopulateImportedImages()` (:6526).
+  - The app already has a non-blocking promise-based dialog: `showChoiceDialog({title, paragraphs, hint,
+    buttons})` (:4660, `#choiceOverlay`) used by the panel-selection batch operations.
+- **IMPLEMENTATION:** pending.
 ### 2026-09-24 — "Generated Prompt" accordion: a per-panel prompt history (up to 5 prompts + their seeds)
 - **Status:** ✅ **DONE 2026.09.24.2** — implemented, verified in the live preview, docs + GitHub backup pushed.
 - **Request (author, 2026-09-24, verbatim):** "Under the panel's Prompt menu, I'd like to add an accordion
