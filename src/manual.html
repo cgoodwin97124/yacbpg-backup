@@ -34,7 +34,7 @@
 <body>
 <div class="page">
 <h1>Yet Another Comic Book Page Generator</h1>
-<h3>Design Document — version 2026.09.24.2</h3>
+<h3>Design Document — version 2026.09.24.3</h3>
 <p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
 <hr>
 <h2>1. What it is</h2>
@@ -147,8 +147,12 @@
 <td>The whole project: project name, image size, guidance, keywords, NSFW flag, current page, and every page&#39;s panels (characters + modifiers, titles, location + modifier, actions, seeds, image counts, the images-per-panel default, per-panel styles, prompt overrides, protection).</td>
 </tr>
 <tr>
-<td><code>comicGen.charLibrary</code> / <code>comicGen.locLibrary</code></td>
-<td>Your saved characters and locations.</td>
+<td><code>comicGen.libObjects</code></td>
+<td>Your saved library — characters, locations and action prompts (shared by every project in this browser).</td>
+</tr>
+<tr>
+<td><code>comicGen.undoProject</code></td>
+<td>The one-step snapshot kept by <strong>New Project</strong> / <strong>Reset to Defaults</strong>, restored with <strong>↩ Restore Previous Project</strong>. It holds the project's settings <em>and</em> your saved library; the images it held are only restorable while the page has not been reloaded.</td>
 </tr>
 <tr>
 <td><code>comicGen.preset</code></td>
@@ -166,6 +170,9 @@
 <li><strong>💾 Save… / Save as…</strong> — write the project settings to a JSON file (silent save to a remembered file, or pick a new one).</li>
 <li><strong>⬇ Export Project</strong> — <strong>JSON</strong> (all settings + libraries + preferences) or <strong>ZIP</strong> (the same settings <strong>plus every generated image</strong> for every page). ZIP is the complete backup.</li>
 <li><strong>⬆ Import Project</strong> — restore from a JSON or ZIP export. Importing starts with a safety prompt (it will replace the current project). ZIP imports restore the images into the right panels. A project (page) seed or a panel seed of <code>-1</code> in the imported file means &quot;random&quot; and is quietly cleared on import — several external prompt pipelines use -1 that way, and this app would otherwise take it literally.</li>
+<li><strong>↩ Restore Previous Project</strong> — <strong>📄 File → New Project</strong> and the <strong>Reset to Defaults</strong> panel first keep a <strong>one-step snapshot of the project they are about to clear</strong>: every page and panel, titles, seeds, keywords, presets, prompt overrides, the 🕘 Generated Prompt histories, image protection — <em>and your saved library</em>. <strong>↩ Restore Previous Project</strong> (in 📄 File, right after New Project, or under Reset to Defaults) puts it back. The button names the snapshot — its project name, when it was taken, and how many images it holds — and always asks before replacing what is on screen. Generated images come back too while the page is still open; after a reload the project, the settings and the library can still be restored, but the images (which only ever live in the page) cannot.</li>
+<li><strong>Starting a new project leaves your library alone</strong> unless you tick <strong>“Also delete my saved library objects”</strong> in its confirmation — that box is <strong>off by default</strong> and shows how many items you have. Your characters, locations and action prompts are shared by every project in this browser, so keeping them is the safe choice.</li>
+<li><strong>Deleting a saved character, location or action always asks first</strong>, names the item, and tells you how many panel slots are using it (those slots fall back to “No Character Selected”, and its description stops being added to their prompts). The Reset panel's “also permanently delete my saved library objects” option is confirmed in the same explicit way.</li>
 </ul>
 <h2>9. Editing the whole project as JSON (Project JSON Editor)</h2>
 <p><strong>Edit &rarr; 🧩 Open JSON Editor</strong> opens your entire project as one formatted JSON document in a full-page editor. It is the same data as <strong>⬇ Export Project &rarr; JSON</strong> — every page and panel, your saved characters/locations, the global keywords and size/guidance settings, the preset and the UI flags — so a document you edit here could equally be saved and opened in your own text editor.</p>
@@ -199,6 +206,7 @@
 <p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
 <h2>12. Recent changes (changelog highlights)</h2>
 <ul>
+<li><strong>2026.09.24.3</strong> — two safety nets against losing work. <strong>New Project</strong> and <strong>Reset to Defaults</strong> now keep a <strong>one-step snapshot</strong> of the project they clear, restorable with the new <strong>↩ Restore Previous Project</strong> button (in 📄 File, next to New Project, or under Reset to Defaults) — the snapshot keeps your pages, panels, seeds, keywords, prompt overrides, prompt histories, image protection <em>and</em> your saved library, and its images return too while the page is open. And <strong>nothing deletes your library by itself any more</strong>: New Project asks with an explicit, off-by-default “Also delete my saved library objects” checkbox, and deleting a saved character/location/action now always asks first, naming the item and how many panels use it.</li>
 <li><strong>2026.09.24.2</strong> — a new <strong>🕘 Generated Prompt</strong> section inside each panel's <strong>📝 Prompt</strong> menu keeps a <strong>history of the last five prompts that panel was actually generated with</strong>, each frozen exactly as it was sent — the full positive and negative text <em>and</em> the exact seed(s) each image used. Later edits to characters, keywords, presets or the live prompt editor never change them. Every entry has its own <strong>📋 Copy</strong> and <strong>🔄 Generate</strong>, the latter re-rendering the panel from that saved prompt and seed(s) without disturbing the history at all. The history is saved with the project (Export / Import / .zip), is read-only in the JSON editor, travels with <strong>⧉ Duplicate</strong>, and is wiped by <strong>🗑 Clear</strong> (but not by <strong>🗑 Clear Images</strong>).</li>
 <li><strong>2026.09.24.1</strong> — the <strong>⇤ copy-from-previous-panel</strong> buttons now reach <strong>across pages</strong> and <strong>skip panels that have nothing to copy</strong>. Panel 1 of page 2 (and every later page) can finally pull a character, location or action prompt from an earlier page, and every ⇤ now looks back to the <em>nearest earlier panel that actually has that item</em> instead of only the panel directly above it — so blank panels and blank pages are stepped over rather than copied as blank. If page 1 has panels 1–8 filled in and pages 2 onwards are empty, panel 1 of page 11 copies from page 1's panel 8. Each ⇤ names its source in its tooltip, and it is greyed out only when nothing before it in the whole project has that item. The <strong>Seed ⇤</strong> is unchanged.</li>
 <li><strong>2026.09.23.14</strong> — a floating <strong>＋ Add Page</strong> button is now pinned to the <strong>bottom-right corner</strong> of the screen, so you can add a page from anywhere without opening 📄 File → Page Setup. It uses the same green style as <strong>▧ Hide Panels</strong> and the page navigator, and it politely steps up out of the way when the panel-selection bar or the page navigator would otherwise sit under it (as they do on a phone).</li>
@@ -232,7 +240,7 @@
 </ul>
 
 <hr>
-<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.09.24.2. Written 2026-08-14 (the JSON-editor section, the collapsible character/location lines, the changelog moving to GitHub, the full-page panel reflow, the cross-page ⇤ copying and the Generated Prompt history were all added 2026-09-23/24). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
+<p style="color:#888;font-size:0.85em;">The user manual for <strong>Yet Another Comic Book Page Generator</strong>, v2026.09.24.3. Written 2026-08-14 (the JSON-editor section, the collapsible character/location lines, the changelog moving to GitHub, the full-page panel reflow, the cross-page ⇤ copying, the Generated Prompt history and the Restore Previous Project / library safety nets were all added 2026-09-23/24). This is a snapshot manual — it may lag the very latest changes listed in the app's Help &rarr; About / Version History.</p>
 </div>
 </body>
 </html>
