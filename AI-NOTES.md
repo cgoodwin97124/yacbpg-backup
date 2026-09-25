@@ -46,9 +46,10 @@ only live ephemerally or inside `index.html`'s comment block.
     `characters` list (none/hero/villain/sidekick/civilian), `locations` list
     (none/city/lab/hideout/rooftop). Loaded before `index.html`; top-level names become
     globals (`root.characters`, `root.locations`, `root.generateImage`).
-  - `index.html` — the ENTIRE app. Top = giant HTML comment of dev notes (read before
-    editing; newest entries near the top). Then `<style>`, then the body markup, then
-    then ONE big IIFE `<script>` with all logic.
+  - `index.html` — the ENTIRE app. Top = a SHORT pointer comment saying where the docs now live;
+    the long-form dev notes were moved OUT of this file and into this repo on 2026-09-23.6 (`DEV-NOTES.md` —
+    read it before editing; never re-add the long-form `text/plain` doc blocks). Then `<style>`, the body
+    markup, and ONE big IIFE `<script>` with all logic.
   - `CHANGELOG.md` (repo root — NOT src/, that name wedges the platform save flow) — version history for
     Help > About. Since 2026.09.23.8 the About panel fetches it from the repo the FIRST time the About
     section is expanded (`loadFullChangelog()`) and falls back to the tiny embedded `#embeddedVersion`
@@ -60,10 +61,13 @@ only live ephemerally or inside `index.html`'s comment block.
     perchance.org, and (b) even the absolute `location.origin + '/src/manual.html'` is refused by the
     service worker ("No src manifest available for this page" — top-level `src/` navigation is unsupported).
     See src/ISSUES.md 2026-08-14 (both entries). A snapshot doc — footer notes it may lag Help → About.
-  - `src/PENDING.md` — open feature-request queue (newest first; read before planning new work; implement
+  - `PENDING.md` — open feature-request queue (newest first; read before planning new work; implement
     only when the author says "go ahead").
-  - `src/ISSUES.md` — issue log, newest first. **GREP before diagnosing anything.**
-  - `src/AI-NOTES.md` — this file.
+  - `ISSUES.md` — issue log, newest first. **GREP before diagnosing anything.**
+  - `AI-NOTES.md` — this file.
+  - These docs live in the REPO ROOT now (with `DEV-NOTES.md`, `CHANGELOG.md` and `tickets/`), NOT in `src/`:
+    `src/` holds only files the shipped generator serves (`manual.html`), because putting any of these .md
+    names in `src/` permanently wedges the platform's save flow.
 - **Execution order caveat:** the Perchance engine evaluates the whole template (all pjs /
   square blocks) BEFORE any body `<script>` runs. The app IIFE therefore runs last.
 - **TEST DATA — "Cow in field" is the author's THROWAWAY test project (author, 2026-09-24, verbatim):** "No
