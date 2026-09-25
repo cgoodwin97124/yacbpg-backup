@@ -283,7 +283,11 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   placeholder. `pinPanelSeedForRun(i)` (used by renderPanelSlot) = panel `#panel-seed-N` > global `#seedInput`
   + (i−1) > one random int, which it writes back into `#panel-seed-N` (so the panel HOLDS the seed and is
   reproducible on later runs). `getPanelSeed(i)` still exists but is no longer used by render.
-  Slot k uses seed + (k−1).
+  Slot k uses seed + (k−1) — **unless that panel's 🎲 checkbox is ticked (2026.09.25.3):** `opts.seed = (useSeed ||
+  panelSameSeedOn(i)) ? seed : (seed + (k - 1))`, so with `pages[N][i].sameSeed` true every image of the panel uses
+  the panel's resolved seed verbatim (panel Seed box, else page seed + i − 1). `useSeed` (an explicit `seedForSlot`
+  from a 🕘 replay) always wins over the checkbox. `panelSameSeedOn` / `setPanelSameSeed` / `onPanelSameSeedChange`
+  are exported; `resetEverything()` clears the flag with the rest of a panel.
 - **Size:** `getImageSize()` from File menu; `pickSourceResolution` picks the nearest plugin
   size (512²/512×768/768×512/768²); `upscaleDataUrl` cover-crops + upscales to target
   (JPEG q0.92) when different.
@@ -912,6 +916,12 @@ Shipped together on 2026-09-25 from tickets T-01 / T-03 / T-04 / T-05 (T-02 was 
 - `showChoiceDialog` builds its DOM synchronously and returns a promise, so the handler stores the promise, attaches `oninput` → `readRange()` to both boxes, and only then awaits. `readRange()` returns `{from,to}` or null AND drives the info line, the `.bad` class and `goBtn.disabled` — an out-of-range or From>To pair can therefore never be submitted (Escape/Cancel resolves null).
 - Prefill = `1 … i`, or the selection SPAN (`panelSelectionSorted()` first…last) when `panelBatchMode(i) && panelSelection.size > 1`; that selection is cleared only when the run starts. Clamped to 1…total and swapped if inverted. The run is `generateComicPage(null, [from…to])`, so `runEndPanel` gives the paused-resume clamp for free.
 - CSS: `.range-row` / `.range-info` (+`.bad`) and, importantly, `#choiceBtns button:disabled { opacity: 0.45; cursor: not-allowed }` — `#choiceBtns` had NO disabled styling before, so a disabled dialog button looked enabled.
+### 🎲 Same seed for every image — per-panel checkbox (2026.09.25.3)
+- State: `sameSeed` on each panel object (`pages[N][i]`), collected/restored like any other panel field (`collectPageData` / `restorePanelState`), so it is saved, exported, imported, deep-copied by Duplicate / Add / Move / reflow / Cut / Paste, and editable in the 🧩 JSON editor. Absent/undefined = old behaviour (falsy), so no migration is needed.
+- DOM: `#panel-sameseed-i` — a `.check-label.panel-acc-check` row (`flex: 1 1 100%`, `border-top`) as the LAST child of that panel's ⚙ Panel `.panel-acc-body`; label text "🎲 Same seed for every image — no +1 per image."; `onchange="onPanelSameSeedChange(i)"`.
+- Effect (single condition, `renderPanelSlot`): `opts.seed = (useSeed || panelSameSeedOn(i)) ? seed : (seed + (k - 1));`. `useSeed` = a 🕘 Generated Prompt replay, which keeps its recorded per-image seeds on purpose.
+- Exports: `window.panelSameSeedOn`, `window.setPanelSameSeed`, `window.onPanelSameSeedChange`. `resetEverything()` calls `setPanelSameSeed(i, false)` per panel.
+
 ### 📄 Recent files + the count preference (T-03 / T-05)
 - IndexedDB `comicGenSaveState` → `main` → `recent`: newest-first array of `{kind:'handle', handle, name, at}` or `{kind:'snapshot', name, at, text}`. `canUseFileHandles()` decides which flavour is available; Firefox and Safari have no File System Access API, so there the app stores a snapshot of the saved project text and the entry still opens even if the file was moved or deleted. That fallback is what makes the feature work in the author's own browser — do not "simplify" it away.
 - Entry points that add an entry: `saveSettingsAs` (handle), the download fallback of `saveSettings`/`saveSettingsAs` (`rememberRecentSnapshot`), `doImportFile` (JSON + ZIP) and `openRecentPicker` (the ＋ Add / Open… chip, hidden `#importSettingsInput` fallback). `openRecentEntry` → `beginImport(file, isZip)`; auto-removes a dead handle entry. `#recentListEl` sits directly under the Backup Project chips in 📄 File; `clearRecentList` empties it; `recentStoreCap() = Math.max(5, recentMaxPref)`.
