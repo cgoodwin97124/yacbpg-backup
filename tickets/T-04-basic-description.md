@@ -2,7 +2,8 @@
 ticket: T-04
 title: "Panel Library “Library Description” → editable, project-saved “Basic Description”"
 kind: feature
-status: answered
+status: done
+released: 2026.09.25.1
 answers: 6/6
 form: yacbpg-tickets-2026-09-25
 updated: 2026-09-25T01:30:19.954Z
@@ -12,7 +13,7 @@ generator: f0vstb2fbe
 # T-04 — Panel Library “Library Description” → editable, project-saved “Basic Description”
 
 - **Kind:** feature
-- **Status:** answered (answered — awaiting the implementation go-ahead)
+- **Status:** done — shipped in **2026.09.25.1** (2026-09-25)
 - **Answers:** 6 of 6
 - **Answered:** 2026-09-25T01:30:19.954Z
 
@@ -51,4 +52,11 @@ generator: f0vstb2fbe
 
 ## Implementation
 
-_Pending — filled in when the work is done (branch / PR, released version, changelog entry)._
+T-04 — shipped in **2026.09.25.1** (2026-09-25) — see CHANGELOG.md and DEV-NOTES.md (BATCH 2026.09.25.1).
+
+- The read-only "Library Description" is now the editable **Basic Description** (`.pl-base-field` + `.pl-base-head` with the `edited` badge and the "⟳ Refresh from library" chip); the "This panel — extra description" box is unchanged and still appends after it (answer 4a).
+- State: `chars:[{sel,base,extra}]` plus `loc` / `locBase` / `locExtra` — saved with the project, carried through Export / Import / .zip and shown read-only in the 🧩 JSON editor.
+- Seeding and freeze (4c): the field is filled from the library when a selection is made and never follows later library edits; ⟳ Refresh from library is the only way to pull the current library text back. `migratePanelBaseDescriptions` seeds projects saved by earlier versions — verified to leave the built prompt byte-identical.
+- Comparison (4e): trimmed, exact, case-sensitive. Call-out (4f): the badge and a coloured left bar, nothing else. Built-ins get the identical treatment (4d).
+- ⇤ copy-from-previous-panel copies the Basic Description edited or not; the built prompt uses the edited text in place of the library's.
+- Verified live in both themes: 96 fields / 96 badges / 96 ⟳ chips and zero old `.pl-libdesc`; the badge and border track edits (a whitespace-only difference is NOT flagged, a case change is); ⟳ clears them; ⇤ copies an edited base; the built prompt carries the custom text and not the library text.
