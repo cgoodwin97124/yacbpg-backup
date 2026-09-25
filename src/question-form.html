@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Author Tickets — Comic Book Page Generator</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1c2024;
+    --muted: #626b76;
+    --line: #dfe3e8;
+    --accent: #2f6fed;
+    --accent-soft: #e8f0ff;
+    --ok: #17864a;
+    --ok-soft: #e3f6ec;
+    --warn: #b7791f;
+    --warn-soft: #fdf3dd;
+    --bad: #c0392b;
+    --bad-soft: #fdecea;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181c;
+      --card: #1f2228;
+      --ink: #e9ecf1;
+      --muted: #9aa4b1;
+      --line: #333a43;
+      --accent: #6f9dff;
+      --accent-soft: #1d2b45;
+      --ok: #4ec27f;
+      --ok-soft: #17301f;
+      --warn: #e0b24d;
+      --warn-soft: #33290f;
+      --bad: #ff8a75;
+      --bad-soft: #3a1c18;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 20px 14px 140px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  header.page h1 { margin: 0 0 6px; font-size: 1.32rem; line-height: 1.25; }
+  header.page p { margin: 6px 0 0; color: var(--muted); font-size: 0.92rem; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 12px; font-size: 0.82rem; color: var(--muted); }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  h2.group {
+    font-size: 1.02rem; margin: 26px 0 6px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent); display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline;
+  }
+  .group-sub { color: var(--muted); font-size: 0.82rem; font-weight: 400; margin: 0 0 12px; }
+  section.q {
+    background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--line);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
+  }
+  section.q.answered { border-left-color: var(--ok); }
+  .q-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 10px; }
+  .q-id { flex: 0 0 auto; font-weight: 700; font-size: 0.78rem; background: var(--accent-soft); color: var(--accent); padding: 3px 8px; border-radius: 6px; margin-top: 2px; }
+  .q-text { font-weight: 600; }
+  select, textarea, input[type=text], input[type=password], input[type=number] {
+    width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
+  }
+  select { min-height: 42px; }
+  textarea { resize: vertical; min-height: 62px; }
+  .opts { display: flex; flex-direction: column; gap: 8px; }
+  label.opt { display: flex; gap: 9px; align-items: flex-start; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; cursor: pointer; font-size: 0.94rem; }
+  label.opt:hover { border-color: var(--accent); }
+  label.opt input { margin: 2px 0 0; flex: 0 0 auto; width: 17px; height: 17px; }
+  .note-label { display: block; margin: 10px 0 4px; font-size: 0.8rem; color: var(--muted); }
+  label.chk { display: flex; gap: 8px; align-items: center; font-size: 0.86rem; color: var(--muted); cursor: pointer; }
+  label.chk input { width: 16px; height: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-top: 10px; }
+  .field { flex: 1 1 180px; min-width: 140px; }
+  .field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+  .targets { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .setting-help { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+  .setting-help code { background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font-size: 0.9em; }
+  details.gh { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); margin-bottom: 16px; }
+  details.gh > summary { cursor: pointer; padding: 14px 18px; font-weight: 600; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  details.gh > summary::-webkit-details-marker { display: none; }
+  details.gh > summary::before { content: "▸"; color: var(--muted); }
+  details.gh[open] > summary::before { content: "▾"; }
+  details.gh .gh-body { padding: 0 18px 18px; border-top: 1px solid var(--line); margin-top: -1px; padding-top: 14px; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; border-radius: 8px; padding: 10px 16px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { filter: brightness(1.08); }
+  button.small { padding: 7px 12px; font-size: 0.86rem; }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--card); border-top: 1px solid var(--line); padding: 12px 14px; box-shadow: 0 -6px 20px rgba(0,0,0,0.08); }
+  .bar-inner { max-width: 900px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+  .bar-status { font-size: 0.85rem; color: var(--muted); }
+  .bar-status.done { color: var(--ok); font-weight: 600; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(8px); background: var(--ink); color: var(--bg); font-weight: 600; font-size: 0.88rem; padding: 10px 16px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 30; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .fallback { margin-top: 10px; display: none; }
+  .fallback.show { display: block; }
+  #resultsEl { display: none; }
+  #resultsEl.show { display: block; }
+  .res-line { display: flex; gap: 8px; align-items: baseline; margin: 6px 0; font-size: 0.9rem; flex-wrap: wrap; }
+  .res-line a { color: var(--accent); word-break: break-all; }
+  .res-err { color: var(--bad); font-size: 0.84rem; }
+  .steps { margin: 8px 0 0 18px; padding: 0; font-size: 0.86rem; color: var(--muted); }
+  .steps li { margin: 4px 0; }
+  details.preview { margin-top: 8px; }
+  details.preview summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+  details.preview pre { white-space: pre-wrap; word-break: break-word; font-size: 0.8rem; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 8px 0 0; max-height: 320px; overflow: auto; }
+  @media (max-width: 560px) {
+    body { padding: 14px 10px 170px; }
+    .card, details.gh > summary { padding-left: 14px; padding-right: 14px; }
+    .q-head { flex-direction: column; gap: 6px; }
+    .q-text { font-size: 0.97rem; }
+    .btns { width: 100%; }
+    .btns button.primary { flex: 1 1 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page card">
+    <h1 id="pageTitle"></h1>
+    <p id="pageIntro"></p>
+    <div class="meta-row">
+      <span id="pageVersion" class="pill"></span>
+      <span id="pageTickets"></span>
+      <span id="pageState"></span>
+    </div>
+  </header>
+
+  <div id="resultsEl" class="card"></div>
+
+  <details class="gh" id="ghCard">
+    <summary>
+      <span>GitHub tickets</span>
+      <span id="ghBadge" class="pill warn">not connected</span>
+      <span id="ghWhere" class="pill">—</span>
+    </summary>
+    <div class="gh-body">
+      <div class="row">
+        <div class="field"><label for="ghOwner">Owner</label><input type="text" id="ghOwner" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="ghRepo">Repository</label><input type="text" id="ghRepo" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="ghBranch">Branch</label><input type="text" id="ghBranch" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="ghFolder">Tickets folder</label><input type="text" id="ghFolder" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1 1 320px;"><label for="ghToken">GitHub token (fine-grained PAT, Contents: read + write)</label><input type="password" id="ghToken" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></div>
+      </div>
+      <div class="row">
+        <button type="button" class="small" id="ghTestBtn">🔍 Test connection</button>
+        <button type="button" class="small" id="ghSaveBtn">💾 Remember in this browser</button>
+        <button type="button" class="small" id="ghForgetBtn">Forget token</button>
+        <label class="chk" style="margin-left:auto;"><input type="checkbox" id="ghQuiet"> quiet mode — only write ticket files</label>
+      </div>
+      <div class="targets">
+        <label class="opt"><input type="radio" name="target" value="files" checked><span><b>Ticket files</b> — one markdown file per ticket in the tickets folder, plus an index. Works with the token you already have (Contents read + write).</span></label>
+        <label class="opt"><input type="radio" name="target" value="issues"><span><b>GitHub Issues</b> — one issue per ticket. Needs the token to also have <code>Issues: read and write</code>; if that fails it falls back to ticket files automatically.</span></label>
+      </div>
+      <p class="setting-help" id="ghHelp"></p>
+    </div>
+  </details>
+
+  <main id="formRoot"></main>
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div>
+      <div id="statusEl" class="bar-status"></div>
+      <details class="preview" id="previewDetails">
+        <summary>Preview the text that will be copied / sent</summary>
+        <pre id="previewEl"></pre>
+      </details>
+    </div>
+    <div class="btns">
+      <button id="clearBtn" type="button">Clear answers</button>
+      <button id="copyBtn" type="button">📋 Copy answers</button>
+      <button id="sendBtn" type="button" class="primary">📤 Send answers</button>
+    </div>
+  </div>
+  <div class="fallback" id="fallbackEl">
+    <label class="note-label">Clipboard was blocked — select all of this and copy it manually (Ctrl/Cmd+C):</label>
+    <textarea id="fallbackText" rows="7" readonly></textarea>
+  </div>
+</div>
+<div class="toast" id="toastEl"></div>
+
+<script>
+"use strict";
+
+const FORM_META = {
+  id: "yacbpg-tickets-2026-09-25",
+  version: "2026-09-25",
+  title: "Comic Book Page Generator — Tickets for the Author",
+  intro: "Each numbered ticket below is one change request. Answer whatever you like, add notes anywhere, then press “Send answers” — each ticket is written to GitHub as a markdown ticket file (or an issue), and the links come back here."
+};
+
+const GH_DEFAULTS = {
+  owner: "cgoodwin97124",
+  repo: "yacbpg-backup",
+  branch: "main",
+  folder: "tickets"
+};
+
+const TICKETS = [
+  {
+    id: "T-01",
+    slug: "T-01-generate-to-here",
+    kind: "feature",
+    title: "“Generate To Here” chip in the Panel menu",
+    request: "I'd like a \"Generate To Here\" button to go with \"Generate From Here\" under the Panel menu. Clicking this button will generate all of the current page's panels from panel 1 up to and including the panel where it was clicked.",
+    questions: [
+      {
+        id: "1a",
+        text: "Label and placement for the new chip in the Panel menu.",
+        type: "select",
+        options: [
+          "⚡ Generate All To Here — placed between 🔄 Generate and ⚡ Generate All From Here (recommended)",
+          "⚡ Generate All To Here — placed after ⚡ Generate All From Here",
+          "A different label or placement — I’ll say what in the notes"
+        ],
+        notesLabel: "If you want a different label, or a different position, type it here:"
+      },
+      {
+        id: "1b",
+        text: "With several panels multi-selected, ⚡ Generate All From Here starts at the FIRST selected panel. Should ⚡ Generate All To Here mirror that and finish at the LAST selected panel?",
+        type: "select",
+        options: [
+          "Yes — mirror the selection: generate panels 1 … last-selected (recommended)",
+          "No — always literal: generate panels 1 … the panel that was clicked"
+        ]
+      },
+      {
+        id: "1c",
+        text: "After pausing a To-Here run, ⚡ Generate All currently resumes to the end of the page (a pre-existing quirk of the explicit-list path). What should happen?",
+        type: "select",
+        options: [
+          "Leave as-is — resume to the end of the page (recommended: no extra complexity)",
+          "Remember the To-Here end panel and resume only up to it"
+        ]
+      }
+    ]
+  },
+  {
+    id: "T-02",
+    slug: "T-02-cow-in-field-throwaway-note",
+    kind: "doc",
+    title: "Document that the “Cow in field” project is a throwaway",
+    request: "Add a note in your documents that the \"Cow in field\" project is a throwaway, and if it's loaded it can always be clobbered.",
+    questions: [
+      {
+        id: "2a",
+        text: "The note is documentation only — no code, nothing shipped. When should it be added?",
+        type: "select",
+        options: [
+          "Now — add it to the repo docs immediately (recommended)",
+          "Later — together with the go-ahead for the other requests"
+        ]
+      }
+    ]
+  },
+  {
+    id: "T-03",
+    slug: "T-03-recent-list-under-file",
+    kind: "feature",
+    title: "“Recent” list under File — reopen a saved project without the system dialog",
+    request: "Can we add a \"Recent\" list under File that would hold the path and filename of the saved file? Clicking on that would directly load the project (JSON or ZIP) with the usual warning to the user rather than going through the system's Load File dialog.",
+    questions: [
+      {
+        id: "3a",
+        text: "Browsers deliberately hide a file’s folder, so an entry can only show the FILENAME plus when it was saved/opened — never a real path. Is that enough, and should there be a “＋ Add…” entry using the browser’s open-file picker (.json AND .zip) as the way files get into the list?",
+        type: "select",
+        options: [
+          "Yes — filename + time is fine, AND add a ＋ Add… button using the open-file picker (recommended)",
+          "Yes — filename + time is fine; no ＋ Add… button (only files saved/opened through the app get listed)",
+          "I want real file paths — see my notes"
+        ]
+      },
+      {
+        id: "3b",
+        text: "Should the Recent list hold ZIPs as well as JSON? (The app only ever SAVES JSON, so a ZIP can only enter the list through that ＋ Add… picker.)",
+        type: "select",
+        options: [
+          "Yes — allow both .json and .zip in the list (recommended)",
+          "No — JSON only"
+        ]
+      },
+      {
+        id: "3c",
+        text: "Where should the Recent list sit under 📄 File?",
+        type: "select",
+        options: [
+          "Directly under the Backup Project chip row, with a “Clear recent list” action (recommended)",
+          "Somewhere else — I’ll say where in the notes"
+        ]
+      },
+      {
+        id: "3d",
+        text: "How many entries should the Recent list keep by default? (This becomes configurable — see ticket T-05.)",
+        type: "select",
+        options: [
+          "5 (recommended)",
+          "3",
+          "10",
+          "Other — I’ll type a number in the notes"
+        ]
+      }
+    ]
+  },
+  {
+    id: "T-04",
+    slug: "T-04-basic-description",
+    kind: "feature",
+    title: "Panel Library “Library Description” → editable, project-saved “Basic Description”",
+    request: "In the Panel Library menu, let's rename Library Description to Basic Description. By default it populates from the character or location's Library Description stored in the main Library, but it *can* be edited, and editing it causes the panel to use the edited description rather than pulling it in from the library. I'd like to be able to save it with the project, and I'd also like a small chip button that refreshes it from the library's description. If the character or location's Basic Description differs from the description stored in the library, use the Basic Description instead of the library's description. Clicking the \"copy from the previous panel\" button copies the previous panel's Basic Description, regardless of whether it's edited. Also, I'd like each one to in some way visually call out a Basic Description that is different from the library's description.",
+    questions: [
+      {
+        id: "4a",
+        text: "Merge the two fields, or keep both? Today there is a read-only “Library description” and a separate editable “This panel — extra description”.",
+        type: "select",
+        options: [
+          "Merge them — the read-only library text becomes the editable “Basic Description”, and the separate extra-description box disappears (recommended)",
+          "Keep both — add “Basic Description” on top of the existing extra field"
+        ]
+      },
+      {
+        id: "4b",
+        text: "For existing projects, how should the old extra descriptions migrate so prompts don’t silently change?",
+        type: "select",
+        options: [
+          "Set each Basic Description to “library description + extra” — reproduces today’s prompt exactly, and flags those as differing (recommended)",
+          "Start each Basic Description as just the library description, and drop the old extras"
+        ]
+      },
+      {
+        id: "4c",
+        text: "If you later edit a library object’s description, what should happen to a Basic Description you have NOT touched?",
+        type: "select",
+        options: [
+          "It follows the new library text — it is still “inherited” (recommended)",
+          "It stays frozen at the text it was filled with"
+        ]
+      },
+      {
+        id: "4d",
+        text: "Do the built-in characters and locations (Hero, City, …) get the identical editable / override / call-out treatment?",
+        type: "select",
+        options: [
+          "Yes — identical treatment for built-ins and library items (recommended)",
+          "No — built-ins stay read-only; only library items can be overridden"
+        ]
+      },
+      {
+        id: "4e",
+        text: "How should “this differs from the library” be decided when comparing the two texts?",
+        type: "select",
+        options: [
+          "Trimmed, exact comparison — case-sensitive (recommended)",
+          "Trimmed and case-insensitive",
+          "Some other rule — see my notes"
+        ]
+      },
+      {
+        id: "4f",
+        text: "How should a differing Basic Description be called out visually?",
+        type: "select",
+        options: [
+          "A small “custom” badge beside the label, a coloured left border on the field, AND a dot on the ▸/▾ toggle row so it is visible while collapsed (recommended)",
+          "Badge + coloured border only",
+          "A dot on the ▸/▾ toggle row only (cleanest)",
+          "Something else — see my notes"
+        ]
+      }
+    ]
+  },
+  {
+    id: "T-05",
+    slug: "T-05-recent-count-preference",
+    kind: "feature",
+    title: "Recent-file count configurable under Edit → Preferences",
+    request: "Let's add in: Allow the number of recent filename/paths kept to be configured by the user under Edit -> Preferences.",
+    questions: [
+      {
+        id: "5a",
+        text: "What shape should the “number of recent files kept” control take?",
+        type: "select",
+        options: [
+          "A dropdown of 1–20, default 5 (recommended)",
+          "A free number box with a sane cap (say 1–50)",
+          "Something else — see my notes"
+        ]
+      },
+      {
+        id: "5b",
+        text: "Should 0 be allowed, meaning the Recent list is hidden entirely?",
+        type: "select",
+        options: [
+          "Yes — 0 hides the Recent list completely (recommended)",
+          "No — 1 is the minimum, the list is always shown"
+        ]
+      },
+      {
+        id: "5c",
+        text: "Stored as a browser preference (comicGen.recentMax), separate from the project — agreed? (It cannot be project data: the file handles it counts are per-browser.)",
+        type: "select",
+        options: [
+          "Yes — browser preference (recommended)",
+          "No — I want it saved with the project; see my notes"
+        ]
+      }
+    ]
+  }
+];
+
+const GH_KEYS = {
+  owner: "comicGen.githubOwner",
+  repo: "comicGen.githubRepo",
+  branch: "comicGen.githubBranch",
+  folder: "comicGen.githubTicketsFolder",
+  token: "comicGen.githubToken"
+};
+
+(function () {
+  const DRAFT_KEY = "questionForm.draft." + FORM_META.id;
+  const LASTSENT_KEY = "questionForm.lastSent." + FORM_META.id;
+  const SETTINGS_KEY = "questionForm.githubSettings";
+
+  const formRoot = document.getElementById("formRoot");
+  const statusEl = document.getElementById("statusEl");
+  const previewEl = document.getElementById("previewEl");
+  const toastEl = document.getElementById("toastEl");
+  const fallbackEl = document.getElementById("fallbackEl");
+  const fallbackText = document.getElementById("fallbackText");
+  const resultsEl = document.getElementById("resultsEl");
+  const ghCard = document.getElementById("ghCard");
+  const ghBadge = document.getElementById("ghBadge");
+  const ghWhere = document.getElementById("ghWhere");
+  const sendBtn = document.getElementById("sendBtn");
+  const copyBtn = document.getElementById("copyBtn");
+
+  const ALL_QUESTIONS = [];
+  TICKETS.forEach(function (t) {
+    t.questions.forEach(function (q) { q.ticket = t.id; ALL_QUESTIONS.push(q); });
+  });
+
+  document.getElementById("pageTitle").textContent = FORM_META.title;
+  document.getElementById("pageIntro").textContent = FORM_META.intro;
+  document.getElementById("pageVersion").textContent = "v" + FORM_META.version;
+  document.getElementById("pageTickets").textContent = TICKETS.length + " tickets";
+  document.getElementById("ghHelp").innerHTML = 'Opened from the generator’s own page (the preview pane)? Then the owner, repo and token you already saved for the backup feature are picked up automatically. Opened as a downloaded file? Fill the fields in once and press <code>Remember in this browser</code>. The token never leaves this browser except as an <code>Authorization</code> header sent to <code>api.github.com</code>.';
+
+  function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  let draft = {};
+  try { draft = JSON.parse(safeGet(DRAFT_KEY) || "{}") || {}; } catch (e) { draft = {}; }
+
+  let gh = {
+    owner: "", repo: "", branch: GH_DEFAULTS.branch, folder: GH_DEFAULTS.folder, token: ""
+  };
+  try {
+    const own = JSON.parse(safeGet(SETTINGS_KEY) || "{}") || {};
+    gh.owner = own.owner || "";
+    gh.repo = own.repo || "";
+    gh.branch = own.branch || "";
+    gh.folder = own.folder || "";
+    gh.token = own.token || "";
+  } catch (e) {}
+  const shared = {
+    owner: safeGet(GH_KEYS.owner),
+    repo: safeGet(GH_KEYS.repo),
+    branch: safeGet(GH_KEYS.branch),
+    folder: safeGet(GH_KEYS.folder),
+    token: safeGet(GH_KEYS.token)
+  };
+  const sameOriginDefaults = !!(shared.owner || shared.token);
+  if (!gh.owner) gh.owner = shared.owner || GH_DEFAULTS.owner;
+  if (!gh.repo) gh.repo = shared.repo || GH_DEFAULTS.repo;
+  if (!gh.branch) gh.branch = shared.branch || GH_DEFAULTS.branch;
+  if (!gh.folder) gh.folder = shared.folder || GH_DEFAULTS.folder;
+  if (!gh.token) gh.token = shared.token || "";
+
+  const ghOwner = document.getElementById("ghOwner");
+  const ghRepo = document.getElementById("ghRepo");
+  const ghBranch = document.getElementById("ghBranch");
+  const ghFolder = document.getElementById("ghFolder");
+  const ghToken = document.getElementById("ghToken");
+  ghOwner.value = gh.owner;
+  ghRepo.value = gh.repo;
+  ghBranch.value = gh.branch;
+  ghFolder.value = gh.folder;
+  ghToken.value = gh.token;
+
+  function currentGh() {
+    return {
+      owner: ghOwner.value.trim(),
+      repo: ghRepo.value.trim(),
+      branch: ghBranch.value.trim() || GH_DEFAULTS.branch,
+      folder: ghFolder.value.trim().replace(/^\/+|\/+$/g, "") || GH_DEFAULTS.folder,
+      token: ghToken.value.trim()
+    };
+  }
+  function currentTarget() {
+    const el = document.querySelector('input[name="target"]:checked');
+    return el ? el.value : "files";
+  }
+  function refreshGhBadge() {
+    const c = currentGh();
+    const complete = c.owner && c.repo && c.token;
+    ghBadge.textContent = complete ? "ready" : "not connected";
+    ghBadge.className = "pill " + (complete ? "ok" : "warn");
+    ghWhere.textContent = c.owner && c.repo ? c.owner + "/" + c.repo + " · " + c.folder : "—";
+    sendBtn.disabled = false;
+  }
+  [ghOwner, ghRepo, ghBranch, ghFolder, ghToken].forEach(function (el) {
+    el.addEventListener("input", function () { gh.branch = ghBranch.value; refreshGhBadge(); });
+    el.addEventListener("change", refreshGhBadge);
+  });
+  document.querySelectorAll('input[name="target"]').forEach(function (r) { r.addEventListener("change", refreshGhBadge); });
+  if (!shared.token) ghCard.open = true;
+  ghToken.addEventListener("focus", function () { if (sameOriginDefaults && shared.token && ghToken.value === shared.token) ghCard.open = true; });
+  refreshGhBadge();
+
+  document.getElementById("ghSaveBtn").addEventListener("click", function () {
+    const c = currentGh();
+    if (!c.owner || !c.repo || !c.token) { showToast("Owner, repo and token are all needed.", 2600); return; }
+    safeSet(SETTINGS_KEY, JSON.stringify(c));
+    safeSet("comicGen.githubOwner", c.owner);
+    safeSet("comicGen.githubRepo", c.repo);
+    safeSet("comicGen.githubToken", c.token);
+    showToast("✅ Remembered in this browser.");
+  });
+  document.getElementById("ghForgetBtn").addEventListener("click", function () {
+    if (!window.confirm("Remove the saved GitHub settings from this browser?")) return;
+    try { localStorage.removeItem(SETTINGS_KEY); } catch (e) {}
+    try { localStorage.removeItem("comicGen.githubToken"); } catch (e) {}
+    ghToken.value = "";
+    refreshGhBadge();
+    showToast("Token forgotten.");
+  });
+  document.getElementById("ghTestBtn").addEventListener("click", async function () {
+    const c = currentGh();
+    if (!c.owner || !c.repo || !c.token) { showToast("Owner, repo and token are all needed.", 2600); return; }
+    const btn = this;
+    btn.disabled = true;
+    showToast("⏳ Testing…", 60000);
+    try {
+      const r = await fetch("https://api.github.com/repos/" + encodeURIComponent(c.owner) + "/" + encodeURIComponent(c.repo), { headers: headers(c), cache: "no-store" });
+      if (r.ok) {
+        const j = await r.json();
+        const f = await fetch(apiUrl(c, ""), { headers: headers(c), cache: "no-store" });
+        let extra = "";
+        if (f.ok) {
+          const names = (await f.json()).map(function (e) { return e.name; });
+          extra = names.indexOf(c.folder) >= 0 ? " The “" + c.folder + "” folder already exists." : " The “" + c.folder + "” folder will be created on the first send.";
+        }
+        showToast("✅ Connected to " + j.full_name + " (" + (j.private ? "private" : "public") + ", branch " + j.default_branch + ")." + extra, 6000);
+      } else {
+        showToast(r.status === 401 || r.status === 403 ? "❌ Token rejected — it needs Contents: read and write on that repo." : "❌ HTTP " + r.status, 6000);
+      }
+    } catch (e) {
+      showToast("❌ " + String(e), 6000);
+    }
+    btn.disabled = false;
+  });
+
+  function headers(c) {
+    const h = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+    if (c.token) h.Authorization = "Bearer " + c.token;
+    return h;
+  }
+  function apiUrl(c, path) {
+    let u = "https://api.github.com/repos/" + encodeURIComponent(c.owner) + "/" + encodeURIComponent(c.repo) + "/contents/";
+    u += String(path || "").split("/").map(encodeURIComponent).join("/");
+    if (c.branch) u += "?ref=" + encodeURIComponent(c.branch);
+    return u;
+  }
+  function b64(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(bin);
+  }
+  async function ghGetFile(c, path) {
+    const r = await fetch(apiUrl(c, path) + "&cb=" + Date.now(), { headers: headers(c), cache: "no-store" });
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error("GET " + path + " → HTTP " + r.status);
+    const j = await r.json();
+    return { sha: j.sha, text: j.content ? new TextDecoder().decode(Uint8Array.from(atob(j.content.replace(/\n/g, "")), function (ch) { return ch.charCodeAt(0); })) : "" };
+  }
+  async function ghPutFile(c, path, content, message) {
+    let existing = null;
+    try { existing = await ghGetFile(c, path); } catch (e) { existing = null; }
+    const body = { message: message, content: b64(content) };
+    if (c.branch) body.branch = c.branch;
+    if (existing && existing.sha) body.sha = existing.sha;
+    let r = await fetch(apiUrl(c, path), { method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, headers(c)), body: JSON.stringify(body) });
+    if (r.status === 409) {
+      const again = await ghGetFile(c, path);
+      if (again && again.sha) { body.sha = again.sha; r = await fetch(apiUrl(c, path), { method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, headers(c)), body: JSON.stringify(body) }); }
+    }
+    if (!r.ok) {
+      let t = "";
+      try { t = (await r.json()).message || ""; } catch (e) {}
+      throw new Error("PUT " + path + " → HTTP " + r.status + (t ? " (" + t + ")" : ""));
+    }
+    const j = await r.json();
+    return { url: (j.content && j.content.html_url) || blobUrl(c, path), commit: j.commit && j.commit.sha };
+  }
+  function blobUrl(c, path) {
+    return "https://github.com/" + c.owner + "/" + c.repo + "/blob/" + encodeURIComponent(c.branch || "main") + "/" + path.split("/").map(encodeURIComponent).join("/");
+  }
+  async function ghSearchIssues(c, marker) {
+    const q = encodeURIComponent('repo:' + c.owner + "/" + c.repo + ' "' + marker + '" in:body');
+    const r = await fetch("https://api.github.com/search/issues?q=" + q, { headers: headers(c), cache: "no-store" });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j.items && j.items.length ? j.items[0] : null;
+  }
+
+  function esc(s) { return String(s == null ? "" : s); }
+
+  let lastGroup = null;
+  TICKETS.forEach(function (t) {
+    const h = document.createElement("h2");
+    h.className = "group";
+    const idEl = document.createElement("span");
+    idEl.className = "q-id";
+    idEl.textContent = t.id;
+    h.appendChild(idEl);
+    const titleEl = document.createElement("span");
+    titleEl.textContent = t.title;
+    h.appendChild(titleEl);
+    const kind = document.createElement("span");
+    kind.className = "pill";
+    kind.textContent = t.kind;
+    kind.id = "tstate-" + t.id;
+    h.appendChild(kind);
+    formRoot.appendChild(h);
+
+    const sub = document.createElement("p");
+    sub.className = "group-sub";
+    sub.textContent = "Requested: “" + t.request + "”";
+    formRoot.appendChild(sub);
+
+    t.questions.forEach(function (q) { formRoot.appendChild(buildQuestion(q)); });
+  });
+
+  function buildQuestion(q) {
+    const sec = document.createElement("section");
+    sec.className = "q";
+    sec.id = "q-" + q.id;
+
+    const head = document.createElement("div");
+    head.className = "q-head";
+    const idBadge = document.createElement("span");
+    idBadge.className = "q-id";
+    idBadge.textContent = q.id;
+    const txt = document.createElement("div");
+    txt.className = "q-text";
+    txt.textContent = q.text;
+    head.appendChild(idBadge);
+    head.appendChild(txt);
+    sec.appendChild(head);
+
+    const control = document.createElement("div");
+    control.className = "q-control";
+
+    if (q.type === "select") {
+      const sel = document.createElement("select");
+      sel.id = "ctl-" + q.id;
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "— choose an answer —";
+      sel.appendChild(blank);
+      (q.options || []).forEach(function (opt, i) {
+        const o = document.createElement("option");
+        o.value = String(i);
+        o.textContent = opt;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", persist);
+      control.appendChild(sel);
+    } else if (q.type === "checkboxes") {
+      const box = document.createElement("div");
+      box.className = "opts";
+      box.id = "ctl-" + q.id;
+      (q.options || []).forEach(function (opt, i) {
+        const lab = document.createElement("label");
+        lab.className = "opt";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = String(i);
+        cb.id = "ctl-" + q.id + "-" + i;
+        cb.addEventListener("change", persist);
+        const span = document.createElement("span");
+        span.textContent = opt;
+        lab.appendChild(cb);
+        lab.appendChild(span);
+        box.appendChild(lab);
+      });
+      control.appendChild(box);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.id = "ctl-" + q.id;
+      ta.rows = q.rows || 4;
+      ta.placeholder = q.placeholder || "";
+      ta.addEventListener("input", persist);
+      control.appendChild(ta);
+    }
+    sec.appendChild(control);
+
+    if (q.notes !== false) {
+      const nl = document.createElement("label");
+      nl.className = "note-label";
+      nl.setAttribute("for", "note-" + q.id);
+      nl.textContent = q.notesLabel || "Notes (optional):";
+      const nt = document.createElement("textarea");
+      nt.id = "note-" + q.id;
+      nt.rows = 2;
+      nt.addEventListener("input", persist);
+      sec.appendChild(nl);
+      sec.appendChild(nt);
+    }
+
+    applyDraft(q);
+    return sec;
+  }
+
+  function applyDraft(q) {
+    const s = draft[q.id];
+    if (!s) return;
+    if (q.type === "select") {
+      const sel = document.getElementById("ctl-" + q.id);
+      if (sel && s.choice != null && s.choice !== "") sel.value = String(s.choice);
+    } else if (q.type === "checkboxes") {
+      (s.checked || []).forEach(function (i) {
+        const cb = document.getElementById("ctl-" + q.id + "-" + i);
+        if (cb) cb.checked = true;
+      });
+    } else {
+      const el = document.getElementById("ctl-" + q.id);
+      if (el && s.text) el.value = s.text;
+    }
+    if (q.notes !== false) {
+      const nt = document.getElementById("note-" + q.id);
+      if (nt && s.note) nt.value = s.note;
+    }
+  }
+
+  function readAnswer(q) {
+    const out = { choice: "", checked: [], text: "", note: "" };
+    if (q.type === "select") {
+      const sel = document.getElementById("ctl-" + q.id);
+      out.choice = sel ? sel.value : "";
+    } else if (q.type === "checkboxes") {
+      (q.options || []).forEach(function (opt, i) {
+        const cb = document.getElementById("ctl-" + q.id + "-" + i);
+        if (cb && cb.checked) out.checked.push(i);
+      });
+    } else {
+      const el = document.getElementById("ctl-" + q.id);
+      out.text = el ? el.value : "";
+    }
+    if (q.notes !== false) {
+      const nt = document.getElementById("note-" + q.id);
+      out.note = nt ? nt.value : "";
+    }
+    return out;
+  }
+
+  function answerText(q) {
+    const a = readAnswer(q);
+    if (q.type === "select") return (a.choice === "" || q.options[a.choice] == null) ? "" : q.options[a.choice];
+    if (q.type === "checkboxes") return a.checked.length ? a.checked.map(function (i) { return q.options[i]; }).join("; ") : "";
+    return esc(a.text).trim();
+  }
+  function noteText(q) { return q.notes === false ? "" : esc(readAnswer(q).note).trim(); }
+  function isAnswered(q) { return answerText(q) !== "" || noteText(q) !== ""; }
+
+  let persistTimer = null;
+  function persist() {
+    const data = {};
+    ALL_QUESTIONS.forEach(function (q) {
+      const a = readAnswer(q);
+      data[q.id] = { choice: a.choice, checked: a.checked, text: a.text, note: a.note };
+    });
+    draft = data;
+    safeSet(DRAFT_KEY, JSON.stringify(data));
+    updateStatus();
+    if (previewEl.getAttribute("data-open") === "1") previewEl.textContent = buildText();
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(function () {
+      document.getElementById("pageState").textContent = "draft saved " + new Date().toLocaleTimeString();
+    }, 400);
+  }
+
+  function buildPayload() {
+    const now = new Date();
+    return {
+      form: { id: FORM_META.id, version: FORM_META.version, at: now.toISOString() },
+      tickets: TICKETS.map(function (t) {
+        const qs = t.questions.map(function (q) {
+          return { id: q.id, text: q.text, answer: answerText(q), note: noteText(q), answered: isAnswered(q) };
+        });
+        const answered = qs.filter(function (q) { return q.answered; }).length;
+        return {
+          id: t.id, slug: t.slug, kind: t.kind, title: t.title, request: t.request,
+          questions: qs, answered: answered, total: qs.length,
+          status: answered === 0 ? "open" : (answered === qs.length ? "answered" : "partially-answered")
+        };
+      })
+    };
+  }
+
+  function ticketMarkdown(t, p) {
+    const L = [];
+    const now = new Date().toISOString();
+    const genLabel = window.generatorName || (location.protocol === "file:" ? "" : (location.hostname || ""));
+    L.push("---");
+    L.push("ticket: " + t.id);
+    L.push("title: " + JSON.stringify(t.title));
+    L.push("kind: " + t.kind);
+    L.push("status: " + t.status);
+    L.push("answers: " + t.answered + "/" + t.total);
+    L.push("form: " + p.form.id);
+    L.push("updated: " + now);
+    if (genLabel) L.push("generator: " + genLabel);
+    L.push("---");
+    L.push("");
+    L.push("# " + t.id + " — " + t.title);
+    L.push("");
+    L.push("- **Kind:** " + t.kind);
+    L.push("- **Status:** " + t.status + (t.status === "answered" ? " (answered — awaiting the implementation go-ahead)" : ""));
+    L.push("- **Answers:** " + t.answered + " of " + t.total);
+    L.push("- **Answered:** " + now);
+    L.push("");
+    L.push("## Original request (verbatim)");
+    L.push("");
+    t.request.split("\n").forEach(function (line) { L.push("> " + line); });
+    L.push("");
+    L.push("## Clarification questions & answers");
+    L.push("");
+    t.questions.forEach(function (q) {
+      L.push("### " + q.id + ". " + q.text);
+      L.push("");
+      L.push("- **Answer:** " + (q.answer || "_(no answer given)_"));
+      if (q.note) L.push("- **Note:** " + q.note.replace(/\n/g, "\n  "));
+      L.push("");
+    });
+    L.push("## Implementation");
+    L.push("");
+    L.push("_Pending — filled in when the work is done (branch / PR, released version, changelog entry)._");
+    L.push("");
+    return L.join("\n");
+  }
+
+  function indexRowsFor(tickets) {
+    return tickets.map(function (t) {
+      return { id: t.id, link: t.slug + ".md", rest: t.title + " | " + t.kind + " | " + t.status + " | " + t.answered + "/" + t.total + " | " + new Date().toISOString().slice(0, 10) + " |" };
+    });
+  }
+  function mergeIndex(existingText, rows) {
+    const map = new Map();
+    const re = /^\|\s*\[(T-\d+)\]\(([^)]+)\)\s*\|(.*)$/;
+    String(existingText || "").split("\n").forEach(function (line) {
+      const m = line.match(re);
+      if (m) map.set(m[1], { id: m[1], link: m[2], rest: m[3] });
+    });
+    rows.forEach(function (r) { map.set(r.id, r); });
+    const ids = Array.from(map.keys()).sort();
+    const out = [];
+    out.push("# Tickets");
+    out.push("");
+    out.push("Change requests for this project. One markdown file per ticket, each with a YAML header (`status`, `kind`, `answers`) so the state is machine-readable. Anyone (including the AI) can flip a ticket's `status` by editing its file.");
+    out.push("");
+    out.push("| Ticket | Title | Kind | Status | Answers | Updated |");
+    out.push("| --- | --- | --- | --- | --- | --- |");
+    ids.forEach(function (id) { const r = map.get(id); out.push("| [" + r.id + "](" + r.link + ") | " + r.rest); });
+    out.push("");
+    return out.join("\n");
+  }
+
+  function buildText() {
+    const p = buildPayload();
+    const lines = [];
+    lines.push("=== " + FORM_META.title.toUpperCase() + " ===");
+    lines.push("Form: " + p.form.id + "  (v" + p.form.version + ")  ·  " + new Date().toLocaleString());
+    lines.push("");
+    let unanswered = [];
+    p.tickets.forEach(function (t) {
+      lines.push("---------- " + t.id + " — " + t.title + " [" + t.status + "] ----------");
+      t.questions.forEach(function (q) {
+        lines.push("[" + q.id + "] " + q.text);
+        lines.push("  ANSWER: " + (q.answer || "(no answer given)"));
+        if (q.note) lines.push("  NOTE: " + q.note.replace(/\n/g, "\n        "));
+        if (!q.answered) unanswered.push(q.id);
+      });
+      lines.push("");
+    });
+    if (unanswered.length) {
+      lines.push("---------- NOT ANSWERED ----------");
+      lines.push(unanswered.join(", "));
+      lines.push("");
+    }
+    lines.push("=== END OF ANSWERS ===");
+    return lines.join("\n");
+  }
+
+  function updateStatus() {
+    let n = 0;
+    ALL_QUESTIONS.forEach(function (q) {
+      const el = document.getElementById("q-" + q.id);
+      if (isAnswered(q)) { n++; if (el) el.classList.add("answered"); } else if (el) el.classList.remove("answered");
+    });
+    statusEl.textContent = n + " of " + ALL_QUESTIONS.length + " answered";
+    if (n === ALL_QUESTIONS.length) statusEl.classList.add("done"); else statusEl.classList.remove("done");
+    TICKETS.forEach(function (t) {
+      const a = t.questions.filter(isAnswered).length;
+      const el = document.getElementById("tstate-" + t.id);
+      if (!el) return;
+      el.textContent = t.kind + " · " + a + "/" + t.questions.length;
+      el.className = "pill" + (a === 0 ? "" : (a === t.questions.length ? " ok" : " warn"));
+    });
+  }
+
+  function showToast(msg, ms) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toastEl.classList.remove("show"); }, ms || 2400);
+  }
+
+  function legacyCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  async function copyText(text) {
+    let ok = false;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { ok = false; }
+    }
+    if (!ok) ok = legacyCopy(text);
+    return ok;
+  }
+
+  copyBtn.addEventListener("click", async function () {
+    const text = buildText();
+    const ok = await copyText(text);
+    if (ok) { fallbackEl.classList.remove("show"); showToast("✅ Copied! Paste it into the chat."); }
+    else { fallbackText.value = text; fallbackEl.classList.add("show"); fallbackText.focus(); fallbackText.select(); showToast("Clipboard blocked — copy the text below.", 4000); }
+  });
+
+  function showResults(html) {
+    resultsEl.innerHTML = html;
+    resultsEl.classList.add("show");
+    resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function sendViaFiles(c, p) {
+    const written = [];
+    for (let i = 0; i < p.tickets.length; i++) {
+      const t = p.tickets[i];
+      if (t.answered === 0) continue;
+      showToast("⏳ Writing " + t.id + " (" + (i + 1) + " of " + p.tickets.length + ")…", 60000);
+      const path = c.folder + "/" + t.slug + ".md";
+      const message = t.id + " — " + t.status + " — " + t.title;
+      const res = await ghPutFile(c, path, ticketMarkdown(t, p), message);
+      written.push({ ticket: t, path: path, url: res.url });
+    }
+    if (written.length) {
+      const quiet = document.getElementById("ghQuiet").checked;
+      if (!quiet) {
+        const idxPath = c.folder + "/README.md";
+        showToast("⏳ Updating the ticket index…", 60000);
+        let existing = "";
+        try { const f = await ghGetFile(c, idxPath); existing = f ? f.text : ""; } catch (e) { existing = ""; }
+        await ghPutFile(c, idxPath, mergeIndex(existing, indexRowsFor(written.map(function (w) { return w.ticket; }))), "tickets: update index");
+      }
+    }
+    return written;
+  }
+
+  async function createIssue(c, t, p) {
+    const marker = "<!-- " + FORM_META.id + ":" + t.id + " -->";
+    const body = marker + "\n\n" + ticketMarkdown(t, p).split("\n").slice(6).join("\n");
+    const existing = await ghSearchIssues(c, marker);
+    if (existing) {
+      const r = await fetch("https://api.github.com/repos/" + encodeURIComponent(c.owner) + "/" + encodeURIComponent(c.repo) + "/issues/" + existing.number, {
+        method: "PATCH", headers: Object.assign({ "Content-Type": "application/json" }, headers(c)), body: JSON.stringify({ title: t.id + " — " + t.title, body: body })
+      });
+      if (!r.ok) throw new Error("PATCH issue " + existing.number + " → HTTP " + r.status);
+      return { url: existing.html_url };
+    }
+    const r = await fetch("https://api.github.com/repos/" + encodeURIComponent(c.owner) + "/" + encodeURIComponent(c.repo) + "/issues", {
+      method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, headers(c)), body: JSON.stringify({ title: t.id + " — " + t.title, body: body, labels: [t.kind] })
+    });
+    if (!r.ok) {
+      let t2 = "";
+      try { t2 = (await r.json()).message || ""; } catch (e) {}
+      throw new Error("POST issue → HTTP " + r.status + (t2 ? " (" + t2 + ")" : ""));
+    }
+    const j = await r.json();
+    return { url: j.html_url };
+  }
+
+  async function sendViaIssues(c, p) {
+    const written = [];
+    for (let i = 0; i < p.tickets.length; i++) {
+      const t = p.tickets[i];
+      if (t.answered === 0) continue;
+      showToast("⏳ Creating issue " + t.id + " (" + (i + 1) + " of " + p.tickets.length + ")…", 60000);
+      const res = await createIssue(c, t, p);
+      written.push({ ticket: t, path: "issue", url: res.url });
+    }
+    return written;
+  }
+
+  sendBtn.addEventListener("click", async function () {
+    const p = buildPayload();
+    const answeredTickets = p.tickets.filter(function (t) { return t.answered > 0; });
+    if (!answeredTickets.length) { showToast("Answer at least one question first.", 3000); return; }
+    const c = currentGh();
+    const text = buildText();
+    safeSet(LASTSENT_KEY, JSON.stringify(p));
+    if (!c.owner || !c.repo || !c.token) {
+      const ok = await copyText(text);
+      showResults("<b>No GitHub connection yet.</b> Your answers are saved as a draft in this browser" + (ok ? " and copied to the clipboard" : "") + ".<div class=\"res-line\">Open the <b>GitHub tickets</b> panel above, fill in owner / repo / token, then press Send again — or just paste the copied text into the chat.</div>");
+      if (!ok) { fallbackText.value = text; fallbackEl.classList.add("show"); }
+      showToast("Not connected to GitHub — answers kept locally.", 4000);
+      return;
+    }
+    const target = currentTarget();
+    sendBtn.disabled = true;
+    copyBtn.disabled = true;
+    let written = [];
+    let err = null;
+    let fellBack = false;
+    try {
+      written = target === "issues" ? await sendViaIssues(c, p) : await sendViaFiles(c, p);
+    } catch (e) {
+      err = String(e);
+      if (target === "issues") {
+        fellBack = true;
+        try { written = await sendViaFiles(c, p); err = null; } catch (e2) { err = String(e2); }
+      }
+    }
+    sendBtn.disabled = false;
+    copyBtn.disabled = false;
+    if (err) {
+      const ok = await copyText(text);
+      showResults("<b>⚠️ GitHub write failed.</b><div class=\"res-err\">" + esc(err).replace(/</g, "&lt;") + "</div><div class=\"res-line\">Your answers are saved as a draft in this browser" + (ok ? " and copied to the clipboard" : "") + " — fix the token above and press Send again, or paste the copied text into the chat.</div>");
+      if (!ok) { fallbackText.value = text; fallbackEl.classList.add("show"); }
+      showToast("GitHub write failed.", 4000);
+      return;
+    }
+    const folderUrl = "https://github.com/" + c.owner + "/" + c.repo + "/tree/" + encodeURIComponent(c.branch) + "/" + c.folder.split("/").map(encodeURIComponent).join("/");
+    let html = "<b>✅ Sent " + written.length + " ticket" + (written.length === 1 ? "" : "s") + ".</b>";
+    if (fellBack) html += " <span class=\"pill warn\">Issues refused (token needs Issues: read+write) — wrote ticket files instead</span>";
+    html += "<div style=\"margin-top:8px\">";
+    written.forEach(function (w) {
+      html += "<div class=\"res-line\"><span class=\"pill ok\">" + w.ticket.id + "</span><span>" + esc(w.ticket.title) + "</span><a href=\"" + w.url + "\" target=\"_blank\" rel=\"noopener\">" + w.url + "</a></div>";
+    });
+    html += "</div><div class=\"res-line\"><a href=\"" + folderUrl + "\" target=\"_blank\" rel=\"noopener\">" + (target === "issues" && !fellBack ? "All issues" : "All tickets in the repo") + " →</a></div>";
+    html += "<div class=\"res-line\">Now just tell the AI “sent”.</div>";
+    if (written.length < answeredTickets.length) html += "<div class=\"res-line\">(" + (answeredTickets.length - written.length) + " answered ticket(s) were skipped.)</div>";
+    showResults(html);
+    showToast("✅ " + written.length + " ticket" + (written.length === 1 ? "" : "s") + " sent to GitHub.", 4000);
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    if (!window.confirm("Clear every answer and note on this form?")) return;
+    ALL_QUESTIONS.forEach(function (q) {
+      if (q.type === "select") {
+        const sel = document.getElementById("ctl-" + q.id);
+        if (sel) sel.value = "";
+      } else if (q.type === "checkboxes") {
+        (q.options || []).forEach(function (opt, i) {
+          const cb = document.getElementById("ctl-" + q.id + "-" + i);
+          if (cb) cb.checked = false;
+        });
+      } else {
+        const el = document.getElementById("ctl-" + q.id);
+        if (el) el.value = "";
+      }
+      if (q.notes !== false) {
+        const nt = document.getElementById("note-" + q.id);
+        if (nt) nt.value = "";
+      }
+    });
+    persist();
+    showToast("Cleared.");
+  });
+
+  const previewDetails = document.getElementById("previewDetails");
+  previewDetails.addEventListener("toggle", function () {
+    previewEl.setAttribute("data-open", previewDetails.open ? "1" : "0");
+    if (previewDetails.open) previewEl.textContent = buildText();
+  });
+
+  updateStatus();
+  document.getElementById("pageState").textContent = Object.keys(draft).length ? "draft restored" : "";
+})();
+</script>
+</body>
+</html>
