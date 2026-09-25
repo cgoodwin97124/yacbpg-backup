@@ -2,7 +2,8 @@
 ticket: T-03
 title: "“Recent” list under File — reopen a saved project without the system dialog"
 kind: feature
-status: answered
+status: done
+released: 2026.09.25.1
 answers: 4/4
 form: yacbpg-tickets-2026-09-25
 updated: 2026-09-25T01:30:18.570Z
@@ -12,7 +13,7 @@ generator: f0vstb2fbe
 # T-03 — “Recent” list under File — reopen a saved project without the system dialog
 
 - **Kind:** feature
-- **Status:** answered (answered — awaiting the implementation go-ahead)
+- **Status:** done — shipped in **2026.09.25.1** (2026-09-25)
 - **Answers:** 4 of 4
 - **Answered:** 2026-09-25T01:30:18.570Z
 
@@ -40,4 +41,10 @@ generator: f0vstb2fbe
 
 ## Implementation
 
-_Pending — filled in when the work is done (branch / PR, released version, changelog entry)._
+T-03 — shipped in **2026.09.25.1** (2026-09-25) — see CHANGELOG.md and DEV-NOTES.md (BATCH 2026.09.25.1).
+
+- A `Recent:` block sits directly under the Backup Project chip row in 📄 File (`#recentAddBtn`, `#recentListEl`, a Clear-list button and a hint that explains the browser difference). Entries are stored newest-first in the existing `comicGenSaveState` IndexedDB under the key `recent`.
+- `beginImport(file, isZip)` was factored out of `importSettingsFromFile` so clicking an entry runs the SAME import path as the file dialog, including the usual replace-this-project warning.
+- Entries are added by 💾 Save as…, by the download fallback of 💾 Save…, by ⬆ Import Project (.json and .zip) and by ＋ Add / Open… (the real picker where available, a hidden file input otherwise).
+- DESIGN NOTE for this author's browser: Firefox has no File System Access API, so where the browser cannot hand back a real file handle the entry keeps its own in-browser copy of the project as it was saved; it still opens even if the original file has since been moved or deleted. Chrome/Edge store a real handle and always load that file's current contents. The hint under the list says which behaviour is in force.
+- How many entries are kept is configurable — see T-05.
