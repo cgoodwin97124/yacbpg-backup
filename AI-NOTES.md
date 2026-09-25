@@ -838,6 +838,7 @@ individually-ticked panel, used for Shift-ranges). Nothing about it is collected
 
 ## 16. Author ticket system (added 2026-09-25)
 
+**STATUS 2026-09-25: the first batch (T-01 … T-05) has been sent by the author and every ticket now reads status: answered — read the ticket files before touching any of them. The answers + notes are authoritative, and the notes add new requests (e.g. the "Generate (x) to (y)" inclusive-range idea on T-01). Implementation still waits for the author's go-ahead.**
 Question/answer tickets between the author and the AI worker now live in this repo, not in scratch/.
 
 - **The form:** src/question-form.html — a self-contained, data-driven ticket form (inline CSS + vanilla JS). All content is one TICKETS = [...] array (id, slug, kind, title, verbatim request, questions[]); a question is an object with type "select" | "checkboxes" | "text", an options[] list and an optional custom notes label. Editing tickets means editing that array and nothing else.
