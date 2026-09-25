@@ -668,6 +668,7 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
 ### 2026-09-25 — FEATURE: "Generate To Here" button (Panel menu), mirroring "Generate From Here"
+- **TICKET:** T-01 — tickets/T-01-generate-to-here.md (answers awaited; see the ticket for the questions)
 - **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
 - **Author, 2026-09-25, verbatim:** "I'd like a \"Generate To Here\" button to go with \"Generate From Here\" under the Panel menu. Clicking this button will generate all of the current page's panels from panel 1 up to and including the panel where it was clicked."
 - **RECON (2026-09-25):** the generation engine already does the hard part. `generateComicPage(startPanel, panelList)` (~index.html:7117) accepts an explicit ordered panel list and iterates exactly those (`seq`), so `panelGenerateFromHereAction(i)` (~4756) is nothing but `generateComicPage(i)`. "Generate To Here" therefore needs only a sibling handler calling `generateComicPage(null, [1 … i])` — no changes to pause/stop, resume, 🔒 protection, per-panel busy flags, the tab-visibility pause or the 🕘 prompt history (each panel still files its own history entry via `generateSinglePanel`).
@@ -680,6 +681,7 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 - **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
 
 ### 2026-09-25 — DOC NOTE: "Cow in field" is a throwaway test project and may be clobbered at any time
+- **TICKET:** T-02 — tickets/T-02-cow-in-field-throwaway-note.md (answers awaited; see the ticket for the questions)
 - **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
 - **Author, 2026-09-25, verbatim:** "Add a note in your documents that the \"Cow in field\" project is a throwaway, and if it's loaded it can always be clobbered."
 - **RECON (2026-09-25):** doc-only, no code. `AI-NOTES.md` §1 "TEST DATA" already records that the "Cow in field" project is the author's sandbox, but it does NOT say it is disposable — a future worker could still treat it as precious. The note belongs there (the worker's persistent memory), phrased so it is impossible to miss: "Cow in field" is a THROWAWAY test project — the worker may overwrite it at any time during verification, and losing it is expected and harmless; the mandatory test protocol (back up all touched `comicGen.*` keys to a second localStorage key AND a workspace file, verify the read-back, stub the native dialogs, restore, then hash-verify byte-for-byte) still applies to every OTHER project and to anything the author is actually working on.
@@ -689,6 +691,7 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 - **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
 
 ### 2026-09-25 — FEATURE: how many recent files are kept must be user-configurable (Edit → Preferences)
+- **TICKET:** T-05 — tickets/T-05-recent-count-preference.md (answers awaited; see the ticket for the questions)
 - **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
 - **Author, 2026-09-25, verbatim:** "Let's add in: Allow the number of recent filename/paths kept to be configured by the user under Edit -> Preferences."
 - **RELATES TO:** the "Recent" list under 📄 File (entry below) — this is a settings knob for it, so the two should land in the same release.
@@ -699,6 +702,7 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 - **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
 
 ### 2026-09-25 — FEATURE: "Recent" list under 📄 File — reopen a saved project (JSON or ZIP) without the system file dialog
+- **TICKET:** T-03 — tickets/T-03-recent-list-under-file.md (answers awaited; see the ticket for the questions)
 - **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
 - **Author, 2026-09-25, verbatim:** "Can we add a \"Recent\" list under File that would hold the path and filename of the saved file? Clicking on that would directly load the project (JSON or ZIP) with the usual warning to the user rather than going through the system's Load File dialog."
 - **RECON (2026-09-25):**
@@ -714,6 +718,7 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 - **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
 
 ### 2026-09-25 — FEATURE: Panel Library's "Library Description" → editable, project-saved "Basic Description" with a refresh-from-library chip
+- **TICKET:** T-04 — tickets/T-04-basic-description.md (answers awaited; see the ticket for the questions)
 - **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
 - **Author, 2026-09-25, verbatim:** "In the Panel Library menu, let's rename Library Description to Basic Description. By default it populates from the character or location's Library Description stored in the main Library, but it *can* be edited, and editing it causes the panel to use the edited description rather than pulling it in from the library. I'd like to be able to save it with the project, and I'd also like a small chip button that refreshes it from the library's description. If the character or location's Basic Description differs from the description stored in the library, use the Basic Description instead of the library's description. Clicking the \"copy from the previous panel\" button copies the previous panel's Basic Description, regardless of whether it's edited. Also, I'd like each one to in some way visually call out a Basic Description that is different from the library's description."
 - **RECON (2026-09-25):** today every character slot and the location has TWO fields inside the 📖 Panel Library accordion (`charRowHtml` / `locRowHtml`, ~2582-2622): a READ-ONLY "Library description" (`div.pl-libdesc`, filled by `refreshPanelLineDesc()` → `plLineDescText()`), and an editable "This panel — extra description" (`#panel-char-extra-i-s` / `#panel-loc-extra-i`). `buildPanelPrompt()` (~5162) contributes `resolveDesc(sel)` — the library/built-in description — immediately FOLLOWED by the panel's `extra`, all joined by ", ". So today it behaves as "library text + appended extra"; the request turns it into ONE editable description that REPLACES the library text in the prompt whenever it differs from it.
@@ -821,6 +826,16 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-09-25 — TOOLING: GitHub-backed author ticket system (question form → repo tickets/)
+- **Status:** ✅ DONE 2026-09-25 — infrastructure only; the five tickets it carries still await the author's answers (nothing implemented).
+- **Author, 2026-09-25, verbatim (three asks in a row while the ticket write-ups were being prepared):** (1) "is it possible that when you have questions, you could generate a really basic HTML (plus CSS or Javascript) that would have dropdowns for yes or no or other 'choice' answers, checkboxes for multiple possible answers to a single question, and freeform text entry for me to type answers in? It would have a 'copy to clipboard' button at the bottom ... the answers themselves, into the clipboard so I can just paste it here?"; (2) "since you're doing it in the preview pane, instead of copy and pasting, can we just do a 'Send answers' button?"; (3) "It almost sounds like we're creating a ticketing system. The answers can be stored in Github if that helps, with links. Let's build this with future expandability in mind into a ticketing system to interface with Github's change request system."
+- **What was built:** src/question-form.html — ONE self-contained, data-driven ticket form (inline CSS + vanilla JS, no build step, works from file://). All content lives in a single TICKETS = [...] block; each ticket has an id (T-01 …), a file slug, a kind (feature/doc/bug), the author's verbatim request, and its clarification questions (single-choice dropdown / multi-select checkboxes / free text, each with an optional notes field).
+- **How the author uses it:** the AI mounts it full-screen over the preview pane (window.__openQuestionForm() on the live page, with a ✕ close button). It runs on the generator's own origin, so it silently picks up comicGen.githubOwner / comicGen.githubRepo / comicGen.githubToken — no setup and no token typing. Pressing 📤 Send answers writes one markdown ticket per request and updates the ticket index; the form then lists the links and the author replies "sent". 📋 Copy answers and a localStorage draft remain as fallbacks, and the same file works when downloaded and opened locally (there it asks for owner/repo/token once).
+- **Where tickets live:** tickets/T-0x-<slug>.md with a YAML header (ticket, title, kind, status, answers, form, updated, generator), a "## Original request (verbatim)" quote, a "## Clarification questions & answers" list and a "## Implementation" placeholder; tickets/README.md is the index table (rebuilt on every send by merging the existing rows).
+- **Statuses:** open / partially-answered / answered. When a ticket is implemented, its file gets its status flipped and its Implementation section filled in (branch / PR, released version, changelog entry).
+- **Two targets, room for more:** ticket files (default — enough with the existing fine-grained PAT's Contents: read+write) and GitHub Issues (optional — needs Issues: read+write on the token; if the token refuses, the form falls back to ticket files and says so). Another backend is one more send() function — the "future expandability" the author asked for.
+- **The five queued 2026-09-25 entries are now tickets T-01 … T-05** (each has a TICKET line below its heading) — awaiting answers, still not implemented.
+- **VERIFIED:** (a) mocked end-to-end in the live page: 17 questions render, the PUTs carry the right paths/messages/branch, ticket markdown + index table are correct, partial answers give status partially-answered, and the no-connection path copies to the clipboard; (b) a real round-trip on the repo: tickets/.selftest.md created (PUT 201), read back byte-exact (UTF-8 intact), read unauthenticated through the public API, then deleted (DELETE 200).
 
 ### 2026-09-23 — BUG: Save produced no feedback at all; the generator stayed on 2026.09.23.8 (DONE — 2026.09.23.9)
 - **Status:** ✅ DONE (2026.09.23.9). Author, verbatim: "Saved!  Go ahead and re-push." then "It didn't
