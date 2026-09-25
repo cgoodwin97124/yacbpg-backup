@@ -667,6 +667,31 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
+### 2026-09-25 — FEATURE: "Generate To Here" button (Panel menu), mirroring "Generate From Here"
+- **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
+- **Author, 2026-09-25, verbatim:** "I'd like a \"Generate To Here\" button to go with \"Generate From Here\" under the Panel menu. Clicking this button will generate all of the current page's panels from panel 1 up to and including the panel where it was clicked."
+- **RECON (2026-09-25):** pending.
+- **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
+
+### 2026-09-25 — DOC NOTE: "Cow in field" is a throwaway test project and may be clobbered at any time
+- **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
+- **Author, 2026-09-25, verbatim:** "Add a note in your documents that the \"Cow in field\" project is a throwaway, and if it's loaded it can always be clobbered."
+- **RECON (2026-09-25):** pending.
+- **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
+
+### 2026-09-25 — FEATURE: "Recent" list under 📄 File — reopen a saved project (JSON or ZIP) without the system file dialog
+- **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
+- **Author, 2026-09-25, verbatim:** "Can we add a \"Recent\" list under File that would hold the path and filename of the saved file? Clicking on that would directly load the project (JSON or ZIP) with the usual warning to the user rather than going through the system's Load File dialog."
+- **RECON (2026-09-25):** pending.
+- **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
+
+### 2026-09-25 — FEATURE: Panel Library's "Library Description" → editable, project-saved "Basic Description" with a refresh-from-library chip
+- **Status:** 🕒 **QUEUED 2026-09-25** — logged on request; RECON in progress. **No code written** — the author explicitly said to hold implementation until they give the go-ahead.
+- **Author, 2026-09-25, verbatim:** "In the Panel Library menu, let's rename Library Description to Basic Description. By default it populates from the character or location's Library Description stored in the main Library, but it *can* be edited, and editing it causes the panel to use the edited description rather than pulling it in from the library. I'd like to be able to save it with the project, and I'd also like a small chip button that refreshes it from the library's description. If the character or location's Basic Description differs from the description stored in the library, use the Basic Description instead of the library's description. Clicking the \"copy from the previous panel\" button copies the previous panel's Basic Description, regardless of whether it's edited. Also, I'd like each one to in some way visually call out a Basic Description that is different from the library's description."
+- **RECON (2026-09-25):** pending.
+- **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
+
+
 
 ### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
 - **Status:** ACTIVE (author-mandated 2026-09-23, in force until the author says otherwise). Docs-only — no
