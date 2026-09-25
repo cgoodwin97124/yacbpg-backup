@@ -74,7 +74,10 @@ only live ephemerally or inside `index.html`'s comment block.
   📄 File → ⬆ Import Project whenever a populated project is needed. It exists to be wiped, overwritten and
   re-imported by test runs, and the author keeps their own copy, so destroying the live preview state while
   testing it is expected and needs no recovery — but back the bytes up first anyway (see the test protocol in
-  `ISSUES.md` 2026-09-24), and never assume the same for any other project.
+  `ISSUES.md` 2026-09-24), and never assume the same for any other project. **IT CAN BE CLOBBERED AT ANY TIME (author, 2026-09-25, ticket T-02):**
+  whatever sits in the live preview under that name — including a project a session just built there — may be loaded,
+  overwritten or wiped without warning by anyone, including a future AI session. Never leave anything in it you would
+  mind losing, and never treat its contents as a source of truth for the author's real work.
 
 ## 2. Boot / init sequence (bottom of the IIFE)
 
@@ -102,9 +105,12 @@ only live ephemerally or inside `index.html`'s comment block.
 - `comicGen.panelState` — versioned `{version:2, projectName, imageSizeSel/W/H, guidanceScale,
   imgCountDefault, previewDelay, previewOn, globalPos, globalNeg, nsfw, currentPage, pages:{N: pageData}}`.
   pageData = `{name, panelCountSel, panelCountCustom, seed, 1..24: panelEntry}`.
-  panelEntry = `{chars:[{sel,extra}]x3, title, protectSlots:[bool x4], loc, locExtra, action, seed,
+  panelEntry = `{chars:[{sel,base,extra}]x3, title, protectSlots:[bool x4], loc, locBase, locExtra, action, seed,
   imgCount, style, promptOverride, extras:[{type, sel, desc}]}` (2026-08-15.1 — `extras` holds arbitrary
-  additional objects of any library type, created via the 🧩 Panel Objects add bar). The ⟳ persist flags
+  additional objects of any library type, created via the 🧩 Panel Objects add bar). As of 2026.09.25.1 `chars[].base` and `locBase` hold the editable **Basic Description** (§17) — the panel's own
+  copy of the library text, seeded when a selection is made, frozen once edited, and the thing the prompt actually
+  uses; a slot with NO `base` key is filled by `migratePanelBaseDescriptions` on restore (null for built-ins until
+  `getMaps()` resolves, hence the `data-needSeed` sentinel). The ⟳ persist flags
   (`chars[].persist`, `locPersist`, `actPersist`) were REMOVED 2026-08-16 (changelog 2026.08.16.11) — old
   saved entries may still carry them but they are ignored. v1 flat data auto-migrates via `ensurePages()`.
 - `comicGen.libObjects` — unified Panel Library Objects store `[{id, type, name, desc}]` where `type`
@@ -116,6 +122,9 @@ only live ephemerally or inside `index.html`'s comment block.
 - `comicGen.activeMenu`, `comicGen.layoutMode`, `comicGen.menuVisible`,
   `comicGen.panelsVisible` — UI prefs ('1'/'0' for the toggles)
 - `comicGen.hidePasswordPref` — '1'/'0': require the (session-only) panels password (2026-08-14.7)
+- `comicGen.recentMax` — how many entries the **Recent** list under 📄 File SHOWS (0 hides it entirely; default 5,
+  max 50). Browser-level only, never project data, never exported. The stored list always keeps the newest five
+  regardless of this number (ticket T-05/5b) — see §17.
 - `comicGen.promptThumbs` — `{key: dataUrl}` of the small thumbnails shown on 🕘 Generated Prompt entries, ONE
   PER GENERATED IMAGE (capped; deliberately OUTSIDE `panelState` so the project state, the JSON editor document
   and Export / Import all stay lean). See 2026.09.24.4 / .5 below.
@@ -124,7 +133,11 @@ only live ephemerally or inside `index.html`'s comment block.
   build on it.
 
 
-**IndexedDB** `comicGenSaveState` — `{handle, name}` (File System Access handle for 💾 Save…)
+**IndexedDB** `comicGenSaveState` → store `main`:
+- key `handle` → `{handle, name}` (File System Access handle for 💾 Save…)
+- key `recent` → an ARRAY of the Recent-list entries, newest first: `{kind:'handle', handle, name, at}` where the
+  browser supports File System Access, or `{kind:'snapshot', name, at, text}` (a copy of the saved project JSON)
+  where it does not — Firefox/Safari. See §17 (T-03).
 
 **Session-only (in memory, per page)** — NOT persisted, wiped on reload:
 - `pageSession[N] = {images}`; current page's live ref is `panelImages`
@@ -191,15 +204,23 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
        (`#panel-char-select-N-S` / `#panel-loc-select-N`) + ⇤ `.btn-copy-prev` (`copyFromPrevPanel`) +
        ✕ `.btn-line-del` (`deletePanelChar`/`deletePanelLoc`).
      - `.pl-line-body` — HIDDEN while `data-collapsed="1"` (the default, i.e. folded shows only the name) —
-       holds a read-only `.pl-libdesc` (`#panel-char-libdesc-N-S` / `#panel-loc-libdesc-N`) showing the selected
-       item's CURRENT library description, then the editable `.po-desc` extra text
-       (`#panel-char-extra-N-S` / `#panel-loc-extra-N`).
+       holds (2026.09.25.1) the editable **Basic Description** field
+       `.pl-line-field.pl-base-field` (`#panel-char-basefield-N-S` / `#panel-loc-basefield-N`) = `.pl-base-head`
+       (label "Basic Description" + `span.pl-base-badge` `#panel-char-basediff-N-S`/`#panel-loc-basediff-N` + the
+       `button.pl-base-refresh` "⟳ Refresh from library" `#panel-char-baseref-N-S`/`#panel-loc-baseref-N`) wrapping
+       the `.po-desc` textarea (`#panel-char-base-N-S` / `#panel-loc-base-N`), and BELOW it the unchanged editable
+       "This panel — extra description" `.po-desc` (`#panel-char-extra-N-S` / `#panel-loc-extra-N`). The old
+       read-only `.pl-libdesc` div was DELETED — do not look for it.
      - Fold state lives in `plLineStateMap` (SESSION-ONLY; default folded) and is rendered by
-       `charRowHtml`/`locRowHtml`. `refreshPanelLineDesc`/`refreshAllPanelLineDescs` (re)write the read-only
-       text; callers: `handleGridInput` (select change), `renderPanelObjects`, `updatePanelSelects`,
+       `charRowHtml`/`locRowHtml`. `refreshPanelLineDesc` (re)computes the trimmed-exact `differs` comparison at every caller and toggles
+       `.differs` on the field + `.on` on the badge; `applyPanelLineBase` / `refreshPanelLineBase` (the ⟳ chip,
+       exported as `window.refreshPanelLineBase`) are the only writers of a seeded/refreshed value; callers: `handleGridInput` (select change), `renderPanelObjects`, `updatePanelSelects`,
        `copyFromPrevPanel`, `deletePanelChar`/`deletePanelLoc`, `newPanelLibraryEntry`, and the 📚 Library
        `descInput.oninput` (so editing a library description updates every panel's display as you type).
-       The built-in half of the lookup needs `builtinDescMaps`, filled once by `getMaps()` in the init block.
+       The built-in half of the lookup needs `builtinDescMaps`, filled once by `getMaps()` in the init block; because it
+       is still null during the FIRST restore, built-in slots are stamped `data-needSeed="1"` and filled afterwards by
+       `seedPendingPanelBases()` from the `getMaps().then(...)` boot callback. The 📚 Library `descInput.oninput` no
+       longer rewrites panel text at all — a panel keeps what it was seeded with until the user edits it or presses ⟳.
      - The action box `#panel-act-N` stays a plain `.po-row` / `.po-desc.pl-act-wide` textarea (Enter =
        generate) and is NOT collapsible.
      - **Prompt assembly (2026.09.23.7):** `buildPanelPrompt` adds `resolveDesc(sel)` + the extra box for each
@@ -280,6 +301,13 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   'cleared' → generateSinglePanel returns early → loop breaks → finally restores UI.
 - `stopAllGenerations()` (used by page-switch/delete/resequence) marks `.paused`, NOT `.stopped`.
 - `'cleared'` card/box class also aborts in-flight renders silently
+- **Resuming after a pause — the run's end panel (2026.09.25.1, ticket T-01/1c):** `generateComicPage` records every
+  run's end panel in the module var `runEndPanel` (beside `resumePanel`). When a run is paused mid-way, `resumePanel`
+  is set and the NEXT plain ⚡ Generate All (no `startPanel`, no list) resumes `from = resumePanel` but clamps
+  `endPanel = Math.min(runEndPanel, totalPanels)` — so a paused **⚡ Generate All To Here** run finishes at the panel it
+  was aiming for instead of running to the end of the page. `runEndPanel` is cleared by `stopAllGenerations`,
+  `haltGenerations` and the stop branch. A resumed run is a plain (non-list) run, so its status line counts
+  `(panel/totalPanels)`, which is intended.
 - **Watchdog / unhandled rejection (2026.09.24.4):** `renderPanelSlot` awaits
   `withRunSignal(withTimeout(pending, GENERATION_TIMEOUT_MS, runSignal ? runSignal.p : null))`. Before this, the
   120s timeout promise kept ticking after a run was abandoned (pause / stop / visibility change) and then rejected
@@ -564,6 +592,14 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   Nothing else is touched and a user-typed `-1` is never rewritten (only the import moment is scrubbed).
 - `saveSettings()` (silent, remembered handle) / `saveSettingsAs()` — File System Access API
   with download fallback; handle+name in IndexedDB.
+- **📄 Recent list (2026.09.25.1, tickets T-03/T-05):** `beginImport(file, isZip)` was factored out of
+  `importSettingsFromFile()` so the Recent list can reuse the very same import path (including the
+  `#importConfirmOverlay` warning). Entries are added by `saveSettingsAs` (handle), by the download fallback of
+  `saveSettings`/`saveSettingsAs` via `rememberRecentSnapshot()`, by `doImportFile` (JSON and ZIP) and by
+  `＋ Add / Open…` (`openRecentPicker`); `openRecentEntry` re-reads a handle (dropping the entry when the file is
+  gone) or rebuilds a `File` from the stored text. `renderRecentList` + `recentStoreCap() = max(5, recentMaxPref)`
+  drive the UI, `clearRecentList` empties it. Where `canUseFileHandles()` is false (Firefox/Safari) the snapshot
+  flavour is what the feature actually does. See §17.
 
 ## 12. Conventions & gotchas (read before editing)
 
@@ -850,6 +886,27 @@ Question/answer tickets between the author and the AI worker now live in this re
 - **Targets:** the form can write ticket files (default — Contents read+write is enough) or GitHub Issues (needs Issues: read+write on the PAT; it falls back to ticket files if the token refuses). Adding another backend is one more send() function in the form's driver section.
 - **Do NOT copy answers back into PENDING as prose** — answers live in the ticket files; PENDING keeps the request + recon and points at the ticket id.
 
+## 17. ⚡ Generate To Here · 📖 Basic Description · 📄 Recent files (added 2026.09.25.1)
+
+Shipped together on 2026-09-25 from tickets T-01 / T-03 / T-04 / T-05 (T-02 was docs-only). All code lives in `index.html`.
+
+### ⚡ Generate All To Here (T-01)
+- `#panel-gento-btn-i` sits BETWEEN 🔄 Generate (`#panel-gen-btn-i`) and ⚡ Generate All From Here (`#panel-genfrom-btn-i`) in the same chips row inside the ⚙ Panel accordion body. `window.panelGenerateToHereAction(i)` is exported beside the other two actions.
+- It mirrors the multi-selection (`panelBatchMode(i) && panelSelection.size > 1`): end = LAST selected panel and the selection is cleared, exactly as `panelGenerateFromHereAction` uses the FIRST. Otherwise end = i. It then calls `generateComicPage(null, list)` with `list = [1 … min(end, getPanelCount())]` — the existing explicit-list path, so nothing in the generation engine had to change.
+- `runEndPanel` (module var beside `resumePanel`) records the run's own end panel and lets a PAUSED run resume only as far as that panel: a non-list resume does `from = resumePanel; endPanel = Math.min(runEndPanel, totalPanels)`. Cleared in `stopAllGenerations`, `haltGenerations` and the stop branch. See §7.
+- Still queued (not shipped): the arbitrary "Generate (x) to (y)" range chip the author floated in ticket 1b — PENDING.md has it with its open questions.
+
+### 📖 Basic Description (T-04)
+- One editable `.pl-base-field` per character slot and per location inside the folded `.pl-line-body`, replacing the old read-only `.pl-libdesc`. IDs: `panel-char-basefield-i-s` / `panel-char-baseref-i-s` (⟳) / `panel-char-basediff-i-s` (badge) / `panel-char-base-i-s` (textarea), and `panel-loc-*` without the slot number. The "This panel — extra description" box is unchanged and still comes AFTER the Basic Description in the prompt.
+- Helpers: `panelLineIds(kind,i,s)` (the id bundle), `panelLibDescSeed(kind,sel)` (library text or NULL while `builtinDescMaps` is null), `applyPanelLineBase` (writes the value, sets/clears `data-needSeed`), `refreshPanelLineBase` (the ⟳ chip; exported), `refreshPanelLineDesc` (the `differs`/badge call-out, trimmed exact case-sensitive comparison; an empty base is never flagged), `seedPendingPanelBases` (fills flagged fields once `getMaps()` resolves — called from the boot callback), `migratePanelBaseDescriptions(page)` (called by `restorePanelState` right after `migratePanelExtraCopies`; gives every slot without a `base` key one, so a legacy project re-seeds itself and its prompt is byte-identical).
+- FREEZE: only the seed path, the ⟳ chip and ⇤ `copyFromPrevPanel` ever write `base`, so a library edit can never change a panel that has one. `buildPanelPrompt` uses `baseEl.value.trim() || resolveDesc(...)` per character and `locBase || resolveDesc(locKey, locMap)` for the location.
+- State: `chars:[{sel,base,extra}]` + `loc`/`locBase`/`locExtra`, touched by `collectPageData`, `renderPanelObjects`, `restorePanelState`, `readPanelItem`, `copyFromPrevPanel`, `deletePanelChar`/`deletePanelLoc`, `clearPanelImage`, the reset / new-project paths and `newPanelLibraryEntry`. The `handleGridInput` `panel-(char|loc)-base` branch keeps `data-pl-key` state and the project state in step.
+- Visuals: `.pl-base-head` is `display:flex; flex-wrap:wrap` (it wraps to two lines on a narrow panel), `.pl-base-badge` is `display:none` until `.on`, and `.pl-base-field.differs textarea` gets `border-color: var(--accent-outline)` + a 3px inset left bar.
+
+### 📄 Recent files + the count preference (T-03 / T-05)
+- IndexedDB `comicGenSaveState` → `main` → `recent`: newest-first array of `{kind:'handle', handle, name, at}` or `{kind:'snapshot', name, at, text}`. `canUseFileHandles()` decides which flavour is available; Firefox and Safari have no File System Access API, so there the app stores a snapshot of the saved project text and the entry still opens even if the file was moved or deleted. That fallback is what makes the feature work in the author's own browser — do not "simplify" it away.
+- Entry points that add an entry: `saveSettingsAs` (handle), the download fallback of `saveSettings`/`saveSettingsAs` (`rememberRecentSnapshot`), `doImportFile` (JSON + ZIP) and `openRecentPicker` (the ＋ Add / Open… chip, hidden `#importSettingsInput` fallback). `openRecentEntry` → `beginImport(file, isZip)`; auto-removes a dead handle entry. `#recentListEl` sits directly under the Backup Project chips in 📄 File; `clearRecentList` empties it; `recentStoreCap() = Math.max(5, recentMaxPref)`.
+- `comicGen.recentMax` (browser pref, `RECENT_MAX_KEY`) + the `#prefRecentMax` spinner under a `pref-sub` "Recent files" in `#preferencesPanel`; `onPrefRecentMaxChange` clamps 0…50. **The stored list always keeps the newest FIVE no matter what the setting says — the setting only decides how many are SHOWN** (ticket 5b, confirmed by the author 2026-09-25); pref 0 swaps the list for a "hidden" message.
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
