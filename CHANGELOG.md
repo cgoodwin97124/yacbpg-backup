@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.25.3 — 2026-09-25 — 🎲 Same seed for every image — a per-panel checkbox in the ⚙ Panel menu
+
+- **New: one seed for a panel's whole set of images.** Every panel's **⚙ Panel** menu now ends with a **🎲 Same seed for every image** checkbox. A panel's images normally get a seed each — the panel's seed, then seed + 1, seed + 2 … — so tick this and every image of that panel is rendered with the panel's seed exactly. Untick it and the one-seed-per-image behaviour comes back.
+- **It works with both kinds of seed.** With a number in that panel's own **Seed** box, all of its images use that number. With the box left empty, they all use the seed the panel would have used anyway — the page seed + this panel's position, the same number the grey placeholder shows.
+- **Saved with the project.** The checkbox is per panel and part of the project: it survives reloads, travels in your settings export/import, appears in the 🧩 JSON editor, and is carried along when you duplicate, move, copy or paste that panel. Regenerating a single image of the panel follows the same rule.
+- **Not retroactive.** Images you already have are untouched until you generate again, and 🔒 protected images are still left alone. Replaying a **🕘 Generated Prompt** entry is also unaffected — it always re-runs with the seeds that entry recorded.
+
 ## 2026.09.25.2 — 2026-09-25 — ⚡ Generate (x) to (y)… — pick any inclusive panel range on the page
 
 - **New: choose exactly which panels a run covers.** Every panel's **⚙ Panel** menu now has a **⚡ Generate (x) to (y)…** chip, sitting after **⚡ Generate All To Here** and **⚡ Generate All From Here**. It opens a small dialog with two number boxes — **From panel** and **to** — and a live line that says what you have chosen, e.g. *→ panels 3–7 (5 panels)*. **Both ends are included**, only panels on the current page can be used, and they are rendered in order.
