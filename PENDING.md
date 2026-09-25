@@ -25,6 +25,14 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-25 — FEATURE: "Generate (x) to (y)" — pick an inclusive panel range to generate (ticket T-01's note 1b)
+- **Status:** 🟢 **START NOW 2026-09-25** — logged on receipt as QUEUED (author-mandated "log every request first"), moved here the moment the author said "go ahead on the generate (x) to (y)!". Implementation in progress.
+- **Author, 2026-09-25, verbatim (note attached to T-01 answer 1b):** "Maybe we do a \"Generate (x) to (y)\" button also that lets the user choose an inclusive range of panels to generate." — then, greenlighting it: "Saved!  And go ahead on the generate (x) to (y)!"
+- **RELATES TO:** T-01 (the "⚡ Generate All To Here" chip, shipped 2026.09.25.1) — both are thin wrappers over `generateComicPage(startPanel, panelList)`, which already accepts an explicit ordered panel list, so a range button is the same engine with a different (start … end) list.
+- **DESIGN CALLS (made at implement time — the author said go ahead, so the questions were answered by the AI rather than asked; each is easy to overrule):** the range is entered through a new **⚡ Generate (x) to (y)…** chip in the same ⚙ Panel chip row, which opens the app's existing non-blocking dialog (the one the import/new-project warnings use) with **two number spinners, From and To**; both ends are inclusive and limited to the current page's panel count; the From/To boxes prefill from a multi-selection when there is one (first … last selected), otherwise 1 … this panel; a live line under them says exactly how many panels will render and the Generate button is disabled while the numbers are out of order or out of range.
+- **BEHAVIOUR DECISIONS:** 🔒 protected images inside the range are respected exactly as in every other run; already-generated panels inside the range ARE regenerated (the app has no "skip panels that already have images" concept, and inventing one here would be a surprise); the run sets the same remembered end panel as T-01, so pausing a range run and pressing ⚡ Generate All resumes up to the range's end rather than the page's.
+- **IMPLEMENTATION:** being written 2026-09-25 (release 2026.09.25.2).
+
 ### 2026-09-24 — FEATURE: a thumbnail for EVERY generated image in a 🕘 Generated Prompt entry (not just the first)
 - **Status:** ✅ **DONE 2026.09.24.5** — every image a run produced now gets its own thumbnail. Verified live: a 3-image panel rendered 3 labelled thumbnails (badges 1/2/3, per-image seed labels) and the author's pre-existing single-thumb entry beside it still rendered correctly; all `comicGen.*` keys were then restored byte-for-byte.
 - **Author, 2026-09-24, verbatim:** "Is it possible to get a thumbnail of each generated image, rather than just the first/representative image, in the filed prompt under Generated Prompts?"
@@ -676,13 +684,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Contents: Read+write on THEIR repo (worth a line in the repo README).
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
-
-### 2026-09-25 — FEATURE: "Generate (x) to (y)" — pick an inclusive panel range to generate (idea raised in ticket T-01)
-- **Status:** 🕒 **QUEUED 2026-09-25** — logged on receipt (author-mandated "log every request first"). **No code written** — it arrived as a note on ticket T-01's answer to question 1b, not as a standalone request, so it still needs recon + clarifying questions before anything is built.
-- **Author, 2026-09-25, verbatim (note attached to T-01 answer 1b):** "Maybe we do a \"Generate (x) to (y)\" button also that lets the user choose an inclusive range of panels to generate."
-- **RELATES TO:** T-01 (the "⚡ Generate All To Here" chip, also queued) — both are thin wrappers over generateComicPage(startPanel, panelList), which already accepts an explicit ordered panel list, so a range button is the same engine with a different (start … end) list.
-- **OPEN QUESTIONS (to ask at recon time):** where the range is entered (two number spinners in the Panel menu vs. one button that opens a small picker vs. reusing the existing multi-select); what happens to 🔒 protected or already-generated panels inside the range; how it interacts with the pause/resume end-panel decision in T-01; whether it replaces or complements T-01's "To Here" chip.
-- **IMPLEMENTATION:** not started (awaiting the author's go-ahead).
 
 ### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
 - **Status:** ACTIVE (author-mandated 2026-09-23, in force until the author says otherwise). Docs-only — no
