@@ -9,6 +9,28 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.25.3 — 🎲 Same seed for every image — a per-panel checkbox in the ⚙ Panel menu
+
+Released 2026-09-25 (stamp 2026.09.25.3). Author request, verbatim: "I'd like to have a checkbox under the panels Panel menu that forces all images in the panel to use the same seed, rather than (seed) for panel 1, (seed+1) for panel 2, etc." Logged in `PENDING.md` on receipt (standing rule). index.html + the shipped manual; repo docs as usual.
+
+### What was built
+- **The one place the per-image offset exists:** `renderPanelSlot` does `const seed = useSeed ? seedOverride : pinPanelSeedForRun(i);` and then `if (seed !== -1) opts.seed = useSeed ? seed : (seed + (k - 1));` — so image *k* of a panel renders with the panel's seed + (k − 1). The whole feature is that single condition: `opts.seed = (useSeed || panelSameSeedOn(i)) ? seed : (seed + (k - 1));`.
+- **State:** a per-panel boolean `sameSeed` on `pages[N][i]`, collected by `collectPageData()` and restored by `restorePanelState()` — which means it rides along for free everywhere page data is deep-copied (duplicate / add / move / reflow / cut / paste), is written into settings export + import, and is visible in the 🧩 JSON editor.
+- **UI:** a full-width `<label class="check-label panel-acc-check">` containing `<input type="checkbox" id="panel-sameseed-i" onchange="onPanelSameSeedChange(i)">`, as the LAST child of the ⚙ Panel accordion body (below 🗑 Delete), separated by a `border-top` rule. The accordion body is `display:flex; flex-wrap:wrap`, so the row needs `flex: 1 1 100%` — `.check-label` on its own does not give it one (this is the CSS gotcha to remember).
+- **Helpers:** `panelSameSeedOn(i)` (reads the box), `setPanelSameSeed(i, on)`, `onPanelSameSeedChange(i)` (status line + `schedulePanelSave()`); all three exported on `window`. `resetEverything()` unticks every panel, so Edit → Reset to Defaults / New Project clears it like the rest of a panel's content.
+- **Deliberately NOT changed:** a `useSeed` run — i.e. a 🕘 Generated Prompt replay via `generateFromPromptHistory` → `seedForSlot(k)` — keeps the per-image seeds that entry recorded. The history is a frozen snapshot of "what that generation actually used"; the checkbox is about how a NEW run derives its seeds.
+
+### Verified live (2026-09-25, `root.generateImage` stubbed to capture its options)
+- Panel seed 500, 3 images: checkbox OFF → seeds **500, 501, 502**; ON → **500, 500, 500**.
+- Page-seed path: `#seedInput` = 1000 with panel 2's Seed box empty → placeholder `1001`, and with the box ticked the images were **1001, 1001, 1001**.
+- Ticking the box persisted `comicGen.panelState…pages["1"]["1"].sameSeed = true`; after a full `buildPanelGrid()` re-render panel 1 was still ticked and panel 3 (never touched) was unticked.
+- Toggled by a real `cb.click()` (not just the helper): the status line read "Panel 1: every image will use the same seed." and the value persisted.
+- Layout: no horizontal overflow at 390 px (⚙ Panel body 316 px wide, label wrapping to 3 lines) or desktop; separator, alignment and contrast confirmed with `vision` in dark and light themes.
+- Storage safety: all 20 `comicGen.*` keys were parked in `__test_backup_v8` before any synthetic write and restored byte-for-byte — an FNV-1a hash of the whole storage map was identical before and AFTER a full page reload (0 mismatches, 0 extra keys, no perchance errors).
+
+### Interpretation recorded for the author
+"All images in the panel" was read as *the images within one panel* (image 1 gets the panel seed, image 2 gets seed + 1, …), which is why the checkbox drops only the per-image offset and keeps the page-seed + panel-index rule. The other reading — "ignore the page seed + panel index offset, so every panel uses the page seed verbatim" — is a one-line change, and the author was told so explicitly in the reply.
+
 ## BATCH 2026.09.25.2 — ⚡ Generate (x) to (y)… — an explicit inclusive panel range
 
 Released 2026-09-25 (stamp 2026.09.25.2). Requested as a note on ticket T-01's answer 1b ("Maybe we do a \"Generate (x) to (y)\" button also that lets the user choose an inclusive range of panels to generate"), logged in PENDING.md as QUEUED on receipt per the standing rule, and greenlit by the author ("Saved!  And go ahead on the generate (x) to (y)!"). index.html only; the shipped manual and the repo docs are the other moving parts.
