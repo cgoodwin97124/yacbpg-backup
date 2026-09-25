@@ -4,6 +4,12 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.25.2 — 2026-09-25 — ⚡ Generate (x) to (y)… — pick any inclusive panel range on the page
+
+- **New: choose exactly which panels a run covers.** Every panel's **⚙ Panel** menu now has a **⚡ Generate (x) to (y)…** chip, sitting after **⚡ Generate All To Here** and **⚡ Generate All From Here**. It opens a small dialog with two number boxes — **From panel** and **to** — and a live line that says what you have chosen, e.g. *→ panels 3–7 (5 panels)*. **Both ends are included**, only panels on the current page can be used, and they are rendered in order.
+- **The numbers start out helpfully.** Normally *1* and *this panel*; with several panels ticked they become **the span of your selection** (first … last selected), and the selection is cleared as the run starts — the same as the other batch chips. Every panel in the range is regenerated, including panels that already have images, and 🔒 protected images inside the range are still respected.
+- **Impossible ranges are refused rather than run.** If a number is outside the page, or *From* is greater than *To*, the line becomes a warning (⚠ Use numbers from 1 to 4, with From not greater than To.) and the generate button is disabled. Disabled buttons in this dialog — and in the app's other dialogs — are now visibly dimmed, so a button that cannot be pressed no longer looks like one that can.
+- **Pausing a range run respects the range.** Pressing **⚡ Generate All** after a pause continues from where it stopped and **stops at the range's end**, instead of running on to the end of the page — the same rule the To-Here chip follows (added in 2026.09.25.1).
 ## 2026.09.25.1 — 2026-09-25 — ⚡ Generate All To Here · editable 📖 Basic Descriptions · a 📄 Recent project list + a spinner for how many it keeps
 
 - **⚡ Generate All To Here** — a new chip in every panel's **⚙ Panel** menu, sitting between **🔄 Generate** and **⚡ Generate All From Here**. It renders *every panel on the page from panel 1 up to and including the panel you clicked it on*, with the usual progress line. If you have several panels ticked it mirrors **From Here** and finishes at the **last** selected panel. And if you pause a To-Here run, **⚡ Generate All** now remembers where it was heading and resumes **only as far as that end panel** instead of running on to the end of the page.
