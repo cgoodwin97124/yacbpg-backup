@@ -836,6 +836,18 @@ individually-ticked panel, used for Shift-ranges). Nothing about it is collected
   successful Paste; a copy survives. `cascadePageSequence` → `loadCurrentPage` already clears the selection,
   so Paste does not re-select (approved decision 5: every batch op clears, except Move).
 
+## 16. Author ticket system (added 2026-09-25)
+
+Question/answer tickets between the author and the AI worker now live in this repo, not in scratch/.
+
+- **The form:** src/question-form.html — a self-contained, data-driven ticket form (inline CSS + vanilla JS). All content is one TICKETS = [...] array (id, slug, kind, title, verbatim request, questions[]); a question is an object with type "select" | "checkboxes" | "text", an options[] list and an optional custom notes label. Editing tickets means editing that array and nothing else.
+- **How to open it for the author:** on the live preview page run window.__openQuestionForm() — it fetches src/question-form.html, mounts it in a full-screen overlay iframe (blob URL, so the document stays same-origin) and adds a ✕ close button. Being same-origin it reads comicGen.githubOwner / githubRepo / githubToken directly, so no token typing is needed and Send writes tickets straight into the repo.
+- **Where tickets live:** tickets/T-0x-<slug>.md, one per request: YAML header (ticket, title, kind, status, answers, form, updated, generator) + "## Original request (verbatim)" + "## Clarification questions & answers" + a "## Implementation" placeholder. tickets/README.md is the index table; the form rebuilds it on every send by merging the existing rows, so hand-edits to other rows survive.
+- **Statuses:** open → partially-answered → answered. When implementing a ticket, edit its own file: flip status and fill the Implementation section (branch/PR, released version, changelog entry), and keep tickets/README.md's row in sync.
+- **Reading them:** the repo is public, so GET api.github.com/repos/cgoodwin97124/yacbpg-backup/contents/tickets?ref=main works with NO token (the authenticated token also works and has a much higher rate limit) — a future session can list and read tickets before planning work.
+- **Targets:** the form can write ticket files (default — Contents read+write is enough) or GitHub Issues (needs Issues: read+write on the PAT; it falls back to ticket files if the token refuses). Adding another backend is one more send() function in the form's driver section.
+- **Do NOT copy answers back into PENDING as prose** — answers live in the ticket files; PENDING keeps the request + recon and points at the ticket id.
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
