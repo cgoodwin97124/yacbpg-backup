@@ -17,6 +17,13 @@ restore() delete every live key, write the parked map back, remove the park key,
 
 The four runners (`run-smoke.js`, `run-gen.js`, `run-fixtures.js`, `make-baseline.js`) all follow the same
 shape, and it is the shape to copy for a new one:
++
+**A probe is a write too.** A `page_eval` that only *sets a control* — the theme dropdown, a checkbox, a
+`panel-seed` box — writes `localStorage` through the app's own handlers, and the theme also lands inside the
+project JSON. On 2026-09-26 a two-line body-height probe (`themeModeSel` → dark, then light) left the author's
+`comicGen.themeMode` and `settings.theme.mode` changed; it was caught by hashing the live map against an older
+park file and repaired with the same control. Diff the live map against a park file whenever a session has
+touched the page outside a runner, and put even "harmless" probe writes in a park/restore.
 
 1. `park()`, then **immediately dump the whole map to `scratch/p0/parks/<name>-<timestamp>.json` and to
    `scratch/p0/last-park.json`**. The workspace copy is the safety net: if the renderer freezes or the run is
