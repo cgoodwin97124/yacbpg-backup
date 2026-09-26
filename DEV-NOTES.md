@@ -50,7 +50,23 @@ Both engines throttle a hidden page and both exempt a page that is playing audio
 - **If a Chromium user reports hidden-tab work is still slow,** raise `KEEP_AWAKE_GAIN` (e.g. to `0.001`) before doubting the mechanism: a media-style power-threshold layer ignoring a −80 dBFS signal is the only plausible failure, and it is one constant to change.
 - **Never create the `AudioContext` before a gesture** (see `keepAwakeArm`), or Firefox logs an autoplay-blocked warning on every load while the preference is on.
 - **Testing trick:** `window.applyKeepAwake(true)` from `page_eval` is *not* a user gesture, so the context can come up `suspended` and resume a moment later via `keepAwakeResume()` — the smoke check accepts `running` **or** `starting` for that reason. Through a real click (the checkbox's `change` handler) it goes straight to `running`.
-- **The measurement still owes an answer:** the probe is installed and its numbers are the author's to generate (switch away for ~45 s with the setting off, then again with it on). The report's `hiddenHeartbeatGap_awakeOff` / `_awakeOn` medians are the proof; a mixed timeline is fine because each sample records the preference as it was at that moment.
+- **The measurement is done (2026-09-26):** the author ran both halves of the A/B — see “The hidden-tab measurement, measured” below for the numbers.
+
+### The hidden-tab measurement, measured (2026-09-26) — the setting works
+
+Firefox 156 / Windows, the author's machine, the author's own switch-away, sampled by `devtests/keepawake-probe.page.js` (a 250 ms heartbeat while the page is hidden, every sample tagged with the preference as it stood at that moment):
+
+| state | hidden time measured | samples | min | median | p90 | max |
+|---|---|---|---|---|---|---|
+| keep-awake **off** (control) | 190 s | 189 | 724 ms | **1005 ms** | 1014 ms | 1077 ms |
+| keep-awake **on** | ~6 min | 1374 | 249 ms | **262 ms** | 265 ms | 5 h 59 m (the laptop asleep) |
+
+- **Off, the timer is pinned to Firefox's clamp.** 189 samples in a 190 s hidden period is ~1 Hz, dead on `dom.min_background_timeout_value = 1000`; the 250 ms interval never got through.
+- **On, the same interval ran at 262 ms** (min 249, p90 265; 1371 of the 1374 gaps under 400 ms) — **3.8× the off rate**, with the same page, the same machine and the same interval. The silent −80 dBFS tone is the whole difference, which is the feature working as designed.
+- **The overnight run's 9 h 33 m of hidden time is mostly the laptop sleeping, not a measurement.** Two gaps in the heartbeat (3 h 28 m, 5 h 59 m) sum to 9 h 28 m; what remains is the ~5.5 min the page was hidden *and* the machine awake. A suspended machine stops the timers as well — the probe cannot tell those apart, so read the spans, not the wall clock.
+- **`requestAnimationFrame` while hidden: 28 frames** (against 28 563 visible). Keep-awake holds the *timers*, not the rendering: a background run keeps ticking while the screen is not being redrawn, which is exactly the shape the background-generation preference wants.
+- **The 100 ms worker ticker never moved** in either state (median 100 ms) — worker timers are not visibility-throttled, so `execute_js` was never at risk.
+- **Nothing was written to `localStorage` by the probe** (raw rows live in `sessionStorage["yacbpg.awake.probe"]`; `window.__awakeReport()` reads them even after a reload), and the only key that changed is the author's own `comicGen.keepAwake` toggle.
 
 ## BATCH 2026.09.26.4 — generation keeps running while the tab is in the background (a preference, on by default)
 
