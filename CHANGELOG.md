@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.26.1 — 2026-09-26 — ⧉ Copy an image to other images — in its own panel, or another one
+
+- **New: copy one image onto others.** Every generated image now has a **⧉** chip in the row beneath it, beside ↗ Open, ⬇ Save, ✕ Clear, 🔓 Protect and ⭐ Cover. It opens a small picker: tick any of the other images in the same panel — there is a **select all** shortcut for the rest of the panel — and/or **1–4 images of another panel** on the page, then press **⧉ Copy image** and every ticked slot receives that image at once.
+- **Copy, not move.** The image you clicked stays exactly where it is, and each copy lands **unprotected** so you can regenerate it on its own afterwards.
+- **Nothing is destroyed silently.** Whatever already sat in a chosen slot is replaced, and the picker says up front how many images that will be. A **🔒 protected** image is never overwritten — protected destinations are skipped, and the status line tells you how many were skipped.
+- **The picker only offers what you can see.** The panel dropdown lists the other panels on this page together with how many images each already holds; a destination's slots are offered up to that panel's **Images** setting and the rest are greyed out (raise that panel's image count first if you want them). No image count is ever changed for you.
+
 ## 2026.09.25.3 — 2026-09-25 — 🎲 Same seed for every image — a per-panel checkbox in the ⚙ Panel menu
 
 - **New: one seed for a panel's whole set of images.** Every panel's **⚙ Panel** menu now ends with a **🎲 Same seed for every image** checkbox. A panel's images normally get a seed each — the panel's seed, then seed + 1, seed + 2 … — so tick this and every image of that panel is rendered with the panel's seed exactly. Untick it and the one-seed-per-image behaviour comes back.
