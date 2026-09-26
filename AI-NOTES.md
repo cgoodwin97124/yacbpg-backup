@@ -502,6 +502,13 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   reloads (images are session-only); `generateSinglePanelSlot` refuses protected slots,
   `generateSinglePanel` keeps them; clears unprotect. `makeRepresentative` swaps slot 1 + its
   protect flag (⭐ = representative shown in Storyboard).
+- **Copy an image between slots (2026.09.26.1):** the ⧉ chip on every slot (`#slotbtns-panel-i-k .btn-copyto`,
+  disabled with the other image chips by `setPanelImageButtons`) calls `copyImageToAction(i, k)` → a
+  `showChoiceDialog` containing `.copy-same` boxes (the other slots of the same panel), `#copySameAll`, and
+  `#copyPanelSel` + `.copy-other` boxes (the other panels on this page, limited to that panel's
+  `getPanelImageCount`). `copyImageRefresh()` drives the live `#copyInfoEl` line and the go button from the DOM;
+  `applyImageCopy(i, k, dests)` does `panelImages[d.i][d.k-1] = src` + `showPanelImage(...)` per destination,
+  skipping 🔒 slots. Copies are session-only and land unprotected, like any other image.
 
 ## 10. Pages, view modes, library, changelog
 
@@ -921,6 +928,12 @@ Shipped together on 2026-09-25 from tickets T-01 / T-03 / T-04 / T-05 (T-02 was 
 - DOM: `#panel-sameseed-i` — a `.check-label.panel-acc-check` row (`flex: 1 1 100%`, `border-top`) as the LAST child of that panel's ⚙ Panel `.panel-acc-body`; label text "🎲 Same seed for every image — no +1 per image."; `onchange="onPanelSameSeedChange(i)"`.
 - Effect (single condition, `renderPanelSlot`): `opts.seed = (useSeed || panelSameSeedOn(i)) ? seed : (seed + (k - 1));`. `useSeed` = a 🕘 Generated Prompt replay, which keeps its recorded per-image seeds on purpose.
 - Exports: `window.panelSameSeedOn`, `window.setPanelSameSeed`, `window.onPanelSameSeedChange`. `resetEverything()` calls `setPanelSameSeed(i, false)` per panel.
+
+### ⧉ Copy an image onto other images (2026.09.26.1)
+- `copyImageToAction(i, k)` (window-exported, async — same shape as `panelGenerateRangeAction`) opens the shared `showChoiceDialog` and builds its own DOM through `paragraphs`: `.copy-same` checkboxes for the panel's other slots, `#copySameAll`, `#copyPanelSel` + `.copy-other` boxes for another panel on the page, and `#copyInfoEl`. Pattern: grab the dialog promise → wire handlers → `copyImageRefresh()` → `await` → act on the result.
+- There is NO parallel JS model of the selection — `copyImageRefresh()` re-reads the ticked boxes from the DOM every time. It controls the go button (`#choiceBtns button`, i.e. the FIRST entry of `buttons`, so it must stay first), greys `.copy-other` beyond `getPanelImageCount(target)`, and writes the info/warning line.
+- `applyImageCopy(i, k, dests)`: `panelImages[d.i][d.k-1] = src` then `showPanelImage(d.i, d.k, src)`; 🔒 destinations are skipped and counted; the caller writes the status line. A copy persists nothing extra (panel images are session-only and never part of `panelState`).
+- Test gotcha: `panelImages` is module-scoped, NOT on `window`. Verify with the `img-panel-i-k` `src` attributes and scroll the slot into view first — `imgObserver` only sets srcs within 400px of the viewport and deliberately drops off-screen ones.
 
 ### 📄 Recent files + the count preference (T-03 / T-05)
 - IndexedDB `comicGenSaveState` → `main` → `recent`: newest-first array of `{kind:'handle', handle, name, at}` or `{kind:'snapshot', name, at, text}`. `canUseFileHandles()` decides which flavour is available; Firefox and Safari have no File System Access API, so there the app stores a snapshot of the saved project text and the entry still opens even if the file was moved or deleted. That fallback is what makes the feature work in the author's own browser — do not "simplify" it away.
