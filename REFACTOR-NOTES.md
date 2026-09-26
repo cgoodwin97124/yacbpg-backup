@@ -85,18 +85,30 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   the author's project.
   **Exit criteria:** the suite passes against the *unmodified* build, and every invariant in `FUNCTION-MAP.md`
   §21 has a test or an explicit "manual check" line.
-- **P1 — pure logic — 4 of the 6 modules extracted, shipped as 2026.09.26.5.** `zip`, `jsontext`, `keywords`
-  and `seeds` now live in `src/core/` with their in-file copies kept as the fallback; `library-core` and `prompt`
-  remain. Loading is one loader — `coreLoad(name, path, apply)` at the top of `index.html` — a dynamic
-  `import()` that swaps the named inline binding for the module's when it resolves and silently keeps the inline
-  copy when it does not (an unsaved `src/` with no service worker is exactly that case). `getEffectiveKeywords`,
-  `getPanelSeed`, `pinPanelSeedForRun` and `updatePanelSeedPlaceholders` were split so that what moved is their
-  pure half; the DOM half stayed in `index.html` as a thin adapter. **Exit criteria:** `devtests/diff-core.js`
-  (~2,600 generated cases) finds zero differences, nothing user-visible changes (`devtests/visual-diff.js`:
-  14 views unchanged), and each in-file copy is deleted one release after its module has survived.
+- **P1 — pure logic — COMPLETE as of 2026.09.26.8.** All six modules are extracted: `zip`, `jsontext`,
+  `keywords` and `seeds` (2026.09.26.5), then `prompt` and `library-core` (2026.09.26.8). Each lives in
+  `src/core/` with its in-file copy kept as the fallback. The last two split their functions: `composePanelPrompt`
+  is pure (`buildPanelPrompt` is now a three-line adapter over `collectPanelPromptInput`), and the library
+  functions are pure with the `loadLibraryObjects()` reads left in their callers (`resolveDesc`, `plLineDescText`,
+  `countLibReferences`). Loading is one loader — `coreLoad(name, path, apply)` at the top of `index.html` — with
+  the hard rule that a replaced binding must be a `function` declaration or a `let` (a `const` throws, and the
+  throw is swallowed by the loader's try/catch, which would skip the rest of that block). **Exit criteria met:**
+  `devtests/diff-core.js` is **31 checks / 0 differences** over ~4,500 generated cases across the six modules
+  (`unspecced: []`, `missing: []`), the suites are green (smoke 73/0/4, generation 18/0, fixtures 16/0, core
+  14/0), 0 perchance errors, the author's map restores byte-identical after every runner, and an A/B of the
+  screenshots against the previous build came back identical. **Left to do:** delete each in-file copy one
+  release after its module has survived a release — `zip`, `jsontext`, `keywords`, `seeds` from 2026.09.26.9,
+  then `prompt` and `library-core`.
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — P1 finished as 2026.09.26.8.** `core/prompt.js` and `core/library-core.js` land (the last two of the
+  six), so the pure logic is out of the monolith: differential **31/0** over ~4,500 generated cases, every suite
+  green (smoke 73/0/4, generation 18/0, fixtures 16/0, core 14/0), 0 perchance errors, and an A/B capture against
+  2026.09.26.7 produced identical screenshots (the six dark views' 112 px drift is the documented session-order
+  artefact). Two test-side fixes came with it: the runners had been comparing a token-redacted parked map against a
+  page-side hash (so `byteIdentical` printed `false` on a clean restore), and `G14:76` had assumed the author's
+  keep-awake key was absent. **Next:** start deleting the in-file copies, then P2 step 1 (panel ids + `core/schema.js`).
 - **2026-09-26 — round 2 answered, P2 unblocked (except two blanks).** The decisions are digested in §1b and
   verbatim in `questions/REFACTOR-ROUND-2-ANSWERS.md`: two library sections, imports *offer* to copy, the file is
   the only home for kept images (compact-export button, 40 MB warning), the ladder covers v2 with a download-only
