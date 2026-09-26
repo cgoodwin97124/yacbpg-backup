@@ -3,7 +3,23 @@
 
 **RULE (author-mandated 2026-08-13): EVERY new author request is logged into this file FIRST — before
 any work starts — even when the author says "go ahead" immediately.** Greenlit requests go straight into
-the 🟢 START NOW section; everything awaiting the author's explicit "go ahead" goes into the 🕒 QUEUED
+the **2026-09-26 — the P0 regression harness (devtests/ + fixtures/) — ✅ DONE**
+**Request.** Build the regression net before any refactor step (R-01 P0).
+**Delivered.** `devtests/park.js` (park/check/restore of the whole localStorage map + an FNV-1a hash), four
+suites and their runners (`smoke.page.js` 68 checks, `gen.page.js` 18, `fixtures.page.js` 16, `core.test.js` 14
+DOM-free), `fixtures/` (full page / legacy v1 / every-legacy-key) with a builder, `devtests/shots/` (15 baseline
+screenshots of the fixture project) with a recipe, `devtests/bgprobe.page.js` (background-throttling probe) and
+`devtests/README.md`. 5 explicit manual lines; 0 perchance errors.
+**Verified.** Against the unmodified 2026.09.26.4 build; every runner restores the author's storage and proves
+it byte-for-byte after a reload.
+**Side findings (documented in `FUNCTION-MAP.md` §24 and `REFACTOR-NOTES.md` §3):** an export carries the
+browser library and an import overwrites it (v2 replaces, v1 merges) — the P2 project-owned-library work has to
+answer this; `panelCountSel` silently ignores any value outside 1/4/6/12/24/custom, which the JSON editor lets a
+user type; single-panel deletes use a native `confirm()` while batch operations use the choice dialog.
+**Hardening.** Park copies are dumped to the workspace before a suite runs; a runner that fails to restore
+reports `byteIdentical: false` and the write-back path recovers from the file.
+
+🟢 START NOW section; everything awaiting the author's explicit "go ahead" goes into the 🕒 QUEUED
 section. Move entries between sections as their status changes (greenlit → START NOW; implemented →
 ✅ DONE, with the changelog version + a matching dev-note block in index.html). A future AI helper
 session should READ THIS FILE before planning new work.
