@@ -3,9 +3,8 @@
 Form: `yacbpg-round2-2026-09-26` (v2026-09-26) · sent back 2026-09-26, 10:10.
 Digested into `REFACTOR-NOTES.md` §1b. The questions themselves are `src/round2-form.html`.
 
-**Two questions came back blank — `P2-01` 1a and 1b — and their notes still hold BUG-01's stray text
-("I'm not seeing it lately."), so they need re-asking (or the recommended defaults).** Everything else is
-answered, and every note below is the author's, verbatim.
+`P2-01` 1a and 1b came back blank; the author answered "For P2-01, defaults." on 2026-09-26, so both are the
+recommended defaults (recorded below). Every other answer is the author's, verbatim.
 
 ---
 
@@ -32,12 +31,12 @@ answered, and every note below is the author's, verbatim.
 ## P2-01 — Several projects, and how the app opens them
 
 **[1a]** Opening a Recent entry (or importing a file) while the current project has unsaved changes — what should happen?
-> (no answer given)
-> NOTE: I'm not seeing it lately.   ← stray text from BUG-01; question left blank
+> Save the current one to Recent first, then switch — no prompt (recommended)
+> TAKEN AS THE DEFAULT at the author's word, 2026-09-26: "For P2-01, defaults."
 
 **[1b]** When you load the generator, what should it open?
-> (no answer given)
-> NOTE: I'm not seeing it lately.   ← stray text from BUG-01; question left blank
+> The project I had open last time (today's behaviour — recommended)
+> TAKEN AS THE DEFAULT at the author's word, 2026-09-26: "For P2-01, defaults."
 
 **[1c]** What should a Recent entry remember beyond the project data itself?
 > Nothing extra — the project data only (recommended)
