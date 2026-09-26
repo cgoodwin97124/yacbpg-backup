@@ -25,6 +25,18 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-26 — FEATURE: duplicate an image — copy one image onto other slots in its own panel, or onto slots of another panel
+- **Status:** 🟢 **START NOW 2026-09-26** — greenlit by the author ("Defaults are fine. Go ahead and implement."). Implementation in progress; answers recorded above.
+- **Author, 2026-09-26, verbatim:** "I'd like an option to duplicate an image within a panel. I'd like a chip button under the images that would allow me to copy that image over one, two, or all three of the other images in the panel, or to one to four images in another panel."
+- **RECON (2026-09-26):** panel images are a plain in-memory array — `panelImages[i][k-1]`, per page as `pageSession[page].images` — and are deliberately NOT part of `panelState`, so a copy is just `panelImages[target][k-1] = sourceDataUrl` plus `showPanelImage(target, k, dataUrl)` (which sets the `img.src` through the lazy observer, enables that slot's chips and refreshes the panel's Open All / Clear Images buttons). Each slot's chips live in `#slotbtns-panel-i-k` (↗ Open · ⬇ Save · ✕ Clear · 🔓 Protect · ⭐ Cover) and `setPanelImageButtons(i, k, has)` disables the ones that need an image — a new chip joins that row and must be disabled the same way (`btn-view`, `btn-dl`, `btn-star` are the classes it loops). 🔒 is per slot (`isSlotProtected(i, k)` reads the `.btn-img-protect.active` class; `setSlotProtected` writes it) and every generation path skips protected slots. A panel shows only the slots up to its **Images** setting (`getPanelImageCount`, 1–4) — `updatePanelImgSlots` hides the rest — so a destination panel's usable slots depend on that setting. The app's generic dialog `showChoiceDialog` accepts raw HTML in `paragraphs` (the ⚡ Generate (x) to (y)… range picker of 2026.09.25.2 builds a custom row inside it), so the copy picker needs no new overlay. `makeRepresentative(i, k)` is the precedent for moving an image between slots (it moves the 🔒 flag with the image), and `getPanelCount()` / `pageLabel()` give the panels on the current page.
+- **DESIGN QUESTIONS SENT TO THE AUTHOR (2026-09-26)** — proposed defaults in brackets:
+  1. **Chip + dialog shape:** a new `⧉` chip at the end of each image's chip row (tooltip "Copy this image to other images in this panel, or to another panel") opening ONE dialog with (a) the panel's other slots as checkboxes plus a *select all 3* shortcut, and (b) a dropdown of the panels on this page plus their slot checkboxes, and a single **⧉ Copy image** button that applies to every ticked destination at once. [proposed]
+  2. **Occupied destinations:** overwrite them silently, with the dialog hint saying how many images will be replaced and the status line reporting it afterwards — or ask for confirmation first? [proposed: overwrite, no extra confirmation]
+  3. **🔒 protected destinations:** skip them and say so (🔒 means "keep this image"), or overwrite them anyway on the grounds that a copy is not a generation? [proposed: skip + warning]
+  4. **Destination panels:** list only the panels on the current page, and offer only the slots up to that panel's **Images** setting (slots above it are hidden on the page, so writing to them would be invisible) — or should the copy also be able to raise the target panel's image count? [proposed: current page only, no count changes]
+- Also assumed (say if otherwise): the source image stays where it is (it is a copy, not a move); the copy lands **unprotected** (🔒 does not travel — the point is to be able to regenerate the new image independently); copies are as ephemeral as every other in-memory image; and "another panel" means another panel on the same page rather than another page.
+
+
 ### 2026-09-25 — FEATURE: a "same seed for every image" checkbox in each panel's ⚙ Panel menu
 - **Status:** ✅ **DONE 2026.09.25.3** — implemented and verified live on 2026-09-25 (see the IMPLEMENTATION bullet below, plus `CHANGELOG.md` 2026.09.25.3 and `DEV-NOTES.md` BATCH 2026.09.25.3).
 - **Author, 2026-09-25, verbatim:** "I'd like to have a checkbox under the panels Panel menu that forces all images in the panel to use the same seed, rather than (seed) for panel 1, (seed+1) for panel 2, etc."
@@ -614,7 +626,6 @@ each section).
   include the two small offers (default mode → "Match my device", and renaming Focus's "⚡ GENERATE ALL PANELS
   ON PAGE" → "⚡ Generate All")? Ship everything as ONE version (`2026.09.23.4`) once the scope is confirmed.
 
-
 ### 2026-09-23 — BUG: "requestCloseMenuFullscreen is not defined" (full-screen menu's "← Back to page" button)
 - **Status:** DONE 2026-09-23 (changelog 2026.09.23.5).
 - **Report (author, 2026-09-23, verbatim):** the perchance HTML error — "There was an error in the onclick
@@ -692,18 +703,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Contents: Read+write on THEIR repo (worth a line in the repo README).
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
-
-### 2026-09-26 — FEATURE: duplicate an image — copy one image onto other slots in its own panel, or onto slots of another panel
-- **Status:** 🕒 **QUEUED 2026-09-26** — logged on receipt (standing rule). Recon done; waiting for the author's answers to the four design questions below before any code is written (standing directive: recon → ask → implement). Moves to 🟢 START NOW on the author's "go ahead".
-- **Author, 2026-09-26, verbatim:** "I'd like an option to duplicate an image within a panel. I'd like a chip button under the images that would allow me to copy that image over one, two, or all three of the other images in the panel, or to one to four images in another panel."
-- **RECON (2026-09-26):** panel images are a plain in-memory array — `panelImages[i][k-1]`, per page as `pageSession[page].images` — and are deliberately NOT part of `panelState`, so a copy is just `panelImages[target][k-1] = sourceDataUrl` plus `showPanelImage(target, k, dataUrl)` (which sets the `img.src` through the lazy observer, enables that slot's chips and refreshes the panel's Open All / Clear Images buttons). Each slot's chips live in `#slotbtns-panel-i-k` (↗ Open · ⬇ Save · ✕ Clear · 🔓 Protect · ⭐ Cover) and `setPanelImageButtons(i, k, has)` disables the ones that need an image — a new chip joins that row and must be disabled the same way (`btn-view`, `btn-dl`, `btn-star` are the classes it loops). 🔒 is per slot (`isSlotProtected(i, k)` reads the `.btn-img-protect.active` class; `setSlotProtected` writes it) and every generation path skips protected slots. A panel shows only the slots up to its **Images** setting (`getPanelImageCount`, 1–4) — `updatePanelImgSlots` hides the rest — so a destination panel's usable slots depend on that setting. The app's generic dialog `showChoiceDialog` accepts raw HTML in `paragraphs` (the ⚡ Generate (x) to (y)… range picker of 2026.09.25.2 builds a custom row inside it), so the copy picker needs no new overlay. `makeRepresentative(i, k)` is the precedent for moving an image between slots (it moves the 🔒 flag with the image), and `getPanelCount()` / `pageLabel()` give the panels on the current page.
-- **DESIGN QUESTIONS SENT TO THE AUTHOR (2026-09-26)** — proposed defaults in brackets:
-  1. **Chip + dialog shape:** a new `⧉` chip at the end of each image's chip row (tooltip "Copy this image to other images in this panel, or to another panel") opening ONE dialog with (a) the panel's other slots as checkboxes plus a *select all 3* shortcut, and (b) a dropdown of the panels on this page plus their slot checkboxes, and a single **⧉ Copy image** button that applies to every ticked destination at once. [proposed]
-  2. **Occupied destinations:** overwrite them silently, with the dialog hint saying how many images will be replaced and the status line reporting it afterwards — or ask for confirmation first? [proposed: overwrite, no extra confirmation]
-  3. **🔒 protected destinations:** skip them and say so (🔒 means "keep this image"), or overwrite them anyway on the grounds that a copy is not a generation? [proposed: skip + warning]
-  4. **Destination panels:** list only the panels on the current page, and offer only the slots up to that panel's **Images** setting (slots above it are hidden on the page, so writing to them would be invisible) — or should the copy also be able to raise the target panel's image count? [proposed: current page only, no count changes]
-- Also assumed (say if otherwise): the source image stays where it is (it is a copy, not a move); the copy lands **unprotected** (🔒 does not travel — the point is to be able to regenerate the new image independently); copies are as ephemeral as every other in-memory image; and "another panel" means another panel on the same page rather than another page.
-
 
 ### 2026-09-23 — STANDING DIRECTIVE: the AI may pause mid-task and ask for input
 - **Status:** ACTIVE (author-mandated 2026-09-23, in force until the author says otherwise). Docs-only — no
@@ -1042,7 +1041,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
    (every load starts fully collapsed, like the panel accordions)? Default I'd pick: session-only.
 6. When expanded on a BUILT-IN (non-`lib:`) choice such as "Hero (Cyber-Ninja)", I'd show that preset's
    description from the generator's own lists as the read-only text. Fine?
-
 
 ### 2026-09-23 — FEATURE REQUEST: JSON editor in a full-page overlay (Edit menu) with Find/Replace
 - **Status:** DONE 2026-09-23 (changelog 2026.08.16.24). Shipped as **Edit → 🧩 Open JSON Editor** — a full-page
@@ -1443,7 +1441,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   the ▦ Storyboard view and the user manual; the grid scrolls BOTH horizontally and vertically with a STICKY
   first row and first column. (8) Clicking a non-✅ intersection offers to ADD that library item to that panel.
 
-
 ### 2026-09-19 — Library → Import: pick Characters / Locations out of a project file
 - **Status:** DONE 2026-09-19 (changelog 2026.08.16.14). Author request: "add a function under
   the Library menu item called Import. When the user selects Import, it will allow them to select a project
@@ -1625,8 +1622,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   to z-index 10002. Verified with real-browser hit testing (elementsFromPoint returns imgPreviewImg first),
   since html2canvas can't capture fixed-position elements.
 
-
-
 ### 2026-08-15 — Panel Objects tooltips + per-panel image size selector (implemented)
 - **Status:** DONE 2026-08-15 (changelog 2026.08.15.5). Greenlit same day ("Go ahead and greenlight these,
   unless you need me to make any decisions..."). (1) Hover / long-press over a Panel Objects Identity dropdown
@@ -1639,7 +1634,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   (version stays 2 — fields are optional/back-compatible), restored on load, reset by Edit → Reset to Defaults,
   copied by Duplicate (whole-page[i] deep copy). Verified live: override/custom/fallback logic, save→restore
   round trip (persisted to localStorage, restored on reload), both tooltip types.
-
 
 ### 2026-08-15 — Bug: Backup dialog's Close button did nothing (fixed 2026-08-15.4)
 - **Status:** DONE 2026-08-15 (changelog 2026.08.15.4). After the dialog-visibility hardening made the overlay
