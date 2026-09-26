@@ -49,12 +49,12 @@ function grab(name) {
   return lines.slice(i, body + 1).join("\n");
 }
 
-const inlineWanted = ["crcTable", "crc32", "initCrcTable", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "JSON_NUM_RE", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds"];
+const inlineWanted = ["crcTable", "crc32", "initCrcTable", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "JSON_NUM_RE", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"];
 const inlineCode = inlineWanted.map(grab).join("\n\n");
 let inline = {};
 let extractionError = null;
 try {
-  const factory = new Function("sandbox", "with (sandbox) { " + inlineCode + "\n; return { crc32, initCrcTable, dataUrlToBytes, buildZip, inflateRawDeflate, unzipEntries, jsonTokenize, jsonDecodeRaw, jsonParse, ART_STYLES, COLOR_PALETTES, DEFAULT_POS, DEFAULT_NEGATIVES, composeKeywords, panelSeedValue, imageSeed, scrubMinusOneSeeds }; }");
+  const factory = new Function("sandbox", "with (sandbox) { " + inlineCode + "\n; return { crc32, initCrcTable, dataUrlToBytes, buildZip, inflateRawDeflate, unzipEntries, jsonTokenize, jsonDecodeRaw, jsonParse, ART_STYLES, COLOR_PALETTES, DEFAULT_POS, DEFAULT_NEGATIVES, composeKeywords, panelSeedValue, imageSeed, scrubMinusOneSeeds, composePanelPrompt, LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, normalizeLibType, extractLibraryItems, libRefEntry, libRefDesc }; }");
   inline = factory({ atob: (s) => atob(s), document: { getElementById: () => null, addEventListener() {} }, window: {} });
 } catch (e) {
   extractionError = e.message;
@@ -417,6 +417,149 @@ const specs = {
         if (JSON.stringify(a) !== JSON.stringify(b)) { bad.push({ n }); if (bad.length > 2) break; }
       }
       return bad.length ? no(JSON.stringify(bad)) : ok("200 documents scrubbed identically");
+    });
+  },
+
+  "src/core/prompt.js": async (mod) => {
+    const pool = ["", " ", "a", " a ", "a, b", ",", "  x  ", "\u00e9\u2713", "line\nbreak", "none", "None", null, undefined];
+    const strPool = pool.filter((v) => typeof v === "string");
+
+    await t("inline vs module: composePanelPrompt agrees on 600 random panel inputs", () => {
+      const bad = [];
+      for (let i = 0; i < 600; i++) {
+        const nChars = rint(4);
+        const chars = [];
+        for (let c = 0; c < nChars; c++) {
+          chars.push(rnd() < 0.12 ? null : { base: pool[rint(pool.length)], extra: pool[rint(pool.length)] });
+        }
+        const input = {
+          positive: pool[rint(pool.length)],
+          negative: pool[rint(pool.length)],
+          chars: chars,
+          locKey: rnd() < 0.2 ? null : pool[rint(pool.length)],
+          locDesc: pool[rint(pool.length)],
+          locExtra: pool[rint(pool.length)],
+          action: pool[rint(pool.length)],
+          override: rnd() < 0.25 ? { pos: strPool[rint(strPool.length)], neg: strPool[rint(strPool.length)] } : null
+        };
+        const a = inline.composePanelPrompt(input);
+        const b = mod.composePanelPrompt(input);
+        if (a.fullPrompt !== b.fullPrompt || a.negativePrompt !== b.negativePrompt || a.hasContent !== b.hasContent) {
+          bad.push({ i, a: short(a), b: short(b) });
+          if (bad.length > 3) break;
+        }
+      }
+      return bad.length ? no(JSON.stringify(bad).slice(0, 230)) : ok("600 panel inputs identical");
+    });
+
+    await t("inline vs module: composePanelPrompt agrees on degenerate inputs", () => {
+      const cases = [undefined, null, {}, { chars: null }, { chars: [] }, { chars: [null, null] }, { locKey: "none" }, { override: { pos: "", neg: "" } }, { chars: [{ base: undefined, extra: undefined }] }];
+      const bad = cases.filter((c) => JSON.stringify(inline.composePanelPrompt(c)) !== JSON.stringify(mod.composePanelPrompt(c)));
+      return bad.length ? no(JSON.stringify(bad).slice(0, 200)) : ok(cases.length + " degenerate inputs identical");
+    });
+  },
+
+  "src/core/library-core.js": async (mod) => {
+    const refPool = ["lib:char:abc", "lib:loc:", "lib:", "lib", "lib:char:abc:def", "LIB:char:x", "", "none", null, undefined, 0, 7, "char:abc", " lib:char:x", "lib:act:zzz", "lib:char:null", "lib:char:undefined", "lib:char:0", "lib::", "lib:char:" + "x".repeat(60), "lib:obj:q"];
+
+    await t("inline vs module: libIdFor agrees on 300 (type, now, rand) triples", () => {
+      const types = ["Character", "Location", "Action", "Bogus", "", null, undefined, 0, "char", "loc"];
+      const bad = [];
+      for (let i = 0; i < 300; i++) {
+        const type = types[rint(types.length)];
+        const now = rint(2) ? 1699999999999 + rint(1000) : rint(1000000);
+        const rand = rnd() < 0.5 ? rnd().toString(36).slice(2, 7) : String(rint(1000));
+        const a = inline.libIdFor(type, now, rand);
+        const b = mod.libIdFor(type, now, rand);
+        if (a !== b) { bad.push({ type, now, rand, a, b }); if (bad.length > 3) break; }
+      }
+      return bad.length ? no(JSON.stringify(bad).slice(0, 230)) : ok("300 ids identical");
+    });
+
+    await t("inline vs module: isLibRef/parseLibRef/libRefValue agree on 400 values", () => {
+      const bad = [];
+      for (let i = 0; i < 400; i++) {
+        const v = refPool[rint(refPool.length)];
+        const rows = [
+          ["isLibRef", String(inline.isLibRef(v)), String(mod.isLibRef(v))],
+          ["parseLibRef", JSON.stringify(inline.parseLibRef(v)), JSON.stringify(mod.parseLibRef(v))],
+          ["libRefValue", String(inline.libRefValue(v, v)), String(mod.libRefValue(v, v))],
+          ["libRefNeedles", JSON.stringify(inline.libRefNeedles(v)), JSON.stringify(mod.libRefNeedles(v))]
+        ];
+        for (const row of rows) if (row[1] !== row[2]) { bad.push({ i, fn: row[0], v, a: row[1], b: row[2] }); break; }
+        if (bad.length > 3) break;
+      }
+      return bad.length ? no(JSON.stringify(bad).slice(0, 230)) : ok("400 values x 4 helpers identical");
+    });
+
+    await t("inline vs module: countLibRefs agrees on 250 random documents", () => {
+      const ids = ["a", "char-1", "", "x".repeat(12)];
+      const makeDoc = () => {
+        const pages = {};
+        const np = rint(4);
+        for (let p = 1; p <= np; p++) {
+          const page = { panelCountSel: String(1 + rint(6)) };
+          const npan = rint(6);
+          for (let i = 1; i <= npan; i++) {
+            const slots = [];
+            const ns = rint(4);
+            for (let s = 0; s < ns; s++) slots.push(refPool[rint(refPool.length)]);
+            page[i] = { chars: slots.map((sel) => ({ sel, base: "", extra: "" })), loc: refPool[rint(refPool.length)], action: "a", imgCount: String(rint(4)) };
+          }
+          pages[p] = page;
+        }
+        return { version: 2, settings: { pages: pages }, libObjects: [{ id: ids[rint(ids.length)], name: "n" }] };
+      };
+      const bad = [];
+      for (let n = 0; n < 250; n++) {
+        const doc = makeDoc();
+        const id = ids[rint(ids.length)];
+        const a = inline.countLibRefs(doc, id);
+        const b = mod.countLibRefs(doc, id);
+        if (a !== b) { bad.push({ n, id, a, b }); if (bad.length > 3) break; }
+      }
+      return bad.length ? no(JSON.stringify(bad).slice(0, 230)) : ok("250 documents, counts identical");
+    });
+
+    await t("inline vs module: extractLibraryItems agrees on 200 documents (v2, legacy, junk)", () => {
+      const bad = [];
+      for (let n = 0; n < 200; n++) {
+        const kind = rint(4);
+        let data;
+        if (kind === 0) {
+          data = { libObjects: [{ id: "loc-1", name: " N ", desc: " d " }, { id: "act-2", type: "Action", name: "", desc: "x" }, { id: "zzz", type: "Bogus", name: "B", desc: "" }, { id: "char-3" }, null, "junk", { id: "loc-9", name: 5, desc: 7 }] };
+        } else if (kind === 1) {
+          data = { charLibrary: [{ name: "A", desc: "d" }], locLibrary: [{ name: "L" }], actLibrary: [{ desc: "act" }] };
+        } else if (kind === 2) {
+          data = rnd() < 0.5 ? null : [1, 2, 3];
+        } else {
+          data = { libObjects: Array.from({ length: rint(5) }, () => ({ id: ["loc-x", "act-y", "char-z", "", "q"][rint(5)], name: ["", " n ", "nn"][rint(3)], desc: ["", " d", "dd"][rint(3)] })) };
+        }
+        const a = JSON.stringify(inline.extractLibraryItems(data));
+        const b = JSON.stringify(mod.extractLibraryItems(data));
+        if (a !== b) { bad.push({ n, kind, a: a.slice(0, 80), b: b.slice(0, 80) }); if (bad.length > 2) break; }
+      }
+      return bad.length ? no(JSON.stringify(bad).slice(0, 230)) : ok("200 documents identical");
+    });
+
+    await t("inline vs module: libRefEntry/libRefDesc agree on 200 lookups", () => {
+      const objs = [{ id: "a", desc: "da" }, { id: "b" }, { id: "c", desc: "" }, { id: "d", desc: 5 }, null, { id: "loc-q", desc: "dq" }];
+      const sels = ["lib:char:a", "lib:char:b", "lib:char:c", "lib:char:d", "lib:char:missing", "lib:loc:loc-q", "none", "", null, "lib:char:null", "lib:char:"];
+      const bad = [];
+      for (let i = 0; i < 200; i++) {
+        const sel = sels[rint(sels.length)];
+        const a = String(inline.libRefDesc(objs, sel)) + "|" + JSON.stringify(inline.libRefEntry(objs, sel));
+        const b = String(mod.libRefDesc(objs, sel)) + "|" + JSON.stringify(mod.libRefEntry(objs, sel));
+        if (a !== b) { bad.push({ i, sel, a, b }); if (bad.length > 3) break; }
+      }
+      return bad.length ? no(JSON.stringify(bad).slice(0, 230)) : ok("200 lookups identical");
+    });
+
+    await t("inline vs module: the type table and normalizeLibType agree", () => {
+      const same = JSON.stringify(mod.LIB_TYPE_PREFIX) === JSON.stringify(inline.LIB_TYPE_PREFIX);
+      const cases = [{ id: "loc-1" }, { id: "act-2" }, { id: "char-3" }, { id: "zzz" }, { id: "loc-" }, { id: "" }, { id: 5 }, { type: "Location" }, { type: "Bogus", id: "act-9" }, {}, null, { id: "actor" }];
+      const bad = cases.filter((o) => inline.normalizeLibType(o) !== mod.normalizeLibType(o));
+      return same && !bad.length ? ok("10 types, " + cases.length + " objects identical") : no("table same: " + same + ", cases: " + JSON.stringify(bad).slice(0, 120));
     });
   },
 };
