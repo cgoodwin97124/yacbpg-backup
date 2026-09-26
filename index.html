@@ -41,8 +41,8 @@
                    to load is reported in a bar at the top of the page. The four that had
                    survived a release (zip, jsontext, keywords, seeds) lost their in-file copy in
                    2026.09.26.9; prompt and library-core keep theirs as the fallback until
-                   2026.09.26.13 (2026.09.26.10 was the panel-id/schema step, .11 the import-menu
-                   fix and .12 the per-panel colour palette), and those two are the
+                   2026.09.26.14 (2026.09.26.10 was the panel-id/schema step, .11 the import-menu
+                   fix, .12 the per-panel colour palette and .13 the library rename), and those two are the
                    ones devtests/diff-core.js still compares
                    module-against-inline. schema.js arrived in 2026.09.26.10: it owns the
                    project/page/panel shape and mints the id every panel now carries.
@@ -392,6 +392,13 @@ color-scheme:light;
   .btn-add-lib:hover { background: var(--blue-2); }
   .btn-del-lib { background: var(--red); color: var(--on-danger); font-weight: bold; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
   .btn-del-lib:hover { background: var(--red-2); }
+  .btn-rename-lib { background: var(--blue); color: var(--text); font-weight: bold; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+  .btn-rename-lib:hover { background: var(--blue-2); }
+  .rename-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 4px; }
+  .rename-row label { font-size: 0.88rem; color: var(--text-5); }
+  .rename-row input { flex: 1 1 auto; min-width: 0; }
+  .rename-preview { display: block; font-size: 0.88rem; color: var(--text-5); margin-top: 8px; min-height: 1.2em; }
+  .rename-preview.bad { color: var(--red-text); }
   .lib-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 2px 0 12px; }
   .lib-toolbar .lib-hint { margin: 0; }
   .btn-lib-import { background: var(--green); color: var(--ink); border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -1264,8 +1271,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.12 — 2026-09-26 — 🌈 Every panel can override the colour palette
-- A Palette dropdown now sits in each panel's header row (after Style, before Size) so a single panel can use a different colour palette from the project default.
+## 2026.09.26.13 — 2026-09-26 — ✎ Rename a library character or location everywhere it is used
+- Every saved Character and Location row in 📚 Library now has a ✎ button: it renames the item and replaces the old name — whole-word and case-sensitive — in that item's library description and in the descriptions and action prompt of every panel that uses it, showing exactly what will change before you confirm.
 </script>
 
 
@@ -1483,6 +1490,226 @@ color-scheme:light;
     });
   }
 
+  function escapeRegExpLiteral(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function libraryNameRegex(name) {
+    return new RegExp('(^|[^A-Za-z0-9_])' + escapeRegExpLiteral(name) + '(?![A-Za-z0-9_])', 'g');
+  }
+
+  function countWholeWordName(text, name) {
+    if (!name) return 0;
+    const m = String(text == null ? '' : text).match(libraryNameRegex(name));
+    return m ? m.length : 0;
+  }
+
+  function replaceWholeWordName(text, name, replacement) {
+    if (!name) return String(text == null ? '' : text);
+    return String(text == null ? '' : text).replace(libraryNameRegex(name), (match, pre) => pre + replacement);
+  }
+
+  function libraryRenameSlug(typeLabel) {
+    if (typeLabel === 'Character') return 'char';
+    if (typeLabel === 'Location') return 'loc';
+    return null;
+  }
+
+  function libraryNameTaken(objs, id, name) {
+    const key = String(name || '').trim().toLowerCase();
+    return objs.some(o => o.id !== id && String(o.name || '').trim().toLowerCase() === key);
+  }
+
+  function sweepPanelForRename(p, slug, id, from, to, apply) {
+    const ref = 'lib:' + slug + ':' + id;
+    let hit = false, descs = 0, acts = 0;
+    if (slug === 'char') {
+      if (Array.isArray(p.chars)) {
+        for (const c of p.chars) {
+          if (!c || c.sel !== ref) continue;
+          hit = true;
+          if (countWholeWordName(c.base, from)) descs++;
+          if (countWholeWordName(c.extra, from)) descs++;
+          if (apply) {
+            c.base = replaceWholeWordName(c.base, from, to);
+            c.extra = replaceWholeWordName(c.extra, from, to);
+          }
+        }
+      }
+    } else if (slug === 'loc' && p.loc === ref) {
+      hit = true;
+      if (countWholeWordName(p.locBase, from)) descs++;
+      if (countWholeWordName(p.locExtra, from)) descs++;
+      if (apply) {
+        p.locBase = replaceWholeWordName(p.locBase, from, to);
+        p.locExtra = replaceWholeWordName(p.locExtra, from, to);
+      }
+    }
+    if (hit && countWholeWordName(p.action, from)) {
+      acts = 1;
+      if (apply) p.action = replaceWholeWordName(p.action, from, to);
+    }
+    return { hit, descs, acts };
+  }
+
+  function sweepRenameAcrossPages(state, slug, id, from, to, apply) {
+    const stats = { panels: 0, descs: 0, acts: 0 };
+    const pages = (state && state.pages) || {};
+    for (const key of Object.keys(pages)) {
+      const page = pages[key];
+      if (!page || typeof page !== 'object') continue;
+      for (let i = 1; i <= 24; i++) {
+        const p = page[i];
+        if (!p || typeof p !== 'object') continue;
+        const r = sweepPanelForRename(p, slug, id, from, to, apply);
+        if (!r.hit) continue;
+        stats.descs += r.descs;
+        stats.acts += r.acts;
+        if (r.descs || r.acts) stats.panels++;
+      }
+    }
+    return stats;
+  }
+
+  function syncRenameFieldsToDom(pageData, slug, id) {
+    if (!pageData) return;
+    const ref = 'lib:' + slug + ':' + id;
+    for (let i = 1; i <= 24; i++) {
+      const p = pageData[i];
+      if (!p || typeof p !== 'object') continue;
+      if (slug === 'char' && Array.isArray(p.chars)) {
+        for (let s = 1; s <= 3; s++) {
+          const c = p.chars[s - 1];
+          if (!c || c.sel !== ref) continue;
+          const b = document.getElementById('panel-char-base-' + i + '-' + s);
+          const e = document.getElementById('panel-char-extra-' + i + '-' + s);
+          if (b) b.value = c.base == null ? '' : c.base;
+          if (e) e.value = c.extra == null ? '' : c.extra;
+        }
+      }
+      if (slug === 'loc' && p.loc === ref) {
+        const b = document.getElementById('panel-loc-base-' + i);
+        const e = document.getElementById('panel-loc-extra-' + i);
+        if (b) b.value = p.locBase == null ? '' : p.locBase;
+        if (e) e.value = p.locExtra == null ? '' : p.locExtra;
+      }
+      const a = document.getElementById('panel-act-' + i);
+      if (a && typeof p.action === 'string') a.value = p.action;
+    }
+  }
+
+  function renamePlural(n, word) {
+    return n + ' ' + word + (n === 1 ? '' : 's');
+  }
+
+  function applyLibraryRename(id, newName) {
+    const objs = loadLibraryObjects();
+    const obj = objs.find(o => o.id === id);
+    if (!obj) return null;
+    const typeLabel = obj.type || 'Character';
+    const slug = libraryRenameSlug(typeLabel);
+    if (!slug) return null;
+    const from = String(obj.name || '').trim();
+    const to = String(newName == null ? '' : newName).trim().slice(0, 60);
+    if (!to || to === from || libraryNameTaken(objs, id, to)) return null;
+    const libDescChanged = countWholeWordName(obj.desc, from) > 0;
+    obj.desc = replaceWholeWordName(obj.desc, from, to);
+    obj.name = to;
+    saveLibraryObjects(objs);
+    const state = collectPanelState();
+    const stats = sweepRenameAcrossPages(state, slug, id, from, to, true);
+    savePanelStateShape(state);
+    syncRenameFieldsToDom(state.pages[state.currentPage], slug, id);
+    updatePanelSelects();
+    renderLibrary();
+    refreshAllPanelLineDescs();
+    for (let i = 1; i <= 24; i++) updatePanelSummary(i);
+    schedulePanelSave();
+    const ov = document.getElementById('analysisOverlay');
+    if (ov && !ov.hidden) renderAnalysis();
+    return { from, to, typeLabel, stats, libDescChanged };
+  }
+
+  async function openLibraryRename(id) {
+    const objs = loadLibraryObjects();
+    const obj = objs.find(o => o.id === id);
+    if (!obj) return;
+    const typeLabel = obj.type || 'Character';
+    const slug = libraryRenameSlug(typeLabel);
+    if (!slug) return;
+    const from = String(obj.name || '').trim();
+    const typeWord = typeLabel.toLowerCase();
+    const state = collectPanelState();
+    const libDescCount = countWholeWordName(obj.desc, from);
+    const dialog = showChoiceDialog({
+      title: '✎ Rename this saved ' + typeWord,
+      paragraphs: [
+        '<span class="rename-row"><label for="renameInput">Rename to</label><input type="text" id="renameInput" maxlength="60" autocomplete="off" spellcheck="false" placeholder="New name" value="' + escapeHtml(obj.name || '') + '"></span>',
+        '<span class="rename-preview" id="renamePreview"></span>'
+      ],
+      hint: 'Matching is whole-word and case-sensitive, so \u201c' + (from || 'the old name') + '\u201d is replaced but \u201c' + (from || '') + 'something\u201d is not. The sweep covers this ' + typeWord + '\u2019s library description and, in every panel on every page that uses it, the Basic Description, the This-panel extra description and the Panel Action Prompt. Other library items are never touched. This cannot be undone \u2014 a project backup can restore it.',
+      buttons: [
+        { label: '✎ Rename everywhere', cls: 'choice-plain', value: 'go' },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    });
+    const input = document.getElementById('renameInput');
+    const preview = document.getElementById('renamePreview');
+    const goBtn = document.querySelector('#choiceBtns button');
+    const readName = () => {
+      const name = input ? input.value.trim().slice(0, 60) : '';
+      let ok = true;
+      let msg = '';
+      if (!name) {
+        ok = false;
+        msg = 'Enter the new name.';
+      } else if (name === from) {
+        ok = false;
+        msg = 'That is already this ' + typeWord + '\u2019s name.';
+      } else if (libraryNameTaken(objs, id, name)) {
+        ok = false;
+        msg = '\u26a0 Another saved item is already named \u201c' + name + '\u201d. Choose a different name.';
+      } else {
+        const s = sweepRenameAcrossPages(state, slug, id, from, name, false);
+        const panelChanges = s.descs + s.acts;
+        if (!panelChanges && !libDescCount) {
+          msg = 'Nothing else mentions \u201c' + from + '\u201d \u2014 only the name of this library entry changes.';
+        } else if (!panelChanges) {
+          msg = '\u201c' + name + '\u201d will replace \u201c' + from + '\u201d in your library description only \u2014 no panel text mentions it.';
+        } else {
+          msg = '\u201c' + name + '\u201d will replace \u201c' + from + '\u201d in ' + renamePlural(s.panels, 'panel')
+            + ' \u2014 ' + renamePlural(s.descs, 'description') + ' and ' + renamePlural(s.acts, 'action prompt') + '.'
+            + (libDescCount ? ' Your saved library description changes too.' : '');
+        }
+      }
+      if (preview) {
+        preview.textContent = msg;
+        preview.classList.toggle('bad', !ok);
+      }
+      if (goBtn) goBtn.disabled = !ok;
+      return ok ? name : null;
+    };
+    if (input) {
+      input.oninput = readName;
+      input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); if (goBtn && !goBtn.disabled) goBtn.click(); } };
+      input.focus();
+      input.select();
+    }
+    readName();
+    const choice = await dialog;
+    if (input) { input.oninput = null; input.onkeydown = null; }
+    if (choice !== 'go') return;
+    const name = input ? input.value.trim().slice(0, 60) : '';
+    if (!name) return;
+    const res = applyLibraryRename(id, name);
+    const st = document.getElementById('statusEl');
+    if (st) {
+      st.textContent = res
+        ? ('✎ Renamed \u201c' + res.from + '\u201d to \u201c' + res.to + '\u201d \u2014 ' + renamePlural(res.stats.descs, 'description') + ' and ' + renamePlural(res.stats.acts, 'action prompt') + ' updated across ' + renamePlural(res.stats.panels, 'panel') + (res.libDescChanged ? ', library description included.' : '.'))
+        : 'Nothing was renamed.';
+    }
+  }
+
   function newPanelLibraryEntry(type, i, s) {
     const label = TYPE_OF[type] || 'Character';
     const suggested = 'New ' + label;
@@ -1572,7 +1799,16 @@ color-scheme:light;
         delBtn.textContent = '🗑';
         delBtn.title = 'Delete';
         delBtn.onclick = () => deleteLibraryObject(o.id);
-        row.append(nameInput, descInput, delBtn);
+        if (type === 'Character' || type === 'Location') {
+          const renameBtn = document.createElement('button');
+          renameBtn.className = 'btn-rename-lib';
+          renameBtn.textContent = '✎';
+          renameBtn.title = 'Rename this ' + type.toLowerCase() + ' everywhere it is used — shows what will change, then applies it';
+          renameBtn.onclick = () => openLibraryRename(o.id);
+          row.append(nameInput, descInput, renameBtn, delBtn);
+        } else {
+          row.append(nameInput, descInput, delBtn);
+        }
         ctn.appendChild(row);
       }
     }
@@ -9190,6 +9426,8 @@ color-scheme:light;
   window.updateCopyPrevChipStates = updateCopyPrevChipStates;
   window.newPanelLibraryEntry = newPanelLibraryEntry;
   window.addLibraryEntryByType = addLibraryEntryByType;
+  window.openLibraryRename = openLibraryRename;
+  window.applyLibraryRename = applyLibraryRename;
   window.libraryImportFiles = libraryImportFiles;
   window.libImportSelectAll = libImportSelectAll;
   window.confirmLibraryImport = confirmLibraryImport;
