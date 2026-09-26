@@ -1,6 +1,6 @@
 # The visual baseline
 
-14 screenshots of the **fixture** project, not of the author's project — deterministic content, no images, so a
+15 screenshots of the **fixture** project, not of the author's project — deterministic content, no images, so a
 diff after a refactor step means the code changed and not the data. Compare them with the `vision` tool (or by
 eye) after each phase; the exit criteria for P5 ("the same screenshots as the P0 baselines") refer to these.
 
@@ -12,7 +12,7 @@ viewport made the snapshot step heavy enough to freeze the preview twice), then 
 
 | File | Viewport | Theme | Subject |
 |---|---|---|---|
-| `desktop-dark-grid.png` | 1440×900 | dark | the panel grid, File menu open, scrolled to top |
+| `desktop-dark-grid.png` | 1440×900 | dark | the panel grid, menus closed, scrolled to top |
 | `desktop-dark-json.png` | 1440×900 | dark | the project JSON editor overlay |
 | `desktop-dark-analysis.png` | 1440×900 | dark | the analysis matrix, page 1 |
 | `desktop-dark-dialog.png` | 1440×900 | dark | the batch-delete confirmation (panels 1–3 selected) |
@@ -31,7 +31,9 @@ Capture details, all of which matter for reproducibility:
   polls `innerWidth`/`innerHeight` (up to 10 s) and refuses to capture until they match the plan. Each shot
   records the observed size in the run report.
 - Each subject starts from a known UI state: any open choice dialog is dismissed, the panel selection cleared,
-  the theme set explicitly, the page scrolled to the top, then a 700 ms settle before the capture.
+  the theme set explicitly, the page scrolled to the top, then a 700 ms settle before the capture. The `grid`
+  subject **closes whatever menu is open** (`switchMenu` is a toggle, so "click File" left the menu open or
+  closed depending on how the session got there — that was the whole 224 px mystery; see `devtests/README.md`).
 
 The PNGs are 900×1331 for the desktop subjects (243×3396 for the phone grid, which is one column tall) — about
 75–125 KB each, ~1.5 MB in total.
