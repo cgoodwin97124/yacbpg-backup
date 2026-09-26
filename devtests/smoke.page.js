@@ -485,6 +485,21 @@ async function run() {
     return p1 !== p2 ? ok("override '" + other + "' changed panel 1 only") : no("prompts identical");
   });
 
+  await t("G7: 47 a per-panel palette override changes only that panel's prompt", async () => {
+    const sel = $("panel-palette-1");
+    if (!sel) return no("no per-panel palette select");
+    const other = [...sel.options].map((o) => o.value).find((v) => v && v !== getVal("presetPalette"));
+    if (!other) return no("options: " + JSON.stringify([...sel.options].map((o) => o.value)));
+    const before = (await buildPanelPrompt(1)).fullPrompt;
+    setVal("panel-palette-1", other);
+    await settle();
+    const after = (await buildPanelPrompt(1)).fullPrompt;
+    const p2 = (await buildPanelPrompt(2)).fullPrompt;
+    setVal("panel-palette-1", "");
+    await settle();
+    return (after !== before && after.length > 0 && before !== p2) ? ok("override '" + other + "' changed panel 1 only") : no("before=" + before.slice(0, 60) + " after=" + after.slice(0, 60));
+  });
+
   await t("G8: 44 a new library object is stored and rendered", async () => {
     switchMenu("library");
     await sleep(150);
