@@ -2,7 +2,7 @@
 
 The companion form is `src/refactor-form.html` (open it on the generator page with `window.__openRefactorForm()`), which writes your answers back into `tickets/` from the browser. This file is the same set of questions in plain text, so they can be read — and answered — without the form: fill in the `Answer:` lines and hand the file back.
 
-The three documents the questions refer to are `FUNCTION-MAP.md`, `REFACTOR-ROADMAP.md` and `UI-IDEAS.md`, all in this repo. Answer as much or as little as you like; every multiple-choice question defaults to the option marked **(recommended)**, and "all defaults" is a valid answer.
+The three documents the questions refer to are `FUNCTION-MAP.md`, `REFACTOR-ROADMAP.md` and `UI-IDEAS.md`, all in this repo. Answer as much or as little as you like; every multiple-choice question defaults to the option marked **(recommended)**, and "all defaults" is a valid answer. (The form has a **✨ Use the recommended answers** button that fills them all in at once; this text version simply lists them.)
 
 ---
 
