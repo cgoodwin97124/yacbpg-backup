@@ -48,8 +48,8 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 ## 2. What is in progress
 
 - **P0 — the regression harness.** **Complete, 2026-09-26.** `devtests/park.js` (park / check / restore of the
-  whole localStorage map with an FNV-1a hash, so "nothing was written" is provable); `devtests/smoke.page.js` (75
-  checks over §22 of the function map — 71 pass, 4 explicit manual lines); `devtests/gen.page.js` (18 checks of the
+  whole localStorage map with an FNV-1a hash, so "nothing was written" is provable); `devtests/smoke.page.js` (77
+  checks over §22 of the function map — 73 pass, 4 explicit manual lines); `devtests/gen.page.js` (18 checks of the
   generation engine against a stubbed service, plus 1 manual); `devtests/fixtures.page.js` (16 checks importing
   every `fixtures/` file through the real import path); `devtests/core.test.js` (14 DOM-free checks — the pure
   functions are extracted out of `index.html` by name and run against a fake `document`); `fixtures/` (full page,
@@ -70,6 +70,15 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — keep-awake shipped as 2026.09.26.6 (a feature release, not a refactor step).** New browser
+  preference `comicGen.keepAwake` + a Web Audio oscillator at gain 0.0001, because a page that is *playing audio*
+  is exempt from background-timer throttling in both engines (the research and the exact source citations are in
+  `DEV-NOTES.md` BATCH 2026.09.26.6). The smoke suite gained `G14:76` (defaults to off, reports its state) and
+  `G14:77` (starts/stops the loop, persists both ways), so it is now **77 checks: 73 pass, 4 manual, 0 fail**;
+  generation 18/0, fixtures 16/0, core 14/0, differential 21/0, 0 perchance errors, and the author's map still
+  restores byte-identical (`1c13afe4`) after every runner. A new measurement tool, `devtests/keepawake-probe.page.js`,
+  keeps its samples in `sessionStorage` so a preview reload (the editor reloads on Save) no longer destroys them —
+  the live-only `devtests/bgprobe.page.js` lost the author's first switch that way.
 - **2026-09-26 — P1 part 1 shipped as 2026.09.26.5.** Four of the six modules are extracted: `src/core/zip.js`
   (`crc32`, `initCrcTable`, `dataUrlToBytes`, `buildZip`, `inflateRawDeflate`, `unzipEntries`),
   `src/core/jsontext.js` (`JSON_NUM_RE`, `jsonTokenize`, `jsonDecodeRaw`, `jsonParse`), `src/core/keywords.js`
