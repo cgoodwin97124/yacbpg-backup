@@ -28,7 +28,9 @@ Reading order for a new session:
   `prompt`/`library-core` in 2026.09.26.14, which completes P1's cleanup; `index.html` now only declares the names,
   so `devtests/diff-core.js` is a guards-only suite (there is no inline half left to diff against). `schema.js`
   (2026.09.26.10) is the first P2 module — the project defaults,
-  `newPanelId`, and the `normalise` / `validate` pair the state layer is built on.
+  `newPanelId`, and the `normalise` / `validate` pair the state layer is built on; 2026.09.26.15 added the project's own
+  `library` field with `normaliseLibrary` / `normaliseLibType` (the project owns its library, and `comicGen.libObjects`
+  is now the browser-wide **catalogue** a project copies entries from — see `AI-NOTES.md` §28).
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
