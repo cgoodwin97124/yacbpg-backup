@@ -1060,23 +1060,43 @@ Two HTML forms under `src/` are how the author answers planning questions. They 
 - **Round 2 (2026.09.26.7).** `src/round2-form.html` is the P2 batch (7 tickets, 25 questions, `FORM_META.id = yacbpg-round2-2026-09-26`). Its data block was spliced into the round-1 shell, so the two files share every line of logic: **edit the data near the top, never the logic below it**, and if the logic ever has to change, change the round-1 file first and re-splice.
 - `questions/REFACTOR-ROUND-1.md` is the readable transcription of round 1; round 2's questions live in the form itself and are summarised in `PENDING.md`.
 
-## 22. P1 complete: the six src/core modules (2026.09.26.5 + 2026.09.26.8)
+## 22. P1 complete + the first four in-file copies deleted (2026.09.26.5 / .8 / .9)
 
-P1 is finished — six modules hold the app's pure logic, and `index.html` keeps an inline copy of each as the fallback:
+P1 is finished — six modules hold the app's pure logic. Since **2026.09.26.9** four of them are the *only* copy (`zip`,
+`jsontext`, `keywords`, `seeds`); `prompt` and `library-core` keep an in-file copy as the fallback until **2026.09.26.10**.
 
 | Module | Exports |
 |---|---|
 | `src/core/zip.js` | `crc32`, `initCrcTable`, `dataUrlToBytes`, `buildZip`, `inflateRawDeflate`, `unzipEntries` |
-| `src/core/jsontext.js` | `JSON_NUM_RE`, `jsonTokenize`, `jsonDecodeRaw`, `jsonParse` |
+| `src/core/jsontext.js` | `jsonTokenize`, `jsonDecodeRaw`, `jsonParse` (`JSON_NUM_RE` is module-internal) |
 | `src/core/keywords.js` | `ART_STYLES`, `COLOR_PALETTES`, `DEFAULT_POS`, `DEFAULT_NEGATIVES`, `composeKeywords` |
 | `src/core/seeds.js` | `panelSeedValue`, `imageSeed`, `scrubMinusOneSeeds` |
 | `src/core/prompt.js` | `composePanelPrompt` |
 | `src/core/library-core.js` | `LIB_TYPE_PREFIX`, `libIdFor`, `libRefValue`, `isLibRef`, `parseLibRef`, `libRefNeedles`, `countLibRefs`, `normalizeLibType`, `extractLibraryItems`, `libRefEntry`, `libRefDesc` |
 
-- **The loader:** `coreLoad(name, path, apply)` at the top of `index.html` — `import(path).then(m => apply(m))`, wrapped in try/catch. Each `apply` assigns the module's binding over the inline one (`if (m.crc32) crc32 = m.crc32;`), so an unsaved `src/` with no service worker simply keeps the inline copy.
-- **The rules for adding one:** the inline target must be a **`function` declaration or a `let`** (never a `const` — the assignment throws, and because `apply` runs inside a try/catch the throw silently skips every later assignment in that block), and it must be the **only** declaration with that name in the file (`devtests/diff-core.js` grabs the first `function|const|let|var <name>` match and extracts it). DOM and storage reads stay in `index.html` as a thin adapter: `collectPanelPromptInput` feeds `composePanelPrompt`, and `countLibReferences`/`resolveDesc`/`plLineDescText` keep their `loadLibraryObjects()`/`collectPanelState()` calls while the pure work moved into `libRefDesc`/`countLibRefs`.
-- **The gate:** `devtests/diff-core.js` extracts each inline binding, imports each module by blob URL, and compares the two over ~4,500 generated inputs (31 checks). It also fails if a discovered `src/core/*.js` is missing from `GH_SRC_FILES` (the manifest `ghPush` walks).
-- **Deleting the inline copies:** one release after the module has survived a release (`REFACTOR-ROADMAP.md` §3.3). Eligible from 2026.09.26.9: `zip`, `jsontext`, `keywords`, `seeds`. Then `prompt` and `library-core`.
+- **The loader:** `coreLoad(name, path, apply)` at the top of `index.html` — `import(path).then(m => apply(m))`, wrapped in
+  try/catch — pushes one promise per module into `coreLoads`. `apply` assigns the module's binding over the declared one
+  (`if (m.crc32) crc32 = m.crc32;`); a failed import *or* a throwing `apply` records that module's name as a failure.
+  `coreReady = Promise.all(coreLoads)` resolves to the names that failed, and **must be created after the six `coreLoad(...)`
+  calls** (built beside the `coreLoad` definition it captures an empty array and resolves at once, so the boot runs with
+  nothing loaded). The old flat init block at the end of the IIFE is now `bootApp()`, invoked from `coreReady.then(...)`;
+  `window.appReady` resolves after it (the hook for tests), and `coreLoadWarning(names)` shows a fixed bar at the top of the
+  page when anything failed.
+- **The rules for adding one:** the target must be a **`function` declaration or a `let`** (never a `const`), and it must be
+  the **only** declaration with that name in the file. Once the module has survived a release the in-file implementation is
+  deleted and only the declaration stays — from then on a module that cannot load leaves the name `undefined`, which is why
+  the boot waits for all six and the failure is reported instead of silently degrading. DOM and storage reads stay in
+  `index.html` as thin adapters: `collectPanelPromptInput`, `getEffectiveKeywords`, `getPanelSeed`, `pinPanelSeedForRun`,
+  `countLibReferences`, `resolveDesc`, `plLineDescText`, `bytesToBlobDataUrl`, `parseZipImages`.
+- **The tests:** `devtests/core.test.js` imports all six modules (blob URL) and asserts their behaviour — 18 checks, including
+  the base64/zip-internals/JSON-escape cases that moved over from the differential suite. `devtests/diff-core.js` compares
+  module against in-file copy for the two modules that still keep one (`prompt`, `library-core`) — 21 checks — and additionally
+  fails if a discovered `src/core/*.js` is missing from `GH_SRC_FILES`, if a deleted in-file copy reappears, or if a
+  module-provided name is no longer declared in `index.html`. Modules with no differential spec get an `exported surface` check
+  (`unspecced: []`).
+- **The deletion schedule (`REFACTOR-ROADMAP.md` §3.3):** one release after the module survived a release. Done in 2026.09.26.9
+  for `zip`, `jsontext`, `keywords`, `seeds`; due in 2026.09.26.10 for `prompt` and `library-core`, after which `diff-core.js`
+  becomes a module-suite and its source-extraction machinery (braceEnd/at/grab) can be deleted.
 
 ## DOC LAYOUT (2026.09.23.6)
 
