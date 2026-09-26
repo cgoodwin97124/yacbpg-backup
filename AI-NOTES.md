@@ -1051,6 +1051,15 @@ So the implementation is a Web Audio oscillator, and **`KEEP_AWAKE_GAIN` must ne
 - Hidden-tab measurement: `devtests/keepawake-probe.page.js` (see `devtests/README.md`); its samples live in `sessionStorage` so the editor's reload-on-Save cannot destroy them.
 - **Measured 2026-09-26** (Firefox 156 / Windows, the author's machine, both halves of the A/B): hidden heartbeat median **1005 ms with the preference off** (189 samples in a 190 s hidden period — Firefox's 1 s clamp) versus **262 ms with it on** (1374 samples, 1371 of them under 400 ms). `requestAnimationFrame` while hidden: 28 frames, so the tone keeps the timers alive, not the rendering. Full table in `DEV-NOTES.md` BATCH 2026.09.26.6.
 
+## 21. The dev answer forms (round 1, round 2)
+
+Two HTML forms under `src/` are how the author answers planning questions. They open from the page (no menu entry) with `window.__openRefactorForm()` / `window.__openRound2Form()` (`window.__openQuestionForm()` is the ticket batch), which fetch the file and load it into an iframe via a blob URL — so the form runs on the generator's own origin and can read the shared GitHub settings out of `localStorage`.
+
+- **Shape.** A form is a self-contained page: `FORM_META` (id, version, title, intro), `GH_DEFAULTS`, and a `TICKETS` array of `{ id, slug, kind, title, request, questions[] }`. A question is `select` / `checkboxes` / `text`, each with an optional free-text note; `persist()` writes answers (debounced) to `questionForm.draft.<FORM_META.id>`, so a form can be filled across sessions and reloads.
+- **Sending.** "Send answers" writes one markdown file per ticket through the GitHub Contents API into `tickets/` (token/owner/repo come from the same `comicGen.github*` keys the backup feature uses; a downloaded copy gets its own settings card), then merges the ticket index. **The answers therefore live in the repo, not in a chat message** — read `tickets/*.md`.
+- **Round 2 (2026.09.26.7).** `src/round2-form.html` is the P2 batch (7 tickets, 25 questions, `FORM_META.id = yacbpg-round2-2026-09-26`). Its data block was spliced into the round-1 shell, so the two files share every line of logic: **edit the data near the top, never the logic below it**, and if the logic ever has to change, change the round-1 file first and re-splice.
+- `questions/REFACTOR-ROUND-1.md` is the readable transcription of round 1; round 2's questions live in the form itself and are summarised in `PENDING.md`.
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
