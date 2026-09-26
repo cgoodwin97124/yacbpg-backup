@@ -39,4 +39,4 @@ if (!window.__park) {
     return { park, check, restore, fnv, PARK_KEY: KEY };
   })();
 }
-return window.__park.park();
+window.__parkReady = true;
