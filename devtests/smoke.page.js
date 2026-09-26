@@ -22,7 +22,7 @@ const GROUPS = {
   G11: "the analysis matrix",
   G12: "views, layout, theme and the manual",
   G13: "destructive confirmations and protection flags",
-  G14: "preferences and the background-generation gate",
+  G14: "preferences, the background-generation gate and keep-awake",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -828,6 +828,36 @@ async function run() {
     if (ownerBefore !== null) localStorage.setItem("comicGen.githubOwner", ownerBefore);
     else localStorage.removeItem("comicGen.githubOwner");
     return eqArr([open, prefill === (ownerBefore || ""), saved], [true, true, "p0-owner"], "open,prefill,saved");
+  });
+
+  await t("G14: 76 the keep-awake preference defaults to off and reports its state", () => {
+    const stored = localStorage.getItem("comicGen.keepAwake");
+    const box = $("prefKeepAwake");
+    const state = keepAwakeStateText();
+    const label = ($("keepAwakeState").textContent || "").trim();
+    const off = stored === null || stored === "0";
+    return off && !!box && box.checked === false && state === "off" && label === "\u25cf off"
+      ? ok("stored=" + JSON.stringify(stored) + ", unchecked, state=off, label=\u201c" + label + "\u201d")
+      : no("stored=" + JSON.stringify(stored) + ", checked=" + (box && box.checked) + ", state=" + state + ", label=\u201c" + label + "\u201d");
+  });
+
+  await t("G14: 77 the keep-awake preference starts a silent loop and stops it again", async () => {
+    const box = $("prefKeepAwake");
+    box.checked = true;
+    onPrefKeepAwakeChange();
+    await settle();
+    const storedOn = localStorage.getItem("comicGen.keepAwake");
+    const stateOn = keepAwakeStateText();
+    const labelOn = ($("keepAwakeState").textContent || "").trim();
+    const statusOn = ($("statusEl").textContent || "").slice(0, 2);
+    const started = stateOn === "running" || stateOn === "starting";
+    box.checked = false;
+    onPrefKeepAwakeChange();
+    await settle();
+    const storedOff = localStorage.getItem("comicGen.keepAwake");
+    const stateOff = keepAwakeStateText();
+    return eqArr([storedOn, started, labelOn.length > 2, statusOn === "\ud83d\udd0a", storedOff, stateOff],
+      ["1", true, true, true, "0", "off"], "on,started,label,statusOn,off,stateOff");
   });
 
   await t("G15: 72 the panel selection lives in the DOM and is never saved", async () => {
