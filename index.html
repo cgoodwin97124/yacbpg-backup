@@ -38,12 +38,12 @@
                    coreLoad(name, path, apply) — import('./src/core/x.js') — and swaps the
                    declared name (a function declaration or a let) for the module's when it
                    loads. The boot waits for all seven (window.appReady) and a module that fails
-                   to load is reported in a bar at the top of the page. The four that had
-                   survived a release (zip, jsontext, keywords, seeds) lost their in-file copy in
-                   2026.09.26.9; prompt and library-core keep theirs as the fallback until
-                   2026.09.26.14 (2026.09.26.10 was the panel-id/schema step, .11 the import-menu
-                   fix, .12 the per-panel colour palette and .13 the library rename), and those two are the
-                   ones devtests/diff-core.js still compares
+                   to load is reported in a bar at the top of the page. P1 is therefore COMPLETE:
+                   zip, jsontext, keywords and seeds lost their in-file copies in 2026.09.26.9,
+                   prompt and library-core in 2026.09.26.14, so no module has an in-file fallback
+                   any more and index.html only declares the names. devtests/diff-core.js keeps
+                   its guards (module surface, the GH_SRC_FILES manifest, "the copies are really
+                   gone", every module name still declared) and no longer compares
                    module-against-inline. schema.js arrived in 2026.09.26.10: it owns the
                    project/page/panel shape and mints the id every panel now carries.
                    Never edit only one side.
@@ -1271,8 +1271,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.13 — 2026-09-26 — ✎ Rename a library character or location everywhere it is used
-- Every saved Character and Location row in 📚 Library now has a ✎ button: it renames the item and replaces the old name — whole-word and case-sensitive — in that item's library description and in the descriptions and action prompt of every panel that uses it, showing exactly what will change before you confirm.
+## 2026.09.26.14 — 2026-09-26 — 🧹 P1 cleanup finished: the last two in-file code copies are gone
+- The seven logic modules (`src/core/*.js`) are now the only home for their code — the app no longer carries a duplicate fallback copy of the prompt builder or the library helpers inside the page. Nothing looks or behaves differently; the page is just smaller and a failed module load is reported in a bar at the top instead of silently falling back.
 </script>
 
 
@@ -1814,78 +1814,10 @@ color-scheme:light;
     }
   }
 
-  let LIB_TYPE_PREFIX = { Character: 'char', Location: 'loc', Action: 'act' };
-
-  function libIdFor(type, now, rand) {
-    return (LIB_TYPE_PREFIX[type] || 'obj') + '-' + now + '-' + rand;
-  }
-
-  function libRefValue(type, id) {
-    return 'lib:' + type + ':' + id;
-  }
-
-  function isLibRef(value) {
-    return String(value == null ? '' : value).indexOf('lib:') === 0;
-  }
-
-  function parseLibRef(value) {
-    if (!isLibRef(value)) return null;
-    const parts = String(value).split(':');
-    return { type: parts[1], id: parts[2] };
-  }
-
-  function libRefNeedles(id) {
-    return ['lib:char:' + id, 'lib:loc:' + id, 'lib:act:' + id];
-  }
-
-  function countLibRefs(data, id) {
-    const needles = libRefNeedles(id);
-    let n = 0;
-    const visit = (v) => {
-      if (typeof v === 'string') { if (needles.indexOf(v) !== -1) n++; return; }
-      if (Array.isArray(v)) { for (const x of v) visit(x); return; }
-      if (v && typeof v === 'object') { for (const k in v) visit(v[k]); }
-    };
-    visit(data);
-    return n;
-  }
-
-  function libRefEntry(objs, selValue) {
-    const ref = parseLibRef(selValue);
-    if (!ref) return null;
-    return (objs || []).find(e => e && e.id === ref.id) || null;
-  }
-
-  function libRefDesc(objs, selValue) {
-    const entry = libRefEntry(objs, selValue);
-    return entry ? (entry.desc || '') : '';
-  }
+  let LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, libRefEntry, libRefDesc, normalizeLibType, extractLibraryItems;
 
   function newLibraryId(type) {
     return libIdFor(type, Date.now(), Math.random().toString(36).slice(2, 7));
-  }
-
-  function normalizeLibType(o) {
-    const t = o && o.type;
-    if (t === 'Character' || t === 'Location' || t === 'Action') return t;
-    const id = String((o && o.id) || '');
-    if (id.startsWith('loc-')) return 'Location';
-    if (id.startsWith('act-')) return 'Action';
-    return 'Character';
-  }
-
-  function extractLibraryItems(data) {
-    const out = [];
-    if (!data || typeof data !== 'object') return out;
-    if (Array.isArray(data.libObjects)) {
-      for (const o of data.libObjects) if (o && typeof o === 'object') out.push({ type: normalizeLibType(o), name: String(o.name || '').trim(), desc: String(o.desc || '').trim() });
-    } else {
-      const legacy = [['charLibrary', 'Character'], ['locLibrary', 'Location'], ['actLibrary', 'Action']];
-      for (const [key, type] of legacy) {
-        if (Array.isArray(data[key])) for (const o of data[key]) if (o && typeof o === 'object') out.push({ type: type, name: String(o.name || '').trim(), desc: String(o.desc || '').trim() });
-      }
-    }
-    return out.filter(o => o.name || o.desc);
   }
 
   async function readProjectFileData(file) {
@@ -6117,27 +6049,7 @@ color-scheme:light;
     return getEffectiveKeywords();
   }
 
-  function composePanelPrompt(input) {
-    const inp = input || {};
-    const charParts = [];
-    const chars = inp.chars || [];
-    for (const c of chars) {
-      if (!c) continue;
-      charParts.push(c.base == null ? "" : c.base);
-      charParts.push(c.extra == null ? "" : c.extra);
-    }
-    const locKey = inp.locKey;
-    const locDesc = inp.locDesc == null ? "" : inp.locDesc;
-    const locExtra = inp.locExtra == null ? "" : inp.locExtra;
-    const action = inp.action == null ? "" : inp.action;
-    const hasLocSelected = !!locKey && locKey !== "none";
-    const fullPrompt = [inp.positive, ...charParts, locDesc, locExtra, action]
-      .map(s => (s || "").trim()).filter(Boolean).join(", ");
-    const hasContent = charParts.length > 0 || hasLocSelected || locDesc.trim() !== "" || locExtra.trim() !== "" || action.trim() !== "";
-    const override = inp.override;
-    if (override) return { fullPrompt: override.pos, negativePrompt: override.neg, hasContent: override.pos.trim() !== "" };
-    return { fullPrompt, negativePrompt: inp.negative, hasContent };
-  }
+  let composePanelPrompt;
 
   function collectPanelPromptInput(i, charMap, locMap) {
     const locKey = (document.getElementById('panel-loc-select-' + i) || {}).value || 'none';
