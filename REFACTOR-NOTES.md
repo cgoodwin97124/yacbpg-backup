@@ -47,12 +47,15 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 
 ## 2. What is in progress
 
-- **P0 — the regression harness.** Started 2026-09-26. `devtests/park.js` exists (park / check / restore of
-  the whole localStorage map with an FNV-1a hash, so "nothing was written" is provable). Still to come:
-  `devtests/smoke.page.js` (the capability walk from `FUNCTION-MAP.md` §22 against the live preview),
-  `devtests/pure.test.js` (the pure-function tests, runnable in a worker), the `fixtures/` set (a multi-page
-  project at the panel limit with overrides, a legacy v1 project, a project carrying every legacy key) and the
-  screenshot baseline (panel grid, JSON editor, analysis matrix, batch dialogs × both themes × 390 px / 1440 px).
+- **P0 — the regression harness.** **Complete, 2026-09-26.** `devtests/park.js` (park / check / restore of the
+  whole localStorage map with an FNV-1a hash, so "nothing was written" is provable); `devtests/smoke.page.js` (72
+  checks over §22 of the function map — 68 pass, 4 explicit manual lines); `devtests/gen.page.js` (18 checks of the
+  generation engine against a stubbed service, plus 1 manual); `devtests/fixtures.page.js` (16 checks importing
+  every `fixtures/` file through the real import path); `devtests/core.test.js` (14 DOM-free checks — the pure
+  functions are extracted out of `index.html` by name and run against a fake `document`); `fixtures/` (full page,
+  legacy v1, every-legacy-key) and `devtests/shots/` (15 screenshots of the fixture project). The runners park,
+  run, restore and *verify the restore byte-for-byte*, and dump the park to the workspace so a freeze cannot lose
+  the author's project.
   **Exit criteria:** the suite passes against the *unmodified* build, and every invariant in `FUNCTION-MAP.md`
   §21 has a test or an explicit "manual check" line.
 - **P1 — pure logic** (after P0): `core/zip.js`, `core/keywords.js`, `core/seeds.js`, `core/prompt.js`,
@@ -62,6 +65,11 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26** — P0 finished and pushed: `devtests/` (5 suites + 4 runners + the park helper), `fixtures/`
+  (3 files + a README) and `devtests/shots/` (15 baseline screenshots). Suite results: smoke 68/0, generation 18/0,
+  fixtures 16/0, core 14/0, 5 manual lines. Two freezes of the live preview during snapshotting were traced to the
+  heavy capture of the 24-panel fixture at a scaled viewport (the baseline now reduces it to 6 panels) and the park
+  protocol was hardened to always restore, dump to the workspace and verify the hash after a reload.
 - **2026-09-26** — the three open decisions were closed by the author (library = project-owned with the browser
   library as a catalogue; kept images = in the project file; dialogue = a configurable number of text lines per
   panel). Recorded in §3; §4 now holds no open questions. The roadmap's P2 gained a step for the project-owned
@@ -73,6 +81,18 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
   single biggest complaint and it was the app's own `visibilitychange` handler doing the damage.
 
 ---
+
+**P0 result (2026-09-26).** The suite passes against the unmodified 2026.09.26.4 build: 68 + 18 + 16 + 14
+checks green, 5 explicit manual lines, zero perchance errors. What the checks pinned down that the docs did not
+say (all now in `FUNCTION-MAP.md` §24): the settings export is a *wrapper* (`{version, exportedAt, settings,
+preset, libObjects, …}`) and it **does** carry the browser library — a v2 import *replaces* that library with the
+file's, a v1 import *merges* its legacy `charLibrary`/`locLibrary`/`actLibrary` into whatever the browser already
+has; `panelCountSel` is only ever one of 1/4/6/12/24/`custom` (a hand-written `"3"` is silently ignored, which the
+JSON editor lets a user type); single-panel deletes confirm with a native `confirm()` while batch operations use
+the choice dialog; and the generation DOM markers (`panel-img-box` gains `rep` / `protected` / `cleared` / `failed`
+/ `paused` / `skipping`, `slot-btns` chips disable) are what a test must assert on, because `showPanelImage`
+attaches the `src` asynchronously. Invariants §21 items 1–15 each have at least one check; 16–18 are covered by
+inspection and by the harness's own rules (the runner refuses to leave a stray key behind).
 
 ## 3. Decisions, written down so they are not re-litigated
 
@@ -116,6 +136,15 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
   upgrader is a standalone page in this repo that reuses `core/migrations.js` once P1/P4 extract it.
 
 ---
+
+- **The library is carried by an export, and an import overwrites it** (measured 2026-09-26, `FUNCTION-MAP.md`
+  §24). A v2 file replaces the browser-wide library with its own `libObjects`; a v1 file merges its legacy arrays
+  in instead. This is the strongest argument yet for the P2 decision above: with per-project libraries, importing
+  someone else's project can no longer rewrite the shared catalogue. It also means P2 has to answer what an
+  import should do to the *catalogue* — offer to copy the file's objects in, rather than replacing.
+- **`panelCountSel` has a closed domain** (1/4/6/12/24/`custom`). A file (or a user in the JSON editor) can say
+  `"3"` and the page silently keeps the previous count. A one-line `normalise()` in P2's schema work should fold
+  any other number into `custom` + `panelCountCustom`.
 
 ## 4. Closed with the author (2026-09-26)
 
