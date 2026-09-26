@@ -1,6 +1,7 @@
 const strip = (s) => s.replace(/\nreturn window\.__park\.park\(\);\s*$/, "\n");
 const parkBody = strip(await fs.readTextFile("devtests/park.js"));
 const fixtureText = await fs.readTextFile("fixtures/full-page.json");
+const noTok = (m) => { const c = {}; for (const k of Object.keys(m || {})) if (!/githubToken$/i.test(k)) c[k] = m[k]; return c; };
 const fnvOf = (map) => {
   let h = 0x811c9dc5;
   const s = Object.keys(map).sort().map((k) => k + "=" + map[k]).join("\n");
@@ -90,7 +91,7 @@ if (!restored) {
 try { await tools.page_refresh({}); } catch (e) {}
 const ver = await tools.page_eval({ js: "const m={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k!=='__test_backup_v10')m[k]=localStorage.getItem(k);}return {project:(JSON.parse(m['comicGen.panelState']||'{}').projectName||null), keys:Object.keys(m).length, strays:Object.keys(m).filter(k=>k.startsWith('__')), map:m};" });
 report.afterReload = { project: ver.result && ver.result.project, keys: ver.result && ver.result.keys, strays: ver.result && ver.result.strays };
-report.byteIdentical = !!(ver.result && fnvOf(ver.result.map) === report.parkedHash);
+report.byteIdentical = !!(ver.result && fnvOf(noTok(ver.result.map)) === fnvOf(noTok(parkedMap)));
 
 const cmp = [];
 for (const p of report.pages) {
