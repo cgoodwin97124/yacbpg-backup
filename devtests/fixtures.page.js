@@ -17,11 +17,13 @@ const ok = (d) => ({ ok: true, d: d === undefined ? "" : d });
 const no = (d) => ({ ok: false, d: d === undefined ? "" : d });
 const eqArr = (a, b, what) => (JSON.stringify(a) === JSON.stringify(b) ? ok(what + " = " + JSON.stringify(a)) : no(what + ": expected " + JSON.stringify(b) + ", got " + JSON.stringify(a)));
 const st = () => JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
-const lib = () => JSON.parse(localStorage.getItem("comicGen.libObjects") || "[]");
+const lib = () => { const s = st(); return Array.isArray(s.library) ? s.library : []; };
+const catLog = () => JSON.parse(localStorage.getItem("comicGen.libObjects") || "[]");
 const shown = () => [...document.querySelectorAll('[id^="panel-card-"]')].filter((el) => el.style.display !== "none").length;
 const getVal = (id) => { const el = $(id); return el ? el.value : null; };
 
 async function importFixture(text) {
+  window.__fxCatBefore = catLog().length;
   const input = $("importSettingsInput");
   const dt = new DataTransfer();
   dt.items.add(new File([text], "fixture.json", { type: "application/json" }));
@@ -63,10 +65,10 @@ async function run() {
       return eqArr([p[6].protectSlots[0], p[6].protectSlots[1], override.pos], [true, false, "hand written prompt for panel 7"], "protect,override");
     });
 
-    await t("FX4 the library came with the file", () => {
+    await t("FX4 the library came with the file (into the project, not the catalogue)", () => {
       const names = lib().map((o) => o.name).sort();
-      const inDom = [...document.querySelectorAll("#libObjects .lib-row input")].map((el) => el.value).sort();
-      return eqArr([lib().length, names[0], inDom.length], [4, "Fixture Action", 4], "count,names");
+      const inDom = [...document.querySelectorAll("#libObjects .lib-row-proj input")].map((el) => el.value).sort();
+      return eqArr([lib().length, names[0], inDom.length, catLog().length], [4, "Fixture Action", 4, window.__fxCatBefore || 0], "count,names,catalogueUnchanged");
     });
 
     await t("FX5 the short page keeps the content in its hidden slots", async () => {
@@ -122,10 +124,10 @@ async function run() {
       return eqArr([p1.chars[0].sel, p1.chars[1].extra, p1.loc, p1.action], ["lib:char:legacy-ch-1", "from the extras array", "lib:loc:legacy-loc-1", "an action recovered from extras"], "chars,loc,action");
     });
 
-    await t("FX10 the legacy libraries merged into the existing libObjects", () => {
+    await t("FX10 the legacy libraries became this project's own library", () => {
       const names = lib().map((o) => o.name).sort();
       const merged = ["Legacy Alley", "Legacy Hero", "Legacy Leap"].every((n) => names.includes(n));
-      return eqArr([merged, names.length >= 3], [true, true], "mergedIntoExisting names=" + JSON.stringify(names));
+      return eqArr([merged, names.length >= 3, catLog().length], [true, true, window.__fxCatBefore || 0], "mergedIntoProject names=" + JSON.stringify(names) + " catalogue=" + catLog().length);
     });
 
     await t("FX11 the legacy library keys were consumed", () => {
