@@ -249,7 +249,8 @@ src/
 **STATUS: COMPLETE (2026.09.26.8); the first cleanup is done (2026.09.26.9).** All six steps are extracted and gated.
 The in-file copies of `zip`, `jsontext`, `keywords` and `seeds` were **deleted in 2026.09.26.9** — `index.html` now only
 declares those names, the boot waits for the modules (`coreReady` / `window.appReady`) and a module that fails to load is
-reported in a bar at the top of the page. `prompt` and `library-core` lose their copies one release later (2026.09.26.10),
+reported in a bar at the top of the page. `prompt` and `library-core` lose their copies one release later **(2026.09.26.11 —
+2026.09.26.10 shipped P2 step 1 instead)**,
 at which point `devtests/diff-core.js` drops its differential half and the extraction machinery in it can go.
 
 Move, in this order, keeping each function's current implementation in `index.html` as a **fallback**:
@@ -274,7 +275,7 @@ const buildPrompt = corePrompt ? corePrompt.buildPanelPrompt : buildPanelPromptI
 So a module that fails to load (an in-app browser before a Save) falls back to the code still in `index.html`.
 The fallback is deleted one release later, once the module has survived a real release — done for `zip`, `jsontext`,
 `keywords` and `seeds` in 2026.09.26.9 (the declaration stays, the boot waits, and a failure is reported), with
-`prompt` and `library-core` following in 2026.09.26.10.
+`prompt` and `library-core` following in **2026.09.26.11** (2026.09.26.10 shipped P2 step 1 instead).
 
 **Exit criteria:** the P0 core tests run against the *modules* (**met 2026.09.26.9** — `core.test.js` imports all six and
 no longer extracts them); a "differential" test compares old vs new output for hundreds of generated inputs and finds zero
@@ -282,11 +283,20 @@ differences (met at each extraction); no user-visible change (met — screenshot
 
 ### 3.4 P2 — a real state layer (read-only first)
 
-1. **Panels get ids.** Add an `id` to every panel entry, generated on create/duplicate/import, and
-   migrated on load for panels that lack one (`migrations.js`). Store it in the project. *Nothing else
+**STATUS: steps 1 and 2 are BUILT (2026.09.26.10).** Panels carry ids and `src/core/schema.js` exists —
+`SCHEMA_VERSION`, `PANEL_COUNT_OPTIONS`, `newPanelId`, `defaultChar`, `defaultPanel`, `defaultPage`,
+`defaultProject`, `normalise`, `validate` — and `validate(normalise(x))` is always clean. `normalise` is the
+migration seam and is **conservative by rule: it never deletes a key it does not understand**. Not yet done:
+`index.html` still uses its own `defaultPageData()` (swapping `resetEverything` onto `defaultProject()` belongs
+with the store, step 3), the project-owned library and kept images (step 2b), the store itself (step 3) and the
+store-vs-`collectPanelState` equality test (step 4).
+
+1. ✅ **Panels get ids.** Add an `id` to every panel entry, generated on create/duplicate/import, and
+   migrated on load for panels that lack one (today: `normalise()` in `core/schema.js`). Store it in the project. *Nothing else
    changes yet* — the DOM still drives everything.
-2. **Write `core/schema.js`**: `defaultProject()`, `defaultPage()`, `defaultPanel()`, `normalise(state)`,
-   `validate(state)`. The hand-built fresh state inside `resetEverything` becomes `defaultProject()`.
+2. ✅ **Write `core/schema.js`**: `defaultProject()`, `defaultPage()`, `defaultPanel()`, `normalise(state)`,
+   `validate(state)` (plus `newPanelId`, `defaultChar`, `PANEL_COUNT_OPTIONS`, `SCHEMA_VERSION`). **Still to do
+   here:** the hand-built fresh state inside `resetEverything` becomes `defaultProject()` (with the store step).
 2b. **The project owns its library, and its kept images** (author's decisions, 2026-09-26 - `REFACTOR-NOTES.md`
    section 3). `defaultProject()` carries a `library` array and a `kept` array; the browser-wide library stays as
    a *catalogue* a project can copy entries from ("+ from my library"). The migration gives an older project a
