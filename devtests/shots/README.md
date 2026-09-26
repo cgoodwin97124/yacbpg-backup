@@ -1,6 +1,6 @@
 # The visual baseline
 
-15 screenshots of the **fixture** project, not of the author's project — deterministic content, no images, so a
+14 screenshots of the **fixture** project, not of the author's project — deterministic content, no images, so a
 diff after a refactor step means the code changed and not the data. Compare them with the `vision` tool (or by
 eye) after each phase; the exit criteria for P5 ("the same screenshots as the P0 baselines") refer to these.
 
