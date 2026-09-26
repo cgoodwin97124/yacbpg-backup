@@ -1,5 +1,4 @@
-const strip = (s) => s.replace(/\nreturn window\.__park\.park\(\);\s*$/, "\n");
-const parkBody = strip(await fs.readTextFile("devtests/park.js"));
+const parkBody = await fs.readTextFile("devtests/park.js");
 const suite = await fs.readTextFile("devtests/fixtures.page.js");
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const FNVSrc = 'function __fnv(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return h.toString(16).padStart(8,"0");}function __map(){const m={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k!=="__test_backup_v10")m[k]=localStorage.getItem(k);}return m;}function __hash(){const m=__map();return __fnv(Object.keys(m).sort().map(k=>k+"="+m[k]).join("\\n"));}';
