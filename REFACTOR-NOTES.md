@@ -53,7 +53,7 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
   generation engine against a stubbed service, plus 1 manual); `devtests/fixtures.page.js` (16 checks importing
   every `fixtures/` file through the real import path); `devtests/core.test.js` (14 DOM-free checks — the pure
   functions are extracted out of `index.html` by name and run against a fake `document`); `fixtures/` (full page,
-  legacy v1, every-legacy-key) and `devtests/shots/` (15 screenshots of the fixture project). The runners park,
+  legacy v1, every-legacy-key) and `devtests/shots/` (14 screenshots of the fixture project). The runners park,
   run, restore and *verify the restore byte-for-byte*, and dump the park to the workspace so a freeze cannot lose
   the author's project.
   **Exit criteria:** the suite passes against the *unmodified* build, and every invariant in `FUNCTION-MAP.md`
