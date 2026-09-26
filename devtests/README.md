@@ -45,11 +45,11 @@ came from a heavy synchronous snapshot of the 24-panel fixture at a scaled viewp
 | File | What it is |
 |---|---|
 | `park.js` | the park/check/restore helper (the only file here that runs on its own) |
-| `smoke.page.js` + `run-smoke.js` | the capability walk: 77 checks over the factory reset, pages, panels and reflow, content and the freeze rule, prompt composition and override invalidation, seeds, keywords and presets, the library, export/zip/import round trips, the JSON editor, the analysis matrix, the views, confirmations, the preferences (including the keep-awake setting, checks 76–77), and the panel selection + clipboard (`G15`, which is what pins invariant §21.11 — the selection is DOM-only and never reaches the save). 73 pass, 3 manual lines + 1 cross-reference line. |
+| `smoke.page.js` + `run-smoke.js` | the capability walk: 77 checks over the factory reset, pages, panels and reflow, content and the freeze rule, prompt composition and override invalidation, seeds, keywords and presets, the library, export/zip/import round trips, the JSON editor, the analysis matrix, the views, confirmations, the preferences (including the keep-awake setting, checks 76–77 — 76 asserts that an absent key reads as `off` and that the off state stores `"0"`, unchecks the box and relabels), and the panel selection + clipboard (`G15`, which is what pins invariant §21.11 — the selection is DOM-only and never reaches the save). 73 pass, 3 manual lines + 1 cross-reference line. |
 | `gen.page.js` + `run-gen.js` | the generation engine against a stubbed `root.generateImage`: skip/protected/failed paths, seed offsets and pinning, the same-seed flag, prompt history, pause and stop settling cleanly, the run tally, and the 2026.09.26.4 background gate in both directions. 18 pass, 1 manual. |
 | `fixtures.page.js` + `run-fixtures.js` | imports every file in `fixtures/` through the real import path and asserts what came back. 16 pass. |
 | `core.test.js` | the DOM-free suite. Extracts `crc32`, `initCrcTable`, `buildZip`, `inflateRawDeflate`, `unzipEntries`, `scrubMinusOneSeeds`, `getEffectiveKeywords`, `applyPreset`, `ART_STYLES`, `COLOR_PALETTES`, `JSON_NUM_RE`, `jsonTokenize`, `jsonDecodeRaw` and `jsonParse` **out of `index.html` by name** and runs them in a worker against a fake `document`. 14 pass. |
-| `diff-core.js` | the **differential** suite for `src/core/*.js` (P1). Extracts the same functions out of `index.html`, imports each module by blob URL, and asserts the two agree over generated input: 300 CRC buffers, 120 zips (byte-identical with the timestamps masked, plus 480 cross-reads), 50 data URLs, 40 deflate streams, 600 JSON texts (200 documents + 400 mutations of them, including the error message and span), 150 escape-heavy strings, the 12 styles × 9 palettes tables, 400 keyword/NSFW combinations, 400 seed inputs, 300 (seed, k, same) triples, 200 scrubbed documents. Also asserts that every discovered `src/core/*.js` is listed in `index.html`'s `GH_SRC_FILES` (the ghPush manifest) — a module that is not in that manifest would never be backed up. 21 pass. **Run it after every extraction.** |
+| `diff-core.js` | the **differential** suite for `src/core/*.js` (P1). Extracts the same functions out of `index.html`, imports each module by blob URL, and asserts the two agree over generated input: 300 CRC buffers, 120 zips (byte-identical with the timestamps masked, plus 480 cross-reads), 50 data URLs, 40 deflate streams, 600 JSON texts (200 documents + 400 mutations of them, including the error message and span), 150 escape-heavy strings, the 12 styles × 9 palettes tables, 400 keyword/NSFW combinations, 400 seed inputs, 300 (seed, k, same) triples, 200 scrubbed documents. Also asserts that every discovered `src/core/*.js` is listed in `index.html`'s `GH_SRC_FILES` (the ghPush manifest) — a module that is not in that manifest would never be backed up. 31 pass (six modules, ~4,500 generated cases). **Run it after every extraction.** |
 | `visual-diff.js` | the **visual regression check**: re-captures the `devtests/shots/` baseline into `scratch/shots-*` and compares it pixel-by-pixel with the stored PNG (differing pixels, mean/max channel delta). It uses the same park/restore protocol. **Capture order matters** — see the note below. |
 | `bgprobe.page.js` | the **live-measurement probe** (2026-09-26, for the tab-background question): a page script that samples a 1 Hz page timer, a `requestAnimationFrame` counter split visible/hidden, a 100 ms worker ticker and every `visibilitychange`, and reports them with `window.__bgReport()` / `__bgReset()` / `__bgStop()`. Live-only: its samples die with the page. |
 | `keepawake-probe.page.js` | the **reload-proof** version of the same measurement (2026-09-26, for the keep-awake setting): samples a 250 ms timer **while hidden**, a 1 s timer while visible, a 100 ms worker, and the keep-awake preference at each sample, and **persists everything to `sessionStorage` (`yacbpg.awake.probe`)** so the numbers survive a preview reload / save. `window.__awakeReport()` reads the stored rows even in a page where the probe is not running (re-inject the file to start sampling again; `__awakeReset()` / `__awakeStop()`). It splits the hidden heartbeat gaps into *keep-awake off* vs *keep-awake on*, which is what shows whether the audio really defeated the throttling. Writes nothing to `localStorage`. |
@@ -98,6 +98,23 @@ that depends on how the session got there, so the same recipe renders differentl
 before it. **Compare like with like:** run the baseline and the check in the same order, or capture a group
 first. The park/restore protocol is what keeps this safe: the fixture import and the theme/viewport changes
 are all hung under the park, and every run restores the author's map byte-for-byte.
+
+### Two harness traps (found 2026.09.26.8)
+
+Both cost an afternoon, and neither was the app's fault. Read them before doubting a suite result.
+
+1. **A tool result redacts `comicGen.githubToken` only when it is a *top-level key* of the returned object.**
+   The runners park by dumping the whole map (`dumpParked`), which the harness redacts, and then compared
+   `fnvOf(parkedMap)` against a hash the page had computed *with* the token — so `byteIdentical` printed `false`
+   on a perfectly clean restore, and had been doing so silently. The fix is to compare like with like:
+   `run-smoke.js`, `run-gen.js` and `run-fixtures.js` now use the page's own `park()` hash against the page's
+   post-reload hash, and `visual-diff.js` / `make-baseline.js` hash both sides through a `noTok()` filter. The
+   authoritative check remains `park.js`'s `restore().byteIdentical`, which never leaves the page.
+2. **A `sizeChanged` in the visual check can be a session artefact, not a code change.** 2026.09.26.8's run again
+   reported the six dark views **112 CSS px taller** than the stored baseline (the light views pixel-identical),
+   so the *previous* build was written back into the workspace and captured in the same session: **both builds
+   produced identical numbers**, and the extraction touched no markup. That is the second independent A/B of the
+   same conclusion as the addendum above — A/B first, blame later.
 
 ### Measuring the hidden-tab throttling (and whether keep-awake defeats it)
 
