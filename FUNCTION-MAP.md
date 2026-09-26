@@ -277,7 +277,9 @@ add a new *type* of object; see which panels use an object; import objects out o
 
 **Rules:**
 - The library is **global to the browser**, shared by every project, and stored separately from the
-  project (so a project export does not carry it, but a project *backup* does, as `libObjects`).
+  project — but a settings export *does* carry it, as `libObjects`, and an import applies it: a v2 file
+  **replaces** the browser library with the file's, a v1 file **merges** its legacy `charLibrary` /
+  `locLibrary` / `actLibrary` into whatever the browser already has (measured 2026-09-26, §24).
 - Objects have a stable generated id, a type label, a name and a description.
 - Types are open-ended: the built-in labels plus any the user creates.
 - Deleting an object is confirmed, names every project it affects, and warns when it is referenced.
@@ -762,6 +764,53 @@ outright; a *migration* must still tolerate the stored data.
 | `.pl-libdesc`, `syncState` chains, `carryNext` | Removed features; do not look for them. |
 | The per-panel header 🔄 Generate button | An intentional duplicate of the action row's generate button. Not dead — but a redundancy worth collapsing in a redesign. |
 | The `#choiceBtns` dialog's stale buttons | The dialog's buttons stay in the DOM when hidden, so any test that reads them after an action that did *not* open a dialog reads the previous dialog. A refactor should clear them. |
+
+---
+
+## 24. Facts the P0 harness measured (2026-09-26)
+
+Verified against the 2026.09.26.4 build by `devtests/` — not read off the code, asserted at runtime.
+
+**The settings export is a wrapper.** `exportSettings()` writes what `buildExportData(false)` returns:
+`{version, exportedAt, settings, preset, libObjects, layoutMode, menuVisible, panelsVisible, activeMenu,`
+`menuFullscreen, genAlwaysVisible, hdrAllViews}`. `settings` is the project (`version, projectName,`
+`imageSizeSel, imageSizeW, imageSizeH, guidanceScale, imgCountDefault, previewDelay, previewOn, globalPos,`
+`globalNeg, nsfw, theme, currentPage, pages`). The **JSON editor edits this same wrapper** — `jsonFieldClass`
+makes the open flags, `preset`'s two fields, `libObjects[].type/name/desc` and every `settings` field except
+`version` / `currentPage` / `pages` / `theme` editable, and everything else locked. A page is
+`{name, summary, panelCountSel, panelCountCustom, seed, 1…24}`; a panel is
+`{chars[3]{sel,base,extra}, title, protectSlots[4], loc, locBase, locExtra, action, seed, imgCount, style,`
+`sizeSel, sizeW, sizeH, sameSeed, promptOverride, promptHistory}` — so all 24 slots exist on every page, which
+is why a page showing 3 panels can still carry content in slots 4–24 (fixture `full-page.json` pins this).
+
+**`panelCountSel` has a closed domain:** `1 | 4 | 6 | 12 | 24 | custom`. Any other value (a hand-edited
+`"3"`) fails to select in the `#panelCount` control and the page silently keeps its previous count — the app's
+own writes always use `custom` + `panelCountCustom`. P2's `normalise()` should fold it.
+
+**Confirmations are split.** Single-panel `deletePanel` / the single-page reset ask with a native `confirm()`;
+batch operations and library deletion use `#choiceOverlay` (`showChoiceDialog`, resolved by
+`choiceDialogPick(value)`). A test must handle both, and the dialog's buttons stay in the DOM when hidden
+(§23).
+
+**The image service contract** is `root.generateImage({prompt, negativePrompt, resolution, guidanceScale,`
+`seed})` → `{dataUrl}`, awaited through `withTimeout(...)`; `seed` is omitted when the run wants the service to
+choose, and per-image seeds are `seed + (k − 1)` unless the same-seed flag is on. Replacing
+`root.generateImage` with a stub is enough to drive the whole engine.
+
+**The generation DOM markers** a test must assert on: `#imgbox-panel-i-k` gains `generating` / `rep` /
+`protected` / `cleared` / `failed` / `paused` / `skipped`, the chips inside `#slotbtns-panel-i-k` gain/lose
+`disabled`, and **`showPanelImage` attaches the `src` asynchronously** — poll for it, do not read it in the
+same tick as the run. `makeRepresentative(i, k)` swaps the images (and their protection) so the chosen image
+becomes slot 1. `clearPanelImageSlot` also clears that slot's protection.
+
+**`#output-container` is the parent of every overlay** (`singleOverlay`, `storyboardOverlay`, `manualOverlay`,
+`passwordOverlay`, `menuOverlay`, `analysisOverlay`, `libImportOverlay`, `importConfirmOverlay`,
+`newProjectOverlay`, `choiceOverlay`, `jsonEditorOverlay`, `ghBackupOverlay`).
+
+**The background gate** (2026.09.26.4): `visibilitychange` returns immediately when the tab becomes visible,
+and returns immediately again while `comicGen.bgGenerate` is on (`!== '0'`, absent = on). With it off, the
+handler sets `pausedByVisibility`, fires the run signal, calls `pending.stop()` on every in-flight generation
+and marks those boxes `paused`.
 
 ---
 
