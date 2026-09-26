@@ -575,7 +575,7 @@ async function run() {
     return eqArr([sig === "PK\u0003\u0004", names >= 2, inflate === "stored ok" || inflate === "deflated ok, name=P0 Project" || inflate === "no-decompressionstream"], [true, true, true], "sig=" + JSON.stringify(sig) + " settingsEntries=" + names + " " + inflate);
   });
 
-  await t("G9: 50 a fresh export imports back to the identical project (the two transient menu fields excepted)", async () => {
+  await t("G9: 50 a fresh export imports back to the identical project, menu state included", async () => {
     captureDownloads();
     exportSettings();
     await sleep(600);
@@ -607,15 +607,14 @@ async function run() {
     let same = false;
     let back = null;
     let diffWhy = "";
-    const uiToggleFields = ["activeMenu", "menuVisible"];
-    const stripUi = (o) => { const c = { ...o, exportedAt: 0 }; for (const k of uiToggleFields) delete c[k]; return canon(c); };
+    const stripUi = (o) => { const c = { ...o, exportedAt: 0 }; return canon(c); };
     try {
       back = JSON.parse(await cap.blobs[cap.blobs.length - 1].text());
       same = canon(back.settings) === want && stripUi(back) === stripUi(doc);
       if (!same) {
         const bits = [];
         for (const k of Object.keys({ ...doc, ...back })) {
-          if (k === "settings" || k === "exportedAt" || uiToggleFields.includes(k)) continue;
+          if (k === "settings" || k === "exportedAt") continue;
           if (canon(doc[k]) !== canon(back[k])) bits.push(k + "=" + canon(doc[k]) + ">" + canon(back[k]));
         }
         if (canon(back.settings) !== want) bits.unshift("settings differ");
