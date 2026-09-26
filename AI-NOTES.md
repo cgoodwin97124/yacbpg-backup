@@ -1060,6 +1060,24 @@ Two HTML forms under `src/` are how the author answers planning questions. They 
 - **Round 2 (2026.09.26.7).** `src/round2-form.html` is the P2 batch (7 tickets, 25 questions, `FORM_META.id = yacbpg-round2-2026-09-26`). Its data block was spliced into the round-1 shell, so the two files share every line of logic: **edit the data near the top, never the logic below it**, and if the logic ever has to change, change the round-1 file first and re-splice.
 - `questions/REFACTOR-ROUND-1.md` is the readable transcription of round 1; round 2's questions live in the form itself and are summarised in `PENDING.md`.
 
+## 22. P1 complete: the six src/core modules (2026.09.26.5 + 2026.09.26.8)
+
+P1 is finished — six modules hold the app's pure logic, and `index.html` keeps an inline copy of each as the fallback:
+
+| Module | Exports |
+|---|---|
+| `src/core/zip.js` | `crc32`, `initCrcTable`, `dataUrlToBytes`, `buildZip`, `inflateRawDeflate`, `unzipEntries` |
+| `src/core/jsontext.js` | `JSON_NUM_RE`, `jsonTokenize`, `jsonDecodeRaw`, `jsonParse` |
+| `src/core/keywords.js` | `ART_STYLES`, `COLOR_PALETTES`, `DEFAULT_POS`, `DEFAULT_NEGATIVES`, `composeKeywords` |
+| `src/core/seeds.js` | `panelSeedValue`, `imageSeed`, `scrubMinusOneSeeds` |
+| `src/core/prompt.js` | `composePanelPrompt` |
+| `src/core/library-core.js` | `LIB_TYPE_PREFIX`, `libIdFor`, `libRefValue`, `isLibRef`, `parseLibRef`, `libRefNeedles`, `countLibRefs`, `normalizeLibType`, `extractLibraryItems`, `libRefEntry`, `libRefDesc` |
+
+- **The loader:** `coreLoad(name, path, apply)` at the top of `index.html` — `import(path).then(m => apply(m))`, wrapped in try/catch. Each `apply` assigns the module's binding over the inline one (`if (m.crc32) crc32 = m.crc32;`), so an unsaved `src/` with no service worker simply keeps the inline copy.
+- **The rules for adding one:** the inline target must be a **`function` declaration or a `let`** (never a `const` — the assignment throws, and because `apply` runs inside a try/catch the throw silently skips every later assignment in that block), and it must be the **only** declaration with that name in the file (`devtests/diff-core.js` grabs the first `function|const|let|var <name>` match and extracts it). DOM and storage reads stay in `index.html` as a thin adapter: `collectPanelPromptInput` feeds `composePanelPrompt`, and `countLibReferences`/`resolveDesc`/`plLineDescText` keep their `loadLibraryObjects()`/`collectPanelState()` calls while the pure work moved into `libRefDesc`/`countLibRefs`.
+- **The gate:** `devtests/diff-core.js` extracts each inline binding, imports each module by blob URL, and compares the two over ~4,500 generated inputs (31 checks). It also fails if a discovered `src/core/*.js` is missing from `GH_SRC_FILES` (the manifest `ghPush` walks).
+- **Deleting the inline copies:** one release after the module has survived a release (`REFACTOR-ROADMAP.md` §3.3). Eligible from 2026.09.26.9: `zip`, `jsontext`, `keywords`, `seeds`. Then `prompt` and `library-core`.
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
