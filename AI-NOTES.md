@@ -1063,8 +1063,8 @@ Two HTML forms under `src/` are how the author answers planning questions. They 
 ## 22. P1 complete + the first four in-file copies deleted (2026.09.26.5 / .8 / .9)
 
 P1 is finished — six modules hold the app's pure logic. Since **2026.09.26.9** four of them are the *only* copy (`zip`,
-`jsontext`, `keywords`, `seeds`); `prompt` and `library-core` keep an in-file copy as the fallback until **2026.09.26.11**
-(2026.09.26.10 shipped P2 step 1 instead — see §23). `src/core/schema.js` is the seventh module but belongs to P2, not P1.
+`jsontext`, `keywords`, `seeds`); `prompt` and `library-core` keep an in-file copy as the fallback until **2026.09.26.12**
+(2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the import-menu fix — see §23/§24). `src/core/schema.js` is the seventh module but belongs to P2, not P1.
 
 | Module | Exports |
 |---|---|
@@ -1097,7 +1097,8 @@ P1 is finished — six modules hold the app's pure logic. Since **2026.09.26.9**
   module-provided name is no longer declared in `index.html`. Modules with no differential spec get an `exported surface` check
   (`unspecced: []`).
 - **The deletion schedule (`REFACTOR-ROADMAP.md` §3.3):** one release after the module survived a release. Done in 2026.09.26.9
-  for `zip`, `jsontext`, `keywords`, `seeds`; due in **2026.09.26.11** for `prompt` and `library-core` (2026.09.26.10 shipped P2 step 1 instead), after which `diff-core.js`
+  for `zip`, `jsontext`, `keywords`, `seeds`; due in **2026.09.26.12** for `prompt` and `library-core` (2026.09.26.10 shipped
+  P2 step 1 and 2026.09.26.11 the import-menu fix), after which `diff-core.js`
   becomes a module-suite and its source-extraction machinery (braceEnd/at/grab) can be deleted.
 
 ## 23. P2 step 1: panel ids + `src/core/schema.js` (2026.09.26.10)
@@ -1113,6 +1114,15 @@ The first piece of P2 (the state layer). Every panel now has a stable `id`, and 
 - **The one behaviour change:** an out-of-domain `panelCountSel` (a hand-typed `"3"`) now folds into `Custom <n>` instead of being ignored.
 - **Tests:** `core.test.js` **24/0** (id shape / uniqueness, the default shapes, normalise keeps unknown keys + mints ids, dedupe / repair / idempotence, the `panelCountSel` fold, `validate` vs `normalise`); `diff-core.js` **23/0** — `schema` has no in-file copy, so it gets an `exported surface` check plus the declaration guard for the **six** names `index.html` declares for it (`newPanelId`, `defaultPanel`, `defaultPage`, `defaultProject`, `normaliseProject`, `validateProject`); smoke `G16` (78–83) is the DOM-level identity group (ids unique + DOM/save agreement, survive a grid rebuild, a duplicate gets a fresh one, add mints one, an export carries every one, ids survive switching away and back, the editor locks the id).
 - **Note:** `index.html` still has its own `defaultPageData()` and does not yet call `schema.js`'s `defaultPage` / `defaultPanel` / `defaultProject` — those are declared and filled for the store step (§3.4 step 3), which is where `resetEverything`'s hand-built state moves onto `defaultProject()`.
+
+## 24. The import-menu toggle, fixed (2026.09.26.11)
+
+`switchMenu(name)` is a **toggle** — right for a menu button, wrong for restoring saved state. Importing a project (or applying the project JSON editor) used to call it, so a file could close the menu it said to open (`openNow = !group.hidden`), a file saved with no menu left the current one open, and a file's `menuVisible:false` was over-ridden by `applyMenuFullscreenPref` whenever fullscreen was on.
+
+- **`applyMenu(name)`** — the *setter*: hide every `.menu-group`, remove every `.menu-btn.active`, then for a name in `MENU_NAMES` show that group, expand it (`expandGroupPanels` for `library`, else `collapseGroupPanels`), mark its button active, write `comicGen.activeMenu`, and refresh the fullscreen labels. A blank/unknown name closes everything. Exported as `window.applyMenu`.
+- **Who calls what:** `switchMenu` stays the button toggle; `ensureMenuOpen` still only opens a hidden group. The two restore paths use `applyMenu`: `applyImportedSettings` (`if (typeof data.activeMenu === 'string') applyMenu(data.activeMenu)`) and `jsonApplyDoc` (same, on the editor's `doc`).
+- **Visibility:** `applyMenuFullscreenPref(on, section, keepVisibility)` — the restore paths pass `keepVisibility = true`, so the `if (on && menu-hidden) applyMenuVisible(true)` convenience no longer clobbers the file's own `menuVisible`.
+- **Test:** smoke `G9:50` is now a **full** export → import → export comparison (the `activeMenu`/`menuVisible` exception is gone). If a restore path ever goes back to toggling, it fails.
 
 ## DOC LAYOUT (2026.09.23.6)
 
