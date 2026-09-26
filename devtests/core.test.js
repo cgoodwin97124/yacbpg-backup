@@ -49,8 +49,20 @@ function grab(name) {
   return lines.slice(i, body + 1).join("\n");
 }
 
-const wanted = ["crcTable", "crc32", "initCrcTable", "buildZip", "inflateRawDeflate", "unzipEntries", "scrubMinusOneSeeds", "composeKeywords", "getEffectiveKeywords", "JSON_NUM_RE", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "applyPreset", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"];
+const wanted = ["getEffectiveKeywords", "applyPreset", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"];
 const code = wanted.map(grab).join("\n\n");
+
+async function loadModule(path) {
+  const text = await fs.readTextFile(path);
+  const url = URL.createObjectURL(new Blob([text], { type: "text/javascript" }));
+  try { return await import(url); } finally { URL.revokeObjectURL(url); }
+}
+const MODULE_PATHS = ["src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js"];
+const modules = {};
+const moduleErrors = [];
+for (const p of MODULE_PATHS) {
+  try { Object.assign(modules, await loadModule(p)); } catch (e) { moduleErrors.push(p + ": " + String(e && e.message).slice(0, 120)); }
+}
 
 const T = [];
 async function t(name, fn) {
@@ -78,12 +90,12 @@ function fakeDoc() {
     addEventListener() {},
   };
 }
-const sandbox = { window: {}, document: fakeDoc(), localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, renderKeywordChips() {}, renderFilterStatus() {}, schedulePanelSave() {}, renderChips() {}, clearAllPromptOverrides() {} };
-let api = {};
+const sandbox = Object.assign({ window: {}, document: fakeDoc(), localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, renderKeywordChips() {}, renderFilterStatus() {}, schedulePanelSave() {}, renderChips() {}, clearAllPromptOverrides() {} }, modules);
+let api = { modules };
 const missingAtBoot = missing.slice();
 try {
-  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { crc32, initCrcTable, buildZip, inflateRawDeflate, unzipEntries, scrubMinusOneSeeds, composeKeywords, getEffectiveKeywords, jsonParse, jsonTokenize, ART_STYLES, COLOR_PALETTES, applyPreset, DEFAULT_POS, DEFAULT_NEGATIVES, composePanelPrompt, LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, normalizeLibType, extractLibraryItems, libRefEntry, libRefDesc }; }");
-  api = factory(sandbox);
+  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { getEffectiveKeywords, applyPreset, composePanelPrompt, LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, normalizeLibType, extractLibraryItems, libRefEntry, libRefDesc }; }");
+  api = Object.assign(factory(sandbox), modules);
 } catch (e) {
   T.push({ n: "extraction", ok: false, d: "could not build the sandbox: " + e.message });
 }
@@ -252,11 +264,60 @@ if (api.jsonParse) {
   });
 }
 
+if (api.dataUrlToBytes && api.crc32 && api.buildZip && api.unzipEntries && api.jsonDecodeRaw) {
+  await t("dataUrlToBytes decodes base64 payloads byte-exactly", () => {
+    let seed = 12345;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const bad = [];
+    for (let i = 0; i < 50; i++) {
+      const n = Math.floor(rnd() * 500);
+      const bytes = new Uint8Array(n);
+      for (let k = 0; k < n; k++) bytes[k] = Math.floor(rnd() * 256);
+      let bin = "";
+      for (const b of bytes) bin += String.fromCharCode(b);
+      const got = api.dataUrlToBytes("data:image/png;base64," + btoa(bin));
+      if (got.length !== n || !got.every((b, k) => b === bytes[k])) bad.push({ i, n, got: got.length });
+    }
+    return bad.length ? no(JSON.stringify(bad.slice(0, 4))) : ok("50 URLs, byte-exact");
+  });
+
+  await t("buildZip writes a matching CRC for every entry", () => {
+    const files = [{ name: "a.txt", data: enc.encode("hello") }, { name: "b.bin", data: new Uint8Array([0, 1, 2, 253, 254, 255]) }];
+    const zip = api.buildZip(files);
+    const dv = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+    const bad = [];
+    let off = 0;
+    for (const f of files) {
+      const want = api.crc32(f.data) >>> 0;
+      const got = dv.getUint32(off + 14, true) >>> 0;
+      if (got !== want) bad.push({ name: f.name, got, want });
+      off += 30 + enc.encode(f.name).length + dv.getUint32(off + 18, true);
+    }
+    return bad.length ? no(JSON.stringify(bad)) : ok(files.length + " entries");
+  });
+
+  await t("unzipEntries rejects junk with a readable message", async () => {
+    let msg = null;
+    try { await api.unzipEntries(new Uint8Array(200).buffer); } catch (e) { msg = String(e && e.message); }
+    return msg && msg.length > 10 ? ok(msg.slice(0, 60)) : no("no error thrown");
+  });
+
+  await t("jsonDecodeRaw resolves the JSON escapes and their spans", () => {
+    const rows = [["plain", "plain"], ["a\\nb", "a\nb"], ["\\u00e9", "\u00e9"], ["\\\\", "\\"], ["\\q", "q"], ["\\t", "\t"], ["", ""]];
+    const bad = [];
+    for (const [raw, want] of rows) {
+      const r = api.jsonDecodeRaw(raw);
+      if (r.text !== want || !Array.isArray(r.map) || r.map[r.map.length - 1] !== raw.length) bad.push({ raw, got: r.text, want });
+    }
+    return bad.length ? no(JSON.stringify(bad).slice(0, 200)) : ok(rows.length + " escape rows");
+  });
+}
+
 const pass = T.filter((x) => x.ok === true).length;
 const fail = T.filter((x) => x.ok === false).length;
 const manual = T.filter((x) => x.ok === null).length;
 return {
-  extraction: { wanted, missing: missingAtBoot, chars: code.length },
+  extraction: { wanted, missing: missingAtBoot, chars: code.length, modules: Object.keys(modules).length, moduleErrors },
   pass, fail, manual,
   failures: T.filter((x) => x.ok === false),
   checks: T,
