@@ -841,7 +841,11 @@ const GH_KEYS = {
     sub.textContent = "Requested: “" + t.request + "”";
     formRoot.appendChild(sub);
 
-    t.questions.forEach(function (q) { formRoot.appendChild(buildQuestion(q)); });
+    t.questions.forEach(function (q) {
+      const sec = buildQuestion(q);
+      formRoot.appendChild(sec);
+      applyDraft(q);
+    });
   });
 
   function buildQuestion(q) {
@@ -921,7 +925,6 @@ const GH_KEYS = {
       sec.appendChild(nt);
     }
 
-    applyDraft(q);
     return sec;
   }
 
