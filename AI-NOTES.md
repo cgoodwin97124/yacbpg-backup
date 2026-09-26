@@ -1049,6 +1049,7 @@ So the implementation is a Web Audio oscillator, and **`KEEP_AWAKE_GAIN` must ne
 - `window.applyKeepAwake(true)` from `page_eval` is **not** a user gesture, so expect `starting` first and `running` a moment later (sticky activation usually lets the resume through). Via a real click it is `running` immediately. `G14:76`/`G14:77` in `devtests/smoke.page.js` cover both directions and are happy with either.
 - The preference key is created by the toggle, so park/restore first (`devtests/park.js`) — a restore removes it, which is the correct end state (absent = off).
 - Hidden-tab measurement: `devtests/keepawake-probe.page.js` (see `devtests/README.md`); its samples live in `sessionStorage` so the editor's reload-on-Save cannot destroy them.
+- **Measured 2026-09-26** (Firefox 156 / Windows, the author's machine, both halves of the A/B): hidden heartbeat median **1005 ms with the preference off** (189 samples in a 190 s hidden period — Firefox's 1 s clamp) versus **262 ms with it on** (1374 samples, 1371 of them under 400 ms). `requestAnimationFrame` while hidden: 28 frames, so the tone keeps the timers alive, not the rendering. Full table in `DEV-NOTES.md` BATCH 2026.09.26.6.
 
 ## DOC LAYOUT (2026.09.23.6)
 
