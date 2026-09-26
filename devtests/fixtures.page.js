@@ -54,7 +54,7 @@ async function run() {
 
     await t("FX2 per-panel overrides survived the import", () => {
       const p = st().pages[1];
-      return eqArr([p[1].imgCount, p[2].seed, p[3].sameSeed, p[4].style, p[5].sizeSel, p[5].sizeW, getVal("panel-seed-2"), getVal("panel-img-count-1")], ["4", "4242", true, "photo", "custom", "640", "4242", "4"], "imgCount,seed,sameSeed,style,size,seedDom,countDom");
+      return eqArr([p[1].imgCount, p[2].seed, p[3].sameSeed, p[4].style, p[4].palette, p[5].sizeSel, p[5].sizeW, getVal("panel-seed-2"), getVal("panel-img-count-1"), getVal("panel-palette-4")], ["4", "4242", true, "photo", "sepia", "custom", "640", "4242", "4", "sepia"], "imgCount,seed,sameSeed,style,palette,size,seedDom,countDom,paletteDom");
     });
 
     await t("FX3 a protected slot and a prompt override survived", () => {
