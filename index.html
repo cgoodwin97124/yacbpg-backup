@@ -41,7 +41,8 @@
                    to load is reported in a bar at the top of the page. The four that had
                    survived a release (zip, jsontext, keywords, seeds) lost their in-file copy in
                    2026.09.26.9; prompt and library-core keep theirs as the fallback until
-                   2026.09.26.11, and those two are the ones devtests/diff-core.js still compares
+                   2026.09.26.12 (2026.09.26.11 was the import-menu fix), and those two are the
+                   ones devtests/diff-core.js still compares
                    module-against-inline. schema.js arrived in 2026.09.26.10: it owns the
                    project/page/panel shape and mints the id every panel now carries.
                    Never edit only one side.
@@ -1262,7 +1263,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.10 — 2026-09-26 — 🪪 Refactor step 4: every panel gets a stable identity
+## 2026.09.26.11 — 2026-09-26 — 🧭 Importing a project now applies its menu state instead of toggling it
 - The full version history lives in the project's GitHub repo; open the About section to load it.
 </script>
 
@@ -2081,12 +2082,12 @@ color-scheme:light;
     placeGenButtons();
   }
 
-  function applyMenuFullscreenPref(on, section) {
+  function applyMenuFullscreenPref(on, section, keepVisibility) {
     menuFullscreenPref = !!on;
     try { localStorage.setItem(MENU_FS_KEY, on ? '1' : '0'); } catch (e) {}
     const cb = document.getElementById('prefMenuFullscreen');
     if (cb) cb.checked = !!on;
-    if (on && document.body.classList.contains('menu-hidden')) applyMenuVisible(true);
+    if (on && !keepVisibility && document.body.classList.contains('menu-hidden')) applyMenuVisible(true);
     syncMenuMode();
     if (on && section) ensureMenuOpen(section);
     updateMenuFullscreenLabels();
@@ -7727,10 +7728,10 @@ color-scheme:light;
     applyLayoutMode(data.layoutMode === 'side' ? 'side' : 'top');
     if (typeof data.menuVisible === 'boolean') applyMenuVisible(data.menuVisible);
     if (typeof data.panelsVisible === 'boolean') applyPanelsVisible(data.panelsVisible);
-    if (typeof data.menuFullscreen === 'boolean') applyMenuFullscreenPref(data.menuFullscreen);
+    if (typeof data.menuFullscreen === 'boolean') applyMenuFullscreenPref(data.menuFullscreen, null, true);
     if (typeof data.genAlwaysVisible === 'boolean') applyGenAlwaysVisible(data.genAlwaysVisible);
     if (typeof data.hdrAllViews === 'boolean') applyHdrAllViews(data.hdrAllViews);
-    if (data.activeMenu && MENU_NAMES.includes(data.activeMenu)) switchMenu(data.activeMenu);
+    if (typeof data.activeMenu === 'string') applyMenu(data.activeMenu);
     populatePageSel();
     updateDeletePageBtn();
     updateProjectNameDisplay();
@@ -8111,6 +8112,22 @@ color-scheme:light;
       active = name;
     }
     try { localStorage.setItem('comicGen.activeMenu', active); } catch (e) {}
+    if (document.body.classList.contains('menu-fullscreen')) updateMenuFullscreenLabels();
+  }
+
+  function applyMenu(name) {
+    const target = (typeof name === 'string' && MENU_NAMES.indexOf(name) !== -1) ? name : '';
+    const group = target ? document.getElementById('menuGroup-' + target) : null;
+    for (const g of document.querySelectorAll('.menu-group')) g.hidden = true;
+    for (const b of document.querySelectorAll('.menu-btn')) b.classList.remove('active');
+    if (group) {
+      group.hidden = false;
+      if (target === 'library') expandGroupPanels(group);
+      else collapseGroupPanels(group);
+      const btn = document.querySelector('.menu-btn[data-menu="' + target + '"]');
+      if (btn) btn.classList.add('active');
+    }
+    try { localStorage.setItem('comicGen.activeMenu', group ? target : ''); } catch (e) {}
     if (document.body.classList.contains('menu-fullscreen')) updateMenuFullscreenLabels();
   }
 
@@ -8891,6 +8908,7 @@ color-scheme:light;
   }
 
   window.switchMenu = switchMenu;
+  window.applyMenu = applyMenu;
   window.toggleMenu = toggleMenu;
   window.applyPreset = applyPreset;
   window.updateResetControls = updateResetControls;
@@ -9730,11 +9748,11 @@ color-scheme:light;
     if (doc.layoutMode === 'side' || doc.layoutMode === 'top') applyLayoutMode(doc.layoutMode);
     if (typeof doc.menuVisible === 'boolean') applyMenuVisible(doc.menuVisible);
     if (typeof doc.panelsVisible === 'boolean') applyPanelsVisible(doc.panelsVisible);
-    if (typeof doc.menuFullscreen === 'boolean') applyMenuFullscreenPref(doc.menuFullscreen);
+    if (typeof doc.menuFullscreen === 'boolean') applyMenuFullscreenPref(doc.menuFullscreen, null, true);
     if (typeof doc.genAlwaysVisible === 'boolean') applyGenAlwaysVisible(doc.genAlwaysVisible);
     if (typeof doc.hdrAllViews === 'boolean') applyHdrAllViews(doc.hdrAllViews);
     if (doc.settings && doc.settings.theme) applyThemeFromProject(doc.settings.theme);
-    if (doc.activeMenu && MENU_NAMES.indexOf(doc.activeMenu) !== -1) switchMenu(doc.activeMenu);
+    if (typeof doc.activeMenu === 'string') applyMenu(doc.activeMenu);
     populatePageSel();
     updateDeletePageBtn();
     updateProjectNameDisplay();
