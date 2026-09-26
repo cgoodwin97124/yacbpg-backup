@@ -20,6 +20,9 @@ Reading order for a new session:
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
   to untangle it (P0 safety net → P1 pure logic → P2 state → P3 commands → P4 services → P5 UI → P6 redesign).
 - `UI-IDEAS.md` — 17 interface proposals that only make sense once the functionality is mapped, each with its risk.
+- `REFACTOR-NOTES.md` — the running log of the refactor: the author's answers digested into decisions, what is
+  in each phase, what was deliberately rejected and why, and what is still open with the author. **Start here
+  when picking the refactor up mid-flight.**
 - `questions/REFACTOR-ROUND-1.md` — the open questions this plan needs answered (the R-01 … R-08 round); the same
   set is in the fill-in form `src/refactor-form.html`, opened on the generator page with `window.__openRefactorForm()`.
   **No refactor starts until these are answered.**
