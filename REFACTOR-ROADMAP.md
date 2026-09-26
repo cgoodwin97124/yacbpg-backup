@@ -246,12 +246,14 @@ src/
 
 ### 3.3 P1 — extract the pure logic *(the highest value per unit of risk)*
 
-**STATUS: COMPLETE (2026.09.26.8); the first cleanup is done (2026.09.26.9).** All six steps are extracted and gated.
-The in-file copies of `zip`, `jsontext`, `keywords` and `seeds` were **deleted in 2026.09.26.9** — `index.html` now only
-declares those names, the boot waits for the modules (`coreReady` / `window.appReady`) and a module that fails to load is
-reported in a bar at the top of the page. `prompt` and `library-core` lose their copies one release later **(2026.09.26.14 —
-2026.09.26.10 shipped P2 step 1, 2026.09.26.11 the import-menu fix, 2026.09.26.12 the colour palette and 2026.09.26.13 the library rename)**,
-at which point `devtests/diff-core.js` drops its differential half and the extraction machinery in it can go.
+**STATUS: COMPLETE (2026.09.26.8); the cleanup is COMPLETE too (2026.09.26.9 + 2026.09.26.14).** All six steps are extracted and gated, and
+**no module keeps an in-file fallback any more.** The in-file copies of `zip`, `jsontext`, `keywords` and `seeds` were **deleted in
+2026.09.26.9**; `prompt` and `library-core` were deleted in **2026.09.26.14** (2026.09.26.10 shipped P2 step 1, 2026.09.26.11 the
+import-menu fix, 2026.09.26.12 the colour palette and 2026.09.26.13 the library rename, which is why the second deletion slipped four
+releases). `index.html` now only declares those names, the boot waits for the modules (`coreReady` / `window.appReady`) and a module that
+fails to load is reported in a bar at the top of the page. `devtests/diff-core.js` is guards-only (it no longer compares
+module-against-inline, because there is no inline half left), and `devtests/core.test.js` extracts just the two DOM-bound names
+(`getEffectiveKeywords`, `applyPreset`) from `index.html`.
 
 Move, in this order, keeping each function's current implementation in `index.html` as a **fallback**:
 
@@ -274,12 +276,15 @@ const buildPrompt = corePrompt ? corePrompt.buildPanelPrompt : buildPanelPromptI
 
 So a module that fails to load (an in-app browser before a Save) falls back to the code still in `index.html`.
 The fallback is deleted one release later, once the module has survived a real release — done for `zip`, `jsontext`,
-`keywords` and `seeds` in 2026.09.26.9 (the declaration stays, the boot waits, and a failure is reported), with
-`prompt` and `library-core` following in **2026.09.26.14** (2026.09.26.10 shipped P2 step 1, 2026.09.26.11 the import-menu fix, 2026.09.26.12 the colour palette and 2026.09.26.13 the library rename).
+`keywords` and `seeds` in 2026.09.26.9 and for `prompt` and `library-core` in **2026.09.26.14** (the declaration stays, the
+boot waits, and a failure is reported; 2026.09.26.10 shipped P2 step 1, .11 the import-menu fix, .12 the colour palette and
+.13 the library rename). **There is no in-file copy left for any module**, so a module that cannot load now leaves its name
+`undefined` — the boot waits for all seven and `coreLoadWarning` says so at the top of the page.
 
-**Exit criteria:** the P0 core tests run against the *modules* (**met 2026.09.26.9** — `core.test.js` imports all six and
-no longer extracts them); a "differential" test compares old vs new output for hundreds of generated inputs and finds zero
-differences (met at each extraction); no user-visible change (met — screenshots unchanged, boot 218 → 228 ms).
+**Exit criteria:** the P0 core tests run against the *modules* (**met 2026.09.26.9** — `core.test.js` imports every module and
+no longer extracts the module-backed names); a "differential" test compares old vs new output for hundreds of generated inputs and finds zero
+differences (met at each extraction; the differential half was retired in **2026.09.26.14**, when the last in-file copy went
+and there was nothing left to compare — `diff-core.js` keeps its guards); no user-visible change (met — screenshots unchanged, boot 218 → 228 ms).
 
 ### 3.4 P2 — a real state layer (read-only first)
 
