@@ -1,0 +1,2906 @@
+{
+ "version": 2,
+ "exportedAt": "2026-09-26T00:00:00.000Z",
+ "settings": {
+  "version": 2,
+  "projectName": "Fixture Full Page",
+  "imageSizeSel": "768x768",
+  "imageSizeW": "",
+  "imageSizeH": "",
+  "guidanceScale": "7",
+  "imgCountDefault": "1",
+  "previewDelay": "350",
+  "previewOn": true,
+  "globalPos": "comic book art, crisp ink lines, vibrant cel shading, high contrast, dramatic shadows",
+  "globalNeg": "blurry, low quality, watermark, text, deformed",
+  "nsfw": false,
+  "theme": {
+   "mode": "dark",
+   "accent": "#3366cc"
+  },
+  "currentPage": 1,
+  "pages": {
+   "1": {
+    "1": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 1 action beat",
+     "seed": "",
+     "imgCount": "4",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "2": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 2 action beat",
+     "seed": "4242",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "3": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": true,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "4": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": "extra note for panel 4"
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 4 action beat",
+     "seed": "",
+     "imgCount": "2",
+     "style": "photo",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "5": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "lib:char:fx-ch-2",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 5 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "custom",
+     "sizeW": "640",
+     "sizeH": "960",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "6": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      true,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "at dawn",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "7": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "Panel title 7",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 7 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": {
+      "pos": "hand written prompt for panel 7",
+      "neg": "hand written negative"
+     },
+     "promptHistory": []
+    },
+    "8": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": "extra note for panel 8"
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 8 action beat",
+     "seed": "",
+     "imgCount": "2",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": [
+      {
+       "pos": "an earlier prompt",
+       "neg": "n",
+       "seeds": [
+        {
+         "k": 1,
+         "seed": 111
+        }
+       ],
+       "at": "2026-09-25T00:00:00.000Z"
+      }
+     ]
+    },
+    "9": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "10": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "lib:char:fx-ch-2",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 10 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "11": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 11 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "12": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": "extra note for panel 12"
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "at dawn",
+     "action": "",
+     "seed": "",
+     "imgCount": "2",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "13": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 13 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "14": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "Panel title 14",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 14 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "15": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "lib:char:fx-ch-2",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "16": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": "extra note for panel 16"
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 16 action beat",
+     "seed": "",
+     "imgCount": "2",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "17": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 17 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "18": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "at dawn",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "19": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 19 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "20": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": "extra note for panel 20"
+      },
+      {
+       "sel": "lib:char:fx-ch-2",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 20 action beat",
+     "seed": "",
+     "imgCount": "2",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "21": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "Panel title 21",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "22": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 22 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "23": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "panel 23 action beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "24": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": "extra note for panel 24"
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "at dawn",
+     "action": "",
+     "seed": "",
+     "imgCount": "2",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "name": "The Long Page",
+    "summary": "24 panels with mixed overrides",
+    "panelCountSel": "24",
+    "panelCountCustom": "",
+    "seed": "1000"
+   },
+   "2": {
+    "1": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "page two panel 1",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "2": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "page two panel 2",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "3": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "page two panel 3",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "4": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "page two panel 4",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "5": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "page two panel 5",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "6": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-1",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "lib:loc:fx-loc-1",
+     "locBase": "",
+     "locExtra": "",
+     "action": "page two panel 6",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "7": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "8": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "9": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "10": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "11": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "12": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "13": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "14": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "15": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "16": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "17": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "18": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "19": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "20": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "21": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "22": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "23": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "24": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "name": "Short Page With Hidden Panels",
+    "summary": "shows 3 panels but carries content in slots 4-6",
+    "panelCountSel": "custom",
+    "panelCountCustom": "3",
+    "seed": ""
+   },
+   "3": {
+    "1": {
+     "chars": [
+      {
+       "sel": "lib:char:fx-ch-2",
+       "base": "a custom sidekick description",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "the last beat",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "2": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "3": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "4": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "5": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "6": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "7": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "8": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "9": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "10": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "11": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "12": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "13": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "14": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "15": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "16": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "17": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "18": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "19": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "20": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "21": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "22": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "23": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "24": {
+     "chars": [
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      },
+      {
+       "sel": "none",
+       "base": "",
+       "extra": ""
+      }
+     ],
+     "title": "",
+     "protectSlots": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "loc": "none",
+     "locBase": "",
+     "locExtra": "",
+     "action": "",
+     "seed": "",
+     "imgCount": "1",
+     "style": "",
+     "sizeSel": "",
+     "sizeW": "",
+     "sizeH": "",
+     "sameSeed": false,
+     "promptOverride": null,
+     "promptHistory": []
+    },
+    "name": "One Panel Page",
+    "summary": "",
+    "panelCountSel": "1",
+    "panelCountCustom": "",
+    "seed": "3000"
+   }
+  }
+ },
+ "preset": {
+  "style": "comic",
+  "palette": "vibrant"
+ },
+ "libObjects": [
+  {
+   "id": "fx-ch-1",
+   "type": "Character",
+   "name": "Fixture Hero",
+   "desc": "a sturdy hero in a red cape, weathered face"
+  },
+  {
+   "id": "fx-ch-2",
+   "type": "Character",
+   "name": "Fixture Sidekick",
+   "desc": "a small robot with one glowing eye"
+  },
+  {
+   "id": "fx-loc-1",
+   "type": "Location",
+   "name": "Fixture Rooftop",
+   "desc": "a rain-slicked city rooftop at night, neon reflections"
+  },
+  {
+   "id": "fx-act-1",
+   "type": "Action",
+   "name": "Fixture Action",
+   "desc": "leaping between rooftops"
+  }
+ ],
+ "layoutMode": "top",
+ "menuVisible": true,
+ "panelsVisible": true,
+ "activeMenu": "file",
+ "menuFullscreen": false,
+ "genAlwaysVisible": false,
+ "hdrAllViews": false
+}
