@@ -1124,6 +1124,16 @@ The first piece of P2 (the state layer). Every panel now has a stable `id`, and 
 - **Visibility:** `applyMenuFullscreenPref(on, section, keepVisibility)` — the restore paths pass `keepVisibility = true`, so the `if (on && menu-hidden) applyMenuVisible(true)` convenience no longer clobbers the file's own `menuVisible`.
 - **Test:** smoke `G9:50` is now a **full** export → import → export comparison (the `activeMenu`/`menuVisible` exception is gone). If a restore path ever goes back to toggling, it fails.
 
+## 25. Per-panel colour palette (2026.09.26.12)
+
+Every panel's header row has a **Palette** select between **Style** and **Size** (`#panel-palette-<i>`, first option `[Default (Global)]`). It is the palette twin of the per-panel Style override, and the implementation is deliberately a copy of that pattern — when one changes, check the other.
+
+- **Options:** `updatePanelSelects()` rebuilds them from `COLOR_PALETTES` on every grid render, in the same block as the Style options (a few lines above).
+- **State:** `collectPageData()` → `palette`; `restorePanelState()` sets the select back. That single pair is what makes the field survive save / export / import / duplicate / move / cut / paste. The extra wiring is only: `JSON_PANEL_FIELDS` + a `case 'palette'` in `jsonTypeProblem`, `resetEverything()`'s clear, and `src/core/schema.js`'s `STRING_FIELDS` + `defaultPanel()`.
+- **Prompt semantics — the one place to touch if the composition rule ever changes.** `getPanelKeywords(i)`: if **neither** select is set, it returns `getEffectiveKeywords()` (the global Positive/Negative fields verbatim, unchanged since before this feature). If **either** is set, it composes from the presets: effective style = panel Style || global `#presetStyle`, effective palette = panel Palette || global `#presetPalette`, using `ART_STYLES` / `COLOR_PALETTES`. So a Style override with no palette override is the `palette = ''` branch and behaves exactly as it did before .12 — which is why no existing project's prompt changes.
+- **Handlers/UI:** `onPanelPaletteChange(i)` (clears that panel's manual prompt override + `schedulePanelSave`, exported on `window`); `resetEverything()` clears every panel's select. The Analysis matrix has `analysisPanelPalette` / `analysisPaletteLabel` / `analysisSetPanelPalette` / `analysisPaletteChip` (`🌈`) / `analysisPaletteEditor`, appended between the style and size chips in `analysisPanelHeader`; its cross-page writes use `collectPanelState` + `savePanelStateShape`, like the style ones.
+- **Tests:** smoke `G7:47` (a palette override changes only that panel's prompt, then resets it), `fixtures` `FX2` (the full-page fixture's panel 4 carries `"palette": "sepia"`; both the saved state and the rendered select are asserted), and `core.test.js`'s default-panel shape check. The screenshot baseline was **regenerated** in .12, because the new control adds a row to every panel header — see `devtests/README.md`.
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
