@@ -7,13 +7,14 @@ if (!window.__bgProbe) {
     P.workerAt = performance.now();
     P.worker.onmessage = (e) => { P.workerLast = e.data; P.workerSample = { n: e.data.n, ms: e.data.ms, at: Math.round(performance.now() - P.t0) }; };
   } catch (e) { P.workerError = String(e && e.message || e); }
-  setInterval(() => { P.ticks.push({ at: Math.round(performance.now() - P.t0), hidden: document.hidden }); }, 1000);
+  P.ticker = setInterval(() => { P.ticks.push({ at: Math.round(performance.now() - P.t0), hidden: document.hidden }); }, 1000);
   const raf = () => { P.raf++; if (document.hidden) P.rafHidden++; else P.rafVisible++; requestAnimationFrame(raf); };
   requestAnimationFrame(raf);
   document.addEventListener("visibilitychange", () => {
     P.events.push({ at: Math.round(performance.now() - P.t0), hidden: document.hidden, ticks: P.ticks.length, raf: P.raf });
   });
   window.__bgReset = () => { P.t0 = performance.now(); P.ticks = []; P.events = []; P.raf = 0; P.rafHidden = 0; P.rafVisible = 0; return "reset"; };
+  window.__bgStop = () => { try { clearInterval(P.ticker); } catch (e) {} try { if (P.worker) P.worker.terminate(); } catch (e) {} P.stopped = true; return "stopped"; };
   window.__bgReport = async () => {
     const ticks = P.ticks;
     const gaps = [];
