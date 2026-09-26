@@ -58,13 +58,32 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
   the author's project.
   **Exit criteria:** the suite passes against the *unmodified* build, and every invariant in `FUNCTION-MAP.md`
   §21 has a test or an explicit "manual check" line.
-- **P1 — pure logic** (after P0): `core/zip.js`, `core/keywords.js`, `core/seeds.js`, `core/prompt.js`,
-  `core/library-core.js`, `core/jsontext.js`, each extracted with the in-file implementation left as a fallback
-  and deleted one release later. **Exit criteria:** a differential test over hundreds of inputs finds zero
-  differences and nothing user-visible changes.
+- **P1 — pure logic — 4 of the 6 modules extracted, shipped as 2026.09.26.5.** `zip`, `jsontext`, `keywords`
+  and `seeds` now live in `src/core/` with their in-file copies kept as the fallback; `library-core` and `prompt`
+  remain. Loading is one loader — `coreLoad(name, path, apply)` at the top of `index.html` — a dynamic
+  `import()` that swaps the named inline binding for the module's when it resolves and silently keeps the inline
+  copy when it does not (an unsaved `src/` with no service worker is exactly that case). `getEffectiveKeywords`,
+  `getPanelSeed`, `pinPanelSeedForRun` and `updatePanelSeedPlaceholders` were split so that what moved is their
+  pure half; the DOM half stayed in `index.html` as a thin adapter. **Exit criteria:** `devtests/diff-core.js`
+  (~2,600 generated cases) finds zero differences, nothing user-visible changes (`devtests/visual-diff.js`:
+  14 views unchanged), and each in-file copy is deleted one release after its module has survived.
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — P1 part 1 shipped as 2026.09.26.5.** Four of the six modules are extracted: `src/core/zip.js`
+  (`crc32`, `initCrcTable`, `dataUrlToBytes`, `buildZip`, `inflateRawDeflate`, `unzipEntries`),
+  `src/core/jsontext.js` (`JSON_NUM_RE`, `jsonTokenize`, `jsonDecodeRaw`, `jsonParse`), `src/core/keywords.js`
+  (`ART_STYLES`, `COLOR_PALETTES`, `DEFAULT_POS`, `DEFAULT_NEGATIVES`, `composeKeywords`) and `src/core/seeds.js`
+  (`panelSeedValue`, `imageSeed`, `scrubMinusOneSeeds`). The new differential suite is `devtests/diff-core.js`
+  — 21 checks, ~2,600 generated cases, zero differences — and the new visual check is `devtests/visual-diff.js`.
+  Suites after the change: smoke 71/0, generation 18/0, fixtures 16/0, core 14/0, differential 21/0, 5 manual
+  lines, 0 perchance errors, and the author's map restored byte-identical (`1c13afe4`) after every runner.
+- **2026-09-26 — two harness findings.** (a) The visual baseline is *order-dependent*: the first visual diff
+  flagged the three `desktop-light-*` views (11–19% of pixels) and the taller `phone-light-*` captures, and a
+  re-run with the light group captured *first* made all five pixel-identical — the preceding subjects were
+  leaving in-memory state behind, not the refactor. (b) `ghPush` only ever uploaded `src/manual.html`; it now
+  walks a `GH_SRC_FILES` manifest (src/manual.html, the two form files, `src/core/*.js`) and `diff-core.js`
+  fails if a discovered module is missing from it.
 - **2026-09-26** — the smoke suite gained `G15` (checks 72–74): the selection is DOM-only and never reaches the
   save (§21.11), a copy/paste round trip, and a cut that empties the clipboard once it is pasted. `G14:68` now
   asserts the *documented* default — a missing `comicGen.bgGenerate` key means on — instead of requiring the key
@@ -150,6 +169,15 @@ inspection and by the harness's own rules (the runner refuses to leave a stray k
 - **`panelCountSel` has a closed domain** (1/4/6/12/24/`custom`). A file (or a user in the JSON editor) can say
   `"3"` and the page silently keeps the previous count. A one-line `normalise()` in P2's schema work should fold
   any other number into `custom` + `panelCountCustom`.
+
+- **The visual baseline is order-dependent** (measured 2026-09-26, `devtests/visual-diff.js`). A capture is
+  taken after the five earlier "subjects" (json, analysis, dialog, storyboard, focus) and some of them leave
+  in-memory state behind — an accordion, a scroll position, a half-finished animation — so the same recipe can
+  render 224 CSS px taller on a later pass. Compare like with like (the same order, or capture the group
+  first); never conclude "the refactor changed the layout" from a single out-of-order diff.
+- **`ghPush` uploaded only `src/manual.html`** (measured 2026-09-26). The two form files and the new
+  `src/core/*.js` modules were never backed up. Fixed with a `GH_SRC_FILES` manifest in `index.html`;
+  `devtests/diff-core.js` fails if a module is missing from it.
 
 ## 4. Closed with the author (2026-09-26)
 
