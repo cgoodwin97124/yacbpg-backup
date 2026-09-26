@@ -174,6 +174,26 @@ async function run() {
     });
   }
 
+  if (full && v1) {
+    await t("FX17 a legacy import mints an id for every panel it loads", async () => {
+      const how = await importFixture(v1.text);
+      const s = st();
+      const entries = [];
+      for (const pg in s.pages) for (let i = 1; i <= 24; i++) if (s.pages[pg][i]) entries.push(s.pages[pg][i].id);
+      const shaped = entries.every((x) => typeof x === "string" && /^p-[0-9a-z]+-[0-9a-z]+$/.test(x));
+      return eqArr([entries.length >= 24, shaped, new Set(entries).size === entries.length], [true, true, true], entries.length + " ids via " + how);
+    });
+
+    await t("FX18 a file's own ids are kept and a repeated one is repaired", async () => {
+      const doc = JSON.parse(full.text);
+      doc.settings.pages[1][1].id = "p-keep-me";
+      doc.settings.pages[1][2].id = "p-keep-me";
+      await importFixture(JSON.stringify(doc));
+      const p1 = st().pages[1];
+      return eqArr([p1[1].id, p1[2].id !== "p-keep-me", typeof p1[2].id === "string" && p1[2].id.length > 4], ["p-keep-me", true, true], "kept,repaired");
+    });
+  }
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
