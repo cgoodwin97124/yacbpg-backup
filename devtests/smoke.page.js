@@ -444,7 +444,7 @@ async function run() {
   });
 
   await t("MAN: 40 per-image seed offsets and -1 scrubbing", () => {
-    return { skip: "getPanelSeed/pinPanelSeedForRun/scrubMinusOneSeeds are private; covered indirectly by G6:35-39 and scheduled for P1 core/seeds.js" };
+    return { skip: "getPanelSeed/pinPanelSeedForRun/scrubMinusOneSeeds are private in the page; the offsets and the -1 scrub are automated in gen.page.js G15:3 and G15:5, and P1 core/seeds.js makes them directly callable" };
   });
 
   await t("G7: 41 applyPreset replaces the global keyword fields", async () => {
@@ -797,7 +797,10 @@ async function run() {
   });
 
   await t("G14: 68 the background-generation preference defaults to on", () => {
-    return eqArr([localStorage.getItem("comicGen.bgGenerate"), $("prefBgGenerate").checked], ["1", true], "stored,checked");
+    const stored = localStorage.getItem("comicGen.bgGenerate");
+    const checked = $("prefBgGenerate").checked;
+    const on = stored === null || stored === "1";
+    return on && checked === true ? ok("stored=" + JSON.stringify(stored) + " means on, checkbox on") : no("stored=" + JSON.stringify(stored) + ", checked=" + checked);
   });
 
   await t("G14: 69 the preference persists in both directions", async () => {
@@ -827,7 +830,76 @@ async function run() {
     return eqArr([open, prefill === (ownerBefore || ""), saved], [true, true, "p0-owner"], "open,prefill,saved");
   });
 
-  await t("MAN: 71 ghTest and ghPush against the real repo", () => {
+  await t("G15: 72 the panel selection lives in the DOM and is never saved", async () => {
+    switchPage(1);
+    setPanelCount(4);
+    await settle();
+    clearPanelSelection();
+    await settle();
+    const before = JSON.stringify(rawState());
+    selectAllPanels();
+    const barShown = !!$("selectionBar") && !$("selectionBar").hidden;
+    const count = ($("selectionBarCount") || {}).textContent;
+    const dup = (($("panel-dup-btn-1") || {}).textContent || "").trim();
+    const marked = document.querySelectorAll(".panel-selected").length;
+    const after = JSON.stringify(rawState());
+    const selKey = /"(panelSelection|selected|selectedPanels|selection)"/.test(after);
+    clearPanelSelection();
+    await settle();
+    const clearedBar = $("selectionBar").hidden;
+    const clearedMarks = document.querySelectorAll(".panel-selected").length;
+    const dupBack = ($("panel-dup-btn-1").textContent || "").trim();
+    return eqArr([barShown, count, dup, marked, before === after, selKey, clearedBar, clearedMarks, dupBack],
+      [true, "4 panels selected", "\u29c9 Duplicate 4 Panels", 4, true, false, true, 0, "\u29c9 Duplicate"],
+      "bar,count,dup,marked,unchangedSave,selKey,clearedBar,clearedMarks,dupReset");
+  });
+
+  await t("G15: 73 copy and paste carry a panel into another slot", async () => {
+    switchPage(1);
+    setPanelCount(6);
+    await settle();
+    clearPanelSelection();
+    setVal("panel-act-1", "COPY-SRC");
+    setVal("panel-title-1", "COPY-TITLE");
+    await settle();
+    onPanelSelectClick(1, { target: { checked: true } });
+    panelCopyAction();
+    await settle();
+    const copied = $("statusEl").textContent || "";
+    const chipShown = $("panel-paste-btn-3").hidden === false;
+    const chipText = ($("panel-paste-btn-3").textContent || "").trim();
+    clearPanelSelection();
+    const before = cardsShown();
+    panelPasteAction(3);
+    await settle();
+    return eqArr([/Copied 1 panel/.test(copied), chipShown, chipText, before, cardsShown(), /Pasted 1 panel/.test($("statusEl").textContent || ""), getVal("panel-act-3"), getVal("panel-title-3"), getVal("panel-act-1")],
+      [true, true, "\ud83d\udccb Paste 1", 6, 7, true, "COPY-SRC", "COPY-TITLE", "COPY-SRC"],
+      "copied,chip,chipText,before,after,pasted,act3,title3,act1");
+  });
+
+  await t("G15: 74 a cut removes the panel and empties the clipboard when pasted", async () => {
+    switchPage(1);
+    setPanelCount(6);
+    await settle();
+    clearPanelSelection();
+    setVal("panel-act-2", "CUT-ME");
+    await settle();
+    onPanelSelectClick(2, { target: { checked: true } });
+    panelCutAction();
+    await settle();
+    const cut = /Cut 1 panel/.test($("statusEl").textContent || "");
+    const gone = getVal("panel-act-2") !== "CUT-ME";
+    const chip = ($("panel-paste-btn-1").textContent || "").trim();
+    const afterCut = cardsShown();
+    panelPasteAction(1);
+    await settle();
+    const chipHidden = $("panel-paste-btn-1").hidden;
+    return eqArr([cut, gone, chip, afterCut, chipHidden, getVal("panel-act-1")],
+      [true, true, "\ud83d\udccb Paste 1", 5, true, "CUT-ME"],
+      "cut,gone,chip,afterCut,chipHidden,restored");
+  });
+
+  await t("MAN: 75 ghTest and ghPush against the real repo", () => {
     return { skip: "network + a live token; verified by hand at the end of every release instead" };
   });
 
