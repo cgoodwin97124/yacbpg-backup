@@ -34,7 +34,7 @@
 <body>
 <div class="page">
 <h1>Yet Another Comic Book Page Generator</h1>
-<h3>Design Document — version 2026.09.25.3</h3>
+<h3>Design Document — version 2026.09.26.1</h3>
 <p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
 <hr>
 <h2>1. What it is</h2>
@@ -130,6 +130,7 @@
 <li><strong>✕</strong> Clear just that image (it aborts an in-progress render of that slot too).</li>
 <li><strong>🔓 / 🔒</strong> Protect — a protected image is never overwritten by regeneration (Generate skips it; unprotect to allow regeneration again).</li>
 <li><strong>⭐</strong> Make it the panel&#39;s <strong>representative/cover</strong> image — the one shown first (with a ⭐ badge) and used in Storyboard view.</li>
+<li><strong>⧉</strong> <strong>Copy this image to other images</strong> — tick any of the other images in its own panel (a <em>select all</em> shortcut is right there), and/or 1–4 images of another panel on the same page, then press <strong>⧉ Copy image</strong>. The image you clicked stays where it is; whatever was already in a chosen slot is replaced; a <strong>🔒</strong> protected image is never overwritten (it is skipped, and the status line tells you how many). Every copy lands unprotected, so you can regenerate it on its own. Slots above a destination panel&#39;s <strong>Images</strong> setting are shown greyed out — raise that panel&#39;s image count first if you want them.</li>
 </ul>
 <p>Each panel also has <strong>🗑 Clear Images</strong> (remove all images, keep the text setup) and <strong>🗑 Clear</strong> (images <em>and</em> all characters/location/action).</p>
 <p><strong>Hover/long-press preview</strong> — hovering (desktop) or long-pressing (mobile) a panel image shows a large preview overlay. Delay and on/off are set in Edit.</p>
@@ -217,6 +218,7 @@
 <p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
 <h2>12. Recent changes (changelog highlights)</h2>
 <ul>
+<li><strong>2026.09.26.1</strong> — <strong>⧉ Copy an image</strong>: a new chip under every generated image opens a picker where you tick any of the other images in its panel (or the whole rest of the panel in one click) and/or 1–4 images of another panel on the same page, then copy in one go. The source image stays put, occupied slots are replaced, 🔒 protected images are skipped and reported, and every copy lands unprotected.</li>
 <li><strong>2026.09.25.3</strong> — <strong>🎲 Same seed for every image</strong>: a checkbox at the foot of each panel&#39;s <strong>⚙ Panel</strong> menu. A panel&#39;s images normally get their own seed (the panel&#39;s seed, then +1, +2 …); tick it and every image of that panel is rendered with the panel&#39;s seed exactly — the number in its Seed box, or the page seed + its position when the box is empty. Per panel, saved with the project, and carried by duplicate / move / copy / paste.</li>
 <li><strong>2026.09.25.2</strong> — <strong>⚡ Generate (x) to (y)…</strong>: a new chip in each panel's ⚙ Panel menu opens a small dialog where you choose an <strong>inclusive range of panels</strong> to render (From / to boxes with a live count line), prefilled from your selection when several panels are ticked. Impossible ranges are refused with a warning and a disabled button, and pausing a range run resumes up to the range's end.</li>
 <li><strong>2026.09.25.1</strong> — <strong>⚡ Generate All To Here</strong>, a new chip in every panel&#39;s ⚙ Panel menu: it renders the page from panel 1 up to and including that panel, and a <em>To Here</em> run that you pause now resumes only as far as the end panel it was aiming for. The Panel Library&#39;s description box became an editable, project-saved <strong>Basic Description</strong> — filled from your library, frozen once you edit it, marked <strong>edited</strong> when it differs, with a <strong>⟳ Refresh from library</strong> chip. A new <strong>📄 Recent</strong> list under File reopens a saved project (JSON or ZIP) with one click, and <strong>Edit → Preferences</strong> gained a spinner for how many recent files to remember.</li>
