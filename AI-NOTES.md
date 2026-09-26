@@ -980,6 +980,43 @@ Author request 2026-09-26 (verbatim in `PENDING.md`): a document mapping the **f
 - The form's own answers become the record: **`PENDING.md` keeps the request + recon and points at the ticket ids; do not copy answers back into it as prose.**
 - Any synthetic project write while testing still needs the park/restore protocol (`scratch/test-v10-backup-raw.json` + a `__test_backup_v10` localStorage key) — see DEV-NOTES.
 
+## 19. Generation lifecycle & the background pause (2026.09.26.4)
+
+**The run used to stop the moment the page was hidden. It no longer does, unless you ask it to.** This is the single most load-bearing behaviour in the app's generation model, so it gets its own section.
+
+### The switch
+- `comicGen.bgGenerate` (localStorage, browser-scoped) + `let bgGeneratePref` (default **`true`**; the key is read as `!== '0'`, so an absent key means ON and no migration is needed).
+- `applyBgGenerate(on)` (beside `applyGenAlwaysVisible`, ~line 1724) writes the key and mirrors `#prefBgGenerate`; `onPrefBgGenerateChange()` is the inline handler; both are exported (`window.onPrefBgGenerateChange`). Restored + ticked in the boot block with the other prefs.
+- Markup: a `pref-sub` **Generation** section in `#preferencesPanel`, between *Header & menus* and *Recent files*, holding the single `check-label` row `#prefBgGenerate`.
+- **Not** carried in project files (`buildExportData` / the JSON editor's `JSON_OPEN_FLAGS` deliberately omit it — it is a device characteristic, not project data). Compare `menuFullscreen` / `genAlwaysVisible` / `hdrAllViews`, which ARE project-scoped.
+
+### The one gate
+```js
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) return;
+  if (bgGeneratePref) return;          // <-- 2026.09.26.4
+  pausedByVisibility = true;
+  if (runSignal) runSignal.fire();
+  /* stop every inFlightGen entry, delete its partial image, mark the box .paused, clear the <img>,
+     status: "Stopped generations — tab went to background." */
+});
+```
+Everything below the gate is the pre-2026.09.26.4 behaviour and is still used whenever the pref is off. **`document.hidden` is the only signal read** — there is no `blur`/`pagehide`/`freeze` listener, and none should be added: focus loss (another window on top) is not the same as hiding, and a run must survive it in both modes.
+
+### Why the pause was there, and why it is now off by default
+Added 2026-08-10 during the mobile memory-hardening pass (TROUBLESHOOTING NOTE in `DEV-NOTES.md`) after a suspected memory-pressure tab kill on the author's phone. That incident was later traced to stale session state (an old cached watchdog + session leftovers), and the part of that hardening which actually matters — evicting off-screen panel images from the DOM through `imgObserver` and `loading="lazy"` — is untouched. Holding a page's worth of images (~120 KB JPEG data URL each; 24 panels ≈ 3 MB) is not a memory problem, so refusing to generate in the background bought nothing and cost the author the thing they disliked most. The author's R-round answer (“This makes me sigh, so, so much”) is the reason the default flipped.
+
+### What still pauses, and why that is fine
+- **The OS.** iOS (and Android under pressure) suspends or kills hidden pages. Nothing in the page can prevent that.
+- **The resume ladder catches it:** `resumePanel` + `runEndPanel` mean the next ⚡ continues from the interrupted panel and finished panels are never re-rendered ("paused — … continue from panel N"). See §7.
+- **Timer throttling** in hidden tabs (Chrome: 1 s minimum, then once a minute after ~5 minutes hidden) can slow a run, and `requestAnimationFrame` stops entirely — nothing in the generation path depends on rAF, and the app's own 120 s per-image watchdog is a `setTimeout`, so it is delayed rather than fired early. The plugin's internals are the only unknown; a run that stalls in the background simply resumes on the next ⚡.
+- **Images rendered while hidden** sit in `panelImages` (JS) until the IO fires on return, so panels appear correctly when the author comes back.
+
+### Testing it
+- Fake the state, don't leave the tab: `Object.defineProperty(document, 'hidden', {configurable: true, get: () => true})`, dispatch `new Event('visibilitychange')`, then `delete document.hidden`.
+- Pair that with a stubbed `root.generateImage` (a promise that never settles, with a `.stop()` that increments a counter) and `generateSinglePanel(i, {pos: 'x', neg: ''})` — the `runOverride` path skips `buildPanelPrompt` and the empty-panel `skipped` branch, and deletes `promptHistoryRuns[i]`, so the whole render/abort machinery runs with nothing persisted.
+- Park storage first anyway (`devtests/park.js`); the pref key itself is created by the toggle, and a restore removes it (absent = ON, so the default is what the author wants).
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
