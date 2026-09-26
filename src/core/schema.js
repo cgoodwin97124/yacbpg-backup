@@ -14,6 +14,28 @@ export function defaultChar() {
   return { sel: "none", base: "", extra: "" };
 }
 
+export function normaliseLibrary(arr) {
+  const out = [];
+  const seen = new Set();
+  if (!Array.isArray(arr)) return out;
+  for (const o of arr) {
+    if (!isObj(o)) continue;
+    const id = asString(o.id, "").trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push({ id: id, type: normaliseLibType(o.type, id), name: asString(o.name, ""), desc: asString(o.desc, "") });
+  }
+  return out;
+}
+
+export function normaliseLibType(type, id) {
+  if (type === "Character" || type === "Location" || type === "Action") return type;
+  const s = asString(id, "");
+  if (s.startsWith("loc-")) return "Location";
+  if (s.startsWith("act-")) return "Action";
+  return "Character";
+}
+
 export function defaultPanel(id) {
   return {
     id: validId(id) ? id : newPanelId(),
@@ -64,7 +86,8 @@ export function defaultProject(overrides) {
     nsfw: false,
     theme: { mode: "system", accent: "" },
     currentPage: 1,
-    pages: { 1: defaultPage(4) }
+    pages: { 1: defaultPage(4) },
+    library: []
   }, overrides || {});
 }
 
@@ -76,6 +99,7 @@ export function normalise(state) {
   if ("previewOn" in out) out.previewOn = !!out.previewOn;
   if ("nsfw" in out) out.nsfw = !!out.nsfw;
   if (isObj(out.theme)) out.theme = { mode: asString(out.theme.mode, "system"), accent: asString(out.theme.accent, "") };
+  if ("library" in out) out.library = normaliseLibrary(out.library);
   const pages = (src.pages !== null && typeof src.pages === "object") ? src.pages : { 1: flatPage(src) };
   const seen = new Set();
   const normPages = {};
@@ -93,6 +117,13 @@ export function validate(state) {
   const problems = [];
   const add = (path, message) => problems.push({ path, message });
   if (!isObj(state)) { add("", "the project must be an object"); return problems; }
+  if (state.library !== undefined) {
+    if (!Array.isArray(state.library)) add("library", "the library must be an array");
+    else state.library.forEach((o, i) => {
+      if (!isObj(o)) { add("library." + i, "a library entry must be an object"); return; }
+      if (!validId(o.id)) add("library." + i + ".id", "a library entry must have a non-empty id");
+    });
+  }
   if (!isObj(state.pages)) add("pages", "pages must be an object");
   else {
     const keys = Object.keys(state.pages);
