@@ -3,8 +3,8 @@ Yet Another Comic Book Page Generator backup
 
 The generator: https://perchance.org/f0vstb2fbe — source is `main.pjs` + `index.html`, plus `src/manual.html`
 (the shipped user manual), `src/question-form.html` (the author's ticket form), `src/refactor-form.html`
-(the R-01 … R-08 refactor questions), `src/round2-form.html` (the P2 round) and `src/core/*.js` (P1's
-extracted pure logic — all six modules). Everything else here is
+(the R-01 … R-08 refactor questions), `src/round2-form.html` (the P2 round) and `src/core/*.js` (the app's
+extracted pure logic — seven modules: P1's six, plus P2's `schema.js`). Everything else here is
 documentation for whoever works on it next.
 
 Reading order for a new session:
@@ -21,11 +21,12 @@ Reading order for a new session:
   suites and how to run them (+ `devtests/shots/`, the visual baseline). **Read `devtests/README.md` before
   running any test** — every suite mutates the live preview and must park and restore the author's storage.
 - `fixtures/` — known project files (full page, legacy v1, every-legacy-key) for the fixture suite.
-- `src/core/` — the six pure-logic modules (`zip.js`, `jsontext.js`, `keywords.js`, `seeds.js`, `prompt.js`,
-  `library-core.js`), loaded by `coreLoad()` at the top of `index.html`. The boot waits for them and a module that
-  cannot load is reported in a bar at the top of the page. Since 2026.09.26.9 four of them are the only copy;
-  `prompt` and `library-core` still keep an in-file fallback, which `devtests/diff-core.js` diffs against until
-  they follow in 2026.09.26.10.
+- `src/core/` — the app's pure-logic modules (`zip.js`, `jsontext.js`, `keywords.js`, `seeds.js`, `prompt.js`,
+  `library-core.js`, `schema.js`), loaded by `coreLoad()` at the top of `index.html`. The boot waits for them and a
+  module that cannot load is reported in a bar at the top of the page. Since 2026.09.26.9 four of them are the only
+  copy; `prompt` and `library-core` still keep an in-file fallback, which `devtests/diff-core.js` diffs against
+  until they follow in 2026.09.26.11. `schema.js` (2026.09.26.10) is the first P2 module — the project defaults,
+  `newPanelId`, and the `normalise` / `validate` pair the state layer is built on.
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
