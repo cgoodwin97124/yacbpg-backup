@@ -53,7 +53,7 @@ const deletedInline = {
   "src/core/library-core.js": ["LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems"],
 };
 
-const declaredNames = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems", "newPanelId", "defaultPanel", "defaultPage", "defaultProject", "normaliseProject", "validateProject"];
+const declaredNames = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems", "newPanelId", "defaultPanel", "defaultPage", "defaultProject", "normaliseProject", "validateProject", "normaliseLibrary"];
 
 const discovered = (await fs.listFiles()).filter((f) => f.path.startsWith("src/core/") && f.path.endsWith(".js")).map((f) => f.path).sort();
 const unspecced = discovered.filter((p) => !surface[p]);
