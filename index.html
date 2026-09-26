@@ -41,7 +41,8 @@
                    to load is reported in a bar at the top of the page. The four that had
                    survived a release (zip, jsontext, keywords, seeds) lost their in-file copy in
                    2026.09.26.9; prompt and library-core keep theirs as the fallback until
-                   2026.09.26.12 (2026.09.26.11 was the import-menu fix), and those two are the
+                   2026.09.26.13 (2026.09.26.10 was the panel-id/schema step, .11 the import-menu
+                   fix and .12 the per-panel colour palette), and those two are the
                    ones devtests/diff-core.js still compares
                    module-against-inline. schema.js arrived in 2026.09.26.10: it owns the
                    project/page/panel shape and mints the id every panel now carries.
@@ -1263,8 +1264,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.11 — 2026-09-26 — 🧭 Importing a project now applies its menu state instead of toggling it
-- The full version history lives in the project's GitHub repo; open the About section to load it.
+## 2026.09.26.12 — 2026-09-26 — 🌈 Every panel can override the colour palette
+- A Palette dropdown now sits in each panel's header row (after Style, before Size) so a single panel can use a different colour palette from the project default.
 </script>
 
 
@@ -2340,6 +2341,11 @@ color-scheme:light;
     return (p && p.style) ? String(p.style) : '';
   }
 
+  function analysisPanelPalette(pageData, i) {
+    const p = pageData && pageData[i];
+    return (p && p.palette) ? String(p.palette) : '';
+  }
+
   function analysisPanelSize(pageData, i) {
     const p = pageData && pageData[i];
     if (!p) return { sel: '', w: '', h: '' };
@@ -2363,6 +2369,11 @@ color-scheme:light;
   function analysisStyleLabel(id) {
     if (!id) return '';
     return ART_STYLES[id] ? ART_STYLES[id].label : id;
+  }
+
+  function analysisPaletteLabel(id) {
+    if (!id) return '';
+    return COLOR_PALETTES[id] ? COLOR_PALETTES[id].label : id;
   }
 
   function analysisGlobalNsfwChanged(checked) {
@@ -2429,6 +2440,20 @@ color-scheme:light;
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
     p.style = val || '';
+    savePanelStateShape(state);
+  }
+
+  function analysisSetPanelPalette(pg, i, val) {
+    if (pg === currentPage) {
+      const sel = document.getElementById('panel-palette-' + i);
+      if (sel && [...sel.options].some(o => o.value === val)) sel.value = val;
+      onPanelPaletteChange(i);
+      return;
+    }
+    const state = collectPanelState();
+    const p = state.pages[pg] && state.pages[pg][i];
+    if (!p) return;
+    p.palette = val || '';
     savePanelStateShape(state);
   }
 
@@ -2557,6 +2582,16 @@ color-scheme:light;
     return analysisChip('🎨 ' + (analysisStyleLabel(eff) || 'Global'), own ? '' : 'an-chip-inherit', title, (chip) => analysisStyleEditor(pg, i, pageData, chip));
   }
 
+  function analysisPaletteChip(pg, i, pageData) {
+    const own = analysisPanelPalette(pageData, i);
+    const g = (document.getElementById('presetPalette') || {}).value || 'vibrant';
+    const eff = own || g;
+    const title = own
+      ? ('Palette override: ' + analysisPaletteLabel(own) + ' — click to change')
+      : ('Uses the project default (' + analysisPaletteLabel(g) + ') — click to override');
+    return analysisChip('🌈 ' + (analysisPaletteLabel(eff) || 'Global'), own ? '' : 'an-chip-inherit', title, (chip) => analysisPaletteEditor(pg, i, pageData, chip));
+  }
+
   function analysisSizeChip(pg, i, pageData) {
     const s = analysisPanelSize(pageData, i);
     const own = !!s.sel;
@@ -2587,6 +2622,18 @@ color-scheme:light;
     sel.innerHTML = '<option value="">[Global]</option>' + Object.entries(ART_STYLES).map(([id, s]) => `<option value="${id}">${escapeHtml(s.label)}</option>`).join('');
     sel.value = analysisPanelStyle(pageData, i);
     sel.onchange = () => { analysisSetPanelStyle(pg, i, sel.value); renderAnalysis(); };
+    wrap.appendChild(sel);
+    chip.replaceWith(wrap);
+    sel.focus();
+  }
+
+  function analysisPaletteEditor(pg, i, pageData, chip) {
+    const wrap = document.createElement('span');
+    wrap.className = 'an-editor';
+    const sel = document.createElement('select');
+    sel.innerHTML = '<option value="">[Global]</option>' + Object.entries(COLOR_PALETTES).map(([id, p]) => `<option value="${id}">${escapeHtml(p.label)}</option>`).join('');
+    sel.value = analysisPanelPalette(pageData, i);
+    sel.onchange = () => { analysisSetPanelPalette(pg, i, sel.value); renderAnalysis(); };
     wrap.appendChild(sel);
     chip.replaceWith(wrap);
     sel.focus();
@@ -2685,7 +2732,7 @@ color-scheme:light;
     d.appendChild(lbl);
     const chips = document.createElement('div');
     chips.className = 'an-chips';
-    chips.append(analysisStyleChip(pg, i, pageData), analysisSizeChip(pg, i, pageData), analysisSeedChip(pg, i, pageData));
+    chips.append(analysisStyleChip(pg, i, pageData), analysisPaletteChip(pg, i, pageData), analysisSizeChip(pg, i, pageData), analysisSeedChip(pg, i, pageData));
     d.appendChild(chips);
     return d;
   }
@@ -3418,6 +3465,7 @@ color-scheme:light;
         seed: ps ? ps.value : '',
         imgCount: ic ? ic.value : '',
         style: stSel ? stSel.value : '',
+        palette: (document.getElementById('panel-palette-' + i) || {}).value || '',
         sizeSel: (document.getElementById('panel-size-' + i) || {}).value || '',
         sizeW: (document.getElementById('panel-size-w-' + i) || {}).value || '',
         sizeH: (document.getElementById('panel-size-h-' + i) || {}).value || '',
@@ -3960,6 +4008,8 @@ color-scheme:light;
       if (ic) ic.value = (p.imgCount && [...ic.options].some(o => o.value === p.imgCount)) ? p.imgCount : imgCountDefaultPref;
       const stSel = document.getElementById('panel-style-' + i);
       if (stSel && p.style && [...stSel.options].some(o => o.value === p.style)) stSel.value = p.style;
+      const palSel = document.getElementById('panel-palette-' + i);
+      if (palSel && p.palette && [...palSel.options].some(o => o.value === p.palette)) palSel.value = p.palette;
       const szSel = document.getElementById('panel-size-' + i);
       if (szSel) {
         if (p.sizeSel && [...szSel.options].some(o => o.value === p.sizeSel)) szSel.value = p.sizeSel;
@@ -4146,6 +4196,12 @@ color-scheme:light;
               </select>
             </div>
             <div class="panel-imgs-sel">
+              <label for="panel-palette-${i}">Palette:</label>
+              <select id="panel-palette-${i}" onchange="onPanelPaletteChange(${i})" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
+                <option value="" selected>[Default (Global)]</option>
+              </select>
+            </div>
+            <div class="panel-imgs-sel">
               <label for="panel-size-${i}">Size:</label>
               <select id="panel-size-${i}" onchange="onPanelSizeChange(${i})" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
                 <option value="" selected>[Default (Global)]</option>
@@ -4292,6 +4348,12 @@ color-scheme:light;
         const curS = styleSel.value;
         styleSel.innerHTML = '<option value="">[Default (Global)]</option>' + Object.entries(ART_STYLES).map(([id, s]) => `<option value="${id}">${s.label}</option>`).join("");
         if ([...styleSel.options].some(o => o.value === curS)) styleSel.value = curS;
+      }
+      const paletteSel = document.getElementById('panel-palette-' + i);
+      if (paletteSel) {
+        const curP = paletteSel.value;
+        paletteSel.innerHTML = '<option value="">[Default (Global)]</option>' + Object.entries(COLOR_PALETTES).map(([id, p]) => `<option value="${id}">${p.label}</option>`).join("");
+        if ([...paletteSel.options].some(o => o.value === curP)) paletteSel.value = curP;
       }
     }
     refreshAllPanelLineDescs();
@@ -5800,16 +5862,21 @@ color-scheme:light;
   function getPanelKeywords(i) {
     const styleSel = document.getElementById('panel-style-' + i);
     const styleId = styleSel ? styleSel.value : '';
-    if (styleId && ART_STYLES[styleId]) {
-      const style = ART_STYLES[styleId];
-      const paletteId = document.getElementById('presetPalette').value;
-      const palette = COLOR_PALETTES[paletteId] || {};
-      const pos = [...style.keywords, ...(palette.keywords || [])].join(", ");
-      const nsfw = document.getElementById('nsfwCheck').checked;
-      const positive = [pos, nsfw ? "" : "fully clothed"].filter(Boolean).join(", ");
-      const neg = style.negatives || DEFAULT_NEGATIVES;
-      const negative = nsfw ? neg : (neg + ", nsfw, nudity, explicit").replace(/, ,+/g, ", ").replace(/^,\s*|,\s*$/g, "").trim();
-      return { positive, negative };
+    const palSel = document.getElementById('panel-palette-' + i);
+    const palId = palSel ? palSel.value : '';
+    if (styleId || palId) {
+      const globalStyleId = (document.getElementById('presetStyle') || {}).value || '';
+      const globalPaletteId = (document.getElementById('presetPalette') || {}).value || '';
+      const style = ART_STYLES[styleId || globalStyleId];
+      if (style) {
+        const palette = COLOR_PALETTES[palId || globalPaletteId] || {};
+        const pos = [...style.keywords, ...(palette.keywords || [])].join(", ");
+        const nsfw = document.getElementById('nsfwCheck').checked;
+        const positive = [pos, nsfw ? "" : "fully clothed"].filter(Boolean).join(", ");
+        const neg = style.negatives || DEFAULT_NEGATIVES;
+        const negative = nsfw ? neg : (neg + ", nsfw, nudity, explicit").replace(/, ,+/g, ", ").replace(/^,\s*|,\s*$/g, "").trim();
+        return { positive, negative };
+      }
     }
     return getEffectiveKeywords();
   }
@@ -6987,6 +7054,11 @@ color-scheme:light;
   }
 
   function onPanelStyleChange(i) {
+    clearPanelPromptOverride(i);
+    schedulePanelSave();
+  }
+
+  function onPanelPaletteChange(i) {
     clearPanelPromptOverride(i);
     schedulePanelSave();
   }
@@ -8421,6 +8493,8 @@ color-scheme:light;
       if (ic) ic.value = '1';
       const stSel = document.getElementById('panel-style-' + i);
       if (stSel) stSel.value = '';
+      const palSel = document.getElementById('panel-palette-' + i);
+      if (palSel) palSel.value = '';
       const szSel = document.getElementById('panel-size-' + i);
       if (szSel) szSel.value = '';
       const sc = document.getElementById('panel-size-custom-' + i);
@@ -8938,6 +9012,7 @@ color-scheme:light;
   window.clearPanelImageSlot = clearPanelImageSlot;
   window.onPanelImgCountChange = onPanelImgCountChange;
   window.onPanelStyleChange = onPanelStyleChange;
+  window.onPanelPaletteChange = onPanelPaletteChange;
   window.onPanelSizeChange = onPanelSizeChange;
   window.onPanelSameSeedChange = onPanelSameSeedChange;
   window.panelSameSeedOn = panelSameSeedOn;
@@ -9124,7 +9199,7 @@ color-scheme:light;
   const JSON_UNDO_MAX = 10;
   const JSON_SYNTAX_MAX_CHARS = 220000;
   const JSON_PAGE_FIELDS = ['name', 'summary', 'panelCountSel', 'panelCountCustom', 'seed'];
-  const JSON_PANEL_FIELDS = ['title', 'loc', 'locExtra', 'action', 'seed', 'imgCount', 'style', 'sizeSel', 'sizeW', 'sizeH'];
+  const JSON_PANEL_FIELDS = ['title', 'loc', 'locExtra', 'action', 'seed', 'imgCount', 'style', 'palette', 'sizeSel', 'sizeW', 'sizeH'];
   const JSON_OPEN_FLAGS = ['layoutMode', 'menuVisible', 'panelsVisible', 'activeMenu', 'menuFullscreen', 'genAlwaysVisible', 'hdrAllViews'];
 
   let jsonBaselineDoc = null;
@@ -9290,6 +9365,7 @@ color-scheme:light;
       case 'panelCountCustom': return (typeof val === 'string' || typeof val === 'number') ? null : 'must be a number written as text, e.g. "5"';
       case 'imgCount': return jsonOptionProblem('panel-img-count-1', val);
       case 'style': return jsonOptionProblem('panel-style-1', val);
+      case 'palette': return jsonOptionProblem('panel-palette-1', val);
       case 'sizeSel': return jsonOptionProblem('panel-size-1', val);
       case 'loc': return jsonOptionProblem('panel-loc-select-1', val);
       case 'seed': case 'title': case 'locExtra': case 'action': case 'sizeW': case 'sizeH': case 'name': case 'desc': case 'type':
