@@ -48,8 +48,8 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 ## 2. What is in progress
 
 - **P0 — the regression harness.** **Complete, 2026-09-26.** `devtests/park.js` (park / check / restore of the
-  whole localStorage map with an FNV-1a hash, so "nothing was written" is provable); `devtests/smoke.page.js` (72
-  checks over §22 of the function map — 68 pass, 4 explicit manual lines); `devtests/gen.page.js` (18 checks of the
+  whole localStorage map with an FNV-1a hash, so "nothing was written" is provable); `devtests/smoke.page.js` (75
+  checks over §22 of the function map — 71 pass, 4 explicit manual lines); `devtests/gen.page.js` (18 checks of the
   generation engine against a stubbed service, plus 1 manual); `devtests/fixtures.page.js` (16 checks importing
   every `fixtures/` file through the real import path); `devtests/core.test.js` (14 DOM-free checks — the pure
   functions are extracted out of `index.html` by name and run against a fake `document`); `fixtures/` (full page,
@@ -65,8 +65,13 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26** — the smoke suite gained `G15` (checks 72–74): the selection is DOM-only and never reaches the
+  save (§21.11), a copy/paste round trip, and a cut that empties the clipboard once it is pasted. `G14:68` now
+  asserts the *documented* default — a missing `comicGen.bgGenerate` key means on — instead of requiring the key
+  to exist, which it did not in the author's own storage (it is only written when the box is toggled). Smoke is now
+  75 checks: 71 pass, 4 manual, 0 fail; the author's project still restores byte-identical (`1c13afe4`).
 - **2026-09-26** — P0 finished and pushed: `devtests/` (5 suites + 4 runners + the park helper), `fixtures/`
-  (3 files + a README) and `devtests/shots/` (15 baseline screenshots). Suite results: smoke 68/0, generation 18/0,
+  (3 files + a README) and `devtests/shots/` (14 baseline screenshots). Suite results: smoke 71/0, generation 18/0,
   fixtures 16/0, core 14/0, 5 manual lines. Two freezes of the live preview during snapshotting were traced to the
   heavy capture of the 24-panel fixture at a scaled viewport (the baseline now reduces it to 6 panels) and the park
   protocol was hardened to always restore, dump to the workspace and verify the hash after a reload.
@@ -82,7 +87,7 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 
 ---
 
-**P0 result (2026-09-26).** The suite passes against the unmodified 2026.09.26.4 build: 68 + 18 + 16 + 14
+**P0 result (2026-09-26).** The suite passes against the unmodified 2026.09.26.4 build: 71 + 18 + 16 + 14
 checks green, 5 explicit manual lines, zero perchance errors. What the checks pinned down that the docs did not
 say (all now in `FUNCTION-MAP.md` §24): the settings export is a *wrapper* (`{version, exportedAt, settings,
 preset, libObjects, …}`) and it **does** carry the browser library — a v2 import *replaces* that library with the
@@ -91,7 +96,7 @@ has; `panelCountSel` is only ever one of 1/4/6/12/24/`custom` (a hand-written `"
 JSON editor lets a user type); single-panel deletes confirm with a native `confirm()` while batch operations use
 the choice dialog; and the generation DOM markers (`panel-img-box` gains `rep` / `protected` / `cleared` / `failed`
 / `paused` / `skipping`, `slot-btns` chips disable) are what a test must assert on, because `showPanelImage`
-attaches the `src` asynchronously. Invariants §21 items 1–15 each have at least one check; 16–18 are covered by
+attaches the `src` asynchronously. Invariants §21 items 1–15 each have at least one check (item 11, *selection is ephemeral*, is pinned by the smoke suite's `G15` group); 16–18 are covered by
 inspection and by the harness's own rules (the runner refuses to leave a stray key behind).
 
 ## 3. Decisions, written down so they are not re-litigated
