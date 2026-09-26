@@ -18,7 +18,7 @@ const plans = [
   { name: "phone-light", size: [390, 844], theme: "light", subjects: ["grid", "dialog"] },
 ];
 const subjects = {
-  grid: "closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); switchMenu('file'); window.scrollTo(0,0);",
+  grid: "closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); const ab = document.querySelector('.menu-btn.active'); if (ab && ab.dataset.menu) switchMenu(ab.dataset.menu); window.scrollTo(0,0);",
   json: "closeSingleView(); closeStoryboard(); closeAnalysis(); openJsonEditor();",
   analysis: "closeSingleView(); closeStoryboard(); closeJsonEditor(); openAnalysis();",
   dialog: "closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); clearPanelSelection(); for (const i of [1,2,3]) { const cb = document.getElementById('panel-select-' + i); if (cb) { cb.checked = true; cb.dispatchEvent(new Event('click', { bubbles: true })); } } batchDeletePanels();",
