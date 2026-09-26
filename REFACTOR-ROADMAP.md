@@ -249,8 +249,8 @@ src/
 **STATUS: COMPLETE (2026.09.26.8); the first cleanup is done (2026.09.26.9).** All six steps are extracted and gated.
 The in-file copies of `zip`, `jsontext`, `keywords` and `seeds` were **deleted in 2026.09.26.9** — `index.html` now only
 declares those names, the boot waits for the modules (`coreReady` / `window.appReady`) and a module that fails to load is
-reported in a bar at the top of the page. `prompt` and `library-core` lose their copies one release later **(2026.09.26.13 —
-2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the import-menu fix)**,
+reported in a bar at the top of the page. `prompt` and `library-core` lose their copies one release later **(2026.09.26.14 —
+2026.09.26.10 shipped P2 step 1, 2026.09.26.11 the import-menu fix, 2026.09.26.12 the colour palette and 2026.09.26.13 the library rename)**,
 at which point `devtests/diff-core.js` drops its differential half and the extraction machinery in it can go.
 
 Move, in this order, keeping each function's current implementation in `index.html` as a **fallback**:
@@ -275,7 +275,7 @@ const buildPrompt = corePrompt ? corePrompt.buildPanelPrompt : buildPanelPromptI
 So a module that fails to load (an in-app browser before a Save) falls back to the code still in `index.html`.
 The fallback is deleted one release later, once the module has survived a real release — done for `zip`, `jsontext`,
 `keywords` and `seeds` in 2026.09.26.9 (the declaration stays, the boot waits, and a failure is reported), with
-`prompt` and `library-core` following in **2026.09.26.13** (2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the import-menu fix).
+`prompt` and `library-core` following in **2026.09.26.14** (2026.09.26.10 shipped P2 step 1, 2026.09.26.11 the import-menu fix, 2026.09.26.12 the colour palette and 2026.09.26.13 the library rename).
 
 **Exit criteria:** the P0 core tests run against the *modules* (**met 2026.09.26.9** — `core.test.js` imports all six and
 no longer extracts them); a "differential" test compares old vs new output for hundreds of generated inputs and finds zero
