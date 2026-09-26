@@ -38,7 +38,7 @@ came from a heavy synchronous snapshot of the 24-panel fixture at a scaled viewp
 | File | What it is |
 |---|---|
 | `park.js` | the park/check/restore helper (the only file here that runs on its own) |
-| `smoke.page.js` + `run-smoke.js` | the capability walk: 72 checks over the factory reset, pages, panels and reflow, content and the freeze rule, prompt composition and override invalidation, seeds, keywords and presets, the library, export/zip/import round trips, the JSON editor, the analysis matrix, the views, confirmations and the preferences. 68 pass, 4 are explicit manual lines. |
+| `smoke.page.js` + `run-smoke.js` | the capability walk: 75 checks over the factory reset, pages, panels and reflow, content and the freeze rule, prompt composition and override invalidation, seeds, keywords and presets, the library, export/zip/import round trips, the JSON editor, the analysis matrix, the views, confirmations, the preferences, and the panel selection + clipboard (`G15`, which is what pins invariant §21.11 — the selection is DOM-only and never reaches the save). 71 pass, 3 manual lines + 1 cross-reference line. |
 | `gen.page.js` + `run-gen.js` | the generation engine against a stubbed `root.generateImage`: skip/protected/failed paths, seed offsets and pinning, the same-seed flag, prompt history, pause and stop settling cleanly, the run tally, and the 2026.09.26.4 background gate in both directions. 18 pass, 1 manual. |
 | `fixtures.page.js` + `run-fixtures.js` | imports every file in `fixtures/` through the real import path and asserts what came back. 16 pass. |
 | `core.test.js` | the DOM-free suite. Extracts `crc32`, `initCrcTable`, `buildZip`, `inflateRawDeflate`, `unzipEntries`, `scrubMinusOneSeeds`, `getEffectiveKeywords`, `applyPreset`, `ART_STYLES`, `COLOR_PALETTES`, `JSON_NUM_RE`, `jsonTokenize`, `jsonDecodeRaw` and `jsonParse` **out of `index.html` by name** and runs them in a worker against a fake `document`. 14 pass. |
@@ -82,3 +82,8 @@ a compact report (pass/fail counts, failure lines, `byteIdentical`) and write th
   `applyImportedSettings`, `analysisFillCell`, `deleteLibraryObject`, `countLibReferences`. What they do is
   covered indirectly through the exported surface and the DOM; P1's extraction makes them directly testable.
 - **An unknown `version` file** is rejected with a status message and no state change; currently a manual check.
+- **The four manual lines** are `MAN:22b` (the private reflow helpers, covered indirectly by `G3` and by P1),
+  `MAN:40` (a cross-reference: the seed offsets and the `-1` scrub are automated in `gen.page.js` `G15:3` /
+  `G15:5`), `MAN:67` (protected slots, automated in `gen.page.js`) and `MAN:75` (`ghTest`/`ghPush`). Nothing in
+  the invariant list is left without a check: `§21.11` (the selection is ephemeral) is pinned by `G15:72`, and
+  `G15:73`/`G15:74` cover the copy / cut / paste clipboard that the selection drives.
