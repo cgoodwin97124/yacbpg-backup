@@ -82,22 +82,36 @@ which is why the boot waits for all six and reports the failure instead of silen
 
 ### Why capture order matters in `visual-diff.js`
 
-**2026-09-26 addendum — it is the harness's session state, not the app.** The keep-awake release (2026.09.26.6,
-a new preference row in the Edit menu) made the same phone/light captures wobble again, so the question "is the
-size change the app or the harness?" was settled with an A/B instead of an argument: the *previous* `index.html`
-(kept at `scratch/p1/index-old.html` during that session, 533,898 bytes) and the new one (540,294 bytes) were
-captured **alternately in the same session at the same position** — new, old, new, old — with the identical
-fixture + phone viewport + `grid` subject recipe. All four captures came back **243x3396 and pixel-identical to
-each other** (0 differing pixels; the baseline's size). The builds differ by a whole preference row, so a
-session-position effect is the only thing that can explain the visual-diff runs' 3508-px captures. Conclusion:
-**a `sizeChanged` or non-zero `differingPct` on the light/phone views is a harness artefact until proven
-otherwise — re-capture in the baseline's order (or A/B it as above) before blaming a code change.**
+**2026-09-26.10 — root cause found, and fixed in the recipe.** The mystery was never the app and never a
+mysterious "in-memory state": the `grid` subject called `switchMenu('file')`, and **`switchMenu` is a
+*toggle***, not a setter. If a menu happened to be open when the subject ran, "click File" *closed* it; if
+none was open, it *opened* it — and an open menu in a non-full-screen layout adds **224 CSS px** to the page
+(a whole menu row, and a menu left open by the import path stays open for the rest of the group). So the
+capture's height depended on the parked author state (`comicGen.activeMenu` / `comicGen.menuFullscreen` /
+`comicGen.menuVisible`) and on which subject had run before it — which is exactly why the 224 px moved from
+the light group to the dark group between two runs of the same build, and why the .9 A/B (new, old, new, old
+at the same session position) came back identical: both builds were being measured with the menu in the same
+state. The `grid` subject now **closes whatever menu is open** instead of toggling File, so every capture
+starts from the same known state and the baseline compares cleanly (measured 2026-09-26.10: 13 of the 14
+baselines pixel-identical, and the two `*-json` captures differing only where the project JSON legitimately
+gained a panel `id` line).
+
+**Historical note — the same artefact, diagnosed as a session effect.** The keep-awake release (2026.09.26.6,
+a new preference row in the Edit menu) made the same phone/light captures wobble again, so "is the size change
+the app or the harness?" was settled with an A/B instead: the *previous* `index.html` (kept at
+`scratch/p1/index-old.html` during that session, 533,898 bytes) and the new one (540,294 bytes) were captured
+**alternately in the same session at the same position** — new, old, new, old — with the identical fixture +
+phone viewport + `grid` subject recipe. All four captures came back **243x3396 and pixel-identical to each
+other** (0 differing pixels; the baseline's size). The builds differ by a whole preference row, so a
+session-position effect was the only explanation available at the time. **A `sizeChanged` or non-zero
+`differingPct` on the light/phone views is a harness artefact until proven otherwise — check the menu state
+first, then re-capture in the baseline's order (or A/B it as above) before blaming a code change.**
 
 The first full run of the visual check reported the three `desktop-light-*` captures differing from the
 baseline by 11-19% of their pixels, and the two `phone-light-*` captures 224 CSS px taller. Re-running with the
 light captures **first in the session** made all of them pixel-identical (0 differing pixels). The difference
 was not the code: each capture is taken after five earlier "subjects" (json, analysis, dialog, storyboard,
-focus), and some of them leave in-memory state - an accordion, a scroll position, a half-finished animation -
+focus), and some of them leave UI state — a menu, an accordion, a scroll position, a half-finished animation —
 that depends on how the session got there, so the same recipe renders differently depending on what ran
 before it. **Compare like with like:** run the baseline and the check in the same order, or capture a group
 first. The park/restore protocol is what keeps this safe: the fixture import and the theme/viewport changes
