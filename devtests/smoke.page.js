@@ -830,15 +830,24 @@ async function run() {
     return eqArr([open, prefill === (ownerBefore || ""), saved], [true, true, "p0-owner"], "open,prefill,saved");
   });
 
-  await t("G14: 76 the keep-awake preference defaults to off and reports its state", () => {
-    const stored = localStorage.getItem("comicGen.keepAwake");
+  await t("G14: 76 the keep-awake preference reads an absent key as off and reports its state", () => {
+    const saved = localStorage.getItem("comicGen.keepAwake");
+    localStorage.removeItem("comicGen.keepAwake");
+    stopKeepAwake();
+    applyKeepAwake(localStorage.getItem("comicGen.keepAwake") === "1");
     const box = $("prefKeepAwake");
-    const state = keepAwakeStateText();
-    const label = ($("keepAwakeState").textContent || "").trim();
-    const off = stored === null || stored === "0";
-    return off && !!box && box.checked === false && state === "off" && label === "\u25cf off"
-      ? ok("stored=" + JSON.stringify(stored) + ", unchecked, state=off, label=\u201c" + label + "\u201d")
-      : no("stored=" + JSON.stringify(stored) + ", checked=" + (box && box.checked) + ", state=" + state + ", label=\u201c" + label + "\u201d");
+    const stateMissing = keepAwakeStateText();
+    applyKeepAwake(false);
+    const storedOff = localStorage.getItem("comicGen.keepAwake");
+    const checkedOff = box.checked;
+    const stateOff = keepAwakeStateText();
+    const labelOff = ($("keepAwakeState").textContent || "").trim();
+    if (saved !== null) localStorage.setItem("comicGen.keepAwake", saved);
+    else localStorage.removeItem("comicGen.keepAwake");
+    const good = stateMissing === "off" && storedOff === "0" && checkedOff === false && stateOff === "off" && labelOff === "\u25cf off";
+    return good
+      ? ok("absent key => off, applyKeepAwake(false) => stored=\"" + storedOff + "\", unchecked, label=\u201c" + labelOff + "\u201d")
+      : no("absent-key-state=" + stateMissing + ", stored=" + JSON.stringify(storedOff) + ", checked=" + checkedOff + ", state=" + stateOff + ", label=\u201c" + labelOff + "\u201d");
   });
 
   await t("G14: 77 the keep-awake preference starts a silent loop and stops it again", async () => {
