@@ -100,7 +100,7 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   screenshots against the previous build came back identical. **Fallback deletion:** **done 2026.09.26.9** for `zip`,
   `jsontext`, `keywords` and `seeds` (released 2026.09.26.9 — the declarations stay, the boot waits on `coreReady`, and a
   module that cannot load gets a bar at the top of the page); `prompt` and `library-core` follow one release later —
-  now scheduled for **2026.09.26.12**, because 2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the
+  now scheduled for **2026.09.26.13**, because 2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the
   import-menu fix — after which
   `devtests/diff-core.js` keeps only its module/surface guards.
 - **P2 — a real state layer. Step 1 DONE (2026.09.26.10).** Panel identity and `core/schema.js` shipped: every panel
@@ -117,6 +117,7 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — the per-panel colour palette shipped as 2026.09.26.12 (a feature request, not a refactor step).** A `Palette` select now sits in every panel header between Style and Size, backed by a per-panel `palette` field (collect/restore, the JSON editor, and `schema.js`'s `STRING_FIELDS` + `defaultPanel()`), and `getPanelKeywords` treats it as the palette twin of the Style override: an override composes effective style (own || global) with effective palette (own || global), while a panel with neither keeps the global keyword fields verbatim. The Analysis matrix gained a `🌈` palette chip + editor. Because it is a feature and not a refactor step, the `prompt`/`library-core` fallback deletion moved **again**, to **2026.09.26.13** — it has now slipped for `.10` (P2 step 1), `.11` (the menu fix) and `.12` (this). Smoke **80/0/4** (new `G7:47`), fixtures **18/0** (the full-page fixture's panel 4 carries `"palette": "sepia"`), core **24/0**, differential **23/0**, 0 perchance errors, park hash `ccdd4096` restored byte-identical. The visual baseline was regenerated (the panel header gains a row per card: +74 CSS px over the 6-panel desktop grid, +214 px on the phone column) and then compared **12/14 pixel-identical**, the 2 `*-json` views differing by ~0.01%.
 - **2026-09-26 — the import-path menu toggle fixed, released as 2026.09.26.11.** `applyImportedSettings` and
   `jsonApplyDoc` ended with `switchMenu(...)`, which **toggles** (`openNow = !group.hidden`), so a restored project
   could close the menu it said to open, leave a menu open that the file said was closed, and (via
@@ -130,7 +131,7 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   visual change** — `visual-diff` identical to 2026.09.26.10 (7 pixel-identical, the same 5 three-pixel dark diffs,
   the same 2 JSON-editor diffs from the `id` lines), because its capture recipe normalises the menu before the first
   shot. Because this was a bug fix rather than a refactor step, the `prompt`/`library-core` fallback deletion moved
-  to **2026.09.26.12**.
+  to **2026.09.26.13**.
 - **2026-09-26 — P2 step 1 released as 2026.09.26.10: panel ids + `core/schema.js`.** Every panel now has a stable
   `id` (`p-<base36 time>-<6 base36 chars>`): minted by `collectPageData` when a card lacks one, set from the state by
   `restorePanelState`, given fresh to every copy (`duplicatePanel` / `batchDuplicatePanels` / `panelPasteAction`), and
@@ -146,7 +147,7 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   called `switchMenu('file')` and `switchMenu` **toggles**, so an open menu (a whole 224 px row) leaked in or out
   depending on the parked menu state and the session order; the subject now closes whatever menu is open. The same
   investigation turned up the import-path menu-toggle wart (§5), deliberately left unfixed. **Next:** `prompt` and
-  `library-core` lose their in-file copies at **2026.09.26.12**, then P2 step 2b.
+  `library-core` lose their in-file copies at **2026.09.26.13**, then P2 step 2b.
 - **2026-09-26 — the four in-file copies deleted, released as 2026.09.26.9.** `zip`, `jsontext`, `keywords` and `seeds` are
   now only in `src/core/`; their in-file implementations came out (357 lines, ~16 KB) and each name is left as a bare `let`
   the loader fills. The boot was restructured to wait for the modules: `coreLoad` collects a promise each, `coreReady`
@@ -311,7 +312,7 @@ All three questions from round 1 are answered - see section 3 for the decisions 
 **Round 2 is answered** (2026-09-26 — `questions/REFACTOR-ROUND-2-ANSWERS.md`, digested in §1b): the P2
 decisions are in (`P2-01` 1a/1b taken as the recommended defaults) and `BUG-01` is closed. **Nothing is waiting on
 the author.** P1's last two modules (`core/prompt.js`, `core/library-core.js`) keep their in-file copies until
-**2026.09.26.12** (the deletion slipped twice: 2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the import-menu fix).
+**2026.09.26.13** (the deletion slipped twice: 2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the import-menu fix).
 
 ## 5. Warts
 
