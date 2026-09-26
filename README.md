@@ -2,8 +2,9 @@
 Yet Another Comic Book Page Generator backup
 
 The generator: https://perchance.org/f0vstb2fbe — source is `main.pjs` + `index.html`, plus `src/manual.html`
-(the shipped user manual), `src/question-form.html` (the author's ticket form) and `src/refactor-form.html`
-(the R-01 … R-08 refactor questions). Everything else here is documentation for whoever works on it next.
+(the shipped user manual), `src/question-form.html` (the author's ticket form), `src/refactor-form.html`
+(the R-01 … R-08 refactor questions) and `src/core/*.js` (P1's extracted pure logic). Everything else here is
+documentation for whoever works on it next.
 
 Reading order for a new session:
 
@@ -19,6 +20,8 @@ Reading order for a new session:
   suites and how to run them (+ `devtests/shots/`, the visual baseline). **Read `devtests/README.md` before
   running any test** — every suite mutates the live preview and must park and restore the author's storage.
 - `fixtures/` — known project files (full page, legacy v1, every-legacy-key) for the fixture suite.
+- `src/core/` — the pure logic extracted so far (`zip.js`, `jsontext.js`, `keywords.js`, `seeds.js`), loaded by
+  `coreLoad()` at the top of `index.html` and diffed against the in-file fallback by `devtests/diff-core.js`.
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
@@ -29,4 +32,4 @@ Reading order for a new session:
   when picking the refactor up mid-flight.**
 - `questions/REFACTOR-ROUND-1.md` — the open questions this plan needs answered (the R-01 … R-08 round); the same
   set is in the fill-in form `src/refactor-form.html`, opened on the generator page with `window.__openRefactorForm()`.
-  **No refactor starts until these are answered.**
+  **Answered 2026-09-26** — the digest is `REFACTOR-NOTES.md` §1, and the plan's progress is tracked there.
