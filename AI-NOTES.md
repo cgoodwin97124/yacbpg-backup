@@ -1232,7 +1232,9 @@ The decisions are the author's round-2 answers (`REFACTOR-NOTES.md` §1b / `ques
   operation). Project rows carry **⤒** to offer an item back to the catalogue. Rows carry
   `lib-row-proj` / `lib-row-cat` so the suites scope to one section; new CSS `.btn-copy-lib` (+hover/+disabled),
   `.lib-section-h`, `.lib-section-hint`. `libraryOptions()` (the panel dropdowns) still lists the project library,
-  now under the optgroup "This project's Characters".
+  now under the optgroup "This project's Characters". A disabled ⤓ uses the house disabled style (its teal fill at
+  `opacity: 0.45`, `cursor: not-allowed`) so it still reads as a button in both themes — a first draft that swapped in
+  `background: var(--surface-3)` looked like a bare glyph on the light theme, which the live capture caught.
 - **Import.** `confirmLibraryImport` / `importLibraryFromFiles` (the **⬆ Import…** button) write into the
   **catalogue** — its historical job. A **project** import goes the other way: `applyImportedSettings` / `jsonApplyDoc`
   take `settings.library` → top-level `libObjects` → the legacy `charLibrary`/`locLibrary`/`actLibrary` → else seed
