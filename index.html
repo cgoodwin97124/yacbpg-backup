@@ -33,13 +33,16 @@
                    differential suite for the src/core modules, the screenshot baseline and the
                    background-throttling probe. READ devtests/README.md BEFORE running anything —
                    every suite mutates the live preview and must park and restore it.
-    src/core/*.js  P1's extracted pure logic (zip, jsontext, keywords, seeds; library-core and
-                   prompt still to come). index.html loads each with coreLoad(name, path, apply)
-                   — import('./src/core/x.js') — and swaps the named inline function/const for
-                   the module's when it loads, so the inline copy stays as the fallback and an
-                   unsaved src/ (no service worker) still works. Never edit only one side: the
-                   differential suite (devtests/diff-core.js) compares the module against the
-                   inline copy in index.html.
+    src/core/*.js  P1's extracted pure logic — all six (zip, jsontext, keywords, seeds, prompt,
+                   library-core). index.html loads each with coreLoad(name, path, apply) —
+                   import('./src/core/x.js') — and swaps the declared name (a function
+                   declaration or a let) for the module's when it loads. The boot waits for all
+                   six (window.appReady) and a module that fails to load is reported in a bar at
+                   the top of the page. The four that had survived a release (zip, jsontext,
+                   keywords, seeds) lost their in-file copy in 2026.09.26.9; prompt and
+                   library-core keep theirs as the fallback until 2026.09.26.10, and those two
+                   are the ones devtests/diff-core.js still compares module-against-inline.
+                   Never edit only one side.
 
   READ (public repo, no token needed):
     fetch("https://raw.githubusercontent.com/cgoodwin97124/yacbpg-backup/main/PENDING.md")
@@ -1257,7 +1260,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.8 — 2026-09-26 — 🧱 Refactor step 2: the prompt and the library ids move into their own files (no behaviour change)
+## 2026.09.26.9 — 2026-09-26 — 🧹 Refactor step 3: the four in-file copies are deleted (no behaviour change)
 - The full version history lives in the project's GitHub repo; open the About section to load it.
 </script>
 
@@ -1269,15 +1272,28 @@ color-scheme:light;
   const LOC_KEYS = ["none", "city", "lab", "hideout", "rooftop"];
 
   const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null };
+  const coreLoads = [];
   const coreLoad = (name, path, apply) => {
-    try {
-      import(path).then((m) => {
-        if (!m) return;
-        coreModules[name] = m;
-        try { apply(m); } catch (e) {}
-      }).catch(() => {});
-    } catch (e) {}
+    coreLoads.push(new Promise((resolve) => {
+      let settled = false;
+      const finish = (bad) => { if (!settled) { settled = true; resolve(bad); } };
+      try {
+        import(path).then((m) => {
+          if (!m) { finish(name); return; }
+          coreModules[name] = m;
+          try { apply(m); } catch (e) { finish(name); return; }
+          finish(null);
+        }).catch(() => finish(name));
+      } catch (e) { finish(name); }
+    }));
   };
+  function coreLoadWarning(names) {
+    const bar = document.createElement('div');
+    bar.id = 'coreLoadWarningEl';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;padding:8px 12px;background:#7a2b2b;color:#fff;font:13px/1.45 system-ui,-apple-system,sans-serif;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    bar.textContent = '⚠️ ' + names.length + ' of the app\'s code files could not load (' + names.join(', ') + '). Press Save, then reload the page to try again.';
+    if (document.body) document.body.appendChild(bar);
+  }
   coreLoad('zip', './src/core/zip.js', (m) => {
     if (m.initCrcTable) initCrcTable = m.initCrcTable;
     if (m.crc32) crc32 = m.crc32;
@@ -1319,6 +1335,7 @@ color-scheme:light;
     if (m.libRefEntry) libRefEntry = m.libRefEntry;
     if (m.libRefDesc) libRefDesc = m.libRefDesc;
   });
+  const coreReady = Promise.all(coreLoads).then((failed) => failed.filter(Boolean));
 
   function itemText(v) {
     if (typeof v === 'string') return v.trim();
@@ -6417,19 +6434,7 @@ color-scheme:light;
     schedulePanelSave();
   }
 
-  function panelSeedValue(panelRaw, globalRaw, i) {
-    if (panelRaw !== "") {
-      const ps = parseInt(panelRaw, 10);
-      if (!isNaN(ps)) return { seed: ps, hasSeed: true };
-    }
-    const parsedSeed = parseInt(globalRaw, 10);
-    if (globalRaw !== "" && !isNaN(parsedSeed)) return { seed: parsedSeed + (i - 1), hasSeed: true };
-    return { seed: -1, hasSeed: false };
-  }
-
-  function imageSeed(seed, k, same) {
-    return same ? seed : seed + (k - 1);
-  }
+  let panelSeedValue, imageSeed;
 
   function getPanelSeed(i) {
     return panelSeedValue(document.getElementById('panel-seed-' + i).value.trim(), document.getElementById('seedInput').value.trim(), i);
@@ -7566,138 +7571,7 @@ color-scheme:light;
       : 'Remembering the ' + n + ' most recent project file' + (n === 1 ? '' : 's') + '.';
   }
 
-  let crcTable = null;
-  function initCrcTable() {
-    crcTable = new Int32Array(256);
-    for (let n = 0; n < 256; n++) {
-      let c = n;
-      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-      crcTable[n] = c;
-    }
-  }
-
-  function crc32(bytes) {
-    if (!crcTable) initCrcTable();
-    let crc = -1;
-    for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ crcTable[(crc ^ bytes[i]) & 0xFF];
-    return (crc ^ -1) >>> 0;
-  }
-
-  function dataUrlToBytes(dataUrl) {
-    const bin = atob(dataUrl.slice(dataUrl.indexOf(',') + 1));
-    const arr = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    return arr;
-  }
-
-  function buildZip(files) {
-    const enc = new TextEncoder();
-    const now = new Date();
-    const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
-    const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
-    const locals = [];
-    const central = [];
-    let offset = 0;
-    for (const f of files) {
-      const name = enc.encode(f.name);
-      const data = f.data;
-      const crc = crc32(data);
-      const local = new Uint8Array(30 + name.length + data.length);
-      const dv = new DataView(local.buffer);
-      dv.setUint32(0, 0x04034b50, true);
-      dv.setUint16(4, 20, true);
-      dv.setUint16(6, 0x0800, true);
-      dv.setUint16(8, 0, true);
-      dv.setUint16(10, dosTime, true);
-      dv.setUint16(12, dosDate, true);
-      dv.setUint32(14, crc, true);
-      dv.setUint32(18, data.length, true);
-      dv.setUint32(22, data.length, true);
-      dv.setUint16(26, name.length, true);
-      dv.setUint16(28, 0, true);
-      local.set(name, 30);
-      local.set(data, 30 + name.length);
-      locals.push(local);
-
-      const cd = new Uint8Array(46 + name.length);
-      const cdv = new DataView(cd.buffer);
-      cdv.setUint32(0, 0x02014b50, true);
-      cdv.setUint16(4, 20, true);
-      cdv.setUint16(6, 20, true);
-      cdv.setUint16(8, 0x0800, true);
-      cdv.setUint16(10, 0, true);
-      cdv.setUint16(12, dosTime, true);
-      cdv.setUint16(14, dosDate, true);
-      cdv.setUint32(16, crc, true);
-      cdv.setUint32(20, data.length, true);
-      cdv.setUint32(24, data.length, true);
-      cdv.setUint16(28, name.length, true);
-      cdv.setUint16(30, 0, true);
-      cdv.setUint16(32, 0, true);
-      cdv.setUint16(34, 0, true);
-      cdv.setUint16(36, 0, true);
-      cdv.setUint32(38, 0, true);
-      cdv.setUint32(42, offset, true);
-      cd.set(name, 46);
-      central.push(cd);
-      offset += local.length;
-    }
-    const cdSize = central.reduce((a, c) => a + c.length, 0);
-    const eocd = new Uint8Array(22);
-    const edv = new DataView(eocd.buffer);
-    edv.setUint32(0, 0x06054b50, true);
-    edv.setUint16(4, 0, true);
-    edv.setUint16(6, 0, true);
-    edv.setUint16(8, files.length, true);
-    edv.setUint16(10, files.length, true);
-    edv.setUint32(12, cdSize, true);
-    edv.setUint32(16, offset, true);
-    edv.setUint16(20, 0, true);
-    const total = locals.reduce((a, c) => a + c.length, 0) + cdSize + eocd.length;
-    const out = new Uint8Array(total);
-    let pos = 0;
-    for (const c of locals) { out.set(c, pos); pos += c.length; }
-    for (const c of central) { out.set(c, pos); pos += c.length; }
-    out.set(eocd, pos);
-    return out;
-  }
-
-  async function inflateRawDeflate(bytes) {
-    if (typeof DecompressionStream !== 'function') throw new Error('This browser cannot decompress .zip images — please use a current Chrome, Firefox, or Safari.');
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-    return new Uint8Array(await new Response(stream).arrayBuffer());
-  }
-
-  async function unzipEntries(buf) {
-    const dv = new DataView(buf);
-    const minOffset = Math.max(0, buf.byteLength - 22 - 65535);
-    let eocd = -1;
-    for (let i = buf.byteLength - 22; i >= minOffset; i--) {
-      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-    }
-    if (eocd === -1) throw new Error('not a valid .zip file (no end-of-central-directory)');
-    const cdCount = dv.getUint16(eocd + 10, true);
-    let pos = dv.getUint32(eocd + 16, true);
-    const entries = {};
-    const dec = new TextDecoder();
-    for (let e = 0; e < cdCount; e++) {
-      if (dv.getUint32(pos, true) !== 0x02014b50) throw new Error('corrupt .zip file (bad central directory)');
-      const method = dv.getUint16(pos + 10, true);
-      const compSize = dv.getUint32(pos + 20, true);
-      const nameLen = dv.getUint16(pos + 28, true);
-      const extraLen = dv.getUint16(pos + 30, true);
-      const commentLen = dv.getUint16(pos + 32, true);
-      const localOffset = dv.getUint32(pos + 42, true);
-      const name = dec.decode(new Uint8Array(buf, pos + 46, nameLen));
-      pos += 46 + nameLen + extraLen + commentLen;
-      if (method !== 0 && method !== 8) continue;
-      const lNameLen = dv.getUint16(localOffset + 26, true);
-      const lExtraLen = dv.getUint16(localOffset + 28, true);
-      const compBytes = new Uint8Array(buf, localOffset + 30 + lNameLen + lExtraLen, compSize);
-      entries[name] = method === 0 ? compBytes : await inflateRawDeflate(compBytes);
-    }
-    return entries;
-  }
+  let initCrcTable, crc32, dataUrlToBytes, buildZip, inflateRawDeflate, unzipEntries;
 
   function bytesToBlobDataUrl(bytes, mime) {
     return new Promise((resolve, reject) => {
@@ -7775,23 +7649,7 @@ color-scheme:light;
     if (st) st.textContent = images > 0 ? `Exported ${images} image${images === 1 ? "" : "s"} + settings (.zip) ✓` : 'Exported settings (.zip) — no images generated yet ✓';
   }
 
-  function scrubMinusOneSeeds(settings) {
-    if (!settings || typeof settings !== 'object') return;
-    const drop = (obj) => {
-      if (!obj || typeof obj !== 'object') return;
-      const v = obj.seed;
-      if (v === -1 || v === '-1' || (typeof v === 'string' && v.trim() === '-1')) obj.seed = '';
-    };
-    drop(settings);
-    if (settings.pages && typeof settings.pages === 'object') {
-      for (const k in settings.pages) {
-        const page = settings.pages[k];
-        drop(page);
-        if (!page || typeof page !== 'object') continue;
-        for (let i = 1; i <= 24; i++) drop(page[i]);
-      }
-    }
-  }
+  let scrubMinusOneSeeds;
 
   function applyImportedSettings(data) {
     if (!data || typeof data !== 'object') throw new Error('not a valid settings file');
@@ -8415,52 +8273,7 @@ color-scheme:light;
     }
   }
 
-  let ART_STYLES = {
-    comic: { label: "Comic Book (default)", keywords: ["comic book art", "crisp ink lines", "vibrant cel shading", "high contrast", "dramatic shadows"] },
-    manga: { label: "Manga / Anime", keywords: ["manga style", "clean bold lineart", "screentone shading", "anime proportions"] },
-    watercolor: { label: "Watercolor", keywords: ["watercolor painting", "soft washes", "loose edges", "textured paper"] },
-    noir: { label: "Film Noir (B&W)", keywords: ["film noir style", "hard chiaroscuro lighting", "deep shadows", "gritty"] },
-    pencil: { label: "Pencil Sketch", keywords: ["pencil sketch", "hatching and cross-hatching", "graphite lines"] },
-    pixel: { label: "Pixel Art", keywords: ["pixel art", "chunky pixels", "16-bit game art"] },
-    retro80s: { label: "Retro 80s Synthwave", keywords: ["retro 1980s style", "synthwave aesthetic", "chrome and neon"] },
-    painterly: { label: "Painterly", keywords: ["painterly illustration", "thick expressive brushstrokes", "impasto"] },
-    vintage50s: { label: "Vintage 1950s Comic", keywords: ["vintage 1950s comic style", "retro illustration", "grainy print texture"] },
-    photo: {
-      label: "Photorealistic",
-      keywords: ["photorealistic", "shot on 35mm film", "sharp focus", "natural lighting", "candid photography"],
-      negatives: "cartoon, anime, illustration, painting, drawing, blurry, deformed hands, text, speech bubbles, low quality"
-    },
-    cinematic: {
-      label: "Cinematic Still",
-      keywords: ["photorealistic", "cinematic film still", "anamorphic lens", "shallow depth of field", "dramatic lighting", "shot on 35mm"],
-      negatives: "cartoon, anime, illustration, painting, drawing, blurry, deformed hands, text, speech bubbles, low quality"
-    },
-    vintagephoto: {
-      label: "Vintage Photograph",
-      keywords: ["photorealistic", "vintage photograph", "film grain", "soft focus", "analog camera"],
-      negatives: "cartoon, anime, illustration, painting, drawing, blurry, deformed hands, text, speech bubbles, low quality"
-    }
-  };
-  let COLOR_PALETTES = {
-    vibrant: { label: "Vibrant (default)", keywords: ["vibrant colors", "saturated hues"] },
-    monochrome: { label: "Monochrome", keywords: ["monochrome", "black and white"] },
-    sepia: { label: "Sepia / Aged", keywords: ["sepia tones", "aged photograph coloring"] },
-    pastel: { label: "Soft Pastel", keywords: ["soft pastel colors", "gentle muted tones"] },
-    neon: { label: "Neon / Cyberpunk", keywords: ["neon color palette", "electric blues and pinks"] },
-    muted: { label: "Muted & Moody", keywords: ["muted desaturated colors", "moody atmosphere"] },
-    warm: { label: "Warm Sunset", keywords: ["warm golden tones", "sunset coloring"] },
-    cool: { label: "Cool Blue", keywords: ["cool blue tones", "cold lighting"] },
-    faded: { label: "Faded Vintage", keywords: ["faded vintage colors", "yellowed paper tones"] }
-  };
-
-  let DEFAULT_NEGATIVES = "photorealistic, 3d render, blurry, deformed hands, text, speech bubbles, low quality";
-  let DEFAULT_POS = "comic book art, crisp ink lines, vibrant cel shading, high contrast, dramatic shadows";
-
-  function composeKeywords(pos, neg, nsfw) {
-    const positive = [pos, nsfw ? "" : "fully clothed"].filter(Boolean).join(", ");
-    const negative = nsfw ? neg : (neg + ", nsfw, nudity, explicit").replace(/, ,+/g, ", ").replace(/^,\s*|,\s*$/g, "").trim();
-    return { positive, negative };
-  }
+  let ART_STYLES, COLOR_PALETTES, DEFAULT_NEGATIVES, DEFAULT_POS, composeKeywords;
 
   function getEffectiveKeywords() {
     const pos = document.getElementById('globalPos').value;
@@ -9309,155 +9122,7 @@ color-scheme:light;
   function jsonDocText(doc) { return JSON.stringify(doc, null, 2); }
   function jsonEscapeString(s) { return JSON.stringify(String(s)).slice(1, -1); }
 
-  // ---------- tokenizer + position-aware parser ----------
-  const JSON_NUM_RE = /-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
-
-  function jsonTokenize(text) {
-    const toks = [];
-    const n = text.length;
-    let i = 0;
-    while (i < n) {
-      const c = text[i];
-      if (c === ' ' || c === '\n' || c === '\r' || c === '\t') { i++; continue; }
-      if (c === '{' || c === '}' || c === '[' || c === ']' || c === ':' || c === ',') { toks.push({ type: 'punct', val: c, start: i, end: i + 1 }); i++; continue; }
-      if (c === '"') {
-        const start = i;
-        i++;
-        let closed = false;
-        while (i < n) {
-          const ch = text[i];
-          if (ch === '\\') { i += 2; continue; }
-          if (ch === '\n') break;
-          if (ch === '"') { i++; closed = true; break; }
-          i++;
-        }
-        if (!closed) return { error: { start, end: Math.min(n, i), message: 'Unterminated string — add the closing double-quote.' } };
-        toks.push({ type: 'string', start, end: i, raw: text.slice(start + 1, i - 1) });
-        continue;
-      }
-      JSON_NUM_RE.lastIndex = i;
-      const nm = JSON_NUM_RE.exec(text);
-      if (nm && nm.index === i) { toks.push({ type: 'number', start: i, end: i + nm[0].length, raw: nm[0] }); i += nm[0].length; continue; }
-      if (text.startsWith('true', i)) { toks.push({ type: 'literal', start: i, end: i + 4, raw: 'true' }); i += 4; continue; }
-      if (text.startsWith('false', i)) { toks.push({ type: 'literal', start: i, end: i + 5, raw: 'false' }); i += 5; continue; }
-      if (text.startsWith('null', i)) { toks.push({ type: 'literal', start: i, end: i + 4, raw: 'null' }); i += 4; continue; }
-      return { error: { start: i, end: i + 1, message: 'Unexpected character ' + JSON.stringify(c) + ' — this is not valid JSON here.' } };
-    }
-    return { tokens: toks };
-  }
-
-  function jsonDecodeRaw(raw) {
-    let out = '';
-    const map = [];
-    for (let i = 0; i < raw.length; i++) {
-      const c = raw[i];
-      if (c !== '\\') { map.push(i); out += c; continue; }
-      const e = raw[i + 1];
-      const escStart = i;
-      i++;
-      if (e === 'u') {
-        const hex = raw.slice(i + 1, i + 5);
-        i += 4;
-        map.push(escStart);
-        out += String.fromCharCode(parseInt(hex, 16) || 0);
-      } else {
-        map.push(escStart);
-        out += e === 'n' ? '\n' : e === 't' ? '\t' : e === 'r' ? '\r' : e === 'b' ? '\b' : e === 'f' ? '\f' : String(e === undefined ? '' : e);
-      }
-    }
-    map.push(raw.length);
-    return { text: out, map };
-  }
-
-  function jsonParse(text) {
-    const tk = jsonTokenize(text);
-    if (tk.error) return { error: tk.error };
-    const toks = tk.tokens;
-    const scalars = [];
-    const containers = [];
-    const valRanges = new Map();
-    const keyRanges = new Map();
-    const puncts = toks.filter(t => t.type === 'punct');
-    let pos = 0;
-    const pkey = p => p.join('\u0000');
-
-    function err(tok, message) {
-      const t = tok || toks[toks.length - 1];
-      return { error: { start: t ? t.start : 0, end: t ? t.end : Math.min(1, text.length), message } };
-    }
-
-    function parseValue(path) {
-      const t = toks[pos];
-      if (!t) return err(null, 'Unexpected end of document — a value is missing here.');
-      if (t.type === 'punct' && t.val === '{') {
-        const start = t.start;
-        pos++;
-        const obj = {};
-        if (toks[pos] && toks[pos].type === 'punct' && toks[pos].val === '}') { const e = toks[pos].end; pos++; containers.push({ path, start, end: e }); valRanges.set(pkey(path), { start, end: e }); return { v: obj }; }
-        for (;;) {
-          const kt = toks[pos];
-          if (!kt) return err(null, 'Unexpected end of document — a closing brace } is missing.');
-          if (kt.type !== 'string') return err(kt, 'Object property names must be double-quoted strings.');
-          pos++;
-          const cp = toks[pos];
-          if (!cp || cp.type !== 'punct' || cp.val !== ':') return err(cp || kt, 'Missing : after the property name.');
-          pos++;
-          const fpath = path.concat([kt.raw]);
-          scalars.push({ path: fpath, kind: 'key', start: kt.start, end: kt.end, raw: kt.raw });
-          keyRanges.set(pkey(fpath), { start: kt.start, end: kt.end });
-          const r = parseValue(fpath);
-          if (r.error) return r;
-          obj[kt.raw] = r.v;
-          const nt = toks[pos];
-          if (nt && nt.type === 'punct' && nt.val === ',') { pos++; continue; }
-          if (nt && nt.type === 'punct' && nt.val === '}') { const e = nt.end; pos++; containers.push({ path, start, end: e }); valRanges.set(pkey(path), { start, end: e }); return { v: obj }; }
-          return err(nt || kt, 'Expected a comma or a closing brace } in the object.');
-        }
-      }
-      if (t.type === 'punct' && t.val === '[') {
-        const start = t.start;
-        pos++;
-        const arr = [];
-        if (toks[pos] && toks[pos].type === 'punct' && toks[pos].val === ']') { const e = toks[pos].end; pos++; containers.push({ path, start, end: e }); valRanges.set(pkey(path), { start, end: e }); return { v: arr }; }
-        for (;;) {
-          const r = parseValue(path.concat([String(arr.length)]));
-          if (r.error) return r;
-          arr.push(r.v);
-          const nt = toks[pos];
-          if (nt && nt.type === 'punct' && nt.val === ',') { pos++; continue; }
-          if (nt && nt.type === 'punct' && nt.val === ']') { const e = nt.end; pos++; containers.push({ path, start, end: e }); valRanges.set(pkey(path), { start, end: e }); return { v: arr }; }
-          return err(nt || null, 'Expected a comma or a closing bracket ] in the array.');
-        }
-      }
-      if (t.type === 'string') {
-        pos++;
-        const dec = jsonDecodeRaw(t.raw);
-        scalars.push({ path, kind: 'string', start: t.start, end: t.end, raw: t.raw, value: dec.text, decoded: dec.text, map: dec.map });
-        valRanges.set(pkey(path), { start: t.start, end: t.end });
-        return { v: dec.text };
-      }
-      if (t.type === 'number') {
-        pos++;
-        const num = Number(t.raw);
-        scalars.push({ path, kind: 'number', start: t.start, end: t.end, raw: t.raw, value: num });
-        valRanges.set(pkey(path), { start: t.start, end: t.end });
-        return { v: num };
-      }
-      if (t.type === 'literal') {
-        pos++;
-        const v = t.raw === 'true' ? true : (t.raw === 'false' ? false : null);
-        scalars.push({ path, kind: 'literal', start: t.start, end: t.end, raw: t.raw, value: v });
-        valRanges.set(pkey(path), { start: t.start, end: t.end });
-        return { v };
-      }
-      return err(t, 'Unexpected token ' + JSON.stringify(t.val || t.raw) + ' — a value was expected here.');
-    }
-
-    const r = parseValue([]);
-    if (r.error) return r;
-    if (pos < toks.length) return err(toks[pos], 'Unexpected extra content after the end of the document.');
-    return { doc: r.v, scalars, containers, puncts, valRanges, keyRanges };
-  }
+  let jsonTokenize, jsonDecodeRaw, jsonParse;
 
   // ---------- editable / locked classification ----------
   function jsonFieldClass(path) {
@@ -10357,6 +10022,21 @@ color-scheme:light;
 
   const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js'];
 
+  function extractTemplateSource(html) {
+    const key = '"outputTemplate":"';
+    const i = html.indexOf(key);
+    if (i < 0) return null;
+    let j = i + key.length, esc = false, raw = '';
+    while (j < html.length) {
+      const c = html[j];
+      if (esc) { raw += c; esc = false; j++; continue; }
+      if (c === '\\') { raw += c; esc = true; j++; continue; }
+      if (c === '"') break;
+      raw += c; j++;
+    }
+    try { const s = JSON.parse('"' + raw + '"'); return s || null; } catch (e) { return null; }
+  }
+
   async function ghPush() {
     const owner = document.getElementById('ghOwnerInput').value.trim();
     const repo = document.getElementById('ghRepoInput').value.trim();
@@ -10375,7 +10055,9 @@ color-scheme:light;
       const pageRes = await fetch(location.href.split('#')[0]);
       if (pageRes.ok) {
         const pageHtml = await pageRes.text();
-        if (pageHtml) files.push({ path: 'index.html', content: pageHtml });
+        const src = pageHtml ? extractTemplateSource(pageHtml) : null;
+        if (src) files.push({ path: 'index.html', content: src });
+        else skippedSrc.push('index.html (template not found in the served page)');
       }
       for (const p of GH_SRC_FILES) {
         try {
@@ -10476,82 +10158,89 @@ color-scheme:light;
   });
   document.addEventListener('scroll', poTipHide, { passive: true, capture: true });
 
-  migrateLibObjects();
-  try { getMaps().then(m => { builtinDescMaps = m; refreshAllPanelLineDescs(); seedPendingPanelBases(); }); } catch (e) {}
-  renderLibrary();
-  initPresets();
-  updateResetControls();
-  initKeywords();
-  initMenu();
-  try { menuFullscreenPref = localStorage.getItem(MENU_FS_KEY) !== '0'; } catch (e) {}
-  try { hdrAllViewsPref = localStorage.getItem(HDR_ALL_KEY) === '1'; } catch (e) {}
-  try { genAlwaysVisiblePref = localStorage.getItem(GEN_ALWAYS_KEY) === '1'; } catch (e) {}
-  try { bgGeneratePref = localStorage.getItem(BG_GEN_KEY) !== '0'; } catch (e) {}
-  try { keepAwakePref = localStorage.getItem(KEEP_AWAKE_KEY) === '1'; } catch (e) {}
-  try { const tm = localStorage.getItem(THEME_MODE_KEY); themeModePref = (tm === 'light' || tm === 'dark' || tm === 'system') ? tm : 'system'; } catch (e) { themeModePref = 'system'; }
-  try { themeAccent = normalizeAccent(localStorage.getItem(THEME_ACCENT_KEY)); } catch (e) {}
-  applyTheme();
-  {
-    const cbFs = document.getElementById('prefMenuFullscreen');
-    if (cbFs) cbFs.checked = menuFullscreenPref;
-    const cbHdr = document.getElementById('prefHdrAllViews');
-    if (cbHdr) cbHdr.checked = hdrAllViewsPref;
-    const cbGen = document.getElementById('prefGenAlwaysVisible');
-    if (cbGen) cbGen.checked = genAlwaysVisiblePref;
-    const cbBg = document.getElementById('prefBgGenerate');
-    if (cbBg) cbBg.checked = bgGeneratePref;
-    const cbAwake = document.getElementById('prefKeepAwake');
-    if (cbAwake) cbAwake.checked = keepAwakePref;
-    if (keepAwakePref && (window.AudioContext || window.webkitAudioContext)) keepAwakeArm();
-    else updateKeepAwakeState();
-  }
-  document.addEventListener('visibilitychange', keepAwakeKick);
-  window.addEventListener('pageshow', keepAwakeKick);
-  document.body.classList.toggle('hdr-all-views', hdrAllViewsPref);
-  syncHdrHeight();
-  let savedLayout = '';
-  try { savedLayout = localStorage.getItem(LAYOUT_KEY) || ''; } catch (e) {}
-  applyLayoutMode(savedLayout === 'side' ? 'side' : 'top');
-  let savedMenuVisible = true;
-  try { savedMenuVisible = localStorage.getItem(MENU_VISIBLE_KEY) !== '0'; } catch (e) {}
-  applyMenuVisible(savedMenuVisible);
-  let savedPanelsVisible = true;
-  try { savedPanelsVisible = localStorage.getItem(PANELS_VISIBLE_KEY) !== '0'; } catch (e) {}
-  try {
-    const pv = localStorage.getItem('comicGen.hidePasswordPref');
-    const prefCb = document.getElementById('hidePasswordPref');
-    if (prefCb) prefCb.checked = pv === '1';
-  } catch (e) {}
-  applyPanelsVisible(savedPanelsVisible);
-  initHeaderObserver();
-  buildPanelGrid();
-  initFocusSync();
-  populatePageSel();
-  updateDeletePageBtn();
-  updateProjectNameDisplay();
-  renderChangelog();
-  saveFileName = defaultFileName();
-  document.getElementById('seedInput').addEventListener('input', () => { schedulePanelSave(); updatePanelSeedPlaceholders(); });
-  document.getElementById('previewDelayInput').addEventListener('input', schedulePanelSave);
-  document.getElementById('previewEnabledCheck').addEventListener('change', () => {
-    if (!document.getElementById('previewEnabledCheck').checked) {
-      clearTimeout(previewHoverTimer);
-      previewHoverTimer = null;
-      clearTimeout(imgPreviewTimer);
-      imgPreviewTimer = null;
-      imgPreviewTouchStart = null;
-      hideImagePreview();
+  const bootApp = () => {
+    migrateLibObjects();
+    try { getMaps().then(m => { builtinDescMaps = m; refreshAllPanelLineDescs(); seedPendingPanelBases(); }); } catch (e) {}
+    renderLibrary();
+    initPresets();
+    updateResetControls();
+    initKeywords();
+    initMenu();
+    try { menuFullscreenPref = localStorage.getItem(MENU_FS_KEY) !== '0'; } catch (e) {}
+    try { hdrAllViewsPref = localStorage.getItem(HDR_ALL_KEY) === '1'; } catch (e) {}
+    try { genAlwaysVisiblePref = localStorage.getItem(GEN_ALWAYS_KEY) === '1'; } catch (e) {}
+    try { bgGeneratePref = localStorage.getItem(BG_GEN_KEY) !== '0'; } catch (e) {}
+    try { keepAwakePref = localStorage.getItem(KEEP_AWAKE_KEY) === '1'; } catch (e) {}
+    try { const tm = localStorage.getItem(THEME_MODE_KEY); themeModePref = (tm === 'light' || tm === 'dark' || tm === 'system') ? tm : 'system'; } catch (e) { themeModePref = 'system'; }
+    try { themeAccent = normalizeAccent(localStorage.getItem(THEME_ACCENT_KEY)); } catch (e) {}
+    applyTheme();
+    {
+      const cbFs = document.getElementById('prefMenuFullscreen');
+      if (cbFs) cbFs.checked = menuFullscreenPref;
+      const cbHdr = document.getElementById('prefHdrAllViews');
+      if (cbHdr) cbHdr.checked = hdrAllViewsPref;
+      const cbGen = document.getElementById('prefGenAlwaysVisible');
+      if (cbGen) cbGen.checked = genAlwaysVisiblePref;
+      const cbBg = document.getElementById('prefBgGenerate');
+      if (cbBg) cbBg.checked = bgGeneratePref;
+      const cbAwake = document.getElementById('prefKeepAwake');
+      if (cbAwake) cbAwake.checked = keepAwakePref;
+      if (keepAwakePref && (window.AudioContext || window.webkitAudioContext)) keepAwakeArm();
+      else updateKeepAwakeState();
     }
+    document.addEventListener('visibilitychange', keepAwakeKick);
+    window.addEventListener('pageshow', keepAwakeKick);
+    document.body.classList.toggle('hdr-all-views', hdrAllViewsPref);
+    syncHdrHeight();
+    let savedLayout = '';
+    try { savedLayout = localStorage.getItem(LAYOUT_KEY) || ''; } catch (e) {}
+    applyLayoutMode(savedLayout === 'side' ? 'side' : 'top');
+    let savedMenuVisible = true;
+    try { savedMenuVisible = localStorage.getItem(MENU_VISIBLE_KEY) !== '0'; } catch (e) {}
+    applyMenuVisible(savedMenuVisible);
+    let savedPanelsVisible = true;
+    try { savedPanelsVisible = localStorage.getItem(PANELS_VISIBLE_KEY) !== '0'; } catch (e) {}
+    try {
+      const pv = localStorage.getItem('comicGen.hidePasswordPref');
+      const prefCb = document.getElementById('hidePasswordPref');
+      if (prefCb) prefCb.checked = pv === '1';
+    } catch (e) {}
+    applyPanelsVisible(savedPanelsVisible);
+    initHeaderObserver();
+    buildPanelGrid();
+    initFocusSync();
+    populatePageSel();
+    updateDeletePageBtn();
+    updateProjectNameDisplay();
+    renderChangelog();
+    saveFileName = defaultFileName();
+    document.getElementById('seedInput').addEventListener('input', () => { schedulePanelSave(); updatePanelSeedPlaceholders(); });
+    document.getElementById('previewDelayInput').addEventListener('input', schedulePanelSave);
+    document.getElementById('previewEnabledCheck').addEventListener('change', () => {
+      if (!document.getElementById('previewEnabledCheck').checked) {
+        clearTimeout(previewHoverTimer);
+        previewHoverTimer = null;
+        clearTimeout(imgPreviewTimer);
+        imgPreviewTimer = null;
+        imgPreviewTouchStart = null;
+        hideImagePreview();
+      }
+    });
+    restoreSaveState();
+    try {
+      const rm = parseInt(localStorage.getItem(RECENT_MAX_KEY), 10);
+      recentMaxPref = (isNaN(rm) || rm < 0) ? RECENT_DEFAULT_MAX : Math.min(RECENT_HARD_CAP, rm);
+    } catch (e) { recentMaxPref = RECENT_DEFAULT_MAX; }
+    {
+      const pr = document.getElementById('prefRecentMax');
+      if (pr) pr.value = String(recentMaxPref);
+    }
+    loadRecentEntries().then(() => renderRecentList());
+  };
+
+  window.appReady = coreReady.then((failed) => {
+    if (failed.length) coreLoadWarning(failed);
+    try { bootApp(); } catch (e) { console.error(e); }
   });
-  restoreSaveState();
-  try {
-    const rm = parseInt(localStorage.getItem(RECENT_MAX_KEY), 10);
-    recentMaxPref = (isNaN(rm) || rm < 0) ? RECENT_DEFAULT_MAX : Math.min(RECENT_HARD_CAP, rm);
-  } catch (e) { recentMaxPref = RECENT_DEFAULT_MAX; }
-  {
-    const pr = document.getElementById('prefRecentMax');
-    if (pr) pr.value = String(recentMaxPref);
-  }
-  loadRecentEntries().then(() => renderRecentList());
   })();
 </script>
