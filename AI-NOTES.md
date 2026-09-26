@@ -1060,11 +1060,13 @@ Two HTML forms under `src/` are how the author answers planning questions. They 
 - **Round 2 (2026.09.26.7).** `src/round2-form.html` is the P2 batch (7 tickets, 25 questions, `FORM_META.id = yacbpg-round2-2026-09-26`). Its data block was spliced into the round-1 shell, so the two files share every line of logic: **edit the data near the top, never the logic below it**, and if the logic ever has to change, change the round-1 file first and re-splice.
 - `questions/REFACTOR-ROUND-1.md` is the readable transcription of round 1; round 2's questions live in the form itself and are summarised in `PENDING.md`.
 
-## 22. P1 complete + the first four in-file copies deleted (2026.09.26.5 / .8 / .9)
+## 22. P1 complete — every in-file copy deleted (2026.09.26.5 / .8 / .9 / .14)
 
-P1 is finished — six modules hold the app's pure logic. Since **2026.09.26.9** four of them are the *only* copy (`zip`,
-`jsontext`, `keywords`, `seeds`); `prompt` and `library-core` keep an in-file copy as the fallback until **2026.09.26.12**
-(2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the import-menu fix — see §23/§24). `src/core/schema.js` is the seventh module but belongs to P2, not P1.
+P1 is finished and the cleanup is finished with it — seven modules hold the app's pure logic and **none of them keeps an
+in-file fallback any more**. `zip`, `jsontext`, `keywords` and `seeds` lost their copies in **2026.09.26.9**; `prompt`
+and `library-core` in **2026.09.26.14** (2026.09.26.10 shipped P2 step 1, .11 the import-menu fix, .12 the per-panel
+colour palette and .13 the library rename, which is why the second deletion slipped four releases). `src/core/schema.js`
+is the seventh module but belongs to P2, not P1 — see §23.
 
 | Module | Exports |
 |---|---|
@@ -1087,19 +1089,23 @@ P1 is finished — six modules hold the app's pure logic. Since **2026.09.26.9**
 - **The rules for adding one:** the target must be a **`function` declaration or a `let`** (never a `const`), and it must be
   the **only** declaration with that name in the file. Once the module has survived a release the in-file implementation is
   deleted and only the declaration stays — from then on a module that cannot load leaves the name `undefined`, which is why
-  the boot waits for all six and the failure is reported instead of silently degrading. DOM and storage reads stay in
+  the boot waits for all seven and the failure is reported instead of silently degrading. DOM and storage reads stay in
   `index.html` as thin adapters: `collectPanelPromptInput`, `getEffectiveKeywords`, `getPanelSeed`, `pinPanelSeedForRun`,
-  `countLibReferences`, `resolveDesc`, `plLineDescText`, `bytesToBlobDataUrl`, `parseZipImages`.
-- **The tests:** `devtests/core.test.js` imports all six modules (blob URL) and asserts their behaviour — 18 checks, including
-  the base64/zip-internals/JSON-escape cases that moved over from the differential suite. `devtests/diff-core.js` compares
-  module against in-file copy for the two modules that still keep one (`prompt`, `library-core`) — 21 checks — and additionally
-  fails if a discovered `src/core/*.js` is missing from `GH_SRC_FILES`, if a deleted in-file copy reappears, or if a
-  module-provided name is no longer declared in `index.html`. Modules with no differential spec get an `exported surface` check
-  (`unspecced: []`).
-- **The deletion schedule (`REFACTOR-ROADMAP.md` §3.3):** one release after the module survived a release. Done in 2026.09.26.9
-  for `zip`, `jsontext`, `keywords`, `seeds`; due in **2026.09.26.12** for `prompt` and `library-core` (2026.09.26.10 shipped
-  P2 step 1 and 2026.09.26.11 the import-menu fix), after which `diff-core.js`
-  becomes a module-suite and its source-extraction machinery (braceEnd/at/grab) can be deleted.
+  `countLibReferences`, `resolveDesc`, `plLineDescText`, `bytesToBlobDataUrl`, `parseZipImages`. The one deliberate
+  exception is `newLibraryId`, which was never a `library-core` export and is still a plain function beside the
+  library-core declaration line.
+- **The tests:** `devtests/core.test.js` imports all seven modules (blob URL) and asserts their behaviour — 24 checks,
+  including the base64/zip-internals/JSON-escape cases that moved over from the differential suite. Since 2026.09.26.14 its
+  `wanted` extraction list holds only the two DOM-bound names that never became modules (`getEffectiveKeywords`,
+  `applyPreset`); everything else arrives by `Object.assign(factory(sandbox), modules)`. `devtests/diff-core.js` is **guards
+  only** as of 2026.09.26.14 (17 checks — no differential comparison is possible once no in-file copy exists): each module
+  loads and exports its surface, a discovered `src/core/*.js` that is missing from `GH_SRC_FILES` fails, a deleted in-file
+  copy that reappears fails, and a module-provided name with no declaration in `index.html` fails.
+- **The deletion schedule (`REFACTOR-ROADMAP.md` §3.3):** ✅ **DONE.** `zip`, `jsontext`, `keywords`, `seeds` in
+  2026.09.26.9; `prompt` and `library-core` in 2026.09.26.14 — the last two, because 2026.09.26.10 shipped P2 step 1, .11
+  the import-menu fix, .12 the per-panel colour palette and .13 the library rename. `diff-core.js` is now a module-suite
+  (its `braceEnd`/`at`/`grab` extraction machinery is gone; `at()` survives only as the "is a body still defined for this
+  name" probe).
 
 ## 23. P2 step 1: panel ids + `src/core/schema.js` (2026.09.26.10)
 
@@ -1144,6 +1150,35 @@ A **✎** button on every Character/Location row in 📚 Library (`renderLibrary
 - **Guard:** `libraryNameTaken(objs, id, name)` (trimmed, case-insensitive, self excluded) blocks a duplicate both in the dialog and inside `applyLibraryRename`.
 - **CSS:** `.btn-rename-lib` (+hover), `.rename-row`, `.rename-preview` (+ `.bad`).
 - **Tests:** `devtests/smoke.page.js` group `G17`, checks 84–88 (dialog preview + block, whole-word/case sensitivity + scope, slot label + prompt, another page, the library description).
+
+## 27. P1 cleanup finished: `prompt` and `library-core` (2026.09.26.14)
+
+The last two in-file copies are gone, so every name in §22's module table is now **module-only**: `composePanelPrompt`
+(`let composePanelPrompt;` where the function used to be) and the eleven `library-core` names (`let LIB_TYPE_PREFIX,
+libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, libRefEntry, libRefDesc, normalizeLibType,
+extractLibraryItems;` on one line where the block used to be). `newLibraryId` was never a module export and is untouched.
+`index.html` gained nothing and lost ~5 KB.
+
+- **Why it is safe:** `composePanelPrompt` is called only from `buildPanelPrompt`, and every library helper only from inside
+  functions — nothing runs during the IIFE, so losing the hoisted declarations cannot bite. Same reasoning as the `.9`
+  deletion; the boot waits for all seven modules (`window.appReady`), and `coreLoadWarning` reports a module that cannot
+  load in a bar at the top of the page.
+- **`diff-core.js` is now guards only.** No in-file copy means nothing to compare, so `specs` went, and with it the
+  `braceEnd`/`grab`/`mulberry`/`inlineCode` machinery plus the three dead zip/jsontext helpers (`bytesEqual`,
+  `entriesEqual`, `maskZipTimestamps`) that `.9` stranded there. Its four guards earn their keep and should stay: modules
+  load, module surface is complete, every `src/core/*.js` is in `GH_SRC_FILES`, the 29 deleted names have no body left
+  (`at(name) >= 0`), and all 35 module-provided names are still declared in `index.html`.
+- **`core.test.js`** dropped `composePanelPrompt` + the library helpers from its `wanted` extraction list (now just
+  `getEffectiveKeywords`, `applyPreset`) and takes them from the modules via `Object.assign(factory(sandbox), modules)`.
+- **`index.html`'s `coreLoad` `apply` blocks are the binding list.** Adding a module or renaming one of its exports means
+  updating the matching `coreLoad` block, the `coreModules` map and the bare declaration — the guards in `diff-core.js` fail
+  loudly if the declaration goes missing, but a *renamed export* would silently leave the old name `undefined`, so check the
+  module's own export list when touching it.
+- **Results:** smoke 85/0/4, `diff-core` 17/0 (`unspecced: []`), core 24/0, gen 18/0 (+1 manual), fixtures 18/0, 0 perchance
+  errors, park hash `7a1123b0` byte-identical after every runner; the visual check is 12/14 pixel-identical with the two
+  `*-json` views at the known ~0.01% wobble, so no baseline change and no manual change (nothing user-visible).
+- **Next:** P2 step 2b — the project owns its library and its kept images (`library`/`kept` on `defaultProject()`, an older
+  project seeded from the browser catalogue, `buildExportData` attaching the project's own library) — then step 3, the store.
 
 ## DOC LAYOUT (2026.09.23.6)
 
