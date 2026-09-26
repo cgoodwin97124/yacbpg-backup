@@ -34,7 +34,7 @@
 <body>
 <div class="page">
 <h1>Yet Another Comic Book Page Generator</h1>
-<h3>Design Document — version 2026.09.26.2</h3>
+<h3>Design Document — version 2026.09.26.3</h3>
 <p><em>Written 2026-08-14. This document describes the generator as it is built today: what it does, how it works, how your data is stored, and how the pieces fit together.</em></p>
 <hr>
 <h2>1. What it is</h2>
@@ -218,6 +218,7 @@
 <p>The app deliberately uses only browser-native APIs — no frameworks, no external code beyond the text-to-image plugin — which keeps it fast and dependable on mobile as well as desktop.</p>
 <h2>12. Recent changes (changelog highlights)</h2>
 <ul>
+<li><strong>2026.09.26.3</strong> — <strong>documentation only — nothing in this guide changed</strong>: a refactor plan was written into the project's GitHub repo (<code>FUNCTION-MAP.md</code>, <code>REFACTOR-ROADMAP.md</code>, <code>UI-IDEAS.md</code>), and the questions that go with it are a fill-in form at <code>src/refactor-form.html</code> (opened with <code>window.__openRefactorForm()</code>). No button, no setting and no behaviour of the app was added or altered.</li>
 <li><strong>2026.09.26.2</strong> — <strong>batch ⟳ refresh, and the whole-selection buttons in Edit → Panel Selection</strong>: with two or more panels selected, <strong>⟳ Refresh from library</strong> now refills the <strong>Basic Description</strong> of every character and location line in <em>all</em> of the selected panels in one click (its label reads <em>⟳ Refresh N panels</em>); lines with no library description are left as they are and the status line reports the counts. The <strong>Edit → Panel Selection</strong> section also gained its own copies of every whole-selection button — <strong>🔄 Generate</strong>, <strong>⚡ Generate All To Here</strong>, <strong>⚡ Generate All From Here</strong>, <strong>⚡ Generate (x) to (y)…</strong>, <strong>⧉ Duplicate</strong>, <strong>＋ Add Panel</strong>, <strong>⇅ Move</strong>, <strong>⟳ Refresh descriptions</strong>, <strong>🗑 Clear Images</strong>, <strong>🗑 Clear</strong> and <strong>🗑 Delete</strong> — greyed out until something is selected, showing the count in their labels, and acting from the last selected panel.</li>
 <li><strong>2026.09.26.1</strong> — <strong>⧉ Copy an image</strong>: a new chip under every generated image opens a picker where you tick any of the other images in its panel (or the whole rest of the panel in one click) and/or 1–4 images of another panel on the same page, then copy in one go. The source image stays put, occupied slots are replaced, 🔒 protected images are skipped and reported, and every copy lands unprotected.</li>
 <li><strong>2026.09.25.3</strong> — <strong>🎲 Same seed for every image</strong>: a checkbox at the foot of each panel&#39;s <strong>⚙ Panel</strong> menu. A panel&#39;s images normally get their own seed (the panel&#39;s seed, then +1, +2 …); tick it and every image of that panel is rendered with the panel&#39;s seed exactly — the number in its Seed box, or the page seed + its position when the box is empty. Per panel, saved with the project, and carried by duplicate / move / copy / paste.</li>
