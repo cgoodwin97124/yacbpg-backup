@@ -13,12 +13,12 @@ const fnvOf = (map) => {
 const report = { stamp };
 let parkedMap = null;
 try {
-  await tools.page_eval({ js: parkBody + "\nreturn window.__park.park();" });
+  const parkedInfo = await tools.page_eval({ js: parkBody + "\nreturn window.__park.park();" });
   const dump = await tools.page_eval({ js: "const m={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k!=='__test_backup_v10')m[k]=localStorage.getItem(k);}return m;" });
   parkedMap = dump.result || {};
   await fs.writeTextFile("scratch/p0/parks/fixtures-" + stamp + ".json", JSON.stringify(parkedMap, null, 1));
   await fs.writeTextFile("scratch/p0/last-park.json", JSON.stringify(parkedMap, null, 1));
-  report.parkedHash = fnvOf(parkedMap);
+  report.parkedHash = (parkedInfo.result && parkedInfo.result.hash) || fnvOf(parkedMap);
 } catch (e) { report.parkFailed = String(e && e.message || e); }
 
 const defs = [
@@ -61,7 +61,7 @@ if (!restored && parkedMap) {
 try { await tools.page_refresh({}); } catch (e) {}
 const ver = await tools.page_eval({ js: FNVSrc + " return { hash: __hash(), project: (JSON.parse(localStorage.getItem('comicGen.panelState')||'{}').projectName||null), strays: Object.keys(__map()).filter(k=>k.startsWith('__')) };" });
 report.afterReload = ver.result;
-report.byteIdentical = !!(parkedMap && ver.result && fnvOf(parkedMap) === ver.result.hash);
+report.byteIdentical = !!(report.parkedHash && ver.result && report.parkedHash === ver.result.hash);
 
 if (results) {
   report.summary = { pass: results.pass, fail: results.fail };
