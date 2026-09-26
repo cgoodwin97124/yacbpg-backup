@@ -54,7 +54,8 @@ const eqArr = (a, b, what) => (JSON.stringify(a) === JSON.stringify(b) ? ok(what
 const rawState = () => { try { return JSON.parse(localStorage.getItem("comicGen.panelState") || "{}"); } catch (e) { return { parseError: e.message }; } };
 const pageKeys = (s) => Object.keys((s || rawState()).pages || {}).map(Number).sort((a, b) => a - b);
 const cardsShown = () => [...document.querySelectorAll('[id^="panel-card-"]')].filter((el) => el.style.display !== "none").length;
-const libObjs = () => { try { return JSON.parse(localStorage.getItem("comicGen.libObjects") || "[]"); } catch (e) { return []; } };
+const libObjs = () => (window.projectLibraryArray ? window.projectLibraryArray() : []);
+const catLog = () => { try { return JSON.parse(localStorage.getItem("comicGen.libObjects") || "[]"); } catch (e) { return []; } };
 const setVal = (id, v) => {
   const el = $(id);
   if (!el) return null;
@@ -320,7 +321,7 @@ async function run() {
   });
 
   await t("G4: 26 a library edit does not retroactively change a frozen line", async () => {
-    const rows = [...document.querySelectorAll("#libObjects .lib-row")];
+    const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
     const row = rows.find((r) => (r.querySelector("input") || {}).value === "P0 Hero");
     if (!row) return no("library row not found (" + rows.length + " rows)");
     const desc = row.querySelector("textarea.lib-desc");
@@ -508,7 +509,7 @@ async function run() {
     addLibraryEntryByType("Location");
     await sleep(350);
     const place = libObjs().find((o) => o.name === "P0 Place");
-    const rowNames = [...document.querySelectorAll("#libObjects .lib-row input")].map((el) => el.value);
+    const rowNames = [...document.querySelectorAll("#libObjects .lib-row-proj input")].map((el) => el.value);
     return eqArr([!!place, rowNames.includes("P0 Place"), libObjs().length], [true, true, 2], "stored,rendered,count rows=" + JSON.stringify(rowNames));
   });
 
@@ -518,26 +519,45 @@ async function run() {
     return has ? ok("option present") : no([...$("panel-loc-select-2").options].map((o) => o.value).join(",").slice(0, 160));
   });
 
-  await t("G8: 46 deleting through the library row warns with its reference count", async () => {
+  await t("G8: 46 deleting through the library row warns, then leaves the text or clears it", async () => {
     switchMenu("library");
     await sleep(150);
     const hero = libObjs().find((o) => o.name === "P0 Hero");
-    const rows = [...document.querySelectorAll("#libObjects .lib-row")];
+    if (!hero) return no("P0 Hero missing from this project's library");
+    const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
     const row = rows.find((r) => (r.querySelector("input") || {}).value === "P0 Hero");
     if (!row) return no("library row not found (" + rows.length + " rows)");
     const refs = JSON.stringify(rawState()).split("lib:char:" + hero.id).length - 1;
+    const beforeText = getVal("panel-char-base-1-1");
     row.querySelector(".btn-del-lib").click();
     await sleep(300);
     const txt = dialogText();
     const warned = refs > 0 ? (txt.includes(String(refs)) && /panel slot/i.test(txt)) : /no panel/i.test(txt);
-    answer("delete");
+    const offered = dialogButtons().some((x) => /leave/i.test(x)) === (refs > 0);
+    if (refs > 0) answer("leave"); else answer();
     await sleep(400);
+    const keptText = refs > 0 ? getVal("panel-char-base-1-1") === beforeText : true;
+    const fellBack = refs > 0 ? getVal("panel-char-select-1-1") === "none" : true;
     const gone = !libObjs().some((o) => o.id === hero.id);
-    const fellBack = getVal("panel-char-select-1-1") === "none";
-    return eqArr([warned, gone, fellBack], [true, true, true], "warned,deleted,fellBack");
+
+    window.__smokePrompts = ["P0 Hero2", "a replacement hero"];
+    addLibraryEntryByType("Character");
+    await sleep(250);
+    const hero2 = libObjs().find((o) => o.name === "P0 Hero2");
+    if (!hero2) return no("second library entry not created");
+    setVal("panel-char-select-1-2", "lib:char:" + hero2.id);
+    await sleep(250);
+    const seeded = getVal("panel-char-base-1-2");
+    const cleared = window.applyLibraryDelete(hero2.id, true);
+    await sleep(250);
+    return eqArr(
+      [warned, offered, keptText, fellBack, gone, cleared && cleared.cleared, seeded, getVal("panel-char-base-1-2"), getVal("panel-char-select-1-2")],
+      [true, true, true, true, true, true, "a replacement hero", "", "none"],
+      "warned,offered,keptText,fellBack,deleted,clearedPath"
+    );
   });
 
-  await t("G8: 47 the settings export carries the browser library (P2 flips this)", async () => {
+  await t("G8: 47 the settings export carries THIS PROJECT's library, not the browser catalogue", async () => {
     captureDownloads();
     exportSettings();
     await sleep(350);
@@ -545,7 +565,18 @@ async function run() {
     if (!cap.blobs.length) return no("nothing captured");
     const txt = await cap.blobs[cap.blobs.length - 1].text();
     window.__smokeExportText = txt;
-    return txt.includes("libObjects") ? ok("export includes libObjects (" + txt.length + " chars)") : no("export lost libObjects");
+    let doc = null;
+    try { doc = JSON.parse(txt); } catch (e) {}
+    if (!doc) return no("the export is not JSON");
+    const settingsLib = doc.settings && Array.isArray(doc.settings.library) ? doc.settings.library : null;
+    if (!settingsLib) return no("settings.library is missing from the export: " + Object.keys(doc.settings || {}).join(","));
+    const mirrorSame = JSON.stringify(doc.libObjects) === JSON.stringify(settingsLib);
+    const catUntouched = catLog().length === 0;
+    const inDom = [...document.querySelectorAll("#libObjects .lib-row-proj input")].length;
+    await sleep(450);
+    const savedLib = Array.isArray(rawState().library) ? rawState().library : null;
+    const savedSame = !!savedLib && JSON.stringify(savedLib) === JSON.stringify(settingsLib);
+    return eqArr([settingsLib.length, mirrorSame, catUntouched, inDom, savedSame], [libObjs().length, true, true, libObjs().length, true], "settingsLib,mirror,catalogueUntouched,rows,saved");
   });
 
   await t("G9: 48 the captured export is a versioned wrapper around a project", async () => {
@@ -1085,7 +1116,7 @@ async function run() {
     switchMenu("library");
     await sleep(200);
     const alpha = libObjs().find((o) => o.name === "RNameAlpha");
-    const rows = [...document.querySelectorAll("#libObjects .lib-row")];
+    const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
     const row = rows.find((r) => (r.querySelector("input") || {}).value === "RNameAlpha");
     if (!alpha || !row) return no("no row for RNameAlpha (" + rows.length + " rows)");
     const rb = row.querySelector(".btn-rename-lib");
@@ -1186,7 +1217,7 @@ async function run() {
     await settle();
     const alpha = libObjs().find((o) => o.name === "RNameGamma");
     if (!alpha) return no("entry missing");
-    const rows = [...document.querySelectorAll("#libObjects .lib-row")];
+    const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
     const row = rows.find((r) => (r.querySelector("input") || {}).value === "RNameGamma");
     if (!row) return no("row missing");
     const ta = row.querySelector("textarea.lib-desc");
@@ -1196,7 +1227,7 @@ async function run() {
     const res = applyLibraryRename(alpha.id, "RNameDelta");
     await sleep(200);
     const obj = libObjs().find((o) => o.id === alpha.id);
-    const rowAfter = [...document.querySelectorAll("#libObjects .lib-row")].map((r) => (r.querySelector("input") || {}).value);
+    const rowAfter = [...document.querySelectorAll("#libObjects .lib-row-proj")].map((r) => (r.querySelector("input") || {}).value);
     return eqArr([!!res, res && res.libDescChanged, obj && obj.name, obj && obj.desc, rowAfter.includes("RNameDelta")], [true, true, "RNameDelta", "Desc mentions RNameDelta once.", true], "libDesc,name,rendered");
   });
 
