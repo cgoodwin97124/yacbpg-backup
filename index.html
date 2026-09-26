@@ -130,6 +130,7 @@ color-scheme:light;
   .check-label span { font-size: 0.85rem; color: var(--text-6); line-height: 1.4; }
   .pref-sub { margin: 16px 0 8px; font-weight: bold; color: var(--accent); font-size: 0.9rem; }
   .pref-sub:first-of-type { margin-top: 4px; }
+  .pref-state { display: block; margin-top: 4px; font-size: 0.78rem; color: var(--text-6); }
   textarea { resize: vertical; height: 50px; }
   select { cursor: pointer; border-color: var(--border-2); }
   .comic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
@@ -949,6 +950,7 @@ color-scheme:light;
           </div>
           <div class="pref-sub">Generation</div>
           <label class="check-label"><input type="checkbox" id="prefBgGenerate" onchange="onPrefBgGenerateChange()"> <span><b>Keep generating when I switch to another tab or app</b> — with this on, a run keeps going while the page is in the background, so you come back to finished panels instead of a paused run. On by default. Turn it off to save memory, battery and data: a backgrounded page runs slower and a phone may suspend it entirely, in which case the run pauses and <b>⚡ GENERATE ALL PANELS ON PAGE ⚡</b> picks it up again.</span></label>
+          <label class="check-label"><input type="checkbox" id="prefKeepAwake" onchange="onPrefKeepAwakeChange()"> <span><b>Keep this tab awake while I work</b> — plays a <b>silent</b> audio loop (a sound you cannot hear) so the browser stops slowing this page down when you are looking at another tab or window. A browser deliberately throttles hidden pages, but it leaves a page that is "playing audio" alone, so this keeps a run — and the AI helper's own work — at full speed while the tab is in the background. Off by default; it starts at your first click on the page, and your browser's tab may show its <b>🔊 playing</b> icon while it is on. <span class="pref-state" id="keepAwakeState">● off</span></span></label>
           <div class="pref-sub">Recent files</div>
           <label class="pref-row"><span><b>Recent projects to remember</b> — how many entries the <b>Recent</b> list under 📄 File shows. Type a number or use the spinner arrows; <b>0</b> hides the list entirely, and the most recent five are still remembered while it is hidden. This is saved in this browser only, like the file list itself.</span>
             <input type="number" id="prefRecentMax" min="0" max="50" step="1" value="5" oninput="onPrefRecentMaxChange()" onchange="onPrefRecentMaxChange()" title="0 hides the Recent list; up to 50 entries are shown" style="width:6em;">
@@ -1254,7 +1256,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.5 — 2026-09-26 — Refactor step 1: the pure logic moves into its own files (no behaviour change)
+## 2026.09.26.6 — 2026-09-26 — 🔊 A silent setting that stops the browser slowing this page down in a background tab
 - The full version history lives in the project's GitHub repo; open the About section to load it.
 </script>
 
@@ -1786,6 +1788,142 @@ color-scheme:light;
     try { localStorage.setItem(BG_GEN_KEY, on ? '1' : '0'); } catch (e) {}
     const cb = document.getElementById('prefBgGenerate');
     if (cb) cb.checked = !!on;
+  }
+
+  const KEEP_AWAKE_KEY = 'comicGen.keepAwake';
+  const KEEP_AWAKE_GAIN = 0.0001;
+  let keepAwakePref = false;
+  let keepAwakeCtx = null;
+  let keepAwakeOsc = null;
+  let keepAwakeArmed = false;
+
+  function keepAwakeRunning() {
+    return !!(keepAwakeCtx && (keepAwakeCtx.state === undefined || keepAwakeCtx.state === 'running'));
+  }
+
+  function keepAwakeStateText() {
+    if (!keepAwakePref) return 'off';
+    if (keepAwakeRunning()) return 'running';
+    if (keepAwakeCtx) return 'starting';
+    if (keepAwakeArmed) return 'waiting';
+    return 'idle';
+  }
+
+  function updateKeepAwakeState() {
+    const el = document.getElementById('keepAwakeState');
+    if (!el) return;
+    const s = keepAwakeStateText();
+    el.textContent = s === 'running' ? '● running now — this page will not be slowed down'
+      : s === 'starting' ? '● starting…'
+      : s === 'waiting' ? '● waiting for your first click on this page'
+      : s === 'off' ? '● off'
+      : '● on';
+  }
+
+  function setKeepAwakeStatus(running, onlyIfKeepAwakeMessage) {
+    const statusEl = document.getElementById('statusEl');
+    if (!statusEl) return;
+    if (onlyIfKeepAwakeMessage && !/^🔊 Keep-awake is on/.test(statusEl.textContent || '')) return;
+    statusEl.textContent = running
+      ? '🔊 Keep-awake is on — a silent loop keeps this page at full speed while it is in the background.'
+      : '🔊 Keep-awake is on — it will start at your first click or keypress on this page.';
+  }
+
+  function keepAwakeResume() {
+    if (!keepAwakeCtx || !keepAwakeCtx.resume) return false;
+    try {
+      const p = keepAwakeCtx.resume();
+      if (p && p.then) {
+        p.then(() => {
+          if (keepAwakeRunning()) { keepAwakeUnarm(); setKeepAwakeStatus(true, true); }
+          updateKeepAwakeState();
+        }).catch(() => updateKeepAwakeState());
+      }
+    } catch (e) { return false; }
+    return true;
+  }
+
+  function startKeepAwake() {
+    if (!keepAwakePref) return false;
+    if (keepAwakeCtx) {
+      if (!keepAwakeRunning()) keepAwakeResume();
+      updateKeepAwakeState();
+      return keepAwakeRunning();
+    }
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { updateKeepAwakeState(); return false; }
+      const ctx = new AC();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 220;
+      gain.gain.value = KEEP_AWAKE_GAIN;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      keepAwakeCtx = ctx;
+      keepAwakeOsc = osc;
+      if (!keepAwakeRunning()) keepAwakeResume();
+    } catch (e) { keepAwakeCtx = null; keepAwakeOsc = null; }
+    updateKeepAwakeState();
+    return keepAwakeRunning();
+  }
+
+  function stopKeepAwake() {
+    try { if (keepAwakeOsc) keepAwakeOsc.stop(); } catch (e) {}
+    try { if (keepAwakeOsc) keepAwakeOsc.disconnect(); } catch (e) {}
+    try { if (keepAwakeCtx && keepAwakeCtx.close) keepAwakeCtx.close(); } catch (e) {}
+    keepAwakeCtx = null;
+    keepAwakeOsc = null;
+    updateKeepAwakeState();
+  }
+
+  function keepAwakeGestureTry() {
+    if (!keepAwakePref) return;
+    if (startKeepAwake()) keepAwakeUnarm();
+  }
+
+  function keepAwakeArm() {
+    if (keepAwakeArmed) return;
+    keepAwakeArmed = true;
+    document.addEventListener('pointerdown', keepAwakeGestureTry, true);
+    document.addEventListener('keydown', keepAwakeGestureTry, true);
+    document.addEventListener('touchstart', keepAwakeGestureTry, true);
+    updateKeepAwakeState();
+  }
+
+  function keepAwakeUnarm() {
+    if (!keepAwakeArmed) return;
+    keepAwakeArmed = false;
+    document.removeEventListener('pointerdown', keepAwakeGestureTry, true);
+    document.removeEventListener('keydown', keepAwakeGestureTry, true);
+    document.removeEventListener('touchstart', keepAwakeGestureTry, true);
+    updateKeepAwakeState();
+  }
+
+  function keepAwakeKick() {
+    if (!keepAwakePref) return;
+    if (startKeepAwake()) keepAwakeUnarm();
+    else if (window.AudioContext || window.webkitAudioContext) keepAwakeArm();
+    updateKeepAwakeState();
+  }
+
+  function applyKeepAwake(on) {
+    keepAwakePref = !!on;
+    try { localStorage.setItem(KEEP_AWAKE_KEY, on ? '1' : '0'); } catch (e) {}
+    const cb = document.getElementById('prefKeepAwake');
+    if (cb) cb.checked = !!on;
+    const statusEl = document.getElementById('statusEl');
+    if (!on) {
+      stopKeepAwake();
+      keepAwakeUnarm();
+      if (statusEl) statusEl.textContent = '🔇 Keep-awake is off — the browser may slow this page down while it is in the background.';
+      return;
+    }
+    const started = startKeepAwake();
+    if (!started && (window.AudioContext || window.webkitAudioContext)) keepAwakeArm();
+    setKeepAwakeStatus(started || !!keepAwakeCtx);
   }
 
   function isMenuFullscreen() {
@@ -8590,6 +8728,11 @@ color-scheme:light;
     applyBgGenerate(c && c.checked);
   }
 
+  function onPrefKeepAwakeChange() {
+    const c = document.getElementById('prefKeepAwake');
+    applyKeepAwake(c && c.checked);
+  }
+
   function onPrefHdrAllViewsChange() {
     const c = document.getElementById('prefHdrAllViews');
     applyHdrAllViews(c && c.checked);
@@ -8962,6 +9105,11 @@ color-scheme:light;
   window.onPrefMenuFullscreenChange = onPrefMenuFullscreenChange;
   window.onPrefGenAlwaysVisibleChange = onPrefGenAlwaysVisibleChange;
   window.onPrefBgGenerateChange = onPrefBgGenerateChange;
+  window.onPrefKeepAwakeChange = onPrefKeepAwakeChange;
+  window.applyKeepAwake = applyKeepAwake;
+  window.startKeepAwake = startKeepAwake;
+  window.stopKeepAwake = stopKeepAwake;
+  window.keepAwakeStateText = keepAwakeStateText;
   window.onPrefHdrAllViewsChange = onPrefHdrAllViewsChange;
   window.onThemeModeChange = onThemeModeChange;
   window.onAccentChange = onAccentChange;
@@ -10270,6 +10418,7 @@ color-scheme:light;
   try { hdrAllViewsPref = localStorage.getItem(HDR_ALL_KEY) === '1'; } catch (e) {}
   try { genAlwaysVisiblePref = localStorage.getItem(GEN_ALWAYS_KEY) === '1'; } catch (e) {}
   try { bgGeneratePref = localStorage.getItem(BG_GEN_KEY) !== '0'; } catch (e) {}
+  try { keepAwakePref = localStorage.getItem(KEEP_AWAKE_KEY) === '1'; } catch (e) {}
   try { const tm = localStorage.getItem(THEME_MODE_KEY); themeModePref = (tm === 'light' || tm === 'dark' || tm === 'system') ? tm : 'system'; } catch (e) { themeModePref = 'system'; }
   try { themeAccent = normalizeAccent(localStorage.getItem(THEME_ACCENT_KEY)); } catch (e) {}
   applyTheme();
@@ -10282,7 +10431,13 @@ color-scheme:light;
     if (cbGen) cbGen.checked = genAlwaysVisiblePref;
     const cbBg = document.getElementById('prefBgGenerate');
     if (cbBg) cbBg.checked = bgGeneratePref;
+    const cbAwake = document.getElementById('prefKeepAwake');
+    if (cbAwake) cbAwake.checked = keepAwakePref;
+    if (keepAwakePref && (window.AudioContext || window.webkitAudioContext)) keepAwakeArm();
+    else updateKeepAwakeState();
   }
+  document.addEventListener('visibilitychange', keepAwakeKick);
+  window.addEventListener('pageshow', keepAwakeKick);
   document.body.classList.toggle('hdr-all-views', hdrAllViewsPref);
   syncHdrHeight();
   let savedLayout = '';
