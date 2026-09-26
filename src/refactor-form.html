@@ -194,6 +194,7 @@
       </details>
     </div>
     <div class="btns">
+      <button id="recommendBtn" type="button">✨ Use the recommended answers</button>
       <button id="clearBtn" type="button">Clear answers</button>
       <button id="copyBtn" type="button">📋 Copy answers</button>
       <button id="sendBtn" type="button" class="primary">📤 Send answers</button>
@@ -1272,6 +1273,28 @@ const GH_KEYS = {
     if (written.length < answeredTickets.length) html += "<div class=\"res-line\">(" + (answeredTickets.length - written.length) + " answered ticket(s) were skipped.)</div>";
     showResults(html);
     showToast("✅ " + written.length + " ticket" + (written.length === 1 ? "" : "s") + " sent to GitHub.", 4000);
+  });
+
+  document.getElementById("recommendBtn").addEventListener("click", function () {
+    let n = 0;
+    ALL_QUESTIONS.forEach(function (q) {
+      if (q.type === "select") {
+        const sel = document.getElementById("ctl-" + q.id);
+        if (!sel || sel.value !== "") return;
+        const idx = (q.options || []).findIndex(function (o) { return /recommended/i.test(o); });
+        if (idx < 0) return;
+        sel.value = String(idx);
+        n++;
+      } else if (q.type === "checkboxes") {
+        (q.options || []).forEach(function (opt, i) {
+          if (!/recommended/i.test(opt)) return;
+          const cb = document.getElementById("ctl-" + q.id + "-" + i);
+          if (cb && !cb.checked) { cb.checked = true; n++; }
+        });
+      }
+    });
+    persist();
+    showToast(n ? "Filled in the recommended answer for " + n + (n === 1 ? " question" : " questions") + " — change any of them you like, then Send." : "Nothing left to fill in: every question that has a recommended answer already has one.");
   });
 
   document.getElementById("clearBtn").addEventListener("click", function () {
