@@ -78,8 +78,9 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   whole localStorage map with an FNV-1a hash, so "nothing was written" is provable); `devtests/smoke.page.js` (77
   checks over §22 of the function map — 73 pass, 4 explicit manual lines); `devtests/gen.page.js` (18 checks of the
   generation engine against a stubbed service, plus 1 manual); `devtests/fixtures.page.js` (16 checks importing
-  every `fixtures/` file through the real import path); `devtests/core.test.js` (14 DOM-free checks — the pure
-  functions are extracted out of `index.html` by name and run against a fake `document`); `fixtures/` (full page,
+  every `fixtures/` file through the real import path); `devtests/core.test.js` (18 DOM-free checks — since 2026.09.26.9 it
+  **imports `src/core/*.js`** and only the DOM-bound names are still extracted out of `index.html` and run against a fake
+  `document`); `fixtures/` (full page,
   legacy v1, every-legacy-key) and `devtests/shots/` (14 screenshots of the fixture project). The runners park,
   run, restore and *verify the restore byte-for-byte*, and dump the park to the workspace so a freeze cannot lose
   the author's project.
@@ -96,12 +97,27 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   `devtests/diff-core.js` is **31 checks / 0 differences** over ~4,500 generated cases across the six modules
   (`unspecced: []`, `missing: []`), the suites are green (smoke 73/0/4, generation 18/0, fixtures 16/0, core
   14/0), 0 perchance errors, the author's map restores byte-identical after every runner, and an A/B of the
-  screenshots against the previous build came back identical. **Left to do:** delete each in-file copy one
-  release after its module has survived a release — `zip`, `jsontext`, `keywords`, `seeds` from 2026.09.26.9,
-  then `prompt` and `library-core`.
+  screenshots against the previous build came back identical. **Fallback deletion:** **done 2026.09.26.9** for `zip`,
+  `jsontext`, `keywords` and `seeds` (released 2026.09.26.9 — the declarations stay, the boot waits on `coreReady`, and a
+  module that cannot load gets a bar at the top of the page); `prompt` and `library-core` follow one release later
+  (2026.09.26.10), after which `devtests/diff-core.js` keeps only its module/surface guards.
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — the four in-file copies deleted, released as 2026.09.26.9.** `zip`, `jsontext`, `keywords` and `seeds` are
+  now only in `src/core/`; their in-file implementations came out (357 lines, ~16 KB) and each name is left as a bare `let`
+  the loader fills. The boot was restructured to wait for the modules: `coreLoad` collects a promise each, `coreReady`
+  resolves to the names that failed, the old flat init block became `bootApp()` behind `coreReady.then(...)`, `window.appReady`
+  exposes the moment the app is up, and `coreLoadWarning` shows a fixed bar at the top of the page if a module could not be
+  loaded (tested with a deliberately broken build). Verified: differential **21/0** (`unspecced: []`, `missing: []`, plus new
+  guards that a deleted copy has not come back and that every module-provided name is still declared), core **18/0** (now
+  importing the modules), smoke 73/0/4, generation 18/0, fixtures 16/0, 0 perchance errors, park hash `e11f084f` restored
+  byte-identical, screenshots unchanged (third A/B of the dark-view 112 px artefact: the previous build gave identical
+  numbers), boot 218 → 228 ms. Two harness/process fixes came with it: `ghPush` no longer pushes the *platform wrapper* as
+  `index.html` (it extracts the generator's own source from the served page's `outputTemplate`), and `devtests/park.js` no
+  longer re-parks the live map when it is injected on its own (`window.__parkReady = true;` — the old trailing `return park()`
+  clobbered the author's parked copy during a freeze recovery; the recovery recipe is in `DEV-NOTES.md`). **Next:** `prompt`
+  and `library-core` follow at 2026.09.26.10, then **P2 step 1** — panel ids + `core/schema.js`.
 - **2026-09-26 — P1 finished as 2026.09.26.8.** `core/prompt.js` and `core/library-core.js` land (the last two of the
   six), so the pure logic is out of the monolith: differential **31/0** over ~4,500 generated cases, every suite
   green (smoke 73/0/4, generation 18/0, fixtures 16/0, core 14/0), 0 perchance errors, and an A/B capture against
