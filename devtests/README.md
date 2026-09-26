@@ -141,11 +141,14 @@ Off, the 250 ms heartbeat is pinned to Firefox's hidden clamp: 189 samples in a 
 `dom.min_background_timeout_value = 1000`. On, the same timer ran at a 262 ms median (1371 of 1374 gaps under
 400 ms). **The silent tone defeats the throttling** — 3.8× the off rate, same interval, same machine.
 
-Two things the same run teaches:
+Three things the same run teaches:
 
 - **Read the spans, not the wall clock.** The overnight hidden period was 9 h 33 m, but the laptop slept through
   9 h 28 m of it (two heartbeat gaps: 3 h 28 m and 5 h 59 m). A suspended machine stops the timers too, and only
   the ~5.5 min it was awake *and* hidden is a measurement.
+- **The sample counts come from the live probe's full in-memory list.** `P.save()` keeps only the most recent 900
+  rows in `sessionStorage` (that is what makes the numbers survive a reload), so a later `__awakeReport()` can
+  report fewer samples than the table above. The medians are unaffected — they are per-row, not per-run.
 - **`raf.hidden` stayed at 28 frames in total.** Keep-awake holds the timers, not the rendering — a background
   run keeps ticking while the screen is not being redrawn.
 
