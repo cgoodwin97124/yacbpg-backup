@@ -97,12 +97,11 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   `devtests/diff-core.js` is **31 checks / 0 differences** over ~4,500 generated cases across the six modules
   (`unspecced: []`, `missing: []`), the suites are green (smoke 73/0/4, generation 18/0, fixtures 16/0, core
   14/0), 0 perchance errors, the author's map restores byte-identical after every runner, and an A/B of the
-  screenshots against the previous build came back identical. **Fallback deletion:** **done 2026.09.26.9** for `zip`,
-  `jsontext`, `keywords` and `seeds` (released 2026.09.26.9 — the declarations stay, the boot waits on `coreReady`, and a
-  module that cannot load gets a bar at the top of the page); `prompt` and `library-core` follow one release later —
-  now scheduled for **2026.09.26.14**, because 2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the
-  import-menu fix — after which
-  `devtests/diff-core.js` keeps only its module/surface guards.
+  screenshots against the previous build came back identical. **Fallback deletion — COMPLETE:** **done 2026.09.26.9** for `zip`,
+  `jsontext`, `keywords` and `seeds`, and **done 2026.09.26.14** for `prompt` and `library-core` (the declarations stay, the boot
+  waits on `coreReady`, and a module that cannot load gets a bar at the top of the page). The second pair slipped four releases
+  (`.10` P2 step 1, `.11` the import-menu fix, `.12` the colour palette, `.13` the library rename) because features and bug fixes
+  keep shipping in parallel. No module has an in-file copy any more, so `devtests/diff-core.js` is guards-only.
 - **P2 — a real state layer. Step 1 DONE (2026.09.26.10).** Panel identity and `core/schema.js` shipped: every panel
   now carries a stable `id` (minted on create / duplicate / paste / import and repaired and deduped by `normalise`),
   `src/core/schema.js` holds the defaults (`defaultProject` / `defaultPage` / `defaultPanel`) plus `newPanelId`,
@@ -117,6 +116,7 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — the P1 cleanup finished as 2026.09.26.14: `prompt` and `library-core` lost their in-file copies.** `composePanelPrompt` is now a bare `let` and the eleven `library-core` names share one bare `let` line where their block used to be; `newLibraryId` stays (never a module export). Nothing runs at IIFE time in either group, so losing the hoisted declarations is safe — `composePanelPrompt` is reached only via `buildPanelPrompt`, and the library helpers only from inside functions. **Every module is now module-only: P1 is complete.** `devtests/diff-core.js` dropped `specs` and the `braceEnd`/`grab`/`inlineCode`/`mulberry` machinery (plus three dead zip/jsontext helpers stranded there since `.9`) and keeps its four guards, with the "deleted copies are really gone" probe extended from 17 to **29** names — **17/0**. `devtests/core.test.js` extracts only `getEffectiveKeywords`/`applyPreset` now and takes the rest from merged modules — **24/0**, unchanged. Smoke **85/0/4**, generation **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, park `7a1123b0` restored byte-identical (`strays: []`), visual **12/14** (the two `*-json` views at the known ~0.01%, maxDelta ~70 — no baseline or manual change, since nothing user-visible moved). **Next: P2 step 2b** — the project owns its library and its kept images.
 - **2026-09-26 — the library rename shipped as 2026.09.26.13 (a feature request, not a refactor step).** Every Character/Location row in 📚 Library gained a ✎ button that renames the item and sweeps the old name — whole-word and case-sensitive — through the item's library description and, in every panel on every page that uses it, its Basic Description, its This-panel extra description and the panel's Action Prompt. It is the first release whose *behaviour* is shaped by the P2 idea that a panel **references** an item by id (the slot label already followed a rename; only the text needed sweeping). New helpers: `libraryNameRegex` / `countWholeWordName` / `replaceWholeWordName` / `sweepRenameAcrossPages` / `syncRenameFieldsToDom` / `applyLibraryRename` / `openLibraryRename`. Cross-page edits went the `analysisSetPanelStyle` way (`collectPanelState` → mutate → `savePanelStateShape`), with the current page's DOM written back from the saved state so the two cannot drift. Smoke **85/0/4** (new group `G17`, checks 84–88), differential **23/0**, core **24/0**, generation **18/0**, fixtures **18/0**, park `1fc18dde` restored byte-identical, visual **12/14** (the two `*-json` views at the known ~0.01%). Because this was a feature and not a refactor step, the `prompt`/`library-core` fallback deletion moved **again**, to **2026.09.26.14** — it has now slipped for `.10` (P2 step 1), `.11` (the menu fix), `.12` (the palette) and `.13` (this).
 - **2026-09-26 — the per-panel colour palette shipped as 2026.09.26.12 (a feature request, not a refactor step).** A `Palette` select now sits in every panel header between Style and Size, backed by a per-panel `palette` field (collect/restore, the JSON editor, and `schema.js`'s `STRING_FIELDS` + `defaultPanel()`), and `getPanelKeywords` treats it as the palette twin of the Style override: an override composes effective style (own || global) with effective palette (own || global), while a panel with neither keeps the global keyword fields verbatim. The Analysis matrix gained a `🌈` palette chip + editor. Because it is a feature and not a refactor step, the `prompt`/`library-core` fallback deletion moved **again**, to **2026.09.26.14** — it has now slipped for `.10` (P2 step 1), `.11` (the menu fix) and `.12` (this). Smoke **80/0/4** (new `G7:47`), fixtures **18/0** (the full-page fixture's panel 4 carries `"palette": "sepia"`), core **24/0**, differential **23/0**, 0 perchance errors, park hash `ccdd4096` restored byte-identical. The visual baseline was regenerated (the panel header gains a row per card: +74 CSS px over the 6-panel desktop grid, +214 px on the phone column) and then compared **12/14 pixel-identical**, the 2 `*-json` views differing by ~0.01%.
 - **2026-09-26 — the import-path menu toggle fixed, released as 2026.09.26.11.** `applyImportedSettings` and
@@ -312,8 +312,10 @@ All three questions from round 1 are answered - see section 3 for the decisions 
 
 **Round 2 is answered** (2026-09-26 — `questions/REFACTOR-ROUND-2-ANSWERS.md`, digested in §1b): the P2
 decisions are in (`P2-01` 1a/1b taken as the recommended defaults) and `BUG-01` is closed. **Nothing is waiting on
-the author.** P1's last two modules (`core/prompt.js`, `core/library-core.js`) keep their in-file copies until
-**2026.09.26.14** (the deletion has been pushed back by every release since: 2026.09.26.10 shipped P2 step 1, 2026.09.26.11 the import-menu fix, 2026.09.26.12 the colour palette and 2026.09.26.13 the library rename).
+the author.** P1's last two modules (`core/prompt.js`, `core/library-core.js`) lost their in-file copies in
+**2026.09.26.14**, which closes out the P1 cleanup (the deletion had been pushed back by every release since:
+2026.09.26.10 shipped P2 step 1, 2026.09.26.11 the import-menu fix, 2026.09.26.12 the colour palette and 2026.09.26.13
+the library rename).
 
 ## 5. Warts
 
