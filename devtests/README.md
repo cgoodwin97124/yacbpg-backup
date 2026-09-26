@@ -42,6 +42,8 @@ came from a heavy synchronous snapshot of the 24-panel fixture at a scaled viewp
 | `gen.page.js` + `run-gen.js` | the generation engine against a stubbed `root.generateImage`: skip/protected/failed paths, seed offsets and pinning, the same-seed flag, prompt history, pause and stop settling cleanly, the run tally, and the 2026.09.26.4 background gate in both directions. 18 pass, 1 manual. |
 | `fixtures.page.js` + `run-fixtures.js` | imports every file in `fixtures/` through the real import path and asserts what came back. 16 pass. |
 | `core.test.js` | the DOM-free suite. Extracts `crc32`, `initCrcTable`, `buildZip`, `inflateRawDeflate`, `unzipEntries`, `scrubMinusOneSeeds`, `getEffectiveKeywords`, `applyPreset`, `ART_STYLES`, `COLOR_PALETTES`, `JSON_NUM_RE`, `jsonTokenize`, `jsonDecodeRaw` and `jsonParse` **out of `index.html` by name** and runs them in a worker against a fake `document`. 14 pass. |
+| `diff-core.js` | the **differential** suite for `src/core/*.js` (P1). Extracts the same functions out of `index.html`, imports each module by blob URL, and asserts the two agree over generated input: 300 CRC buffers, 120 zips (byte-identical with the timestamps masked, plus 480 cross-reads), 50 data URLs, 40 deflate streams, 600 JSON texts (200 documents + 400 mutations of them, including the error message and span), 150 escape-heavy strings, the 12 styles × 9 palettes tables, 400 keyword/NSFW combinations, 400 seed inputs, 300 (seed, k, same) triples, 200 scrubbed documents. Also asserts that every discovered `src/core/*.js` is listed in `index.html`'s `GH_SRC_FILES` (the ghPush manifest) — a module that is not in that manifest would never be backed up. 21 pass. **Run it after every extraction.** |
+| `visual-diff.js` | the **visual regression check**: re-captures the `devtests/shots/` baseline into `scratch/shots-*` and compares it pixel-by-pixel with the stored PNG (differing pixels, mean/max channel delta). It uses the same park/restore protocol. **Capture order matters** — see the note below. |
 | `make-fixtures.js` | regenerates `fixtures/*.json`. Run after a schema change; it writes only those three files. |
 | `make-baseline.js` | regenerates `devtests/shots/*.png`. See `shots/README.md`. |
 | `restore-from-park.js` | writes `scratch/p0/last-park.json` back into the live page. |
@@ -59,6 +61,24 @@ URL** — and this file is where that change lands first.
 The extraction reports `missing` names, so a rename in `index.html` shows up as an explicit failure rather
 than as a silent skip.
 
+As of 2026.09.26.5 that replacement has started: `src/core/zip.js`, `jsontext.js`, `keywords.js` and
+`seeds.js` exist, `index.html` loads each one through `coreLoad()` and swaps its inline copy for the module's,
+and `diff-core.js` compares module against inline copy. The inline copies stay in `index.html` as the fallback
+(and as the extraction source) until the module has survived a release; then the copy is deleted and
+`core.test.js` imports the module instead.
+
+### Why capture order matters in `visual-diff.js`
+
+The first full run of the visual check reported the three `desktop-light-*` captures differing from the
+baseline by 11-19% of their pixels, and the two `phone-light-*` captures 224 CSS px taller. Re-running with the
+light captures **first in the session** made all of them pixel-identical (0 differing pixels). The difference
+was not the code: each capture is taken after five earlier "subjects" (json, analysis, dialog, storyboard,
+focus), and some of them leave in-memory state - an accordion, a scroll position, a half-finished animation -
+that depends on how the session got there, so the same recipe renders differently depending on what ran
+before it. **Compare like with like:** run the baseline and the check in the same order, or capture a group
+first. The park/restore protocol is what keeps this safe: the fixture import and the theme/viewport changes
+are all hung under the park, and every run restores the author's map byte-for-byte.
+
 ## Running them
 
 Each `*.js` here is an `execute_js` body (it uses `fs` and `tools`). From a session:
@@ -66,6 +86,8 @@ Each `*.js` here is an `execute_js` body (it uses `fs` and `tools`). From a sess
 ```
 read devtests/run-smoke.js  →  execute_js with that text
 read devtests/core.test.js  →  execute_js with that text     (no page needed)
+read devtests/diff-core.js  →  execute_js with that text     (no page needed; run after any extraction)
+read devtests/visual-diff.js →  execute_js with that text    (parks, captures, compares, restores)
 ```
 
 The runners are self-contained: they read the suite files, park, run, restore, reload and verify. They return
@@ -76,7 +98,9 @@ a compact report (pass/fail counts, failure lines, `byteIdentical`) and write th
 
 - **Images**: copy-to-other-panel, download-one/all, and the upscale path touch the clipboard, the file system
   and canvas, so they are manual checks (`gen.page.js` MAN:19).
-- **`ghTest`/`ghPush`**: network and a live token; verified by hand at the end of every release.
+- **`ghTest`/`ghPush`**: network and a live token; verified by hand at the end of every release. The *list of
+  files* ghPush uploads is checked automatically — `diff-core.js` fails if a `src/core/*.js` module is missing
+  from `index.html`'s `GH_SRC_FILES`, because a module that is not in that manifest would never be backed up.
 - **Not-exported internals**: `getPanelSeed`, `pinPanelSeedForRun`, `scrubMinusOneSeeds` (in the page),
   `cascadePageSequence`, `reflowInsertOnFullPage`, `isSlotProtected`, `setSlotProtected`, `buildExportData`,
   `applyImportedSettings`, `analysisFillCell`, `deleteLibraryObject`, `countLibReferences`. What they do is
