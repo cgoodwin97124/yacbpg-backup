@@ -45,6 +45,31 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 
 ---
 
+## 1b. Round 2 answered — the P2 decisions (2026-09-26)
+
+Sent in chat from the round-2 form (`yacbpg-round2-2026-09-26`, 2026-09-26 10:10). Verbatim in
+`questions/REFACTOR-ROUND-2-ANSWERS.md`. **Two questions came back blank — `P2-01` 1a and 1b — and their notes
+still hold BUG-01's stray text; they are the only thing still owed by the author.**
+
+- **BUG-01 — closed as "not seen since".** Nothing misbehaves, no console line is available, the dialog has not
+  appeared again, and they will report it with the console text if it does. Nothing wanted in the generator for it;
+  the platform report (`923578bb`) stays on file.
+- **P2-01** — a Recent entry remembers *nothing* beyond the project data (1c). 1a/1b outstanding.
+- **P2-02** — the library UI gets **two sections, "This project" then "My catalogue"** (2a); importing a file
+  **offers** to copy its objects in, their choice each time (2b); deleting a referenced object: they asked what it
+  does today, and want **warn → clear the references / leave them as plain text / cancel** (2c); and a new request
+  (2d): **hooks for up to three reference images per library object** for a future image-to-image path (queued as
+  its own feature entry).
+- **P2-03** — **two export buttons**, full and "compact (no kept images)" (3a); the file is the **only** home for
+  kept images — the browser keeps no copy (3b); warn at about **40 MB** (3c).
+- **P2-04** — the automatic ladder covers **v2 onward**, older files go to the upgrader (4a); the upgrader converts
+  and hands back a file to download (4b); the JSON editor stays an editor, normalise + validate on apply (4c).
+- **P2-05** — autosave: **panel data only, user-configurable** (5a); undo: the last **50** changes, surviving a
+  reload (5b); the GitHub backup becomes **one file per project in `projects/`** (5c); no side-features while P2 is
+  in flight (5d).
+- **P2-06** — **one release per P2 step** (6a); each release note leads with plain language and ends with the
+  suite / differential / park-hash numbers (6b); nothing they are nervous about in a state layer (6c).
+
 ## 2. What is in progress
 
 - **P0 — the regression harness.** **Complete, 2026-09-26.** `devtests/park.js` (park / check / restore of the
@@ -70,6 +95,14 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — round 2 answered, P2 unblocked (except two blanks).** The decisions are digested in §1b and
+  verbatim in `questions/REFACTOR-ROUND-2-ANSWERS.md`: two library sections, imports *offer* to copy, the file is
+  the only home for kept images (compact-export button, 40 MB warning), the ladder covers v2 with a download-only
+  upgrader, autosave is panel-data-only but configurable, undo is 50 deep and survives a reload, GitHub backups
+  become per-project files, and each P2 step ships as its own release. `BUG-01` closed. Plus one new queued feature
+  (`P2-02` 2d: up to three reference images per library object). **`P2-01` 1a/1b came back blank** — re-ask them, or
+  take the recommended defaults. **The next work is still P1's last two modules** (`core/prompt.js`,
+  `core/library-core.js`), which need no input.
 - **2026-09-26 — round 2 of the questions went out as 2026.09.26.7 (docs + dev tool only).** `src/round2-form.html`
   (opened with `window.__openRound2Form()`) asks the seven P2 decisions: projects becoming first-class, the
   project's library vs the browser catalogue, kept images in the project file, the ladder / upgrader / JSON
@@ -202,6 +235,7 @@ All three questions from round 1 are answered - see section 3 for the decisions 
 2. **Kept images** - in the project file (big exports are fine).
 3. **Character dialogue** - a configurable number of lines per panel, text-only, never rendered.
 
-**Round 2 is out and waiting on the author** (2026.09.26.7): `src/round2-form.html`, opened with
-`window.__openRound2Form()` — the P2 decisions plus the `BUG-01` console-line follow-up. Nothing else is blocked:
-P1's two remaining modules (`core/prompt.js`, `core/library-core.js`) need no input.
+**Round 2 is answered** (2026-09-26 — `questions/REFACTOR-ROUND-2-ANSWERS.md`, digested in §1b): the P2
+decisions are in and `BUG-01` is closed. **`P2-01` 1a/1b came back blank**, so those two are the only answers still
+owed; everything else is unblocked, and the next work is P1's last two modules (`core/prompt.js`,
+`core/library-core.js`).
