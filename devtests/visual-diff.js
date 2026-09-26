@@ -1,5 +1,4 @@
-const strip = (s) => s.replace(/\nreturn window\.__park\.park\(\);\s*$/, "\n");
-const parkBody = strip(await fs.readTextFile("devtests/park.js"));
+const parkBody = await fs.readTextFile("devtests/park.js");
 const fixtureText = await fs.readTextFile("fixtures/full-page.json");
 const noTok = (m) => { const c = {}; for (const k of Object.keys(m || {})) if (!/githubToken$/i.test(k)) c[k] = m[k]; return c; };
 const fnvOf = (map) => {
