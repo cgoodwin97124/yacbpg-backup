@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.26.4 — 2026-09-26 — ⚙ Generation keeps running when you switch to another tab or app
+
+- **The run no longer stops when this page loses focus.** Start **⚡ GENERATE ALL PANELS ON PAGE**, switch to another tab, another window or another app, and come back to finished panels — instead of the "Stopped generations — tab went to background" message and a half-done page. This was the thing that made the app sigh-worthy to use, and it was the app's own doing: the old behaviour stopped every in-flight image and broke the run the moment the page was hidden.
+- **New setting: Edit → Preferences → Generation → “Keep generating when I switch to another tab or app”** — on by default, because that is how you actually work with it. Turn it off to get the old behaviour back if you would rather save memory, battery and data; a run then pauses where it was and **⚡ GENERATE ALL PANELS ON PAGE** continues from that panel.
+- **Honest about the limits:** a browser deliberately gives a background page fewer resources, so a backgrounded run can be slower, and a phone may suspend the page completely (iOS in particular). When that happens the run pauses and **⚡** picks it up from the panel it stopped on — nothing is lost, and panels that already finished are never re-rendered.
+- **Nothing else changes.** The per-browser setting is not part of your project, so it does not travel in a Save / Export / Import; the panel grid, the 120-second per-image timeout and the Stop/Pause buttons behave exactly as before.
+
 ## 2026.09.26.3 — 2026-09-26 — 🗺️ A refactor plan you can read: the functionality map, the road map, UI ideas — and a form for the questions
 
 - **Your project now has three planning documents in the repo**, written to be read straight through on GitHub. **`FUNCTION-MAP.md`** describes everything the app *does*, capability by capability, with no reference to the interface at all — the data model, pages, panels, generation, seeds, the library, images, history, export, the JSON document, plus the promises the app has to keep. **`REFACTOR-ROADMAP.md`** maps the *current* code — measured, not guessed — explains why it grew tangled, and lays out a six-phase, reversible plan for untangling it, phase by phase, each one ending in something shippable. **`UI-IDEAS.md`** takes the ideas that only make sense once the functionality is mapped: the panel menu pile-up, edit-vs-generate, the accordion maze, selection, a real inspector, progressive disclosure, mobile.
