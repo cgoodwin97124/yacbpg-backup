@@ -288,13 +288,15 @@ and there was nothing left to compare — `diff-core.js` keeps its guards); no u
 
 ### 3.4 P2 — a real state layer (read-only first)
 
-**STATUS: steps 1 and 2 are BUILT (2026.09.26.10).** Panels carry ids and `src/core/schema.js` exists —
-`SCHEMA_VERSION`, `PANEL_COUNT_OPTIONS`, `newPanelId`, `defaultChar`, `defaultPanel`, `defaultPage`,
-`defaultProject`, `normalise`, `validate` — and `validate(normalise(x))` is always clean. `normalise` is the
-migration seam and is **conservative by rule: it never deletes a key it does not understand**. Not yet done:
-`index.html` still uses its own `defaultPageData()` (swapping `resetEverything` onto `defaultProject()` belongs
-with the store, step 3), the project-owned library and kept images (step 2b), the store itself (step 3) and the
-store-vs-`collectPanelState` equality test (step 4).
+**STATUS: steps 1, 2 and 2b's library half are BUILT (2026.09.26.10 / 2026.09.26.15).** Panels carry ids and
+`src/core/schema.js` exists — `SCHEMA_VERSION`, `PANEL_COUNT_OPTIONS`, `newPanelId`, `defaultChar`, `defaultPanel`,
+`defaultPage`, `defaultProject`, `normalise`, `validate`, plus `normaliseLibrary`/`normaliseLibType` — and
+`validate(normalise(x))` is always clean. `normalise` is the migration seam and is **conservative by rule: it never
+deletes a key it does not understand**, and it normalises `library` only when the key is present. **The project owns
+its library as of 2026.09.26.15** (`settings.library` inside `panelState`; `comicGen.libObjects` is now the
+browser-wide *catalogue* a project copies from — `AI-NOTES.md` §28). Not yet done: the `kept` images half of 2b,
+`index.html` still uses its own `defaultPageData()` (swapping `resetEverything` onto `defaultProject()` belongs with
+the store, step 3), the store itself (step 3) and the store-vs-`collectPanelState` equality test (step 4).
 
 1. ✅ **Panels get ids.** Add an `id` to every panel entry, generated on create/duplicate/import, and
    migrated on load for panels that lack one (today: `normalise()` in `core/schema.js`). Store it in the project. *Nothing else
@@ -302,8 +304,9 @@ store-vs-`collectPanelState` equality test (step 4).
 2. ✅ **Write `core/schema.js`**: `defaultProject()`, `defaultPage()`, `defaultPanel()`, `normalise(state)`,
    `validate(state)` (plus `newPanelId`, `defaultChar`, `PANEL_COUNT_OPTIONS`, `SCHEMA_VERSION`). **Still to do
    here:** the hand-built fresh state inside `resetEverything` becomes `defaultProject()` (with the store step).
-2b. **The project owns its library, and its kept images** (author's decisions, 2026-09-26 - `REFACTOR-NOTES.md`
-   section 3). `defaultProject()` carries a `library` array and a `kept` array; the browser-wide library stays as
+2b. ⏳ **The project owns its library, and its kept images** (author's decisions, 2026-09-26 - `REFACTOR-NOTES.md`
+   section 3). **The library half is BUILT (2026.09.26.15)**; the `kept` half is scheduled as 2026.09.26.16.
+   `defaultProject()` carries a `library` array (built) and a `kept` array (pending); the browser-wide library stays as
    a *catalogue* a project can copy entries from ("+ from my library"). The migration gives an older project a
    `library` seeded from the browser library the first time it is loaded, so nothing is lost and the panel lines
    that already reference `lib:<type>:<id>` keep resolving. `buildExportData` stops attaching a copy of the
