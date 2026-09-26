@@ -70,6 +70,12 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — round 2 of the questions went out as 2026.09.26.7 (docs + dev tool only).** `src/round2-form.html`
+  (opened with `window.__openRound2Form()`) asks the seven P2 decisions: projects becoming first-class, the
+  project's library vs the browser catalogue, kept images in the project file, the ladder / upgrader / JSON
+  editor, autosave + undo + the GitHub backup, and P2's cadence. `BUG-01` rides along with the five unanswered
+  questions from the 2026-09-22 perchance error-dialog report. **P2 should not start until these are answered** —
+  every ticket exists because the code cannot answer it.
 - **2026-09-26 — keep-awake shipped as 2026.09.26.6 (a feature release, not a refactor step).** New browser
   preference `comicGen.keepAwake` + a Web Audio oscillator at gain 0.0001, because a page that is *playing audio*
   is exempt from background-timer throttling in both engines (the research and the exact source citations are in
@@ -196,6 +202,6 @@ All three questions from round 1 are answered - see section 3 for the decisions 
 2. **Kept images** - in the project file (big exports are fine).
 3. **Character dialogue** - a configurable number of lines per panel, text-only, never rendered.
 
-Nothing is waiting on the author. The next thing that needs them is a **question batch at the end of P0**, which
-will be packaged in the same answer form (`window.__openRefactorForm()`, or a fresh round file) rather than as
-prose here.
+**Round 2 is out and waiting on the author** (2026.09.26.7): `src/round2-form.html`, opened with
+`window.__openRound2Form()` — the P2 decisions plus the `BUG-01` console-line follow-up. Nothing else is blocked:
+P1's two remaining modules (`core/prompt.js`, `core/library-core.js`) need no input.
