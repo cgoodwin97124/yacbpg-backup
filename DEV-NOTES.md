@@ -9,6 +9,31 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.26.1 — ⧉ Copy one image onto other images (its own panel, or another)
+
+Released 2026-09-26 (stamp 2026.09.26.1). Author request, verbatim: "I'd like an option to duplicate an image within a panel. I'd like a chip button under the images that would allow me to copy that image over one, two, or all three of the other images in the panel, or to one to four images in another panel." Logged in `PENDING.md` on receipt, recon done, the four design questions asked and answered ("Defaults are fine. Go ahead and implement.") before any code was written.
+
+### What was built
+- **Chip:** `.btn-copyto` (⧉) as a sixth chip in every slot's `.slot-btns` row (`#slotbtns-panel-i-k`), disabled alongside the other image chips by adding `'btn-copyto'` to the class list in `setPanelImageButtons`. Tooltip: "Copy this image to other images in this panel, or to one to four images in another panel".
+- **Dialog:** `copyImageToAction(i, k)` (async, exported on `window`) reuses `showChoiceDialog` with raw HTML in `paragraphs` — the same trick as the ⚡ Generate (x) to (y)… range picker of 2026.09.25.2: a `.copy-sub` heading plus `.copy-opt` checkboxes for this panel's other slots, a `#copySameAll` "select all N" link, then a second `.copy-sub`, a `#copyPanelSel` dropdown and four `.copy-other` boxes. Buttons: "⧉ Copy image" (value `go`) first, then Cancel.
+- **Live validation:** `copyImageRefresh()` recomputes the destinations from the DOM each time (the DOM *is* the selection model — no parallel JS state), greys out `.copy-other` boxes above the chosen panel's `getPanelImageCount`, writes the `#copyInfoEl` line ("→ Panel 1 · Image 2, Panel 2 · Image 1 · 3 will be replaced · 1 🔒 protected (skipped)") and disables the go button when nothing is ticked or when every chosen destination is 🔒 protected (with a ⚠ line). Dropdown entries are labelled "Panel N — <panel title> · no images / 2 images".
+- **The copy itself:** `applyImageCopy(i, k, dests)` = `panelImages[d.i][d.k-1] = src` followed by `showPanelImage(d.i, d.k, src)` for each destination, skipping 🔒 slots and counting replaced / skipped; `copyImageToAction` then writes the status line ("⧉ Copied Panel 1 · Image 1 to 3 images (…) 3 images were replaced."). Copies are in-memory only, exactly like every other panel image — nothing new is persisted — and they land unprotected.
+- **CSS:** `.copy-sub`, `.copy-row` (plus `.copy-row > label:not(.copy-opt)` to escape the global bold/yellow `label` styling), `.copy-opt` / `.copy-opt-off`, `.copy-all`, `.copy-panel-sel`, `.copy-info` (plus `.bad`).
+
+### Verified live (2026-09-26)
+- Chip states: present and enabled on an occupied slot, disabled on an empty slot (all 96 chips — 24 panels × 4 slots — are disabled in an image-less project).
+- Dialog: three same-panel boxes (2/3/4), panel options "Panel 2 — Cow close-up · no images", go disabled with "Pick at least one image to copy to.", `select all 3` ticks all three, the info line and replaced/protected counts, and the live go-button state.
+- Copy run: panel 1 · Image 1 → panel 1 slots 2 and 3 plus panel 2 slot 1 = 3 copies, status "3 images were replaced", slot 4 untouched.
+- 🔒 destination: with slot 4 protected, choosing slots 3 and 4 reported "1 will be replaced · 1 🔒 protected (skipped)", copied only slot 3, left slot 4 exactly as it was and still protected, and the status line said "1 🔒 protected image was skipped."
+- An all-protected selection disables the go button with the ⚠ line; Cancel changes nothing (verified by comparing the slot `img` srcs).
+- Destination limits: a panel set to 2 images greys out its Image 3/4 boxes with an explanatory tooltip; a panel set to 1 image shows "This panel shows a single image, so there is nowhere else in it to copy to." and offers no same-panel boxes.
+- Layout: `vision` on the dialog found every section, label, checkbox and button legible, aligned and unclipped in the dark theme.
+- Storage: all 19 stored keys (the whole map, not just `comicGen.*`) were parked in `__test_backup_v9` before any synthetic write and restored byte-for-byte — an FNV-1a hash of the whole storage map was identical before and after a full page reload (0 mismatches, 0 extra keys, no stray `__*` keys, no perchance errors).
+
+### Gotchas for the next session
+- `panelImages` is module-scoped and is **not** on `window`, so a test cannot assert against it directly. Assert with the `img-panel-i-k` `src` attributes instead — scroll the slot into view and poll, because `imgObserver` only sets `src` for slots within 400px of the viewport (it deliberately drops off-screen srcs to save memory). The first parked snapshot of this batch was lost when a test crashed on `window.panelImages` (a `resultPath` file is only written when the eval succeeds); it was recovered from `localStorage.__test_backup_v9` and re-verified.
+- The dialog's go button is `#choiceBtns button` — the FIRST button — so it must stay first in the `buttons` array.
+
 ## BATCH 2026.09.25.3 — 🎲 Same seed for every image — a per-panel checkbox in the ⚙ Panel menu
 
 Released 2026-09-25 (stamp 2026.09.25.3). Author request, verbatim: "I'd like to have a checkbox under the panels Panel menu that forces all images in the panel to use the same seed, rather than (seed) for panel 1, (seed+1) for panel 2, etc." Logged in `PENDING.md` on receipt (standing rule). index.html + the shipped manual; repo docs as usual.
