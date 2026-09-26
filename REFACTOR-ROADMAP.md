@@ -279,6 +279,13 @@ output for hundreds of generated inputs and finds zero differences; no user-visi
    changes yet* — the DOM still drives everything.
 2. **Write `core/schema.js`**: `defaultProject()`, `defaultPage()`, `defaultPanel()`, `normalise(state)`,
    `validate(state)`. The hand-built fresh state inside `resetEverything` becomes `defaultProject()`.
+2b. **The project owns its library, and its kept images** (author's decisions, 2026-09-26 - `REFACTOR-NOTES.md`
+   section 3). `defaultProject()` carries a `library` array and a `kept` array; the browser-wide library stays as
+   a *catalogue* a project can copy entries from ("+ from my library"). The migration gives an older project a
+   `library` seeded from the browser library the first time it is loaded, so nothing is lost and the panel lines
+   that already reference `lib:<type>:<id>` keep resolving. `buildExportData` stops attaching a copy of the
+   browser library and attaches the project's own instead. `core/library-core.js` (P1 step 5) is unaffected by
+   the ownership change - it is pure id/type/reference work either way.
 3. **Write `state/store.js`** as a plain object plus `load()` / `toJSON()` / `subscribe()`. Its loader is
    a *pure* serializer over a snapshot of the DOM (an object of the values `collectPageData` reads
    today), so it can be tested without a browser.
