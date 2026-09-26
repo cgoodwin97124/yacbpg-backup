@@ -1,3 +1,8 @@
+## 2026.09.26.7 — 2026-09-26 — ❓ Round 2 of the refactor questions: what the state layer (P2) needs to know
+- The refactor's **round 2 questions** are open: a form covering what the next refactor phase (P2 — a real state layer: several projects in the browser, the project owning its own library and kept images, old-file upgrades, autosave and undo) has to decide before any of it is built.
+- Same shape as round 1: open it from the page with `__openRound2Form()`, answer what you like, and each ticket is written to the repo's `tickets/` folder. Ticket **BUG-01** carries the still-unanswered questions from your 2026-09-22 error-dialog report (the browser-console line is the one that pins it).
+- Nothing in the app itself changed.
+
 
 # CHANGELOG — Yet Another Comic Book Page Generator
 
