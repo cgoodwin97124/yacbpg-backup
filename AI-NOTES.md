@@ -103,6 +103,8 @@ only live ephemerally or inside `index.html`'s comment block.
     is fetched lazily by `loadFullChangelog()` when the About section is first expanded
 12. seed + preview listeners; `restoreSaveState()` (IndexedDB save handle)
 
+Preference restore happens just before `applyTheme()`: `menuFullscreenPref`, `hdrAllViewsPref`, `genAlwaysVisiblePref`, `bgGeneratePref` and `keepAwakePref` are read from `localStorage`, their checkboxes are mirrored, and `keepAwakeArm()` is called **instead of creating the AudioContext** (§20 — it must never be created before a user gesture); `visibilitychange` and `pageshow` are wired to `keepAwakeKick` there too.
+
 ## 3. Data & persistence model
 
 **localStorage keys**
@@ -1009,13 +1011,44 @@ Added 2026-08-10 during the mobile memory-hardening pass (TROUBLESHOOTING NOTE i
 ### What still pauses, and why that is fine
 - **The OS.** iOS (and Android under pressure) suspends or kills hidden pages. Nothing in the page can prevent that.
 - **The resume ladder catches it:** `resumePanel` + `runEndPanel` mean the next ⚡ continues from the interrupted panel and finished panels are never re-rendered ("paused — … continue from panel N"). See §7.
-- **Timer throttling** in hidden tabs (Chrome: 1 s minimum, then once a minute after ~5 minutes hidden) can slow a run, and `requestAnimationFrame` stops entirely — nothing in the generation path depends on rAF, and the app's own 120 s per-image watchdog is a `setTimeout`, so it is delayed rather than fired early. The plugin's internals are the only unknown; a run that stalls in the background simply resumes on the next ⚡.
+- **Timer throttling** in hidden tabs (Chrome: 1 s minimum, then once a minute after ~5 minutes hidden) can slow a run, and `requestAnimationFrame` stops entirely — nothing in the generation path depends on rAF, and the app's own 120 s per-image watchdog is a `setTimeout`, so it is delayed rather than fired early. The plugin's internals are the only unknown; a run that stalls in the background simply resumes on the next ⚡. **§20 (`comicGen.keepAwake`) is the setting that removes this throttle altogether** — it is the browser-level half of the same problem, and it is off by default.
 - **Images rendered while hidden** sit in `panelImages` (JS) until the IO fires on return, so panels appear correctly when the author comes back.
 
 ### Testing it
 - Fake the state, don't leave the tab: `Object.defineProperty(document, 'hidden', {configurable: true, get: () => true})`, dispatch `new Event('visibilitychange')`, then `delete document.hidden`.
 - Pair that with a stubbed `root.generateImage` (a promise that never settles, with a `.stop()` that increments a counter) and `generateSinglePanel(i, {pos: 'x', neg: ''})` — the `runOverride` path skips `buildPanelPrompt` and the empty-panel `skipped` branch, and deletes `promptHistoryRuns[i]`, so the whole render/abort machinery runs with nothing persisted.
 - Park storage first anyway (`devtests/park.js`); the pref key itself is created by the toggle, and a restore removes it (absent = ON, so the default is what the author wants).
+
+## 20. Keep-awake: the silent audio preference (2026.09.26.6)
+
+**The browser-level half of the background problem.** §19 stops the *app* pausing a run when the tab is hidden; this stops the *browser* throttling the page. Full research, the source citations and the gotchas are in `DEV-NOTES.md` BATCH 2026.09.26.6 — this section is the reference for the code.
+
+### The one fact that makes it work
+
+A page that is **playing audio** is exempt from background-timer throttling in both engines — and each engine tests that differently:
+
+| Engine | Test | Where |
+|---|---|---|
+| Firefox | `TimeoutManager::IsActive()` → `mGlobalObject.IsPlayingAudio()` → **any `AudioContext` in the window with `state === "running"`** (level irrelevant), or audible media via `AudioChannelService::IsWindowActive()` | `dom/base/TimeoutManager.cpp`, `dom/base/nsGlobalWindowInner.cpp` |
+| Chromium | the page “has made noises in the past 30 seconds … a silent audio track doesn't count”; for Web Audio that is `IsAudible(renderedData) { return energy > 0; }` — **any non-zero sample** | `developer.chrome.com/blog/timer-throttling-in-chrome-88`, `third_party/blink/renderer/modules/webaudio/audio_context.cc` |
+
+So the implementation is a Web Audio oscillator, and **`KEEP_AWAKE_GAIN` must never be `0`** — exact silence fails Chromium's test. It is `0.0001` (−80 dBFS): inaudible, but a real non-zero signal.
+
+### The code (all exported on `window`)
+
+- `KEEP_AWAKE_KEY` = `comicGen.keepAwake` (browser pref, **default OFF**, never in project files), `KEEP_AWAKE_GAIN`, `let keepAwakePref` / `keepAwakeCtx` / `keepAwakeOsc` / `keepAwakeArmed` — beside `applyBgGenerate`.
+- `startKeepAwake()` builds `AudioContext` → `OscillatorNode` (220 Hz, sine) → `GainNode(KEEP_AWAKE_GAIN)` → destination, starts it, and calls `keepAwakeResume()` if the context is not yet running. `stopKeepAwake()` stops/disconnects the oscillator and closes the context.
+- `keepAwakeRunning()` / `keepAwakeStateText()` (`off` | `waiting` | `starting` | `running` | `idle`) / `updateKeepAwakeState()` (writes `#keepAwakeState`, the small `.pref-state` line in the preference row) / `setKeepAwakeStatus(running, onlyIfKeepAwakeMessage)` (the status line).
+- `keepAwakeArm()` / `keepAwakeUnarm()` / `keepAwakeGestureTry()` — the autoplay ladder: a capture-phase `pointerdown`/`keydown`/`touchstart` listener retries the start at the first real gesture and disarms itself on success. **`AudioContext` must never be created before a gesture**, or Firefox logs an autoplay-blocked warning on every load; that is why the boot block only arms.
+- `keepAwakeKick()` on `visibilitychange` + `pageshow`: resumes a suspended context, re-arms a missing one.
+- `applyKeepAwake(on)` — the pref setter (write the key, mirror the checkbox, start/stop, status message); `onPrefKeepAwakeChange()` is the inline handler.
+- Markup: a third `check-label` row in **Edit → Preferences → Generation** with the `#keepAwakeState` span inside it.
+
+### Testing it
+
+- `window.applyKeepAwake(true)` from `page_eval` is **not** a user gesture, so expect `starting` first and `running` a moment later (sticky activation usually lets the resume through). Via a real click it is `running` immediately. `G14:76`/`G14:77` in `devtests/smoke.page.js` cover both directions and are happy with either.
+- The preference key is created by the toggle, so park/restore first (`devtests/park.js`) — a restore removes it, which is the correct end state (absent = off).
+- Hidden-tab measurement: `devtests/keepawake-probe.page.js` (see `devtests/README.md`); its samples live in `sessionStorage` so the editor's reload-on-Save cannot destroy them.
 
 ## DOC LAYOUT (2026.09.23.6)
 
