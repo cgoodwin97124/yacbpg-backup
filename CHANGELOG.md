@@ -4,6 +4,13 @@
 Version history, newest first. The Help → About panel (index.html) fetches and parses THIS file at runtime.
 Entry format: `## <ver> — <date> — <title>` followed by `- <item>` bullet lines.
 
+## 2026.09.26.3 — 2026-09-26 — 🗺️ A refactor plan you can read: the functionality map, the road map, UI ideas — and a form for the questions
+
+- **Your project now has three planning documents in the repo**, written to be read straight through on GitHub. **`FUNCTION-MAP.md`** describes everything the app *does*, capability by capability, with no reference to the interface at all — the data model, pages, panels, generation, seeds, the library, images, history, export, the JSON document, plus the promises the app has to keep. **`REFACTOR-ROADMAP.md`** maps the *current* code — measured, not guessed — explains why it grew tangled, and lays out a six-phase, reversible plan for untangling it, phase by phase, each one ending in something shippable. **`UI-IDEAS.md`** takes the ideas that only make sense once the functionality is mapped: the panel menu pile-up, edit-vs-generate, the accordion maze, selection, a real inspector, progressive disclosure, mobile.
+- **The questions that go with them are a fill-in form.** It has **eight tickets and thirty-one questions**, and every multiple-choice question carries a **recommended** answer, so *"all defaults"* is a perfectly good reply. Your answers are written into the repo's `tickets/` folder from the form itself, and the refactoring is planned from them.
+- **Nothing about the app behaves differently.** The only code change is a small hidden developer overlay — `window.__openRefactorForm()` opens the form full-screen over the page (and `window.openDevForm('src/…html', 'title')` opens any other `src/` document the same way). It has **no menu button**; it exists so the form can be opened from the generator page without a download.
+- **The manual and this changelog record the round**, so a later session can tell that the documents are the plan of record rather than a stray set of files.
+
 ## 2026.09.26.2 — 2026-09-26 — ⟳ Refresh every Basic Description in a multi-panel selection + the whole-selection buttons in Edit → Panel Selection
 
 - **Refresh a whole selection's descriptions at once.** With two or more panels selected, the **⟳ Refresh from library** chip beside a character's or location's **Basic Description** now refills that description in **all of the selected panels in one click**, not just the panel you clicked it in. While several panels are selected the chip's label changes to **⟳ Refresh N panels**, so you can see what a click is about to do.
