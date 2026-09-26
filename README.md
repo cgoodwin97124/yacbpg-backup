@@ -15,6 +15,10 @@ Reading order for a new session:
   the `#embeddedVersion` stamp inside `index.html`.
 - `tickets/` — the author's change-request tickets (T-01 …) with their answers, statuses and implementation notes.
 - `samples/cow-in-field.zip` — the throwaway sample project used for testing. It may be clobbered at any time.
+- `devtests/` — the regression harness: the park/restore protocol, the smoke / generation / fixtures / core
+  suites and how to run them (+ `devtests/shots/`, the visual baseline). **Read `devtests/README.md` before
+  running any test** — every suite mutates the live preview and must park and restore the author's storage.
+- `fixtures/` — known project files (full page, legacy v1, every-legacy-key) for the fixture suite.
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
