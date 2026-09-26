@@ -13,6 +13,12 @@ const fnvOf = (map) => {
 const report = { stamp, steps: [] };
 let parkedMap = null;
 try {
+  await tools.page_refresh({});
+  report.steps.push("reloaded");
+} catch (e) {
+  report.reloadFailed = String((e && e.message) || e).slice(0, 120);
+}
+try {
   const parked = await tools.page_eval({ js: parkBody + "\nreturn window.__park.park();" });
   report.parked = parked.result;
   const dump = await tools.page_eval({ js: "const m={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k!=='__test_backup_v10')m[k]=localStorage.getItem(k);}return m;" });
