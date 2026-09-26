@@ -1134,6 +1134,17 @@ Every panel's header row has a **Palette** select between **Style** and **Size**
 - **Handlers/UI:** `onPanelPaletteChange(i)` (clears that panel's manual prompt override + `schedulePanelSave`, exported on `window`); `resetEverything()` clears every panel's select. The Analysis matrix has `analysisPanelPalette` / `analysisPaletteLabel` / `analysisSetPanelPalette` / `analysisPaletteChip` (`🌈`) / `analysisPaletteEditor`, appended between the style and size chips in `analysisPanelHeader`; its cross-page writes use `collectPanelState` + `savePanelStateShape`, like the style ones.
 - **Tests:** smoke `G7:47` (a palette override changes only that panel's prompt, then resets it), `fixtures` `FX2` (the full-page fixture's panel 4 carries `"palette": "sepia"`; both the saved state and the rendered select are asserted), and `core.test.js`'s default-panel shape check. The screenshot baseline was **regenerated** in .12, because the new control adds a row to every panel header — see `devtests/README.md`.
 
+## 26. Library rename + propagation (2026.09.26.13)
+
+A **✎** button on every Character/Location row in 📚 Library (`renderLibrary` → `.btn-rename-lib`; Action rows get none) calls `openLibraryRename(id)` — the app's `showChoiceDialog` with a `#renameInput` and a live `#renamePreview`, confirm disabled on an empty / unchanged / already-taken name. `applyLibraryRename(id, newName)` is the mutation. Both are exported (`window.openLibraryRename`, `window.applyLibraryRename`).
+
+- **Match rule:** whole-word **and** case-sensitive, via `libraryNameRegex(name)` = `new RegExp('(^|[^A-Za-z0-9_])' + escapeRegExpLiteral(name) + '(?![A-Za-z0-9_])', 'g')`. `replaceWholeWordName` re-emits the captured boundary char (so adjacent matches and the boundary itself survive); `countWholeWordName` counts with `String.match`. Deliberately **no `\b`** (a name whose edge is not a word character still matches) and **no `i`** flag.
+- **Swept fields:** the object's `desc`; and, for every panel on every page whose `sel`/`loc` === `lib:<slug>:<id>`, that item's `base`+`extra` (Character) or `locBase`+`locExtra` (Location) plus the panel's `action`. Not touched: panel titles, page names/summaries, the global keyword fields, other items' descriptions, and `promptHistory` (frozen 🕘 entries). The item is matched **by reference** (`c.sel === ref`), so another item sharing the name is never swept.
+- **State path:** `collectPanelState()` → `sweepRenameAcrossPages(state, slug, id, from, to, true)` → `savePanelStateShape(state)` → `syncRenameFieldsToDom(state.pages[currentPage], slug, id)` (the current page's DOM is written back from the saved state, so the two cannot drift) → `updatePanelSelects()` / `renderLibrary()` / `refreshAllPanelLineDescs()` / `updatePanelSummary()` ×24 / `renderAnalysis()` when the 📊 overlay is open / `schedulePanelSave()`. Cross-page edits follow the `analysisSetPanelStyle` pattern.
+- **Guard:** `libraryNameTaken(objs, id, name)` (trimmed, case-insensitive, self excluded) blocks a duplicate both in the dialog and inside `applyLibraryRename`.
+- **CSS:** `.btn-rename-lib` (+hover), `.rename-row`, `.rename-preview` (+ `.bad`).
+- **Tests:** `devtests/smoke.page.js` group `G17`, checks 84–88 (dialog preview + block, whole-word/case sensitivity + scope, slot label + prompt, another page, the library description).
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
