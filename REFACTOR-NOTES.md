@@ -79,8 +79,9 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 - **No rolling per-slot image history** (R-05 5c). 121 KB per image × 3 × 4 slots × 24 panels ≈ 35 MB per page
   is exactly the memory-pressure class that once killed a mobile tab. The need it was meant to serve ("images
   I liked, but the prompts were lost when I edited the library") is met better by a **⤓ Keep**: pin an image
-  and its *resolved* prompt text + seed, so later library edits cannot change what produced it. Design open
-  (in-project list vs a separate browser store; cap around a dozen per project).
+  and its *resolved* prompt text + seed, so later library edits cannot change what produced it. **DECIDED
+  2026-09-26 - kept images live in the project file**, not a separate browser store; the author is fine with
+  bigger exports in exchange for portability. Cap around a dozen per project (a soft warning past that).
 - **Panel ids before undo** (R-04 4d). Position is the only identity today, which is why move/duplicate/reflow
   need so much care. Adding `id` is invisible, backward-compatible (old files simply gain one on load), and is
   the prerequisite for undo, for dragging panels between pages, and for a saner reorder.
@@ -95,7 +96,16 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
     has now, adds the isolation they asked for, and makes the "editing the library changed my panel's prompt"
     class of surprise impossible — panel text is already frozen once seeded, and with a project-owned copy
     there is nothing global left to edit underneath it.
-  - **Status: awaiting the author's decision.** No code until then.
+  - **DECIDED 2026-09-26 - the author took the recommendation above.** Their own words: "The library import
+    function was an attempt to give me reuse." So the catalogue-to-project copy is the part that must stay
+    easy; the project-owned copy is what they actually want. Build it in P2 with `core/schema.js` (a project
+    carries its own `library`; loading an older project seeds it from the browser library the first time).
+- **Character dialogue** (R-08 8b) - **DECIDED 2026-09-26: a configurable number of dialogue lines per panel**,
+  held as text in the project and deliberately **not** rendered into the image. The author's reasoning: "they're
+  intended for the user more than the renderer", and they do not want to guess how many lines anyone needs, so
+  the count is a setting (per panel, default small). Shape: `dialogue: [{ speaker, text }]` on the panel, an
+  editable list in the inspector, a configurable row count, and a read-only rendering in Storyboard / Focus / a
+  future Review mode. Belongs in P2's schema work (a field on the panel) with P6 writing its UI.
 - **Old-file compatibility** (R-04 4a/4b): stamp exports with a format + app version; keep the migration ladder
   for recent shapes only; on import, a file older than the supported ladder gets a clear "this file predates
   the current format, run it through the upgrader" message plus a link, instead of a best-effort guess. The
@@ -103,15 +113,14 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 
 ---
 
-## 4. Open with the author
+## 4. Closed with the author (2026-09-26)
 
-1. **The library** (§3, R-04 4c) — the recommended design above: per-project copies with the browser library as
-   a catalogue. Yes / no / something else?
-2. **Kept images** (R-05 5c) — a **⤓ Keep** that stores the image *and* the exact prompt + seed in the project
-   (so it survives library edits and travels with the file), capped at about a dozen per project. In the
-   project file (bigger exports, portable) or in a separate browser store (lean exports, not portable)?
-3. **Character dialogue** (R-08 8b) — text-only panel dialogue, not rendered into the image. Where should it
-   live: per panel (a "Dialogue" box beside the action prompt), or per panel *per character* (so a panel with
-   three characters can carry three lines)?
+All three questions from round 1 are answered - see section 3 for the decisions and their reasoning.
 
-Answers can come back in any form — the question form, this file, or chat.
+1. **The library** - project-owned, the browser library becomes a catalogue, existing projects seeded on first load.
+2. **Kept images** - in the project file (big exports are fine).
+3. **Character dialogue** - a configurable number of lines per panel, text-only, never rendered.
+
+Nothing is waiting on the author. The next thing that needs them is a **question batch at the end of P0**, which
+will be packaged in the same answer form (`window.__openRefactorForm()`, or a fresh round file) rather than as
+prose here.
