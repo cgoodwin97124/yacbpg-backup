@@ -23,10 +23,11 @@ Reading order for a new session:
 - `fixtures/` — known project files (full page, legacy v1, every-legacy-key) for the fixture suite.
 - `src/core/` — the app's pure-logic modules (`zip.js`, `jsontext.js`, `keywords.js`, `seeds.js`, `prompt.js`,
   `library-core.js`, `schema.js`), loaded by `coreLoad()` at the top of `index.html`. The boot waits for them and a
-  module that cannot load is reported in a bar at the top of the page. Since 2026.09.26.9 four of them are the only
-  copy; `prompt` and `library-core` still keep an in-file fallback, which `devtests/diff-core.js` diffs against
-  until they follow in 2026.09.26.14 (2026.09.26.10 shipped P2 step 1, `src/core/schema.js`, 2026.09.26.11 the
-  import-menu fix, 2026.09.26.12 the per-panel colour palette and 2026.09.26.13 the library rename). `schema.js` (2026.09.26.10) is the first P2 module — the project defaults,
+  module that cannot load is reported in a bar at the top of the page. Since 2026.09.26.14 **every one of them is the
+  only copy** — `zip`/`jsontext`/`keywords`/`seeds` lost their in-file fallbacks in 2026.09.26.9 and
+  `prompt`/`library-core` in 2026.09.26.14, which completes P1's cleanup; `index.html` now only declares the names,
+  so `devtests/diff-core.js` is a guards-only suite (there is no inline half left to diff against). `schema.js`
+  (2026.09.26.10) is the first P2 module — the project defaults,
   `newPanelId`, and the `normalise` / `validate` pair the state layer is built on.
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
