@@ -9,6 +9,16 @@ Other docs in this repo: `AI-NOTES.md` (architecture / state / API reference), `
 (user-facing version history — since 2026.09.23.8 fetched from this repo by Help → About;
 index.html keeps only a tiny `#embeddedVersion` stamp as the offline fallback).
 
+## BATCH 2026.09.26.7 — round 2 of the refactor questions (P2) + the BUG-01 follow-up
+
+Released 2026-09-26 (stamp 2026.09.26.7). Docs and a dev tool only: **the app's behaviour is untouched**. Author, 2026-09-26, verbatim: **"Remind me of what answers you need... I'll give you those, and then let's do the round-2 question batch for P2 as well."**
+
+- **What shipped:** `src/round2-form.html` — seven tickets (25 questions) covering everything P2 (the state layer) needs decided before it can be built: `BUG-01` (the five unanswered questions from the 2026-09-22 perchance error-dialog report), `P2-01` projects becoming first-class (switching between them, what loads at startup, what a Recent entry remembers beyond the project data), `P2-02` the project's own library vs the browser catalogue (one list or two, what an import does to the catalogue, deleting a referenced object), `P2-03` kept images inside the project file (one export or two, whether the browser keeps its own copy, a size warning), `P2-04` old files / version stamps / the upgrader (how far the automatic ladder reaches, what the upgrader hands back, the JSON editor's fate), `P2-05` autosave, a real undo stack and where the GitHub backup points, `P2-06` P2's release cadence and what each release note shows.
+- **How it was built:** the round-1 form (`src/refactor-form.html`) is the shell — CSS, the draft/persist logic, the GitHub Contents-API submit and the markdown ticket writer are reused verbatim; only `FORM_META` and the `TICKETS` data are new (`scratch/p2/round2-data.js` held the data block while it was spliced in). `FORM_META.id` is `yacbpg-round2-2026-09-26`, so the draft key (`questionForm.draft.<id>`) and the sent key cannot collide with round 1's.
+- **Wiring:** `window.__openRound2Form()` sits next to the two existing dev-form openers, `src/round2-form.html` was added to `GH_SRC_FILES`, the `#embeddedVersion` stamp was bumped, the top-of-file doc comment was extended, and a CHANGELOG entry was written (the About panel reads it).
+- **Verified live:** the form opens from the preview, renders 7 tickets / 25 questions (17 selects, 10 checkboxes, 36 text fields), the title and intro come from `FORM_META`, 0 console errors, and a full-page capture + a vision pass confirm the cards are laid out and legible over the app's own overlay.
+- **Not changed:** no app code, no `src/core/*.js`, no suites, no fixtures — and the four suites are unaffected by a docs-only form.
+
 ## BATCH 2026.09.26.6 — keep-awake: a silent Web Audio tone that stops the browser throttling a hidden tab
 
 Released 2026-09-26 (stamp 2026.09.26.6). Author request, verbatim: **“I would like the audio added, even though I use Firefox mostly.  Is there something similar that Firefox uses?”** — greenlighting the “keep awake while working” preference that the same day's PENDING inquiry had offered, and asking whether Firefox has the same lever (it does; the source is quoted below). Logged in `PENDING.md` on receipt (standing rule).
