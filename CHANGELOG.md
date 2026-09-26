@@ -1,3 +1,10 @@
+## 2026.09.26.14 — 2026-09-26 — 🧹 P1 cleanup finished: the last two in-file code copies are gone
+
+- **The plain version:** nothing you can see or do has changed. The app used to carry a duplicate copy of two pieces of its own logic — the bit that assembles a panel's prompt, and the helpers behind the library — inside the page itself, with the module in `src/` loaded on top of it. Those two duplicates are now deleted, so each piece of logic lives in exactly one place. The page is a little smaller, and there is no longer a silently-outdated second copy to trip over later.
+- **What did *not* change:** every button, menu, prompt, save file, import and render behaves exactly as it did in 2026.09.26.13. No setting was added or removed; no project file changed shape.
+- **If a code file ever fails to load:** the app already waits for its seven `src/core/*.js` modules at startup, and a module that cannot load is reported in a bar at the top of the page instead of the app quietly falling back to an old internal copy — which is the point of this cleanup. Press Save, then reload.
+- **Under the hood:** this completes the P1 phase of the refactor plan — the pure logic (zip, the JSON scanner, keywords, seeds, the prompt builder, the library helpers, and the project/page/panel schema) now lives only in `src/core/`. The engineering detail is in the repo's `DEV-NOTES.md` BATCH 2026.09.26.14 and `REFACTOR-NOTES.md`.
+
 ## 2026.09.26.13 — 2026-09-26 — ✎ Rename a library character or location everywhere it is used
 
 - **The plain version:** every saved **Character** and **Location** row in **📚 Library** now has a small **✎** button (between the description box and the red 🗑 button). Click it, type a new name, and the app first shows you exactly what it is about to change — for example *"Bill will replace John in 3 panels — 4 descriptions and 1 action prompt"* — and only changes anything when you press **✎ Rename everywhere**. The name in your library entry, that entry's saved library description, and the Basic Description, the This-panel extra description and the Panel Action Prompt of every panel that uses the item (on every page) all follow the new name.
