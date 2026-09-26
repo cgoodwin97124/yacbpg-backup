@@ -25,6 +25,7 @@ const GROUPS = {
   G14: "preferences, the background-generation gate and keep-awake",
   G15: "panel selection, copy / cut / paste",
   G16: "panel identity (the id on every panel)",
+  G17: "renaming a library character/location and propagating it",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -1069,6 +1070,134 @@ async function run() {
     closeJsonEditor();
     await settle();
     return eqArr([/problem/i.test(status), rawState().pages[1][1].id === idBefore], [true, true], "refused,unchanged :: " + status.slice(0, 70));
+  });
+
+  await t("G17: 84 the ✎ dialog previews the sweep and refuses a duplicate name", async () => {
+    switchPage(1);
+    setPanelCount(4);
+    await settle();
+    window.__smokePrompts = ["RNameAlpha", "The brave RNameAlpha guards the gate."];
+    addLibraryEntryByType("Character");
+    await sleep(250);
+    window.__smokePrompts = ["RCollideAlpha", "A decoy RNameAlpha."];
+    addLibraryEntryByType("Character");
+    await sleep(250);
+    switchMenu("library");
+    await sleep(200);
+    const alpha = libObjs().find((o) => o.name === "RNameAlpha");
+    const rows = [...document.querySelectorAll("#libObjects .lib-row")];
+    const row = rows.find((r) => (r.querySelector("input") || {}).value === "RNameAlpha");
+    if (!alpha || !row) return no("no row for RNameAlpha (" + rows.length + " rows)");
+    const rb = row.querySelector(".btn-rename-lib");
+    if (!rb) return no("no ✎ button on the row");
+    rb.click();
+    await sleep(280);
+    if (!dialogOpen()) return no("rename dialog did not open");
+    const input = $("renameInput");
+    const goBtn = document.querySelector("#choiceBtns button");
+    const setRename = (v) => { input.value = v; input.dispatchEvent(new Event("input", { bubbles: true })); };
+    setRename("RNameBeta");
+    await sleep(150);
+    const goodText = ($("renamePreview") || {}).textContent || "";
+    const goodEnabled = !!goBtn && !goBtn.disabled;
+    setRename("RCollideAlpha");
+    await sleep(150);
+    const clashText = ($("renamePreview") || {}).textContent || "";
+    const clashDisabled = !!goBtn && goBtn.disabled;
+    answer("cancel");
+    await sleep(250);
+    const unchanged = libObjs().some((o) => o.name === "RNameAlpha");
+    return eqArr([goodEnabled, /RNameBeta/.test(goodText) && /replace/i.test(goodText), clashDisabled, /already named/i.test(clashText), unchanged], [true, true, true, true, true], "enabled,preview,blocked,unchanged :: " + goodText);
+  });
+
+  await t("G17: 85 the rename sweeps whole words, case-sensitively, and only that item's fields", async () => {
+    switchPage(1);
+    setPanelCount(4);
+    await settle();
+    const alpha = libObjs().find((o) => o.name === "RNameAlpha");
+    const collide = libObjs().find((o) => o.name === "RCollideAlpha");
+    if (!alpha || !collide) return no("entries missing");
+    setVal("panel-char-select-1-1", "lib:char:" + alpha.id);
+    setVal("panel-char-select-2-1", "lib:char:" + alpha.id);
+    setVal("panel-char-select-1-2", "lib:char:" + collide.id);
+    await settle();
+    setVal("panel-char-base-1-1", "OLD RNameAlpha holds the gate. RNameAlphaX watches. rnamealpha whispers.");
+    setVal("panel-char-extra-1-1", "Extra: RNameAlpha again.");
+    setVal("panel-act-1", "RNameAlpha charges.");
+    setVal("panel-char-base-2-1", "Panel two: RNameAlpha waits.");
+    await settle();
+    const blocked = applyLibraryRename(alpha.id, "RCollideAlpha") === null;
+    const blockedKept = libObjs().some((o) => o.name === "RNameAlpha");
+    const res = applyLibraryRename(alpha.id, "RNameBeta");
+    await sleep(250);
+    const obj = libObjs().find((o) => o.id === alpha.id);
+    return eqArr([
+      blocked, blockedKept,
+      !!res, res && res.stats.descs, res && res.stats.acts, res && res.stats.panels,
+      getVal("panel-char-base-1-1"), getVal("panel-char-extra-1-1"), getVal("panel-act-1"), getVal("panel-char-base-2-1"),
+      getVal("panel-char-base-1-2"), obj && obj.name, obj && obj.desc
+    ], [
+      true, true,
+      true, 3, 1, 2,
+      "OLD RNameBeta holds the gate. RNameAlphaX watches. rnamealpha whispers.",
+      "Extra: RNameBeta again.",
+      "RNameBeta charges.",
+      "Panel two: RNameBeta waits.",
+      "A decoy RNameAlpha.",
+      "RNameBeta",
+      "The brave RNameBeta guards the gate."
+    ], "blocked,counts,fields,decoy,name,desc");
+  });
+
+  await t("G17: 86 the slot label and the composed prompt follow the rename", async () => {
+    const alpha = libObjs().find((o) => o.name === "RNameBeta");
+    const opt = [...$("panel-char-select-1-1").options].find((o) => o.value === "lib:char:" + alpha.id);
+    const label = opt ? opt.textContent.trim() : "(none)";
+    const f = (await buildPanelPrompt(1)).fullPrompt;
+    const betaCount = f.split("RNameBeta").length - 1;
+    const alphaWhole = (f.match(/(^|[^A-Za-z0-9_])RNameAlpha(?![A-Za-z0-9_])/g) || []).length;
+    return eqArr([label, betaCount > 0, alphaWhole], ["RNameBeta", true, 1], "label,prompt,decoyOnly :: label=" + label + " beta=" + betaCount + " alpha=" + alphaWhole);
+  });
+
+  await t("G17: 87 the sweep reaches a panel on another page", async () => {
+    const beforeKeys = pageKeys();
+    addPage();
+    await settle();
+    const newNo = pageKeys().find((k) => !beforeKeys.includes(k));
+    if (!newNo) return no("no new page");
+    const alpha = libObjs().find((o) => o.name === "RNameBeta");
+    setVal("panel-char-select-1-1", "lib:char:" + alpha.id);
+    await settle();
+    setVal("panel-char-base-1-1", "Page two says RNameBeta here.");
+    setVal("panel-act-1", "RNameBeta acts on page two.");
+    await settle();
+    switchPage(1);
+    await settle();
+    const res = applyLibraryRename(alpha.id, "RNameGamma");
+    switchPage(newNo);
+    await settle();
+    const stored = rawState().pages[newNo] && rawState().pages[newNo][1];
+    return eqArr([!!res, res && res.stats.panels >= 1, getVal("panel-char-base-1-1"), getVal("panel-act-1"), stored && stored.action], [true, true, "Page two says RNameGamma here.", "RNameGamma acts on page two.", "RNameGamma acts on page two."], "renamed,panel,page2 base+act+saved");
+  });
+
+  await t("G17: 88 the library description is swept as well", async () => {
+    switchPage(1);
+    switchMenu("library");
+    await settle();
+    const alpha = libObjs().find((o) => o.name === "RNameGamma");
+    if (!alpha) return no("entry missing");
+    const rows = [...document.querySelectorAll("#libObjects .lib-row")];
+    const row = rows.find((r) => (r.querySelector("input") || {}).value === "RNameGamma");
+    if (!row) return no("row missing");
+    const ta = row.querySelector("textarea.lib-desc");
+    ta.value = "Desc mentions RNameGamma once.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(250);
+    const res = applyLibraryRename(alpha.id, "RNameDelta");
+    await sleep(200);
+    const obj = libObjs().find((o) => o.id === alpha.id);
+    const rowAfter = [...document.querySelectorAll("#libObjects .lib-row")].map((r) => (r.querySelector("input") || {}).value);
+    return eqArr([!!res, res && res.libDescChanged, obj && obj.name, obj && obj.desc, rowAfter.includes("RNameDelta")], [true, true, "RNameDelta", "Desc mentions RNameDelta once.", true], "libDesc,name,rendered");
   });
 
   const pass = T.filter((x) => x.ok === true).length;
