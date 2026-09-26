@@ -246,6 +246,11 @@ src/
 
 ### 3.3 P1 — extract the pure logic *(the highest value per unit of risk)*
 
+**STATUS: COMPLETE (2026.09.26.8).** All six steps are extracted and gated by `devtests/diff-core.js` (31 checks,
+0 differences over ~4,500 generated cases). What remains is deleting each in-file copy one release after its
+module has survived a release — `zip`, `jsontext`, `keywords` and `seeds` are eligible from 2026.09.26.9, then
+`prompt` and `library-core`.
+
 Move, in this order, keeping each function's current implementation in `index.html` as a **fallback**:
 
 | Step | Extract to | Notes |
