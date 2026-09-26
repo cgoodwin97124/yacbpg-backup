@@ -62,6 +62,10 @@ author. `DEV-NOTES.md` remains the log for *feature* releases; this file is for 
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26** — the three open decisions were closed by the author (library = project-owned with the browser
+  library as a catalogue; kept images = in the project file; dialogue = a configurable number of text lines per
+  panel). Recorded in §3; §4 now holds no open questions. The roadmap's P2 gained a step for the project-owned
+  library and the kept-image list.
 - **2026-09-26** — created this file; recorded the round-1 answers and the decisions above. `devtests/park.js`
   written and used to park/restore the live preview (`hash 6548bd20`, 21 keys, byte-identical round trip).
 - **2026-09-26 — 2026.09.26.4 shipped** (a feature, not a refactor step): generation keeps running while the
