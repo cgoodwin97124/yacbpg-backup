@@ -789,13 +789,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
 
-### 2026-09-26 — BUG (cosmetic, queued): importing a project can close or re-open the active menu (`switchMenu` is a toggle)
-- **Status:** 🕒 **QUEUED — not greenlit.** Found 2026-09-26 while testing P2 step 1's export round trip (`REFACTOR-NOTES.md` §5); deliberately not fixed inside the refactor step.
-- **Symptom:** after an import or a JSON-editor apply, the drawer menu that was open closes, or one that was closed appears (windowed layout), so the page height jumps by a whole 224 px row. Repro + root cause are in `ISSUES.md` (2026-09-26).
-- **Cause:** `applyImportedSettings` ends with `switchMenu(data.activeMenu)`, and `switchMenu` **toggles** (`openNow = !group.hidden`) instead of setting the menu state.
-- **Why queued, not fixed now:** the fix shifts **5 of the 14 visual baselines** (an open menu is a 224 px row), so it needs its own release with the baseline refreshed in the same release.
-- **Offered fix (for the author to greenlight):** make the import / JSON-apply path set the menu state through a real setter instead of toggling, so the same file always leaves the same menu open.
-
 ### 2026-09-26 — FEATURE (queued): up to three reference images per library object
 - **Status:** 🕒 **QUEUED 2026-09-26** — logged on receipt (answer `P2-02` 2d of the round-2 form); not started. It is a *hook*, not a feature request for now.
 - **Author, 2026-09-26, verbatim:** "Let's build in hooks for the possibility to allow up to three reference images, in case we get Image to Image generation capability or in case the user wants to have an idea of what their characters or locations look like."
@@ -915,6 +908,12 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Also recorded in the top-of-file dev-notes and in AI-NOTES §standings.
 
 ## ✅ DONE — implemented (history, newest first)
+### 2026-09-26 — BUG: importing a project closed or re-opened the active menu (`switchMenu` is a toggle) — ✅ **2026.09.26.11**
+- **Status:** ✅ **DONE 2026.09.26.11.** Author, 2026-09-26, verbatim: **"Go ahead and fix the cosmetic wart."** Logged in QUEUED on discovery (2026-09-26, while testing P2 step 1's export round trip), then moved here.
+- **Symptom:** after an import or a JSON-editor apply the drawer menu flipped — the open menu closed, or one that should have stayed closed appeared — and a file's `menuVisible:false` was over-ridden whenever fullscreen was on.
+- **Cause:** both restore paths called `switchMenu(...)`, which **toggles** (`openNow = !group.hidden`), and `applyMenuFullscreenPref` ran before the file's own visibility was applied.
+- **IMPLEMENTATION (2026.09.26.11):** a new `applyMenu(name)` setter (hide every group, then show the named one with its active button and panel expansion; a blank/unknown name closes everything; exported as `window.applyMenu`), used by `applyImportedSettings` and `jsonApplyDoc`; `applyMenuFullscreenPref(on, section, keepVisibility)` gained `keepVisibility`, which the restore paths set so a file's `menuVisible` survives. The menu buttons keep `switchMenu` and still toggle.
+- **Verified:** smoke `G9:50` was tightened to a **full** export → import → export comparison (the `activeMenu`/`menuVisible` exception removed) and passes; a live park/restore probe drove the real import path four ways (same menu → stays open, `''` → all closed, a different menu → opens, `menuFullscreen:true`+`menuVisible:false` → really hidden); differential **23/0**, core **24/0**, smoke **79/0/4**, generation **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, park hash `bb2bf3c8` byte-identical. **No visual change** — the predicted 5-baseline shift did not occur (`visual-diff` identical to .10). Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.11, `AI-NOTES.md` §24, `REFACTOR-NOTES.md` §2/§5 + running log, `ISSUES.md`, `devtests/README.md`.
 ### 2026-09-26 — FEATURES: batch "⟳ Refresh from library" across a multi-panel selection + the multi-panel buttons inside Edit → Panel Selection
 - **Status:** ✅ **DONE 2026.09.26.2** — logged on receipt as QUEUED (2026-08-13 rule), recon done and the six design questions answered the same day ("Defaults are all correct!"), implemented and verified live on 2026-09-26. See the IMPLEMENTATION bullet below, plus `CHANGELOG.md` 2026.09.26.2 and `DEV-NOTES.md` BATCH 2026.09.26.2.
 - **Author, 2026-09-26, verbatim:** "If multiple panels are selected, and Refresh From Library is clicked, I would like all of the basic descriptions in the selected panels to refresh from the library.  Also, I would like the Edit -> Panel Selection menu to have its own copies of all of the buttons that can affect multiple panels.  Please perform the usual pre-implementation tasks first. Thank you!"
