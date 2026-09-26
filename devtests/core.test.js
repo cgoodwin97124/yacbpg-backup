@@ -52,12 +52,18 @@ function grab(name) {
 const wanted = ["getEffectiveKeywords", "applyPreset", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"];
 const code = wanted.map(grab).join("\n\n");
 
+const moduleBlobs = {};
 async function loadModule(path) {
-  const text = await fs.readTextFile(path);
+  let text = await fs.readTextFile(path);
+  text = text.replace(/from\s+["'](\.\/[^"']+)["']/g, (m, rel) => {
+    const dep = path.replace(/[^/]+$/, "") + rel.slice(2);
+    return 'from "' + (moduleBlobs[dep] || rel) + '"';
+  });
   const url = URL.createObjectURL(new Blob([text], { type: "text/javascript" }));
-  try { return await import(url); } finally { URL.revokeObjectURL(url); }
+  moduleBlobs[path] = url;
+  return import(url);
 }
-const MODULE_PATHS = ["src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js"];
+const MODULE_PATHS = ["src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js"];
 const modules = {};
 const moduleErrors = [];
 for (const p of MODULE_PATHS) {
@@ -310,6 +316,97 @@ if (api.dataUrlToBytes && api.crc32 && api.buildZip && api.unzipEntries && api.j
       if (r.text !== want || !Array.isArray(r.map) || r.map[r.map.length - 1] !== raw.length) bad.push({ raw, got: r.text, want });
     }
     return bad.length ? no(JSON.stringify(bad).slice(0, 200)) : ok(rows.length + " escape rows");
+  });
+}
+
+if (api.normalise && api.validate && api.newPanelId) {
+  await t("newPanelId mints unique, well-formed ids", () => {
+    const ids = new Set();
+    for (let i = 0; i < 5000; i++) ids.add(api.newPanelId());
+    const odd = [...ids].filter((id) => typeof id !== "string" || !/^p-[0-9a-z]+-[0-9a-z]+$/.test(id));
+    return eqArr([ids.size, odd.length], [5000, 0], "5000 unique, well-formed");
+  });
+
+  await t("defaultPanel/defaultPage/defaultProject carry the documented shapes", () => {
+    const p = api.defaultPanel();
+    const page = api.defaultPage(4);
+    const proj = api.defaultProject();
+    return eqArr([
+      Object.keys(p).join(","),
+      p.chars.length, p.protectSlots.join(","), p.promptOverride === null, Array.isArray(p.promptHistory),
+      Object.keys(page).filter((k) => /^\d+$/.test(k)).length, page.panelCountSel, page.panelCountCustom,
+      Object.keys(proj).join(","), proj.currentPage, api.validate(proj).length
+    ], [
+      "id,chars,title,protectSlots,loc,locBase,locExtra,action,seed,imgCount,style,sizeSel,sizeW,sizeH,sameSeed,promptOverride,promptHistory",
+      3, "false,false,false,false", true, true,
+      4, "4", "",
+      "version,projectName,imageSizeSel,imageSizeW,imageSizeH,guidanceScale,imgCountDefault,previewDelay,previewOn,globalPos,globalNeg,nsfw,theme,currentPage,pages", 1, 0
+    ], "panel,page,project");
+  });
+
+  await t("normalise keeps unknown keys and mints the missing ids", () => {
+    const legacy = {
+      version: 1,
+      projectName: "T",
+      pages: { 1: { panelCountSel: "custom", panelCountCustom: "2", 1: { chars: [{ sel: "lib:char:a", base: "b", extra: "e", persist: true }, { sel: "none", base: "", extra: "" }, { sel: "none", base: "", extra: "" }], extras: [{ type: "Action", desc: "d" }], locPersist: false, title: "T" }, 2: { action: "x" } } }
+    };
+    const n = api.normalise(legacy);
+    const flat = api.normalise({ panelCountSel: "4", seed: "5", 1: { action: "a" } });
+    const ids = [n.pages[1][1].id, n.pages[1][2].id];
+    return eqArr([
+      n.version,
+      typeof ids[0], ids[0] !== ids[1],
+      n.pages[1][1].chars[0].persist, n.pages[1][1].chars[0].sel, n.pages[1][1].chars.length,
+      n.pages[1][1].extras.length, n.pages[1][1].locPersist, n.pages[1][1].title,
+      n.pages[1][2].action, n.pages[1].panelCountCustom,
+      Object.keys(flat.pages).join(","), flat.pages[1][1].action, flat.pages[1].seed, flat.currentPage
+    ], [
+      2,
+      "string", true,
+      true, "lib:char:a", 3,
+      1, false, "T",
+      "x", "2",
+      "1", "a", "5", 1
+    ], "legacy,flat");
+  });
+
+  await t("normalise repairs duplicate ids, junk fields and is idempotent", () => {
+    const dupe = { pages: { 1: { 1: { id: "same" }, 2: { id: "same" }, 3: { id: 7, chars: "no", protectSlots: [1, 0], promptOverride: "text", promptHistory: {} }, 4: "junk" }, 2: { 1: { id: "same" } } } };
+    const n = api.normalise(dupe);
+    const ids = [n.pages[1][1].id, n.pages[1][2].id, n.pages[1][3].id, n.pages[2][1].id];
+    return eqArr([
+      ids[0], new Set(ids).size, 4 in n.pages[1], n.pages[1][3].chars.length,
+      n.pages[1][3].protectSlots.join(","), n.pages[1][3].promptOverride === null, Array.isArray(n.pages[1][3].promptHistory),
+      api.validate(n).length,
+      JSON.stringify(api.normalise(n)) === JSON.stringify(api.normalise(api.normalise(n)))
+    ], [
+      "same", 4, false, 3,
+      "true,false,false,false", true, true,
+      0, true
+    ], "ids,repaired,valid,idempotent");
+  });
+
+  await t("normalise folds an out-of-domain panelCountSel into custom", () => {
+    const fold = (v, c) => { const n = api.normalise({ pages: { 1: { panelCountSel: v, panelCountCustom: c } } }).pages[1]; return n.panelCountSel + "/" + n.panelCountCustom; };
+    return eqArr([fold("3", "2"), fold("7", ""), fold("24", "3"), fold("custom", "9"), fold("1", ""), fold("0", ""), fold("abc", ""), fold("", "6")],
+      ["custom/3", "custom/7", "24/3", "custom/9", "1/", "0/", "abc/", "/6"], "panelCountSel");
+  });
+
+  await t("validate reports the structural problems normalise clears", () => {
+    const broken = { pages: { 1: { panelCountSel: "9", 1: { id: "", chars: [], protectSlots: [true] }, 2: { id: "z" } }, 2: { 1: { id: "z", protectSlots: [false, false, false, false] } } } };
+    const msgs = api.validate(broken).map((p) => p.path + " " + p.message);
+    const compact = { pages: { 1: { panelCountSel: "24" } } };
+    for (let i = 1; i <= 24; i++) compact.pages[1][i] = { id: "p-" + i, chars: [{ sel: "none", base: "", extra: "" }, { sel: "none", base: "", extra: "" }, { sel: "none", base: "", extra: "" }], promptOverride: null, promptHistory: [] };
+    const before = api.validate(compact).length;
+    return eqArr([
+      msgs.length, msgs.filter((m) => /panelCountSel/.test(m)).length, msgs.filter((m) => /\.id/.test(m)).length, msgs.filter((m) => /chars/.test(m)).length, msgs.filter((m) => /protectSlots/.test(m)).length,
+      api.validate(null).length,
+      before, api.validate(api.normalise(compact)).length
+    ], [
+      8, 1, 2, 3, 2,
+      1,
+      24, 0
+    ], "broken,compact");
   });
 }
 
