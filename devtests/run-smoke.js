@@ -25,7 +25,7 @@ try {
   parkedMap = dump.result || {};
   await fs.writeTextFile("scratch/p0/parks/park-" + stamp + ".json", JSON.stringify(parkedMap, null, 1));
   await fs.writeTextFile("scratch/p0/last-park.json", JSON.stringify(parkedMap, null, 1));
-  report.parkedHash = fnvOf(parkedMap);
+  report.parkedHash = (parked.result && parked.result.hash) || fnvOf(parkedMap);
   report.parkedKeys = Object.keys(parkedMap).length;
   report.steps.push("parked");
 } catch (e) {
@@ -77,7 +77,7 @@ report.steps.push("restored");
 try { await tools.page_refresh({}); } catch (e) {}
 const ver = await tools.page_eval({ js: FNVSrc + " return { hash: __hash(), keys: Object.keys(__map()).length, strays: Object.keys(__map()).filter(k=>k.startsWith('__')), project: (JSON.parse(localStorage.getItem('comicGen.panelState')||'{}').projectName||null) };" });
 report.afterReload = ver.result;
-report.byteIdentical = !!(parkedMap && ver.result && fnvOf(parkedMap) === ver.result.hash);
+report.byteIdentical = !!(report.parkedHash && ver.result && report.parkedHash === ver.result.hash);
 report.steps.push("verified");
 
 if (results) {
