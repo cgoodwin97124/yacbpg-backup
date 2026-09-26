@@ -42,6 +42,14 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-26 — FEATURE: keep the browser tab awake while the AI helper works (near-silent audio loop, opt-in)
+- **Status:** 🟢 **START NOW 2026-09-26** — the author greenlit it on 2026-09-26 ("I would like the audio added, even though I use Firefox mostly.  Is there something similar that Firefox uses?"). Implementation in progress; this bullet will be updated to ✅ DONE with the version number when it ships.
+- **Author, 2026-09-26, verbatim:** "I would like the audio added, even though I use Firefox mostly.  Is there something similar that Firefox uses? / I was away from the keyboard for a while.  I switched away and back when I got back, but I don't know if that got you the measurements you needed. / I did save, so you can push when ready!"
+- **RELATES TO:** the 2026-09-26 tab-background INQUIRY entry below (same subject — that one measured the throttling and offered this preference; this one builds it).
+- **Why audio (both engines):** Chromium clamps hidden-tab timers (1 Hz, then ~1/min after ~5 hidden minutes) and stops `requestAnimationFrame`, but exempts a tab that is *playing audio*; Firefox clamps hidden-tab timers to ≥ 1 s (`dom.min_background_timeout_value`) and also exempts a tab that is playing audio. A near-silent looping clip is therefore the one lever that keeps a hidden tab — and with it the AI helper's page-level work — at full speed.
+- **Design (proposed, easy to change):** an opt-in per-browser preference `comicGen.keepAwake`, **off by default**, with a checkbox in **Edit → Preferences → Generation** beside the existing background-generation checkbox; the loop starts only from a real user gesture (autoplay policy), is deliberately quiet (volume ≈ 0.005, i.e. inaudible in practice, but *not* muted — a muted element is not counted as audible and would not defeat the throttling), and stops when the preference is unticked.
+- **Measurement note:** the passive probe installed for the INQUIRY entry did not survive the author's save/reload, so the hidden-tab numbers were never read. The redo uses a reload-proof probe (samples kept in `sessionStorage`) so the author can switch away and back whenever convenient.
+
 ### 2026-09-26 — QUESTION: can the helper's own work keep going while the author is on another tab? (plus a possible "keep-awake" preference)
 - **Status:** 🔬 **INQUIRY — answered in chat; the passive probe is installed in the live preview and waits for the author's 30–60 s tab switch.** Nothing about the app changed, so no version bump.
 - **Author, 2026-09-26, verbatim:** "Is there any way your work can continue when I switch to another browser tab?  That's almost as sigh-worthy as the app stopping."
