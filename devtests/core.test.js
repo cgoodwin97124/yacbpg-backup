@@ -337,7 +337,7 @@ if (api.normalise && api.validate && api.newPanelId) {
       Object.keys(page).filter((k) => /^\d+$/.test(k)).length, page.panelCountSel, page.panelCountCustom,
       Object.keys(proj).join(","), proj.currentPage, api.validate(proj).length
     ], [
-      "id,chars,title,protectSlots,loc,locBase,locExtra,action,seed,imgCount,style,sizeSel,sizeW,sizeH,sameSeed,promptOverride,promptHistory",
+      "id,chars,title,protectSlots,loc,locBase,locExtra,action,seed,imgCount,style,palette,sizeSel,sizeW,sizeH,sameSeed,promptOverride,promptHistory",
       3, "false,false,false,false", true, true,
       4, "4", "",
       "version,projectName,imageSizeSel,imageSizeW,imageSizeH,guidanceScale,imgCountDefault,previewDelay,previewOn,globalPos,globalNeg,nsfw,theme,currentPage,pages", 1, 0
