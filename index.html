@@ -25,7 +25,8 @@
                    untangle it, and the interface ideas that follow. Read these before any
                    large restructuring. questions/REFACTOR-ROUND-1.md is the same plan's open
                    questions; src/refactor-form.html is the fill-in version of them, opened
-                   with window.__openRefactorForm() (a dev tool — no menu entry).
+                   with window.__openRefactorForm() (a dev tool — no menu entry). Its round 2 —
+                   the P2 questions — is src/round2-form.html, opened with window.__openRound2Form().
     devtests/ + fixtures/
                    The regression harness (P0, 2026-09-26): park/restore of the author's whole
                    localStorage map, the smoke / generation / fixtures / core suites, the
@@ -1256,7 +1257,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.6 — 2026-09-26 — 🔊 A silent setting that stops the browser slowing this page down in a background tab
+## 2026.09.26.7 — 2026-09-26 — ❓ Round 2 of the refactor questions: what the state layer (P2) needs to know
 - The full version history lives in the project's GitHub repo; open the About section to load it.
 </script>
 
@@ -9170,6 +9171,7 @@ color-scheme:light;
   window.__openDevForm = openDevForm;
   window.__openRefactorForm = function () { return openDevForm('src/refactor-form.html', 'Refactor & UI Planning — answer form'); };
   window.__openQuestionForm = function () { return openDevForm('src/question-form.html', 'Author tickets'); };
+  window.__openRound2Form = function () { return openDevForm('src/round2-form.html', 'Refactor round 2 — the state layer (P2)'); };
   window.closeUserManual = closeUserManual;
   window.deletePanelChar = deletePanelChar;
   window.deletePanelLoc = deletePanelLoc;
@@ -10286,7 +10288,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js'];
 
   async function ghPush() {
     const owner = document.getElementById('ghOwnerInput').value.trim();
