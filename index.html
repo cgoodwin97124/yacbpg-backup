@@ -33,15 +33,17 @@
                    differential suite for the src/core modules, the screenshot baseline and the
                    background-throttling probe. READ devtests/README.md BEFORE running anything —
                    every suite mutates the live preview and must park and restore it.
-    src/core/*.js  P1's extracted pure logic — all six (zip, jsontext, keywords, seeds, prompt,
-                   library-core). index.html loads each with coreLoad(name, path, apply) —
-                   import('./src/core/x.js') — and swaps the declared name (a function
-                   declaration or a let) for the module's when it loads. The boot waits for all
-                   six (window.appReady) and a module that fails to load is reported in a bar at
-                   the top of the page. The four that had survived a release (zip, jsontext,
-                   keywords, seeds) lost their in-file copy in 2026.09.26.9; prompt and
-                   library-core keep theirs as the fallback until 2026.09.26.10, and those two
-                   are the ones devtests/diff-core.js still compares module-against-inline.
+    src/core/*.js  P1/P2's extracted pure logic — zip, jsontext, keywords, seeds, prompt,
+                   library-core, and (2026.09.26.10) schema. index.html loads each with
+                   coreLoad(name, path, apply) — import('./src/core/x.js') — and swaps the
+                   declared name (a function declaration or a let) for the module's when it
+                   loads. The boot waits for all seven (window.appReady) and a module that fails
+                   to load is reported in a bar at the top of the page. The four that had
+                   survived a release (zip, jsontext, keywords, seeds) lost their in-file copy in
+                   2026.09.26.9; prompt and library-core keep theirs as the fallback until
+                   2026.09.26.11, and those two are the ones devtests/diff-core.js still compares
+                   module-against-inline. schema.js arrived in 2026.09.26.10: it owns the
+                   project/page/panel shape and mints the id every panel now carries.
                    Never edit only one side.
 
   READ (public repo, no token needed):
@@ -1260,7 +1262,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.9 — 2026-09-26 — 🧹 Refactor step 3: the four in-file copies are deleted (no behaviour change)
+## 2026.09.26.10 — 2026-09-26 — 🪪 Refactor step 4: every panel gets a stable identity
 - The full version history lives in the project's GitHub repo; open the About section to load it.
 </script>
 
@@ -1271,7 +1273,7 @@ color-scheme:light;
   const CHAR_KEYS = ["none", "hero", "villain", "sidekick", "civilian"];
   const LOC_KEYS = ["none", "city", "lab", "hideout", "rooftop"];
 
-  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null };
+  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null, schema: null };
   const coreLoads = [];
   const coreLoad = (name, path, apply) => {
     coreLoads.push(new Promise((resolve) => {
@@ -1334,6 +1336,15 @@ color-scheme:light;
     if (m.extractLibraryItems) extractLibraryItems = m.extractLibraryItems;
     if (m.libRefEntry) libRefEntry = m.libRefEntry;
     if (m.libRefDesc) libRefDesc = m.libRefDesc;
+  });
+  let newPanelId, defaultPanel, defaultPage, defaultProject, normaliseProject, validateProject;
+  coreLoad('schema', './src/core/schema.js', (m) => {
+    if (m.newPanelId) newPanelId = m.newPanelId;
+    if (m.defaultPanel) defaultPanel = m.defaultPanel;
+    if (m.defaultPage) defaultPage = m.defaultPage;
+    if (m.defaultProject) defaultProject = m.defaultProject;
+    if (m.normalise) normaliseProject = m.normalise;
+    if (m.validate) validateProject = m.validate;
   });
   const coreReady = Promise.all(coreLoads).then((failed) => failed.filter(Boolean));
 
@@ -3388,7 +3399,14 @@ color-scheme:light;
       const ps = document.getElementById('panel-seed-' + i);
       const ic = document.getElementById('panel-img-count-' + i);
       const stSel = document.getElementById('panel-style-' + i);
+      const card = document.getElementById('panel-card-' + i);
+      let panelId = card ? String(card.dataset.panelId || '') : '';
+      if (!panelId) {
+        panelId = newPanelId();
+        if (card) card.dataset.panelId = panelId;
+      }
       page[i] = {
+        id: panelId,
         chars,
         title: ti ? ti.value : '',
         protectSlots: [isSlotProtected(i, 1), isSlotProtected(i, 2), isSlotProtected(i, 3), isSlotProtected(i, 4)],
@@ -3866,7 +3884,7 @@ color-scheme:light;
   }
 
   function restorePanelState() {
-    const raw = readPanelState();
+    const raw = normaliseProject(readPanelState());
     const st = normalizeState(raw);
     currentPage = st.currentPage;
     const pnInput = document.getElementById('projectNameInput');
@@ -3908,6 +3926,11 @@ color-scheme:light;
     for (let i = 1; i <= 24; i++) {
       const p = page[i];
       if (!p) continue;
+      const pcard = document.getElementById('panel-card-' + i);
+      if (pcard) {
+        if (!p.id) p.id = newPanelId();
+        pcard.dataset.panelId = p.id;
+      }
       for (let s = 1; s <= 3; s++) {
         const info = p.chars && p.chars[s - 1];
         const sel = document.getElementById('panel-char-select-' + i + '-' + s);
@@ -4967,7 +4990,11 @@ color-scheme:light;
     const wasCut = panelClipboardCut;
     const entries = [];
     for (let p = 1; p <= total; p++) {
-      if (p === i) for (const e of panelClipboard) entries.push({ panel: JSON.parse(JSON.stringify(e.panel)), img: e.img ? JSON.parse(JSON.stringify(e.img)) : null });
+      if (p === i) for (const e of panelClipboard) {
+        const copy = JSON.parse(JSON.stringify(e.panel));
+        copy.id = newPanelId();
+        entries.push({ panel: copy, img: e.img ? JSON.parse(JSON.stringify(e.img)) : null });
+      }
       entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
     }
     const res = cascadePageSequence(currentPage, entries);
@@ -5090,7 +5117,11 @@ color-scheme:light;
     const entries = [];
     for (let p = 1; p <= total; p++) {
       entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
-      if (selSet.has(p)) entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: null });
+      if (selSet.has(p)) {
+        const dup = JSON.parse(JSON.stringify(page[p] || {}));
+        dup.id = newPanelId();
+        entries.push({ panel: dup, img: null });
+      }
     }
     const res = cascadePageSequence(currentPage, entries);
     clearPanelSelection();
@@ -5607,6 +5638,7 @@ color-scheme:light;
         return;
       }
       const copy = JSON.parse(JSON.stringify(page[i]));
+      copy.id = newPanelId();
       clearPanelSelection();
       const res = reflowInsertOnFullPage(i, copy, null);
       if (statusEl) statusEl.textContent = 'Panel ' + i + ' duplicated — the copy is now Panel ' + res.insertPos + ' on ' + label + '. ' + res.moves + ' panel' + (res.moves === 1 ? '' : 's') + ' reflowed' + (res.createdPage ? ' and Page ' + res.createdPage + ' created.' : '.');
@@ -5629,6 +5661,7 @@ color-scheme:light;
       const src = order[p - 1];
       if (page[src] !== undefined) newPage[p] = JSON.parse(JSON.stringify(page[src]));
     }
+    if (newPage[copyPos]) newPage[copyPos].id = newPanelId();
     state.pages[currentPage] = newPage;
     savePanelStateShape(state);
     clearPanelSelection();
@@ -7246,7 +7279,7 @@ color-scheme:light;
     const data = {
       version: 2,
       exportedAt: new Date().toISOString(),
-      settings: collectPanelState(),
+      settings: normaliseProject(collectPanelState()),
       preset: (() => { try { return JSON.parse(localStorage.getItem('comicGen.preset')); } catch (e) { return null; } })(),
       libObjects: loadLibraryObjects(),
       layoutMode: document.body.classList.contains('side-mode') ? 'side' : 'top',
@@ -7676,6 +7709,7 @@ color-scheme:light;
     }
     if (data.settings) {
       scrubMinusOneSeeds(data.settings);
+      data.settings = normaliseProject(data.settings);
       try { localStorage.setItem(PANEL_STATE_KEY, JSON.stringify(data.settings)); } catch (e) {}
       buildPanelGrid();
     }
@@ -10020,7 +10054,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js'];
 
   function extractTemplateSource(html) {
     const key = '"outputTemplate":"';
