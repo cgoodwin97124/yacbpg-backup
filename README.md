@@ -25,8 +25,8 @@ Reading order for a new session:
   `library-core.js`, `schema.js`), loaded by `coreLoad()` at the top of `index.html`. The boot waits for them and a
   module that cannot load is reported in a bar at the top of the page. Since 2026.09.26.9 four of them are the only
   copy; `prompt` and `library-core` still keep an in-file fallback, which `devtests/diff-core.js` diffs against
-  until they follow in 2026.09.26.13 (2026.09.26.10 shipped P2 step 1, `src/core/schema.js`, 2026.09.26.11 the
-  import-menu fix and 2026.09.26.12 the per-panel colour palette). `schema.js` (2026.09.26.10) is the first P2 module — the project defaults,
+  until they follow in 2026.09.26.14 (2026.09.26.10 shipped P2 step 1, `src/core/schema.js`, 2026.09.26.11 the
+  import-menu fix, 2026.09.26.12 the per-panel colour palette and 2026.09.26.13 the library rename). `schema.js` (2026.09.26.10) is the first P2 module — the project defaults,
   `newPanelId`, and the `normalise` / `validate` pair the state layer is built on.
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
