@@ -49,7 +49,7 @@ function grab(name) {
   return lines.slice(i, body + 1).join("\n");
 }
 
-const wanted = ["getEffectiveKeywords", "applyPreset", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"];
+const wanted = ["getEffectiveKeywords", "applyPreset"];
 const code = wanted.map(grab).join("\n\n");
 
 const moduleBlobs = {};
@@ -100,7 +100,7 @@ const sandbox = Object.assign({ window: {}, document: fakeDoc(), localStorage: {
 let api = { modules };
 const missingAtBoot = missing.slice();
 try {
-  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { getEffectiveKeywords, applyPreset, composePanelPrompt, LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, normalizeLibType, extractLibraryItems, libRefEntry, libRefDesc }; }");
+  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { getEffectiveKeywords, applyPreset }; }");
   api = Object.assign(factory(sandbox), modules);
 } catch (e) {
   T.push({ n: "extraction", ok: false, d: "could not build the sandbox: " + e.message });
