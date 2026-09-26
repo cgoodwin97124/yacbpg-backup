@@ -340,8 +340,29 @@ if (api.normalise && api.validate && api.newPanelId) {
       "id,chars,title,protectSlots,loc,locBase,locExtra,action,seed,imgCount,style,palette,sizeSel,sizeW,sizeH,sameSeed,promptOverride,promptHistory",
       3, "false,false,false,false", true, true,
       4, "4", "",
-      "version,projectName,imageSizeSel,imageSizeW,imageSizeH,guidanceScale,imgCountDefault,previewDelay,previewOn,globalPos,globalNeg,nsfw,theme,currentPage,pages", 1, 0
+      "version,projectName,imageSizeSel,imageSizeW,imageSizeH,guidanceScale,imgCountDefault,previewDelay,previewOn,globalPos,globalNeg,nsfw,theme,currentPage,pages,library", 1, 0
     ], "panel,page,project");
+  });
+
+  await t("normaliseLibrary / normalise handle the project's own library", () => {
+    const norm = api.normalise({ projectName: "T", pages: { 1: { panelCountSel: "4" } }, library: [
+      { id: "loc-1", name: "L", desc: "d" },
+      { id: "act-2", type: "Action", name: "A", desc: "" },
+      { id: "loc-1", name: "dupe" },
+      { id: "zzz", type: "Bogus", name: "B" },
+      { name: "no id" },
+      null,
+      "junk",
+      { id: "char-3", name: 5, desc: 7 }
+    ] });
+    const seeded = api.normalise({ projectName: "T", pages: { 1: { panelCountSel: "4" } } });
+    const bad = api.validate({ pages: { 1: { panelCountSel: "4" } }, library: { nope: 1 } }).length;
+    const badEntry = api.validate({ pages: { 1: { panelCountSel: "4" } }, library: [{ name: "x" }] }).length;
+    const okProj = api.validate({ pages: { 1: { panelCountSel: "4" } }, library: [{ id: "c-1", name: "x" }] }).length;
+    return eqArr([
+      norm.library.length, norm.library.map((o) => o.type).join(","), norm.library[3].name, JSON.stringify(norm.library[3].desc),
+      "library" in seeded, bad, badEntry, okProj
+    ], [4, "Location,Action,Character,Character", "5", "\"7\"", false, 1, 1, 0], "library");
   });
 
   await t("normalise keeps unknown keys and mints the missing ids", () => {
