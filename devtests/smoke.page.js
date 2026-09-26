@@ -23,6 +23,8 @@ const GROUPS = {
   G12: "views, layout, theme and the manual",
   G13: "destructive confirmations and protection flags",
   G14: "preferences, the background-generation gate and keep-awake",
+  G15: "panel selection, copy / cut / paste",
+  G16: "panel identity (the id on every panel)",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -573,7 +575,7 @@ async function run() {
     return eqArr([sig === "PK\u0003\u0004", names >= 2, inflate === "stored ok" || inflate === "deflated ok, name=P0 Project" || inflate === "no-decompressionstream"], [true, true, true], "sig=" + JSON.stringify(sig) + " settingsEntries=" + names + " " + inflate);
   });
 
-  await t("G9: 50 a fresh export imports back to the identical project", async () => {
+  await t("G9: 50 a fresh export imports back to the identical project (the two transient menu fields excepted)", async () => {
     captureDownloads();
     exportSettings();
     await sleep(600);
@@ -604,12 +606,24 @@ async function run() {
     cap.restore();
     let same = false;
     let back = null;
+    let diffWhy = "";
+    const uiToggleFields = ["activeMenu", "menuVisible"];
+    const stripUi = (o) => { const c = { ...o, exportedAt: 0 }; for (const k of uiToggleFields) delete c[k]; return canon(c); };
     try {
       back = JSON.parse(await cap.blobs[cap.blobs.length - 1].text());
-      same = canon(back.settings) === want && canon({ ...back, exportedAt: 0 }) === canon({ ...doc, exportedAt: 0 });
-    } catch (e) {}
+      same = canon(back.settings) === want && stripUi(back) === stripUi(doc);
+      if (!same) {
+        const bits = [];
+        for (const k of Object.keys({ ...doc, ...back })) {
+          if (k === "settings" || k === "exportedAt" || uiToggleFields.includes(k)) continue;
+          if (canon(doc[k]) !== canon(back[k])) bits.push(k + "=" + canon(doc[k]) + ">" + canon(back[k]));
+        }
+        if (canon(back.settings) !== want) bits.unshift("settings differ");
+        diffWhy = bits.join(" ");
+      }
+    } catch (e) { diffWhy = "read failed: " + e.message; }
     const nameOk = getVal("projectNameInput") === doc.settings.projectName;
-    return eqArr([changed, same, nameOk], [true, true, true], "changed,exportIdempotent,nameRestored panels=" + cardsShown() + " via " + clicked);
+    return eqArr([changed, same, nameOk], [true, true, true], "changed,exportIdempotent,nameRestored panels=" + cardsShown() + " via " + clicked + (diffWhy ? " | " + diffWhy : ""));
   });
 
   await t("G10: 51 openJsonEditor shows the project as JSON", async () => {
@@ -940,6 +954,107 @@ async function run() {
 
   await t("MAN: 75 ghTest and ghPush against the real repo", () => {
     return { skip: "network + a live token; verified by hand at the end of every release instead" };
+  });
+
+  await t("G16: 78 every panel carries a unique id and the DOM agrees with the save", async () => {
+    switchPage(1);
+    setPanelCount(6);
+    await settle();
+    const p1 = rawState().pages[1];
+    const ids = [1, 2, 3, 4, 5, 6].map((i) => (p1[i] || {}).id);
+    const dom = [1, 2, 3, 4, 5, 6].map((i) => { const c = $("panel-card-" + i); return c ? c.dataset.panelId : null; });
+    const shaped = ids.every((x) => typeof x === "string" && /^p-[0-9a-z]+-[0-9a-z]+$/.test(x));
+    const unique = new Set(ids).size === ids.length;
+    return eqArr([shaped, unique, dom.join() === ids.join()], [true, true, true], "ids " + ids.map((x) => String(x).slice(0, 9)).join(","));
+  });
+
+  await t("G16: 79 an id survives a grid rebuild and a duplicate gets a fresh one", async () => {
+    switchPage(1);
+    setPanelCount(6);
+    await settle();
+    const id1 = rawState().pages[1][1].id;
+    buildPanelGrid();
+    await settle();
+    const domAfterRebuild = $("panel-card-1").dataset.panelId;
+    setVal("panel-title-1", "ID-KEEP");
+    await settle();
+    const savedAfterRebuild = rawState().pages[1][1].id;
+    duplicatePanel(1);
+    await settle();
+    const p1 = rawState().pages[1];
+    const ids = [1, 2, 3].map((i) => p1[i].id);
+    return eqArr([domAfterRebuild === id1, savedAfterRebuild === id1, ids[0] === id1, ids[1] !== id1, typeof ids[1] === "string", new Set(ids).size], [true, true, true, true, true, 3], "kept,domRebuild,savedRebuild,originalKept,copyIsNew,threeDistinct");
+  });
+
+  await t("G16: 80 adding a panel mints an id and leaves its neighbours alone", async () => {
+    switchPage(1);
+    setPanelCount(6);
+    await settle();
+    const before = [1, 2, 3, 4].map((i) => rawState().pages[1][i].id);
+    addPanel(2);
+    await settle();
+    const p1 = rawState().pages[1];
+    const after = [1, 2, 3, 4].map((i) => p1[i].id);
+    return eqArr([after[0] === before[0], after[1] === before[1], after[2] !== before[2], !before.includes(after[2]), after[3] === before[2], typeof after[2] === "string" && after[2].length > 4], [true, true, true, true, true, true], "neighboursKept,insertIsNew,shifted");
+  });
+
+  await t("G16: 81 an export carries every id", async () => {
+    switchPage(1);
+    await settle();
+    captureDownloads();
+    exportSettings();
+    await settle();
+    cap.restore();
+    const doc = JSON.parse(await cap.blobs[0].text());
+    const ids = [];
+    for (const pg in doc.settings.pages) for (let i = 1; i <= 24; i++) { const p = doc.settings.pages[pg][i]; if (p) ids.push(p.id); }
+    const live = rawState().pages[1][1].id;
+    return eqArr([ids.length > 0, ids.every((x) => typeof x === "string" && x.length > 4), new Set(ids).size === ids.length, ids.includes(live)], [true, true, true, true], ids.length + " ids in the export");
+  });
+
+  await t("G16: 82 ids survive a switch away from the page and back", async () => {
+    switchPage(1);
+    setPanelCount(4);
+    await settle();
+    const before = [1, 2, 3, 4].map((i) => rawState().pages[1][i].id);
+    const pagesBefore = pageKeys(rawState()).length;
+    addPage();
+    await settle();
+    const created = rawState().currentPage;
+    const pages = pageKeys(rawState()).length;
+    switchPage(1);
+    await settle();
+    const after = [1, 2, 3, 4].map((i) => rawState().pages[1][i].id);
+    switchPage(created);
+    await settle();
+    deletePage(true);
+    switchPage(1);
+    await settle();
+    return eqArr([pages > pagesBefore, before.join() === after.join(), pageKeys(rawState()).length === pagesBefore], [true, true, true], "pagesSeen,stableBackOnPage1,cleanedUp");
+  });
+
+  await t("G16: 83 the panel id is a locked field in the project JSON editor", async () => {
+    switchPage(1);
+    await settle();
+    const idBefore = rawState().pages[1][1].id;
+    openJsonEditor();
+    await sleep(600);
+    const area = $("jsonArea");
+    const txt = area.value;
+    const mine = (txt.match(/"id": "p-[0-9a-z-]+"/) || [])[0];
+    if (!mine) { closeJsonEditor(); return no("no panel id in the document"); }
+    area.value = txt.replace(mine, '"id": "hacked-id"');
+    area.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(300);
+    jsonEditorApply();
+    await sleep(400);
+    const status = ($("jsonStatusEl") || {}).textContent || "";
+    area.value = txt;
+    area.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(200);
+    closeJsonEditor();
+    await settle();
+    return eqArr([/problem/i.test(status), rawState().pages[1][1].id === idBefore], [true, true], "refused,unchanged :: " + status.slice(0, 70));
   });
 
   const pass = T.filter((x) => x.ok === true).length;
