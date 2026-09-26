@@ -10,7 +10,7 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
-## 2026-09-26 — Importing a project can close or re-open the active menu (`switchMenu` is a toggle) — found in development, deliberately NOT fixed yet
+## 2026-09-26 — Importing a project could close or re-open the active menu (`switchMenu` is a toggle) — FIXED 2026.09.26.11
 - **Symptom (cosmetic, windowed layout, after an import or a JSON-editor apply):** a drawer menu that was open
   closes, or one that was closed appears — so the page height jumps by a whole 224 px menu row. Invisible in normal
   use unless you are watching the menu; it surfaced because `devtests/visual-diff.js` and the smoke round-trip
@@ -33,6 +33,16 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
   compared key actually differs. `visual-diff.js`'s `grid` subject no longer calls `switchMenu('file')` — it
   **closes whatever menu is open**, which is what fixed the long-standing "224 CSS px" baseline drift (the capture
   height had been depending on the parked menu state and the session order, not on any code change).
+- **FIXED 2026.09.26.11.** A new **`applyMenu(name)`** setter (exported on `window`) replaces `switchMenu` on the two
+  restore paths (`applyImportedSettings`, `jsonApplyDoc`): it hides every group, then shows the named one with its
+  active button and panel expansion, and a blank/unknown name closes everything. `applyMenuFullscreenPref` gained a
+  `keepVisibility` parameter, passed `true` by the restore paths so a file's own `menuVisible` is honoured. The menu
+  **buttons still call `switchMenu` and still toggle**. `G9:50`'s exception was removed — the export → import →
+  export comparison is now full and passes. `applyMenu` was verified directly (`set`, `''`, a bogus name) and the
+  real import path was driven four ways (same menu → stays open; `''` → all closed; different menu → opens;
+  `menuFullscreen:true`+`menuVisible:false` → really hidden). **The predicted 5-baseline shift did not happen** —
+  `visual-diff` is identical to 2026.09.26.10, because the `grid` subject closes any open menu before the first
+  capture, so the post-import menu state reaches no screenshot. See `DEV-NOTES.md` BATCH 2026.09.26.11.
 
 ## 2026-09-24 — AI-worker test protocol DESTROYED the author's live project + library (unrecoverable)
 - **Symptom:** while testing the 2026.09.24.1 "Generated Prompt" feature, the preview's `comicGen.panelState` ended up
