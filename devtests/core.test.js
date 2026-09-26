@@ -49,7 +49,7 @@ function grab(name) {
   return lines.slice(i, body + 1).join("\n");
 }
 
-const wanted = ["crcTable", "crc32", "initCrcTable", "buildZip", "inflateRawDeflate", "unzipEntries", "scrubMinusOneSeeds", "getEffectiveKeywords", "JSON_NUM_RE", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "applyPreset", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES"];
+const wanted = ["crcTable", "crc32", "initCrcTable", "buildZip", "inflateRawDeflate", "unzipEntries", "scrubMinusOneSeeds", "composeKeywords", "getEffectiveKeywords", "JSON_NUM_RE", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "applyPreset", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES"];
 const code = wanted.map(grab).join("\n\n");
 
 const T = [];
@@ -82,7 +82,7 @@ const sandbox = { window: {}, document: fakeDoc(), localStorage: { getItem: () =
 let api = {};
 const missingAtBoot = missing.slice();
 try {
-  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { crc32, initCrcTable, buildZip, inflateRawDeflate, unzipEntries, scrubMinusOneSeeds, getEffectiveKeywords, jsonParse, jsonTokenize, ART_STYLES, COLOR_PALETTES, applyPreset, DEFAULT_POS, DEFAULT_NEGATIVES }; }");
+  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { crc32, initCrcTable, buildZip, inflateRawDeflate, unzipEntries, scrubMinusOneSeeds, composeKeywords, getEffectiveKeywords, jsonParse, jsonTokenize, ART_STYLES, COLOR_PALETTES, applyPreset, DEFAULT_POS, DEFAULT_NEGATIVES }; }");
   api = factory(sandbox);
 } catch (e) {
   T.push({ n: "extraction", ok: false, d: "could not build the sandbox: " + e.message });
