@@ -100,7 +100,8 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   screenshots against the previous build came back identical. **Fallback deletion:** **done 2026.09.26.9** for `zip`,
   `jsontext`, `keywords` and `seeds` (released 2026.09.26.9 — the declarations stay, the boot waits on `coreReady`, and a
   module that cannot load gets a bar at the top of the page); `prompt` and `library-core` follow one release later —
-  now scheduled for **2026.09.26.11**, because 2026.09.26.10 shipped P2 step 1 instead — after which
+  now scheduled for **2026.09.26.12**, because 2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the
+  import-menu fix — after which
   `devtests/diff-core.js` keeps only its module/surface guards.
 - **P2 — a real state layer. Step 1 DONE (2026.09.26.10).** Panel identity and `core/schema.js` shipped: every panel
   now carries a stable `id` (minted on create / duplicate / paste / import and repaired and deduped by `normalise`),
@@ -109,9 +110,27 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   field. `normalise` is conservative by rule — **it never deletes a key it does not understand** — and idempotent;
   the one behaviour change is the documented `panelCountSel` fold. Next: §3.4 step 2b (the project owns its library
   and kept images) and then the store in step 3.
+- **Fixed outside a refactor step (2026.09.26.11):** the import-path menu toggle — `applyImportedSettings` and
+  `jsonApplyDoc` called `switchMenu`, which *toggles*, so a restored file could close the menu it said to open (and
+  its `menuVisible` could be over-ridden). They now call a real setter, `applyMenu(name)`; the buttons keep the
+  toggle, and smoke `G9:50` was tightened to a full export → import → export comparison to pin it (§5).
 - **In parallel:** feature releases keep shipping (R-01 1b). 2026.09.26.4 is the first of the refactor era.
 
 ### Running log
+- **2026-09-26 — the import-path menu toggle fixed, released as 2026.09.26.11.** `applyImportedSettings` and
+  `jsonApplyDoc` ended with `switchMenu(...)`, which **toggles** (`openNow = !group.hidden`), so a restored project
+  could close the menu it said to open, leave a menu open that the file said was closed, and (via
+  `applyMenuFullscreenPref`) force the menu visible when the file said hidden. A new **`applyMenu(name)`** setter
+  (exported on `window`) is now used by both restore paths, and `applyMenuFullscreenPref` gained a
+  `keepVisibility` parameter the restore paths pass so a file's own `menuVisible` survives. The menu buttons keep
+  `switchMenu` and still toggle. Smoke `G9:50` was tightened from "the two transient menu fields excepted" to a
+  **full** export → import → export comparison, and passes. Verified: differential **23/0**, core **24/0**, smoke
+  **79/0/4**, generation **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, park hash `bb2bf3c8` (moved
+  from `beead0c6` because the author's Save wrote the new panel ids into the project) restored byte-identical. **No
+  visual change** — `visual-diff` identical to 2026.09.26.10 (7 pixel-identical, the same 5 three-pixel dark diffs,
+  the same 2 JSON-editor diffs from the `id` lines), because its capture recipe normalises the menu before the first
+  shot. Because this was a bug fix rather than a refactor step, the `prompt`/`library-core` fallback deletion moved
+  to **2026.09.26.12**.
 - **2026-09-26 — P2 step 1 released as 2026.09.26.10: panel ids + `core/schema.js`.** Every panel now has a stable
   `id` (`p-<base36 time>-<6 base36 chars>`): minted by `collectPageData` when a card lacks one, set from the state by
   `restorePanelState`, given fresh to every copy (`duplicatePanel` / `batchDuplicatePanels` / `panelPasteAction`), and
@@ -127,7 +146,7 @@ defaults** at the author's word ("For P2-01, defaults.", 2026-09-26) — so **no
   called `switchMenu('file')` and `switchMenu` **toggles**, so an open menu (a whole 224 px row) leaked in or out
   depending on the parked menu state and the session order; the subject now closes whatever menu is open. The same
   investigation turned up the import-path menu-toggle wart (§5), deliberately left unfixed. **Next:** `prompt` and
-  `library-core` lose their in-file copies at **2026.09.26.11**, then P2 step 2b.
+  `library-core` lose their in-file copies at **2026.09.26.12**, then P2 step 2b.
 - **2026-09-26 — the four in-file copies deleted, released as 2026.09.26.9.** `zip`, `jsontext`, `keywords` and `seeds` are
   now only in `src/core/`; their in-file implementations came out (357 lines, ~16 KB) and each name is left as a bare `let`
   the loader fills. The boot was restructured to wait for the modules: `coreLoad` collects a promise each, `coreReady`
@@ -292,18 +311,19 @@ All three questions from round 1 are answered - see section 3 for the decisions 
 **Round 2 is answered** (2026-09-26 — `questions/REFACTOR-ROUND-2-ANSWERS.md`, digested in §1b): the P2
 decisions are in (`P2-01` 1a/1b taken as the recommended defaults) and `BUG-01` is closed. **Nothing is waiting on
 the author.** P1's last two modules (`core/prompt.js`, `core/library-core.js`) keep their in-file copies until
-**2026.09.26.11** (the deletion slipped one release because 2026.09.26.10 shipped P2 step 1).
+**2026.09.26.12** (the deletion slipped twice: 2026.09.26.10 shipped P2 step 1 and 2026.09.26.11 the import-menu fix).
 
-## 5. Known warts, deliberately not fixed yet
+## 5. Warts
 
-- **`switchMenu` is a toggle, not a setter — and the import path calls it.** `applyImportedSettings` ends with
-  `switchMenu(data.activeMenu)`, and `switchMenu(name)` toggles (`openNow = !group.hidden`; a click on the
-  already-open menu closes it, subject to a full-screen guard). So importing a project whose stored active menu is
-  the one already open **closes it**, and a file carrying `menuFullscreen:true` while the app is in windowed layout
-  can **open** a menu that should be hidden. It is cosmetic (you only notice if you are watching the menu), and it
-  only shows after an import or a JSON-editor apply — but a right fix (set the menu state instead of toggling it)
-  shifts **5 of the 14 visual baselines**, because an open menu is a whole 224 px row. It is therefore queued as its
-  own release with the baseline refreshed in that release, rather than smuggled into a refactor step: `PENDING.md`
-  (🕒 QUEUED) and `ISSUES.md` (2026-09-26) carry the repro. The same wart is why `devtests/visual-diff.js`'s `grid`
-  subject now closes any open menu and why smoke `G9:50` excepts the two transient menu fields (`activeMenu`,
-  `menuVisible`).
+- **`switchMenu` is a toggle, not a setter — FIXED 2026.09.26.11.** `switchMenu(name)` toggles
+  (`openNow = !group.hidden`), which is right for a menu button and wrong for restoring a saved state: the import
+  path used it, so a project whose stored active menu was the one already open **closed it**, a file saved with no
+  menu left the current one open, and `applyMenuFullscreenPref` over-rode a file's `menuVisible:false` when
+  fullscreen was on. The two restore paths (`applyImportedSettings`, `jsonApplyDoc`) now call a real setter,
+  **`applyMenu(name)`**, and pass `keepVisibility: true` to `applyMenuFullscreenPref`; the buttons keep the toggle.
+  Smoke `G9:50` is now a **full** export → import → export comparison (the `activeMenu`/`menuVisible` exception is
+  gone) and passes, so this cannot come back silently. **The predicted baseline shift did not happen** —
+  `visual-diff` is byte-for-byte the same result as 2026.09.26.10, because its `grid` subject closes any open menu
+  before the first capture, so the post-import menu state reaches no screenshot. Found 2026-09-26 while testing P2
+  step 1 and deliberately held back from that refactor step; shipped as its own release (`PENDING.md`, `ISSUES.md`,
+  `DEV-NOTES.md` BATCH 2026.09.26.11).
