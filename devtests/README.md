@@ -127,8 +127,27 @@ What the report contains and how to read it:
 - `ua` — recorded, because all of this is engine behaviour and the answer differs per browser.
 
 Baseline recorded on the author's machine (Firefox 156 / Windows, 2026-09-26): visible page timer 1005–1014 ms,
-rAF ≈ 56–61 fps, worker 100.7 ms/tick. The hidden numbers with the setting on and off are the measurement the
-author's switch supplies.
+rAF ≈ 56–61 fps, worker 100.7 ms/tick.
+
+**The measurement itself, run by the author on 2026-09-26** — both halves of the A/B, same page, same machine,
+the preference flipped between them:
+
+| state | hidden time measured | samples | min | median | p90 | max |
+|---|---|---|---|---|---|---|
+| keep-awake off (control) | 190 s | 189 | 724 ms | **1005 ms** | 1014 ms | 1077 ms |
+| keep-awake on | ~6 min | 1374 | 249 ms | **262 ms** | 265 ms | 5 h 59 m (the laptop asleep) |
+
+Off, the 250 ms heartbeat is pinned to Firefox's hidden clamp: 189 samples in a 190 s period is ~1 Hz, exactly
+`dom.min_background_timeout_value = 1000`. On, the same timer ran at a 262 ms median (1371 of 1374 gaps under
+400 ms). **The silent tone defeats the throttling** — 3.8× the off rate, same interval, same machine.
+
+Two things the same run teaches:
+
+- **Read the spans, not the wall clock.** The overnight hidden period was 9 h 33 m, but the laptop slept through
+  9 h 28 m of it (two heartbeat gaps: 3 h 28 m and 5 h 59 m). A suspended machine stops the timers too, and only
+  the ~5.5 min it was awake *and* hidden is a measurement.
+- **`raf.hidden` stayed at 28 frames in total.** Keep-awake holds the timers, not the rendering — a background
+  run keeps ticking while the screen is not being redrawn.
 
 ## Running them
 
