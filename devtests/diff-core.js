@@ -90,10 +90,16 @@ async function t(name, fn) {
 const ok = (d) => ({ ok: true, d: d === undefined ? "" : d });
 const no = (d) => ({ ok: false, d: d === undefined ? "" : d });
 
+const moduleBlobs = {};
 async function loadModule(path) {
-  const text = await fs.readTextFile(path);
+  let text = await fs.readTextFile(path);
+  text = text.replace(/from\s+["'](\.\/[^"']+)["']/g, (m, rel) => {
+    const dep = path.replace(/[^/]+$/, "") + rel.slice(2);
+    return 'from "' + (moduleBlobs[dep] || rel) + '"';
+  });
   const url = URL.createObjectURL(new Blob([text], { type: "text/javascript" }));
-  try { return await import(url); } finally { URL.revokeObjectURL(url); }
+  moduleBlobs[path] = url;
+  return import(url);
 }
 
 function bytesEqual(a, b) {
@@ -283,6 +289,7 @@ const surface = {
   "src/core/seeds.js": ["panelSeedValue", "imageSeed", "scrubMinusOneSeeds"],
   "src/core/prompt.js": ["composePanelPrompt"],
   "src/core/library-core.js": ["LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"],
+  "src/core/schema.js": ["SCHEMA_VERSION", "PANEL_COUNT_OPTIONS", "newPanelId", "defaultChar", "defaultPanel", "defaultPage", "defaultProject", "normalise", "validate"],
 };
 
 const deletedInline = {
@@ -331,7 +338,7 @@ await t("the deleted inline copies are really gone from index.html", () => {
 });
 
 await t("index.html still declares every name the modules provide", () => {
-  const decls = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds"];
+  const decls = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "newPanelId", "defaultPanel", "defaultPage", "defaultProject", "normaliseProject", "validateProject"];
   const gaps = decls.filter((n) => !new RegExp("(?:let|var|const)[^;\\n]*\\b" + n + "\\b").test(src));
   return gaps.length ? no("no declaration for: " + gaps.join(", ")) : ok(decls.length + " names declared");
 });
