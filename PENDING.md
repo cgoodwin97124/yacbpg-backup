@@ -43,10 +43,11 @@ each section).
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-09-26 — DOCS/FORM: ROUND 2 of the refactor questions (P2) + the outstanding BUG-01 follow-up
-- **Status:** 🟢 **START NOW 2026-09-26** — the author asked for both in one message ("Remind me of what answers you need... I'll give you those, and then let's do the round-2 question batch for P2 as well."). Logged on receipt, before any work, per the 2026-08-13 rule.
+- **Status:** ✅ **DONE 2026.09.26.7** — both deliverables shipped the same session (see the IMPLEMENTATION bullet). The author asked for both in one message ("Remind me of what answers you need... I'll give you those, and then let's do the round-2 question batch for P2 as well."). Logged on receipt, before any work, per the 2026-08-13 rule.
 - **Deliverable 1 — the BUG-01 follow-up (questions only; no work until answered).** The five questions from the 2026-09-22 entry are unchanged and are now ticket `BUG-01` inside the form: does anything actually break, the red console line, how often and where, browser + extensions, and whether a workaround is wanted. The console line is the only thing that can pin the cause, because the platform's dialog hides the exception text for engine-located errors.
 - **Deliverable 2 — round 2 of the refactor questions, scoped to P2.** Seven tickets: `BUG-01`, `P2-01` projects become first-class (switching, what loads at startup, what a Recent entry remembers), `P2-02` the project's own library vs the browser catalogue (the library UI, import semantics, deleting a referenced object), `P2-03` kept images inside the project file (a compact export, browser copies, size warnings), `P2-04` old files / version stamps / the upgrader (how far the ladder reaches, what the upgrader hands back, the JSON editor's fate), `P2-05` autosave + undo + where the GitHub backup points, `P2-06` P2's release cadence and what each release note shows.
 - **Shape:** `src/round2-form.html` — the round-1 form's shell and GitHub submit path, with `FORM_META.id = yacbpg-round2-2026-09-26` so its drafts and answers cannot collide with round 1's — opened with `window.__openRound2Form()`, listed in `GH_SRC_FILES`, answers written to the repo's `tickets/` folder as in round 1. Release: **2026.09.26.7** (dev tool + docs only; the app's behaviour is untouched).
+- **IMPLEMENTATION (2026.09.26.7):** `src/round2-form.html` shipped (the round-1 shell with a new `FORM_META.id` and a new `TICKETS` data block — 7 tickets, 25 questions), `window.__openRound2Form()` added beside the other dev-form openers, the file added to `GH_SRC_FILES`, the `#embeddedVersion` stamp and `CHANGELOG.md` bumped to 2026.09.26.7, and the doc comment at the top of `index.html` extended. Verified live in the preview: 7 tickets / 25 questions render, 17 selects / 10 checkboxes / 36 text fields, title + intro from `FORM_META`, 0 console errors, and a capture + vision pass show the cards laid out and legible. `DEV-NOTES.md` BATCH 2026.09.26.7, `AI-NOTES.md` §21 and `REFACTOR-NOTES.md` §2/§4 updated.
 
 ### 2026-09-26 — FEATURE: keep the browser tab awake while the AI helper works (near-silent audio loop, opt-in)
 - **Status:** ✅ **DONE 2026.09.26.6** — implemented, verified live and pushed on 2026-09-26 (see the IMPLEMENTATION bullet, `CHANGELOG.md` 2026.09.26.6, `DEV-NOTES.md` BATCH 2026.09.26.6 and `AI-NOTES.md` §20).
@@ -807,7 +808,7 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
 
 ### 2026-09-22 — BUG REPORT: perchance error dialog "interactionPointerMoveHandler@…:34:3414"
 - **Status:** RECON DONE 2026-09-22 — questions for the author recorded below, awaiting answers (per the
-  2026-09-20 standing directive). Logged before any work, per the 2026-08-13 rule.
+  2026-09-20 standing directive). Logged before any work, per the 2026-08-13 rule. **RE-ASKED 2026.09.26.7** as ticket `BUG-01` in the round-2 answer form (`src/round2-form.html`, `window.__openRound2Form()`) — the five questions are unchanged, and the browser-console line is still the only thing that can pin the cause.
 - **Request.** Author: "Hi, I'm getting this error." + screenshot
   (`scratch/message-attachments/pasted-image-20260922111138.png`).
 - **What the screenshot shows (transcribed verbatim):** the perchance "*An error occurred*" dialog — the variant
