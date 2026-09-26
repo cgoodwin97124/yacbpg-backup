@@ -2,7 +2,7 @@ import { DEFAULT_POS, DEFAULT_NEGATIVES } from "./keywords.js";
 
 export const SCHEMA_VERSION = 2;
 export const PANEL_COUNT_OPTIONS = ["1", "4", "6", "12", "24", "custom"];
-const STRING_FIELDS = ["loc", "locBase", "locExtra", "action", "seed", "imgCount", "style", "sizeSel", "sizeW", "sizeH"];
+const STRING_FIELDS = ["loc", "locBase", "locExtra", "action", "seed", "imgCount", "style", "palette", "sizeSel", "sizeW", "sizeH"];
 const GLOBAL_STRING_FIELDS = ["projectName", "imageSizeSel", "imageSizeW", "imageSizeH", "guidanceScale", "imgCountDefault", "previewDelay", "globalPos", "globalNeg"];
 const PAGE_STRING_FIELDS = ["name", "summary", "panelCountCustom", "seed"];
 
@@ -27,6 +27,7 @@ export function defaultPanel(id) {
     seed: "",
     imgCount: "",
     style: "",
+    palette: "",
     sizeSel: "",
     sizeW: "",
     sizeH: "",
