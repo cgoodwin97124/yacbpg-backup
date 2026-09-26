@@ -110,6 +110,9 @@ Preference restore happens just before `applyTheme()`: `menuFullscreenPref`, `hd
 **localStorage keys**
 - `comicGen.panelState` — versioned `{version:2, projectName, imageSizeSel/W/H, guidanceScale,
   imgCountDefault, previewDelay, previewOn, globalPos, globalNeg, nsfw, currentPage, pages:{N: pageData}}`.
+  Since 2026.09.26.15 it also carries **`library`** — `[{id, type, name, desc}]`, the PROJECT's own library
+  (this whole object is what the app and the docs call `settings`, so its library is `settings.library`) —
+  see §28.
   pageData = `{name, panelCountSel, panelCountCustom, seed, 1..24: panelEntry}`.
   panelEntry = `{chars:[{sel,base,extra}]x3, title, protectSlots:[bool x4], loc, locBase, locExtra, action, seed,
   imgCount, style, promptOverride, extras:[{type, sel, desc}]}` (2026-08-15.1 — `extras` holds arbitrary
@@ -119,9 +122,10 @@ Preference restore happens just before `applyTheme()`: `menuFullscreenPref`, `hd
   `getMaps()` resolves, hence the `data-needSeed` sentinel). The ⟳ persist flags
   (`chars[].persist`, `locPersist`, `actPersist`) were REMOVED 2026-08-16 (changelog 2026.08.16.11) — old
   saved entries may still carry them but they are ignored. v1 flat data auto-migrates via `ensurePages()`.
-- `comicGen.libObjects` — unified Panel Library Objects store `[{id, type, name, desc}]` where `type`
-  is a LABEL ('Character'/'Location'/'Action' or custom via "＋ New Type…") deciding which panel
-  dropdown the object appears in (2026-08-14.7). Replaces the three legacy keys
+- `comicGen.libObjects` — **the CATALOGUE since 2026.09.26.15**: the browser-wide `[{id, type, name, desc}]`
+  store every project can copy entries *from*. It no longer backs the panel dropdowns — `settings.library`
+  (inside `panelState`) does. `type` is a LABEL ('Character'/'Location'/'Action' or custom via "＋ New Type…")
+  deciding which panel dropdown the object appears in (2026-08-14.7). Replaces the three legacy keys
   `comicGen.charLibrary`/`locLibrary`/`actLibrary` (migrated + deleted by `migrateLibObjects()` at boot
   and on import). `comicGen.libTypes` — custom type labels.
 - `comicGen.preset` — `{style, palette}`
@@ -549,11 +553,17 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   Title (`#storyboardTitle`) + Summary (`#storyboardSummary` bar) and, with ≥2 pages, its own page navigator
   `#storyboardNav` (◀ `storyboardNavDelta` + `#storyboardNavPages` + ▶) next to "← Back to page"
   (`renderStoryboardPage`/`updateStoryboardNav`; `switchPage` calls `refreshStoryboardIfOpen()` so it follows).
-- **Library:** ONE `comicGen.libObjects` store: entries `{id, type, name, desc}` where `type` is
-  'Character' | 'Location' | 'Action'. Panel dropdowns list precreated options (minus "none") + an optgroup
-  of saved objects of that type + "No Character Selected" LAST (chars only). 📚 Library menu shows the
+- **Library — TWO stores since 2026.09.26.15 (see §28).** The panel dropdowns and the 📚 Library menu's
+  **📁 This project** section read the PROJECT library, `settings.library` inside `comicGen.panelState`
+  (`loadLibraryObjects()` / `saveLibraryObjects()` now address it, keeping their names and all ~25 call
+  sites). The browser-wide `comicGen.libObjects` survives as **🗂 My catalogue**, which
+  `loadCatalogue()` / `saveCatalogue()` address and where ⬆ Import… writes. Entries are
+  `{id, type, name, desc}` where `type` is 'Character' | 'Location' | 'Action'. Panel dropdowns list
+  precreated options (minus "none") + an optgroup ("This project's Characters") of saved objects of that
+  type + "No Character Selected" LAST (chars only). 📚 Library shows the project's
   objects as 👤 Characters / 📍 Locations buckets (plus a 🎬 Actions bucket when any Action item exists),
-  each row = name + desc + 🗑, with a green + to add. migrateLibObjects() migrates the legacy
+  each row = name + desc + ✎ + 🗑, with a green + to add, and below them the catalogue rows with ⤓ / 🗑.
+  An older project's library is seeded from the catalogue by `initProjectLibrary()` the first time it boots. migrateLibObjects() migrates the legacy
   charLibrary/locLibrary/actLibrary keys and, since 2026-09-19, KEEPS Action items instead of pruning them.
   **Library → Import (2026-09-19):** the ⬆ Import… button reads Characters/Locations/Actions out of a
   project .json/.zip (legacy v1 included) and merges the chosen ones into libObjects — see BATCH 2026.08.16.14.
@@ -596,6 +606,12 @@ Card: `#panel-card-N.panel-card` (display toggled by `updatePanelVisibility()` b
   (image protection is session-only and shouldn't imply anything about exported files); `exportZip()`
   passes `true` → the zip keeps protections so a backup/restore round-trip preserves them (2026-08-15.1).
   Import is unchanged (nukes protections then applies).
+- **The project's own library in the file (2026.09.26.15, §28):** `buildExportData` attaches the project's
+  `settings.library` (mirrored in the top-level `libObjects` so an older reader still finds the field) instead
+  of a copy of the browser library; `applyImportedSettings` takes the file's own library (`settings.library` →
+  `libObjects` → legacy `charLibrary`/`locLibrary`/`actLibrary` → else seed from the catalogue) and **never
+  writes the catalogue**; `jsonApplyDoc` does the same. The JSON editor locks the top-level `libObjects` as a
+  mirror and makes `settings.library[i].type/name/desc` editable.
 - `exportZip()` — settings JSON + every page's session images into one .zip
   (self-contained STORE writer; DEFLATE via DecompressionStream on import).
 - `importSettingsFromFile()` — `hasActiveProject()` gate → three-choice modal
@@ -1177,8 +1193,69 @@ extractLibraryItems;` on one line where the block used to be). `newLibraryId` wa
 - **Results:** smoke 85/0/4, `diff-core` 17/0 (`unspecced: []`), core 24/0, gen 18/0 (+1 manual), fixtures 18/0, 0 perchance
   errors, park hash `7a1123b0` byte-identical after every runner; the visual check is 12/14 pixel-identical with the two
   `*-json` views at the known ~0.01% wobble, so no baseline change and no manual change (nothing user-visible).
-- **Next:** P2 step 2b — the project owns its library and its kept images (`library`/`kept` on `defaultProject()`, an older
-  project seeded from the browser catalogue, `buildExportData` attaching the project's own library) — then step 3, the store.
+- **Next:** P2 step 2b — the project owns its library and its kept images. **The library half shipped as
+  2026.09.26.15 (§28)**; the `kept`-images half is scheduled as 2026.09.26.16 — then step 3, the store.
+
+## 28. P2 step 2b (first half): the project owns its library (2026.09.26.15)
+
+`settings.library` — i.e. a `library` array inside `comicGen.panelState` — is now the **project's own** library.
+`comicGen.libObjects` stays as the browser-wide **catalogue** a project copies entries from. The user-facing story is
+`CHANGELOG.md` 2026.09.26.15 and the engineering detail is `DEV-NOTES.md` BATCH 2026.09.26.15; this is the map.
+The decisions are the author's round-2 answers (`REFACTOR-NOTES.md` §1b / `questions/REFACTOR-ROUND-2-ANSWERS.md` §P2-02).
+
+- **The seam — why nothing else changed.** `loadLibraryObjects()` / `saveLibraryObjects()` kept their names and
+  signatures but changed *which store they address*: they now read/write the project library (`saveLibraryObjects`
+  sets the in-memory `projectLibrary` and calls `schedulePanelSave()`, because the project library is project data).
+  Every one of the ~25 call sites — and every panel reference `lib:<type>:<id>` — therefore resolves against the
+  project with no call-site edits. The catalogue gets its own pair, `loadCatalogue()` / `saveCatalogue()` (same
+  localStorage key as before, `comicGen.libObjects`).
+- **New helpers:** `projectLibraryArray()` (the array the UI and tests act on), `normaliseLibArray()` (delegates to
+  `schema.js`'s new `normaliseLibrary`), `initProjectLibrary()`, `deleteCatalogueObject`,
+  `copyCatalogueItemToProject` (⤓), `copyProjectItemToCatalogue` (⤒), `sweepDeleteAcrossPages`,
+  `syncDeleteFieldsToDom` and `applyLibraryDelete(id, clearText)`.
+- **The one-time seed.** `initProjectLibrary()` runs in `bootApp` right after `migrateLibObjects()`: if the project
+  state has no `library` array it is seeded from the catalogue **and written straight into the stored state** —
+  deliberately *not* through `schedulePanelSave()`, whose debounced `collectPageState()` would read a DOM that is
+  mid-build. An older project opens with a copy of what was in My catalogue, its existing references keep resolving,
+  and from then on the two stores are independent. This is why the suites' park hash moves on the first load of a new
+  build (it is the seed writing the new field, not a leak).
+- **The three-way delete (round-2 2c).** Deleting an item panels still reference now offers **"⤓ Leave the text as
+  plain text"** (reference cleared → slot back to *No X Selected*; every word already in those panels kept),
+  **"✕ Clear the references and the text"** (reference *and* that slot's per-panel text emptied), or **Cancel**;
+  `showChoiceDialog`'s body carries the reference count. When nothing references the item the danger button reads
+  **"🗑 Delete “x”"** and the "leave" choice is not offered. `applyLibraryDelete` → `sweepDeleteAcrossPages(state, …)`
+  → `savePanelStateShape(state)` → `syncDeleteFieldsToDom` (the `analysisSetPanelStyle` cross-page pattern the
+  rename already used), then the selects/library/summaries/Analysis refresh and a save is scheduled.
+- **The UI (`renderLibrary()`).** **"📁 This project"** first — the editable rows (name + description in place, green
+  **+**, **✎** rename-with-sweep, 🗑) — then **"🗂 My catalogue"** — name/description editable in place, **⤓**
+  copy-into-this-project (disabled when already present), **🗑**, and no **✎** (the sweep is a project-library
+  operation). Project rows carry **⤒** to offer an item back to the catalogue. Rows carry
+  `lib-row-proj` / `lib-row-cat` so the suites scope to one section; new CSS `.btn-copy-lib` (+hover/+disabled),
+  `.lib-section-h`, `.lib-section-hint`. `libraryOptions()` (the panel dropdowns) still lists the project library,
+  now under the optgroup "This project's Characters".
+- **Import.** `confirmLibraryImport` / `importLibraryFromFiles` (the **⬆ Import…** button) write into the
+  **catalogue** — its historical job. A **project** import goes the other way: `applyImportedSettings` / `jsonApplyDoc`
+  take `settings.library` → top-level `libObjects` → the legacy `charLibrary`/`locLibrary`/`actLibrary` → else seed
+  from the catalogue, and **never write the catalogue**. The "importing someone's file rewrote my library" surprise is
+  gone.
+- **Export / JSON / reset.** `buildExportData` puts the project library in `settings.library` **and mirrors it in the
+  top-level `libObjects`** (so an older reader still finds the field it always looked for). The JSON editor **locks**
+  the top-level `libObjects` (label "Project library (mirror — edit settings.library instead)") and makes
+  `settings.library[i].type/name/desc` editable. `resetEverything`'s "also permanently delete my saved library
+  objects" clears **both**; `newProject` counts both in its "you will lose N items" line.
+- **`src/core/schema.js`:** new exports `normaliseLibrary(arr)` and `normaliseLibType(type, id)`;
+  `defaultProject()` gains `library: []`; `normalise()` normalises `library` **only if the key is present** (so an
+  old file keeps its exact shape, and the seed path can tell "no library key" from "empty library"); `validate()`
+  errors on a non-array library or an entry without an id. `core.test.js` gained a matching check (**25/0**).
+- **Tests:** smoke `G8:46` (both delete paths) and `G8:47` (the export carries the project library + the `libObjects`
+  mirror, the catalogue is untouched, the saved state agrees); fixtures `FX4`/`FX10` (a file's library lands in the
+  project, the catalogue length is unchanged — `window.__fxCatBefore`). Results: smoke **85/0/4**, generation
+  **18/0** (+1 manual), fixtures **18/0**, core **25/0**, `diff-core` guards **17/0**, 0 perchance errors, park
+  byte-identical after every runner; visual **12/14** (the 2 `*-json` views at the known ~0.01%) — no baseline change.
+- **Interpretation calls.** (a) Catalogue rows are editable in place and get the ⤓/⤒ pair, so the cross-project reuse
+  workflow survives. (b) "Leave the text" clears the reference but keeps the text; "clear" empties the text too.
+  (c) A new project / Reset keeps the project library unless the delete box is ticked.
+- **Still open in step 2b:** the **`kept`**-images array on the project (scheduled 2026.09.26.16), then step 3, the store.
 
 ## DOC LAYOUT (2026.09.23.6)
 
