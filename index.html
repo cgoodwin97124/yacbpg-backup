@@ -1257,7 +1257,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.7 — 2026-09-26 — ❓ Round 2 of the refactor questions: what the state layer (P2) needs to know
+## 2026.09.26.8 — 2026-09-26 — 🧱 Refactor step 2: the prompt and the library ids move into their own files (no behaviour change)
 - The full version history lives in the project's GitHub repo; open the About section to load it.
 </script>
 
@@ -1268,7 +1268,7 @@ color-scheme:light;
   const CHAR_KEYS = ["none", "hero", "villain", "sidekick", "civilian"];
   const LOC_KEYS = ["none", "city", "lab", "hideout", "rooftop"];
 
-  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null };
+  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null };
   const coreLoad = (name, path, apply) => {
     try {
       import(path).then((m) => {
@@ -1302,6 +1302,22 @@ color-scheme:light;
     if (m.panelSeedValue) panelSeedValue = m.panelSeedValue;
     if (m.imageSeed) imageSeed = m.imageSeed;
     if (m.scrubMinusOneSeeds) scrubMinusOneSeeds = m.scrubMinusOneSeeds;
+  });
+  coreLoad('prompt', './src/core/prompt.js', (m) => {
+    if (m.composePanelPrompt) composePanelPrompt = m.composePanelPrompt;
+  });
+  coreLoad('library', './src/core/library-core.js', (m) => {
+    if (m.LIB_TYPE_PREFIX) LIB_TYPE_PREFIX = m.LIB_TYPE_PREFIX;
+    if (m.libIdFor) libIdFor = m.libIdFor;
+    if (m.libRefValue) libRefValue = m.libRefValue;
+    if (m.isLibRef) isLibRef = m.isLibRef;
+    if (m.parseLibRef) parseLibRef = m.parseLibRef;
+    if (m.libRefNeedles) libRefNeedles = m.libRefNeedles;
+    if (m.countLibRefs) countLibRefs = m.countLibRefs;
+    if (m.normalizeLibType) normalizeLibType = m.normalizeLibType;
+    if (m.extractLibraryItems) extractLibraryItems = m.extractLibraryItems;
+    if (m.libRefEntry) libRefEntry = m.libRefEntry;
+    if (m.libRefDesc) libRefDesc = m.libRefDesc;
   });
 
   function itemText(v) {
@@ -1406,15 +1422,7 @@ color-scheme:light;
   }
 
   function countLibReferences(id) {
-    const needles = ['lib:char:' + id, 'lib:loc:' + id, 'lib:act:' + id];
-    let n = 0;
-    const visit = (v) => {
-      if (typeof v === 'string') { if (needles.indexOf(v) !== -1) n++; return; }
-      if (Array.isArray(v)) { for (const x of v) visit(x); return; }
-      if (v && typeof v === 'object') { for (const k in v) visit(v[k]); }
-    };
-    try { visit(collectPanelState()); } catch (e) {}
-    return n;
+    try { return countLibRefs(collectPanelState(), id); } catch (e) { return 0; }
   }
 
   function deleteLibraryObject(id) {
@@ -1459,7 +1467,7 @@ color-scheme:light;
     saveLibraryObjects(objs);
     renderLibrary();
     updatePanelSelects();
-    const value = 'lib:' + type + ':' + id;
+    const value = libRefValue(type, id);
     if (type === 'char') {
       let slot = s || 0;
       let target = s ? document.getElementById('panel-char-select-' + i + '-' + s) : null;
@@ -1540,10 +1548,55 @@ color-scheme:light;
     }
   }
 
-  const LIB_TYPE_PREFIX = { Character: 'char', Location: 'loc', Action: 'act' };
+  let LIB_TYPE_PREFIX = { Character: 'char', Location: 'loc', Action: 'act' };
+
+  function libIdFor(type, now, rand) {
+    return (LIB_TYPE_PREFIX[type] || 'obj') + '-' + now + '-' + rand;
+  }
+
+  function libRefValue(type, id) {
+    return 'lib:' + type + ':' + id;
+  }
+
+  function isLibRef(value) {
+    return String(value == null ? '' : value).indexOf('lib:') === 0;
+  }
+
+  function parseLibRef(value) {
+    if (!isLibRef(value)) return null;
+    const parts = String(value).split(':');
+    return { type: parts[1], id: parts[2] };
+  }
+
+  function libRefNeedles(id) {
+    return ['lib:char:' + id, 'lib:loc:' + id, 'lib:act:' + id];
+  }
+
+  function countLibRefs(data, id) {
+    const needles = libRefNeedles(id);
+    let n = 0;
+    const visit = (v) => {
+      if (typeof v === 'string') { if (needles.indexOf(v) !== -1) n++; return; }
+      if (Array.isArray(v)) { for (const x of v) visit(x); return; }
+      if (v && typeof v === 'object') { for (const k in v) visit(v[k]); }
+    };
+    visit(data);
+    return n;
+  }
+
+  function libRefEntry(objs, selValue) {
+    const ref = parseLibRef(selValue);
+    if (!ref) return null;
+    return (objs || []).find(e => e && e.id === ref.id) || null;
+  }
+
+  function libRefDesc(objs, selValue) {
+    const entry = libRefEntry(objs, selValue);
+    return entry ? (entry.desc || '') : '';
+  }
 
   function newLibraryId(type) {
-    return (LIB_TYPE_PREFIX[type] || 'obj') + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    return libIdFor(type, Date.now(), Math.random().toString(36).slice(2, 7));
   }
 
   function normalizeLibType(o) {
@@ -2176,11 +2229,11 @@ color-scheme:light;
           if (sel && (!sel.value || sel.value === 'none')) { target = sel; break; }
         }
         if (!target) return false;
-        target.value = 'lib:char:' + item.id;
+        target.value = libRefValue('char', item.id);
       } else if (item.type === 'Location') {
         const ls = document.getElementById('panel-loc-select-' + i);
         if (!ls || (ls.value && ls.value !== 'none')) return false;
-        ls.value = 'lib:loc:' + item.id;
+        ls.value = libRefValue('loc', item.id);
       } else {
         const el = document.getElementById('panel-act-' + i);
         if (!el || el.value.trim()) return false;
@@ -2203,10 +2256,10 @@ color-scheme:light;
         if (!c || !c.sel || c.sel === 'none') { slot = s; break; }
       }
       if (slot < 0) return false;
-      p.chars[slot - 1] = { sel: 'lib:char:' + item.id, extra: '' };
+      p.chars[slot - 1] = { sel: libRefValue('char', item.id), extra: '' };
     } else if (item.type === 'Location') {
       if (p.loc && p.loc !== 'none') return false;
-      p.loc = 'lib:loc:' + item.id;
+      p.loc = libRefValue('loc', item.id);
     } else {
       if (String(p.action || '').trim()) return false;
       p.action = item.desc || '';
@@ -2635,7 +2688,7 @@ color-scheme:light;
   function analysisFillCell(td, item, i, pageData, pg) {
     if (!item) { td.classList.add('an-empty'); return; }
     if (item.type === 'Character') {
-      const slots = [1, 2, 3].filter(s => analysisCharSel(pageData, i, s) === 'lib:char:' + item.id);
+      const slots = [1, 2, 3].filter(s => analysisCharSel(pageData, i, s) === libRefValue('char', item.id));
       if (slots.length) {
         td.classList.add('an-cell-used');
         const chk = document.createElement('div');
@@ -2651,7 +2704,7 @@ color-scheme:light;
       }
     } else if (item.type === 'Location') {
       const sel = analysisLocSel(pageData, i);
-      if (sel === 'lib:loc:' + item.id) {
+      if (sel === libRefValue('loc', item.id)) {
         td.classList.add('an-cell-used');
         const chk = document.createElement('div');
         chk.className = 'an-check';
@@ -2819,10 +2872,7 @@ color-scheme:light;
 
   function plLineDescText(kind, selValue) {
     if (!selValue || selValue === 'none') return '';
-    if (String(selValue).indexOf('lib:') === 0) {
-      const entry = loadLibraryObjects().find(o => o.id === String(selValue).split(':')[2]);
-      return entry ? (entry.desc || '') : '';
-    }
+    if (isLibRef(selValue)) return libRefDesc(loadLibraryObjects(), selValue);
     if (!builtinDescMaps) return '';
     const map = kind === 'char' ? builtinDescMaps.charMap : builtinDescMaps.locMap;
     return (map && map[selValue]) || '';
@@ -2836,7 +2886,7 @@ color-scheme:light;
 
   function panelLibDescSeed(kind, sel) {
     if (!sel || sel === 'none') return '';
-    if (String(sel).indexOf('lib:') === 0) return plLineDescText(kind, sel);
+    if (isLibRef(sel)) return plLineDescText(kind, sel);
     if (!builtinDescMaps) return null;
     return plLineDescText(kind, sel);
   }
@@ -3774,7 +3824,7 @@ color-scheme:light;
   }
 
   function panelLibDescOf(selValue) {
-    if (!selValue || String(selValue).indexOf('lib:') !== 0) return null;
+    if (!selValue || !isLibRef(selValue)) return null;
     const entry = loadLibraryObjects().find(o => o.id === String(selValue).split(':')[2]);
     return entry ? (entry.desc || '') : null;
   }
@@ -4208,11 +4258,7 @@ color-scheme:light;
 
   function resolveDesc(selValue, builtinMap) {
     if (!selValue) return "";
-    if (selValue.startsWith('lib:')) {
-      const id = selValue.split(':')[2];
-      const entry = loadLibraryObjects().find(e => e.id === id);
-      return entry ? entry.desc : "";
-    }
+    if (isLibRef(selValue)) return libRefDesc(loadLibraryObjects(), selValue);
     return builtinMap[selValue] || "";
   }
 
@@ -5717,39 +5763,60 @@ color-scheme:light;
     return getEffectiveKeywords();
   }
 
-  async function buildPanelPrompt(i) {
-    const { charMap, locMap } = await getMaps();
+  function composePanelPrompt(input) {
+    const inp = input || {};
+    const charParts = [];
+    const chars = inp.chars || [];
+    for (const c of chars) {
+      if (!c) continue;
+      charParts.push(c.base == null ? "" : c.base);
+      charParts.push(c.extra == null ? "" : c.extra);
+    }
+    const locKey = inp.locKey;
+    const locDesc = inp.locDesc == null ? "" : inp.locDesc;
+    const locExtra = inp.locExtra == null ? "" : inp.locExtra;
+    const action = inp.action == null ? "" : inp.action;
+    const hasLocSelected = !!locKey && locKey !== "none";
+    const fullPrompt = [inp.positive, ...charParts, locDesc, locExtra, action]
+      .map(s => (s || "").trim()).filter(Boolean).join(", ");
+    const hasContent = charParts.length > 0 || hasLocSelected || locDesc.trim() !== "" || locExtra.trim() !== "" || action.trim() !== "";
+    const override = inp.override;
+    if (override) return { fullPrompt: override.pos, negativePrompt: override.neg, hasContent: override.pos.trim() !== "" };
+    return { fullPrompt, negativePrompt: inp.negative, hasContent };
+  }
+
+  function collectPanelPromptInput(i, charMap, locMap) {
     const locKey = (document.getElementById('panel-loc-select-' + i) || {}).value || 'none';
     const locExtra = (document.getElementById('panel-loc-extra-' + i) || {}).value || '';
     const action = (document.getElementById('panel-act-' + i) || {}).value || '';
-
-    const charParts = [];
+    const chars = [];
     for (let s = 1; s <= 3; s++) {
       const sel = document.getElementById('panel-char-select-' + i + '-' + s);
-      const baseEl = document.getElementById('panel-char-base-' + i + '-' + s);
-      const extra = document.getElementById('panel-char-extra-' + i + '-' + s);
       if (!sel || !sel.value || sel.value === 'none') continue;
+      const baseEl = document.getElementById('panel-char-base-' + i + '-' + s);
+      const extraEl = document.getElementById('panel-char-extra-' + i + '-' + s);
       const libDesc = resolveDesc(sel.value, charMap);
       const baseText = baseEl ? baseEl.value.trim() : '';
-      charParts.push(baseText || libDesc);
-      charParts.push(extra.value);
+      chars.push({ base: baseText || libDesc, extra: extraEl ? extraEl.value : '' });
     }
-
     const eff = getPanelKeywords(i);
-    const negativePrompt = eff.negative;
     const locBaseEl = document.getElementById('panel-loc-base-' + i);
     const locBaseText = locBaseEl ? locBaseEl.value.trim() : '';
-    const locDesc = locBaseText || resolveDesc(locKey, locMap);
-    const hasLocSelected = !!locKey && locKey !== 'none';
+    return {
+      positive: eff.positive,
+      negative: eff.negative,
+      chars: chars,
+      locKey: locKey,
+      locDesc: locBaseText || resolveDesc(locKey, locMap),
+      locExtra: locExtra,
+      action: action,
+      override: panelPromptOverrides[i] || null
+    };
+  }
 
-    const fullPrompt = [eff.positive, ...charParts, locDesc, locExtra, action]
-      .map(s => (s || "").trim()).filter(Boolean).join(", ");
-    const hasContent = charParts.length > 0 || hasLocSelected || locDesc.trim() !== "" || locExtra.trim() !== "" || action.trim() !== "";
-    const override = panelPromptOverrides[i];
-    if (override) {
-      return { fullPrompt: override.pos, negativePrompt: override.neg, hasContent: override.pos.trim() !== "" };
-    }
-    return { fullPrompt, negativePrompt, hasContent };
+  async function buildPanelPrompt(i) {
+    const { charMap, locMap } = await getMaps();
+    return composePanelPrompt(collectPanelPromptInput(i, charMap, locMap));
   }
 
   async function copyPanelPrompt(i) {
@@ -10288,7 +10355,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js'];
 
   async function ghPush() {
     const owner = document.getElementById('ghOwnerInput').value.trim();
