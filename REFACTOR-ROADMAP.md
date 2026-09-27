@@ -288,7 +288,7 @@ and there was nothing left to compare — `diff-core.js` keeps its guards); no u
 
 ### 3.4 P2 — a real state layer (read-only first)
 
-**STATUS: steps 1, 2 and 2b are BUILT (2026.09.26.10 / 2026.09.26.15 / 2026.09.26.16).** Panels carry ids and
+**STATUS: steps 1, 2, 2b and 3 are BUILT (2026.09.26.10 / 2026.09.26.15 / 2026.09.26.16 / 2026.09.26.17).** Panels carry ids and
 `src/core/schema.js` exists — `SCHEMA_VERSION`, `PANEL_COUNT_OPTIONS`, `newPanelId`, `defaultChar`, `defaultPanel`,
 `defaultPage`, `defaultProject`, `normalise`, `validate`, plus `normaliseLibrary`/`normaliseLibType` — and
 `validate(normalise(x))` is always clean. `normalise` is the migration seam and is **conservative by rule: it never
@@ -314,11 +314,14 @@ store itself (step 3) and the store-vs-`collectPanelState` equality test (step 4
    that already reference `lib:<type>:<id>` keep resolving. `buildExportData` stops attaching a copy of the
    browser library and attaches the project's own instead. `core/library-core.js` (P1 step 5) is unaffected by
    the ownership change - it is pure id/type/reference work either way.
-3. **Write `state/store.js`** as a plain object plus `load()` / `toJSON()` / `subscribe()`. Its loader is
-   a *pure* serializer over a snapshot of the DOM (an object of the values `collectPageData` reads
-   today), so it can be tested without a browser.
+3. ✅ **`state/store.js` written (2026.09.26.17).** A plain store object — `load()` / `toJSON()` / `subscribe()` (plus
+   `unsubscribe`, `getSnapshot`, `isDirty`) — over a *pure* `serializeProject(snapshot)`; `ensurePages` lives in the module
+   as well, as a deliberate second copy that a test keeps in agreement with `index.html`'s. `index.html` supplies the DOM
+   half, `collectDomSnapshot()`, and creates one store at boot. **Nothing reads the store**, exactly as this step requires —
+   `AI-NOTES.md` §30 is the map, `DEV-NOTES.md` BATCH 2026.09.26.17 the detail.
 4. **Differential test:** for the fixture corpus, `store.toJSON()` must equal today's
-   `collectPanelState()` output, key for key. Until that passes, nothing reads the store.
+   `collectPanelState()` output, key for key. Until that passes, nothing reads the store. *(Queued in `PENDING.md`; already
+   true by hand on the author's own project — the two strings stringify identically.)*
 5. **Switch the save path** to write from the store; keep `restorePanelState()` writing the DOM. Now the
    DOM is a *rendering* of the store on load and a *proxy for it* on input — the last step of P3 removes
    the proxy.
