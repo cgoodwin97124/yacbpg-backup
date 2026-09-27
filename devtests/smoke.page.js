@@ -28,6 +28,7 @@ const GROUPS = {
   G17: "renaming a library character/location and propagating it",
   G18: "the kept-image hook (the project's own kept array)",
   G19: "the GitHub backup (the served page read back, the fifteen files)",
+  G20: "Panel Descriptions in the library (the shared pool, the picker, the pill)",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -1342,6 +1343,93 @@ async function run() {
     } finally {
       window.fetch = realFetch;
     }
+  });
+
+  await t("G20: 93 the Panel Description box saves its text to the library as a named entry", async () => {
+    const box = $("panel-char-extra-1-1");
+    const pick = $("panel-char-extra-pick-1-1");
+    if (!box || !pick) return no("missing box/pick");
+    setVal("panel-char-extra-1-1", "wearing a torn jacket");
+    await settle();
+    const badgeCustom = ($("panel-char-extra-badge-1-1") || {}).textContent || "";
+    window.__smokePrompts = ["Torn jacket"];
+    const saved = window.savePanelDescription("char", 1, 1);
+    await settle();
+    const item = libObjs().find((o) => o.type === "Panel Description" && o.name === "Torn jacket");
+    const badgeName = ($("panel-char-extra-badge-1-1") || {}).textContent || "";
+    const offered = [...(($("panel-char-extra-pick-1-2") || {}).options || [])].some((o) => o.textContent === "Torn jacket");
+    return eqArr([
+      saved, !!item, item && item.desc,
+      /not in your library/.test(badgeCustom), /Torn jacket/.test(badgeName), offered
+    ], [true, true, "wearing a torn jacket", true, true, true], "saved,item,desc,badgeCustom,badgeName,offered");
+  });
+
+  await t("G20: 94 picking a saved Panel Description copies its text into the box", async () => {
+    const item = libObjs().find((o) => o.type === "Panel Description");
+    if (!item) return no("no saved panel description");
+    if (!$("panel-char-extra-pick-2-1")) return no("panel 2 char slot 1 not on screen");
+    setVal("panel-char-extra-pick-2-1", "lib:pd:" + item.id);
+    await settle();
+    const badge = ($("panel-char-extra-badge-2-1") || {}).textContent || "";
+    const cleared = getVal("panel-char-extra-pick-2-1");
+    return eqArr([getVal("panel-char-extra-2-1"), /Torn jacket/.test(badge), cleared], ["wearing a torn jacket", true, ""], "box,badge,pickReset");
+  });
+
+  await t("G20: 95 editing the library copy never rewrites a panel that already took the text", async () => {
+    const row = [...document.querySelectorAll("#libObjects .lib-row-proj")].find((r) => (r.querySelector("input") || {}).value === "Torn jacket");
+    if (!row) return no("library row not found");
+    const ta = row.querySelector("textarea.lib-desc");
+    if (!ta) return no("no desc box");
+    ta.value = "CHANGED in the library";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    await settle();
+    const badge = ($("panel-char-extra-badge-1-1") || {}).textContent || "";
+    return eqArr([getVal("panel-char-extra-1-1"), /not in your library/.test(badge)], ["wearing a torn jacket", true], "boxFrozen,badgeFlipped");
+  });
+
+  await t("G20: 96 the main Library bucket exists and its creation dialog can make a Panel Description", async () => {
+    const buckets = [...document.querySelectorAll("#libObjects .lib-bucket")].map((h) => h.textContent);
+    window.__smokePrompts = ["P22 Hero", "a bold hero", "Torn jacket"];
+    addLibraryEntryByType("Character");
+    await settle();
+    const hero = libObjs().find((o) => o.name === "P22 Hero");
+    const poolAfterReuse = libObjs().filter((o) => o.type === "Panel Description").length;
+    window.__smokePrompts = ["P22 Place", "a windy cliff", "at dusk", "Dusk"];
+    addLibraryEntryByType("Location");
+    await settle();
+    const place = libObjs().find((o) => o.name === "P22 Place");
+    const dusk = libObjs().find((o) => o.type === "Panel Description" && o.name === "Dusk");
+    return eqArr([
+      buckets.some((b) => /Panel Descriptions/.test(b)), !!hero, poolAfterReuse, !!place, !!dusk, dusk && dusk.desc
+    ], [true, true, 1, true, true, "at dusk"], "bucket,hero,reused,place,newPd,newPdText");
+  });
+
+  await t("G20: 97 a new character made from a panel carries its Panel Description in", async () => {
+    if (!$("panel-char-extra-2-1")) return no("panel 2 not on screen");
+    window.__smokePrompts = ["P22 Local", "a local hero", "duelling at dawn", "Dawn duel"];
+    window.newPanelLibraryEntry("char", 2, 1);
+    await settle();
+    const local = libObjs().find((o) => o.name === "P22 Local");
+    const pd = libObjs().find((o) => o.type === "Panel Description" && o.name === "Dawn duel");
+    const sel = getVal("panel-char-select-2-1");
+    const badge = ($("panel-char-extra-badge-2-1") || {}).textContent || "";
+    return eqArr([
+      !!local, !!pd, pd && pd.desc,
+      sel === (local ? "lib:char:" + local.id : "x"),
+      getVal("panel-char-extra-2-1"), /Dawn duel/.test(badge)
+    ], [true, true, "duelling at dawn", true, "duelling at dawn", true], "local,pd,sel,box,badge");
+  });
+
+  await t("G20: 98 the box is labelled Panel Description and the old wording is gone", async () => {
+    const card = $("panel-card-1");
+    if (!card) return no("no panel 1");
+    const labels = [...card.querySelectorAll(".pl-line-label")].map((e) => e.textContent.trim());
+    const html = document.body.innerHTML;
+    return eqArr([
+      labels.filter((l) => l === "Panel Description").length,
+      labels.filter((l) => /extra description/i.test(l)).length,
+      /This panel — extra description/.test(html)
+    ], [4, 0, false], "renamed,oldGone," + labels.join("/"));
   });
 
   const pass = T.filter((x) => x.ok === true).length;
