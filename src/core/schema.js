@@ -39,10 +39,11 @@ export function normaliseKept(arr) {
 }
 
 export function normaliseLibType(type, id) {
-  if (type === "Character" || type === "Location" || type === "Action") return type;
+  if (type === "Character" || type === "Location" || type === "Action" || type === "Panel Description") return type;
   const s = asString(id, "");
   if (s.startsWith("loc-")) return "Location";
   if (s.startsWith("act-")) return "Action";
+  if (s.startsWith("pd-")) return "Panel Description";
   return "Character";
 }
 
