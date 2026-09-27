@@ -108,7 +108,9 @@
      overwrite the live file with the stale fallback.
   5. End of every task: remind the author to press Save, AND run the GitHub backup in the same
      turn: openGhBackup(); await ghPush(); ghClose();   ghPush reads main.pjs via the perchance
-     API, index.html from the SERVED page (the last SAVED build), and every file in GH_SRC_FILES
+     API, index.html from the SERVED page (the last SAVED build — fetched with a cache-busting
+     query param, because a bare fetch of that URL never returns inside the editor preview, whose
+     service worker intercepts it), and every file in GH_SRC_FILES
      (src/manual.html, the two form files, src/core/*.js and src/state/*.js — keep that manifest
      in step with src/) — the
      changelog and the other docs live in the repo and are updated with the Contents API. So
@@ -1310,8 +1312,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.20 — 2026-09-26 — 🧭 The first named command: a panel title is saved by the store, not read back out of the box
-- 🧭 Nothing you can see changes. This release starts turning "the controls are the data" into "the project is the data, and the controls are a view of it" — one field at a time. This one field is a panel's title: typing in a Title box now goes through a named command that writes the project file itself, instead of the app reading the box back a moment later. The bytes saved are identical.
+## 2026.09.26.21 — 2026-09-26 — 🔧 The backup button works again: it no longer waits forever for the served page, and it no longer runs the page out of memory
+- 🔧 Nothing you can see changes, and nothing about what a backup contains changes — but "⬆ Backup to GitHub…" could hang (it sat at "Pushing…" forever, or died with "out of memory") and now it doesn't. Both faults were in how it read the page it is about to back up: the request for that page had no "don't use a stale copy" hint, and the answer was then walked one character at a time, which is what a long page cannot survive.
 </script>
 
 
@@ -10721,15 +10723,18 @@ color-scheme:light;
     const key = '"outputTemplate":"';
     const i = html.indexOf(key);
     if (i < 0) return null;
-    let j = i + key.length, esc = false, raw = '';
-    while (j < html.length) {
-      const c = html[j];
-      if (esc) { raw += c; esc = false; j++; continue; }
-      if (c === '\\') { raw += c; esc = true; j++; continue; }
-      if (c === '"') break;
-      raw += c; j++;
+    const start = i + key.length;
+    let q = start, end = -1;
+    while (true) {
+      q = html.indexOf('"', q);
+      if (q < 0) break;
+      let bs = 0, k = q - 1;
+      while (k >= start && html[k] === '\\') { bs++; k--; }
+      if (bs % 2 === 0) { end = q; break; }
+      q++;
     }
-    try { const s = JSON.parse('"' + raw + '"'); return s || null; } catch (e) { return null; }
+    if (end < 0) return null;
+    try { const s = JSON.parse('"' + html.slice(start, end) + '"'); return s || null; } catch (e) { return null; }
   }
 
   async function ghPush() {
@@ -10747,7 +10752,8 @@ color-scheme:light;
       const srcJson = await srcRes.json();
       const code = srcJson.generators ? (srcJson.generators[window.generatorName] ? srcJson.generators[window.generatorName].code : null) : null;
       if (code) files.push({ path: 'main.pjs', content: code });
-      const pageRes = await fetch(location.href.split('#')[0]);
+      const pageUrl = location.href.split('#')[0];
+      const pageRes = await fetch(pageUrl + (pageUrl.indexOf('?') === -1 ? '?' : '&') + '_gh=' + Date.now(), { cache: 'no-store' });
       if (pageRes.ok) {
         const pageHtml = await pageRes.text();
         const src = pageHtml ? extractTemplateSource(pageHtml) : null;
