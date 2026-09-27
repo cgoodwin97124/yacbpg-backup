@@ -353,6 +353,42 @@ async function run() {
     ], [true, "written by the command", true, false, "written by the command", true, "1,2,3"], "immediate,saved,match,unknown,roundTrip,neighbour");
   });
 
+  await t("SD18 an Images-count change is written by the named command", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setImgCount !== "function") return no("the commands module did not load");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const rawBefore = localStorage.getItem("comicGen.panelState");
+    const sel = $("panel-img-count-1");
+    if (!sel) return no("no #panel-img-count-1 to change");
+    const otherBefore = $("panel-img-count-2") ? $("panel-img-count-2").value : null;
+    if (!window.__panelOverrideSet) return no("no __panelOverrideSet seam");
+    const posEl = $("prompt-pos-1");
+    if (!posEl) return no("no #prompt-pos-1 to override with");
+    posEl.value = "SD18 pinned override";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    const overBefore = window.__panelOverrideSet(1);
+    sel.value = "3";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    const rawAfter = localStorage.getItem("comicGen.panelState");
+    const saved = JSON.parse(rawAfter || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const changed = saved.pages[1][1].imgCount;
+    const neighbour = saved.pages[1][2] ? saved.pages[1][2].imgCount : "(none)";
+    const overAfter = window.__panelOverrideSet(1);
+    const slots = [1, 2, 3, 4].map((k) => { const s = $("imgslot-panel-1-" + k); return s ? s.style.display : "?"; }).join(",");
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    const roundTripped = $("panel-img-count-1") ? $("panel-img-count-1").value : "(missing card)";
+    return eqArr([
+      rawAfter !== rawBefore, changed, JSON.stringify(saved) === JSON.stringify(c),
+      roundTripped, neighbour === otherBefore, overBefore === overAfter, slots, pages,
+    ], [true, "3", true, "3", true, true, "block,block,block,none", "1,2,3"], "immediate,saved,match,roundTrip,neighbour,overrideKept,slots");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
