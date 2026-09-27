@@ -67,7 +67,7 @@ async function run() {
 
     await t("FX4 the library came with the file (into the project, not the catalogue)", () => {
       const names = lib().map((o) => o.name).sort();
-      const inDom = [...document.querySelectorAll("#libObjects .lib-row-proj input")].map((el) => el.value).sort();
+      const inDom = [...document.querySelectorAll("#libObjects .lib-row-proj .lib-name-input")].map((el) => el.value).sort();
       return eqArr([lib().length, names[0], inDom.length, catLog().length], [4, "Fixture Action", 4, window.__fxCatBefore || 0], "count,names,catalogueUnchanged");
     });
 
