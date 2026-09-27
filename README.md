@@ -3,8 +3,9 @@ Yet Another Comic Book Page Generator backup
 
 The generator: https://perchance.org/f0vstb2fbe — source is `main.pjs` + `index.html`, plus `src/manual.html`
 (the shipped user manual), `src/question-form.html` (the author's ticket form), `src/refactor-form.html`
-(the R-01 … R-08 refactor questions), `src/round2-form.html` (the P2 round) and `src/core/*.js` (the app's
-extracted pure logic — seven modules: P1's six, plus P2's `schema.js`). Everything else here is
+(the R-01 … R-08 refactor questions), `src/round2-form.html` (the P2 round), `src/core/*.js` (the app's
+extracted pure logic — seven modules: P1's six, plus P2's `schema.js`) and `src/state/store.js` (P2 step 3,
+the state layer's first piece). Everything else here is
 documentation for whoever works on it next.
 
 Reading order for a new session:
@@ -33,6 +34,13 @@ Reading order for a new session:
   is now the browser-wide **catalogue** a project copies entries from — see `AI-NOTES.md` §28); 2026.09.26.16 added the
   project's own `kept` array with `normaliseKept` — the home for kept images (nothing writes to it until the ⤓ Keep feature
   ships — `AI-NOTES.md` §29).
+- `src/state/store.js` — P2 step 3 (2026.09.26.17): the state layer's first piece. A plain store object
+  (`load()` / `toJSON()` / `subscribe()` / `unsubscribe()` / `getSnapshot()` / `isDirty()`) over a **pure**
+  `serializeProject(snapshot)` plus `ensurePages` / `defaultPageData` / `pageKey` / `normaliseSnapshot`, loaded by the same
+  `coreLoad()` mechanism as the `src/core/` modules (it is in `GH_SRC_FILES`, and `devtests/diff-core.js` discovers
+  `src/core/` **and** `src/state/`). `index.html` owns the DOM half, `collectDomSnapshot()`. **Nothing reads the store yet,
+  deliberately** — §3.4 step 4 is the differential test that `store.toJSON()` equals `collectPanelState()` key for key, and
+  step 5 the release that moves the save path onto it (`AI-NOTES.md` §30).
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
