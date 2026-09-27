@@ -385,6 +385,25 @@ if (api.normalise && api.validate && api.newPanelId) {
     ], [4, "Location,Action,Character,Character", "5", "\"7\"", false, 1, 1, 0], "library");
   });
 
+  await t("panelDescMatch finds only a saved Panel Description whose text matches", () => {
+    const objs = [
+      { id: "char-1", type: "Character", name: "Bill", desc: "a tall man" },
+      { id: "pd-1", type: "Panel Description", name: "Torn jacket", desc: "wearing a torn jacket" },
+      { id: "pd-2", type: "Panel Description", name: "At night", desc: "lit only by the moon" },
+      { id: "zzz-9", name: "legacy", desc: "wearing a torn jacket" }
+    ];
+    const hit = api.panelDescMatch(objs, "  wearing a torn jacket  ");
+    return eqArr([
+      hit && hit.id, hit && hit.name,
+      api.panelDescMatch(objs, "something else"),
+      api.panelDescMatch(objs, "   "),
+      api.panelDescMatch(objs, null),
+      api.panelDescMatch([], "wearing a torn jacket"),
+      api.normalizeLibType({ id: "pd-77" }),
+      api.normalizeLibType({ id: "x", type: "Panel Description" })
+    ], ["pd-1", "Torn jacket", null, null, null, null, "Panel Description", "Panel Description"], "match,idPrefix,byType");
+  });
+
   await t("normalise keeps unknown keys and mints the missing ids", () => {
     const legacy = {
       version: 1,
