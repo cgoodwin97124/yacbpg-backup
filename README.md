@@ -30,7 +30,9 @@ Reading order for a new session:
   (2026.09.26.10) is the first P2 module — the project defaults,
   `newPanelId`, and the `normalise` / `validate` pair the state layer is built on; 2026.09.26.15 added the project's own
   `library` field with `normaliseLibrary` / `normaliseLibType` (the project owns its library, and `comicGen.libObjects`
-  is now the browser-wide **catalogue** a project copies entries from — see `AI-NOTES.md` §28).
+  is now the browser-wide **catalogue** a project copies entries from — see `AI-NOTES.md` §28); 2026.09.26.16 added the
+  project's own `kept` array with `normaliseKept` — the home for kept images (nothing writes to it until the ⤓ Keep feature
+  ships — `AI-NOTES.md` §29).
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
