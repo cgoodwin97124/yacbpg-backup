@@ -340,8 +340,28 @@ if (api.normalise && api.validate && api.newPanelId) {
       "id,chars,title,protectSlots,loc,locBase,locExtra,action,seed,imgCount,style,palette,sizeSel,sizeW,sizeH,sameSeed,promptOverride,promptHistory",
       3, "false,false,false,false", true, true,
       4, "4", "",
-      "version,projectName,imageSizeSel,imageSizeW,imageSizeH,guidanceScale,imgCountDefault,previewDelay,previewOn,globalPos,globalNeg,nsfw,theme,currentPage,pages,library", 1, 0
+      "version,projectName,imageSizeSel,imageSizeW,imageSizeH,guidanceScale,imgCountDefault,previewDelay,previewOn,globalPos,globalNeg,nsfw,theme,currentPage,pages,library,kept", 1, 0
     ], "panel,page,project");
+  });
+
+  await t("normaliseKept / normalise handle the project's own kept images", () => {
+    const src = [
+      { id: "k1", panel: "p-1", slot: 2, image: "data:image/png;base64,AAA", prompt: "a cow", seed: "5" },
+      { extra: "unknown key kept" },
+      { prompt: 5 },
+      null, "junk", 7, []
+    ];
+    const arr = api.normaliseKept(src);
+    const norm = api.normalise(Object.assign({ projectName: "T", pages: { 1: { panelCountSel: "4" } } }, { kept: src }));
+    const seeded = api.normalise({ projectName: "T", pages: { 1: { panelCountSel: "4" } } });
+    const bad = api.validate({ pages: { 1: { panelCountSel: "4" } }, kept: { nope: 1 } }).length;
+    const badEntry = api.validate({ pages: { 1: { panelCountSel: "4" } }, kept: ["x"] }).length;
+    const okProj = api.validate({ pages: { 1: { panelCountSel: "4" } }, kept: [{ anything: 1 }] }).length;
+    return eqArr([
+      arr.length, norm.kept.length, norm.kept[0].prompt, norm.kept[0].slot, norm.kept[1].extra, norm.kept[2].prompt,
+      api.normaliseKept("nope").length, arr[0] === src[0],
+      "kept" in seeded, api.defaultProject().kept.length
+    ], [3, 3, "a cow", 2, "unknown key kept", 5, 0, false, false, 0], "kept");
   });
 
   await t("normaliseLibrary / normalise handle the project's own library", () => {
