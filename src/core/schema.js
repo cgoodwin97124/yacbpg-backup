@@ -28,6 +28,16 @@ export function normaliseLibrary(arr) {
   return out;
 }
 
+export function normaliseKept(arr) {
+  const out = [];
+  if (!Array.isArray(arr)) return out;
+  for (const o of arr) {
+    if (!isObj(o)) continue;
+    out.push(Object.assign({}, o));
+  }
+  return out;
+}
+
 export function normaliseLibType(type, id) {
   if (type === "Character" || type === "Location" || type === "Action") return type;
   const s = asString(id, "");
@@ -87,7 +97,8 @@ export function defaultProject(overrides) {
     theme: { mode: "system", accent: "" },
     currentPage: 1,
     pages: { 1: defaultPage(4) },
-    library: []
+    library: [],
+    kept: []
   }, overrides || {});
 }
 
@@ -100,6 +111,7 @@ export function normalise(state) {
   if ("nsfw" in out) out.nsfw = !!out.nsfw;
   if (isObj(out.theme)) out.theme = { mode: asString(out.theme.mode, "system"), accent: asString(out.theme.accent, "") };
   if ("library" in out) out.library = normaliseLibrary(out.library);
+  if ("kept" in out) out.kept = normaliseKept(out.kept);
   const pages = (src.pages !== null && typeof src.pages === "object") ? src.pages : { 1: flatPage(src) };
   const seen = new Set();
   const normPages = {};
@@ -123,6 +135,10 @@ export function validate(state) {
       if (!isObj(o)) { add("library." + i, "a library entry must be an object"); return; }
       if (!validId(o.id)) add("library." + i + ".id", "a library entry must have a non-empty id");
     });
+  }
+  if (state.kept !== undefined) {
+    if (!Array.isArray(state.kept)) add("kept", "kept must be an array");
+    else state.kept.forEach((o, i) => { if (!isObj(o)) add("kept." + i, "a kept image must be an object"); });
   }
   if (!isObj(state.pages)) add("pages", "pages must be an object");
   else {
