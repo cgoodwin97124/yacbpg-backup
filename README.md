@@ -44,7 +44,7 @@ Reading order for a new session:
   it as of 2026.09.26.19** (`savePanelState()` = `savePanelStateShape(storeJsonNow() || collectPanelState())`, and
   `resetEverything()` now builds its fresh state from the schema's `defaultProject()`/`defaultPanel()`): the differential
   that licensed that (`store.toJSON()` equals `collectPanelState()` key for key, plus the saved bytes and the reset) runs
-  **16 checks** in `devtests/state-diff.page.js` — `AI-NOTES.md` §31/§32. §3.4 is complete; P3 (mutations become commands)
+  **17 checks** in `devtests/state-diff.page.js` — `AI-NOTES.md` §31/§32. §3.4 is complete; P3 (mutations become commands)
   is next.
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
