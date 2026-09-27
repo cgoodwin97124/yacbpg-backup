@@ -40,10 +40,12 @@ Reading order for a new session:
   (`load()` / `toJSON()` / `subscribe()` / `unsubscribe()` / `getSnapshot()` / `isDirty()`) over a **pure**
   `serializeProject(snapshot)` plus `ensurePages` / `defaultPageData` / `pageKey` / `normaliseSnapshot`, loaded by the same
   `coreLoad()` mechanism as the `src/core/` modules (it is in `GH_SRC_FILES`, and `devtests/diff-core.js` discovers
-  `src/core/` **and** `src/state/`). `index.html` owns the DOM half, `collectDomSnapshot()`. **Nothing reads the store yet,
-  deliberately** — §3.4 step 4 was the differential test that `store.toJSON()` equals `collectPanelState()` key for key, and
-  **it went green in 2026.09.26.18** (`devtests/state-diff.page.js`, 13 checks — `AI-NOTES.md` §31); step 5, the release
-  that moves the save path onto the store, is next (`AI-NOTES.md` §30).
+  `src/core/` **and** `src/state/`). `index.html` owns the DOM half, `collectDomSnapshot()`. **The save path writes through
+  it as of 2026.09.26.19** (`savePanelState()` = `savePanelStateShape(storeJsonNow() || collectPanelState())`, and
+  `resetEverything()` now builds its fresh state from the schema's `defaultProject()`/`defaultPanel()`): the differential
+  that licensed that (`store.toJSON()` equals `collectPanelState()` key for key, plus the saved bytes and the reset) runs
+  **16 checks** in `devtests/state-diff.page.js` — `AI-NOTES.md` §31/§32. §3.4 is complete; P3 (mutations become commands)
+  is next.
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
