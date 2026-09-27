@@ -1330,8 +1330,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.27.1 — 2026-09-27 — 🧭 The second named command: the Images count is saved by the store, and it leaves your prompt override alone
-- Changing a panel's Images count now writes through the store's named command instead of the debounced autosave; slot row re-renders at once, manual prompt overrides untouched, same bytes saved.
+## 2026.09.27.2 — 2026-09-27 — 🧭 The third named command: the Style select is saved by the store, and it still clears your prompt override
+- Changing a panel's Style now writes through the store's named command instead of the debounced autosave; the manual prompt override is still cleared, same bytes saved.
 </script>
 
 
@@ -4454,6 +4454,10 @@ color-scheme:light;
           sel.value = [...sel.options].some(o => o.value === v) ? v : imgCountDefaultPref;
         }
         updatePanelImgSlots(hit.index);
+      }
+      if (f === 'style') {
+        const sel = document.getElementById('panel-style-' + hit.index);
+        if (sel && panel.style && [...sel.options].some(o => o.value === panel.style)) sel.value = panel.style;
       }
     }
     return true;
@@ -8014,7 +8018,10 @@ color-scheme:light;
 
   function onPanelStyleChange(i) {
     clearPanelPromptOverride(i);
-    schedulePanelSave();
+    const sel = document.getElementById('panel-style-' + i);
+    if (!sel || !runPanelCommand('setStyle', panelIdAt(i), [sel.value])) {
+      schedulePanelSave();
+    }
   }
 
   function onPanelPaletteChange(i) {
