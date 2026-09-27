@@ -1402,6 +1402,51 @@ pointer comment in `index.html`. The user-facing story is `CHANGELOG.md` 2026.09
 - **Next: P3** (`REFACTOR-ROADMAP.md` §3.5) — mutations become named commands, leaf setters first, one release each.
   **§3.4 is COMPLETE.**
 
+## 33. P3 step 1a: the first named command — `setTitle` (2026.09.26.20)
+
+`REFACTOR-ROADMAP.md` §3.5 step 1, first command. The user-facing story is `CHANGELOG.md` 2026.09.26.20; the
+detail is `DEV-NOTES.md` BATCH 2026.09.26.20.
+
+- **The new module — `src/state/commands.js`** (the second `src/state/` file, the ninth module). Pure and DOM-free:
+  `findPanelById(project, id)` → `{ page, index, panel }` or `null` (walks canonical numeric page keys, then canonical
+  numeric slot keys — `String(Number(k)) === k`, which is what the app's own writer produces — and never mutates);
+  `setTitle(project, id, value)` → writes `text(value)` (`null`/`undefined` → `""`, else `String(...)`, matching the DOM
+  read's `.value` semantics) and returns `{ page, index, fields: ["title"] }`; `COMMANDS = { setTitle }` is the registry
+  the dispatcher looks names up in; `COMMANDS_VERSION = 1`.
+- **The dispatcher and the adapter, in `index.html`.** `runPanelCommand(name, id, args)` = look the command up in
+  `panelCommands` (filled by `coreLoad('commands', …)`) → build the project object with `storeJsonNow()` → apply →
+  `savePanelStateShape(project)` (the `.19` writer) → `renderCommittedFields(project, hit)`. `renderCommittedFields` is the
+  **only** place that knows a committed field maps to an element (`title` → `#panel-title-<index>`, and only when
+  `hit.page === currentPage`), and it skips the write when the element already holds the value. `panelIdAt(i)` reads
+  `data-panel-id` off the card. Everything returns `false` on a missing module/command/id, which is the strangler
+  fallback to the old debounced DOM-read save (deleted at the end of P3).
+- **The routing.** `handleGridInput(e)` gained one branch at the very top —
+  `const ttl = id.match(/^panel-title-(\d+)$/); if (ttl) return runPanelCommand('setTitle', panelIdAt(...), [e.target.value]);`
+  — and the two delegated listeners became `if (!handleGridInput(e)) schedulePanelSave();`. Every other branch in
+  `handleGridInput` still ends in a bare `return;` (→ `undefined`) so the debounce is untouched for every other input;
+  the title's save is suppressed for that keystroke because the command has already written synchronously.
+- **Why the bytes cannot differ:** the project object is `serializeProject(collectDomSnapshot())`, proven
+  character-identical to `collectPanelState()` by `SD1`–`SD16`; the command sets `title` to exactly the string the input
+  holds; the writer is unchanged. The DOM re-render is a no-op by construction.
+- **New checks.** `devtests/state-diff.page.js` **17** (`SD17`: a real `input` event on `#panel-title-1` is in
+  `localStorage` **synchronously**, equals the store's JSON and `collectPanelState()`, leaves the neighbour alone, returns
+  `false` for an unknown command, and survives a page switch away and back). `devtests/core.test.js` **33** (three DOM-free
+  commands checks, including a recursive differ proving `setTitle` writes **exactly one leaf**). `devtests/diff-core.js`
+  **21** (the new module is discovered automatically; manifest now 13 files, declarations 40).
+- **Park hash `a9ccf378`** — moved from `0442faa8` by the `.19` backup's `comicGen.githubLastBackup` rewrite (trap 5),
+  nothing else. Differential **17/17**, smoke **88/0/4**, generation **18/0**, fixtures **18/0**, core **33/0**,
+  guards **21/0**, 0 perchance errors, the author's map byte-identical after every runner.
+- **The visual gate was done at the DOM level** (the platform wedge killed three image runs, one of them with the
+  **previous** build loaded): a fingerprint of every `[id]` element (rect, computed display/visibility/opacity/font/colour/
+  background, value, leaf text, `hidden` flags, `body.scrollHeight`) for `desktop-dark-grid` is **identical between the
+  `.19` and `.20` builds in the same session** (`8eee1954`, 213,179 chars, 2,125 elements) once the version string is
+  normalised — it appears 11 times in the page. The `.20` grid capture is also byte-identical to a `.19` capture from
+  the previous session, and the only pixel deltas against the baselines are the trap-6 thumbnail-placeholder bands.
+  Phone 390×844: `scrollWidth` 390, no overflow.
+- **Next:** P3 step 1b — the next leaf setter, smallest-first. Of the remaining ones `setImgCount` is the smallest
+  (it clears the panel's prompt override and re-renders the slot row); `setStyle`/`setSize`/`setChar`/`setLoc`/`setAction`
+  follow. Each adds its field to `renderCommittedFields` and its own check.
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
