@@ -1371,6 +1371,37 @@ pointer comment in `index.html`. The user-facing story is `CHANGELOG.md` 2026.09
   unchanged (smoke 88/0/4, generation 18/0, fixtures 18/0, core 30/0, guards 19/0, visual 12/14, 0 perchance errors).
 - **Next: §3.4 step 5** — the save path moves onto the store.
 
+## 32. P2 step 5: the save path moves onto the store (2026.09.26.19)
+
+`REFACTOR-ROADMAP.md` §3.4 step 5 — the first release in which the store is *read*. The user-facing story is
+`CHANGELOG.md` 2026.09.26.19; the detail is `DEV-NOTES.md` BATCH 2026.09.26.19.
+
+- **The change is one line plus a leftover.** `savePanelState()` now writes `savePanelStateShape(storeJsonNow() || collectPanelState())` — the store's project object, through the same writer, with the old expression as the
+  fallback for a missing `src/state/store.js`. `resetEverything()`'s hand-built fresh state became
+  `defaultProject()` / `defaultPanel()` (§3.4 step 2's leftover), so the factory project has one definition.
+- **What stayed on `collectPanelState()`:** `switchPage`, `addPage`, `deletePage`, `jsonApplyDoc` and the export/import
+  paths — each writes a state it *derived* (a new `currentPage`, a deleted page). Those are **mutations**; P3's named
+  commands replace them. The DOM is still the only source of truth for input: the snapshot is re-read from the DOM on
+  every save, and `restorePanelState()` still writes the DOM on load. The proxy is what the last step of P3 removes.
+- **Three new checks (`SD14`–`SD16`, 13 → 16).** The saved bytes must equal `JSON.stringify(window.__storeJson())` (and
+  `collectPanelState()`'s) after a real autosave, on the live project and on the 3-page fixture; and a factory reset must
+  match `schema.js`'s own `defaultProject()`/`defaultPanel()` field by field (all but a panel's `id` and `imgCount`). New
+  read-only accessors for the harness: `window.savePanelState`, `window.__schemaModule()`.
+- **The identity evidence (this is the release's real gate).** A masked before/after fingerprint of the reset's saved
+  state (`scratch/p0/reset-fp.js`) is character-identical between the `.18` and `.19` builds, and the suites assert the
+  saved bytes ~90 times, so "same bytes" is measured, not argued. The save path itself is proven equal by the
+  differential's string comparison, which is why routing the writer through the store is safe at all.
+- **The trap this session found, for the visual harness:** the `*-analysis` captures are **input-dependent** — the
+  analysis table's shape follows `loadLibraryObjects()`, and importing `fixtures/full-page.json` lands **4** items (from
+  its top-level `libObjects`), so the committed `*-analysis` baselines have been stale since the fixture gained its own
+  library in 2026.09.26.15. Four wedged-preview freezes had hidden it: no visual run has completed since. The delta is
+  **not** a code change, proved by an in-page A/B (the pre-`.19` save path restored, same view, **0 differing pixels**) —
+  see `devtests/README.md` trap 6 and 7.
+- **Park hash `0442faa8`** (the post-`.18`-backup value; this release changes no stored byte). Differential **16/16**,
+  smoke **88/0/4**, generation **18/0**, fixtures **18/0**, core **30/0**, guards **19/0**, 0 perchance errors.
+- **Next: P3** (`REFACTOR-ROADMAP.md` §3.5) — mutations become named commands, leaf setters first, one release each.
+  **§3.4 is COMPLETE.**
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
