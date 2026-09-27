@@ -42,6 +42,14 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-27 — REFACTOR: P2 step 3 — the store (`src/state/store.js`)
+
+- **Status:** 🚧 **IN PROGRESS** — logged here on receipt, before any work, per the 2026-08-13 rule. Author, 2026-09-27, verbatim: **"Start it!"**, in reply to "Next up on the roadmap is P2 step 3 — the store (`src/core/store.js`: `load()`/`toJSON()`/`subscribe()` over a pure serializer of the DOM snapshot, then step 4's differential test that `store.toJSON()` equals `collectPanelState()`). Say the word and I'll start it."
+- **What:** the first **`src/state/`** module (`REFACTOR-ROADMAP.md` §3.4 step 3) — a plain store object with `load()` / `toJSON()` / `subscribe()`, whose loader is a **pure serializer over a snapshot** of the values `collectPageData()` reads today, so the whole thing can be tested in a Worker with no browser. `index.html` gains only the DOM adapter that builds that snapshot (`collectDomSnapshot()`), the loader entry, and a test accessor. **Nothing reads the store yet** — that is deliberate: §3.4 step 4 is the differential test (`store.toJSON()` must equal `collectPanelState()` key for key, and "until that passes, nothing reads the store") and step 5 is the release that moves the save path onto it.
+- **Shape (decided, since the author said "make a reasonable call and say so"):** the module lives at `src/state/store.js` (the roadmap's own path — `src/state/` is new), exports `createStore` / `serializeProject` / `ensurePages` / `normaliseSnapshot` / `STORE_VERSION`, and is loaded through the existing `coreLoad(name, path, apply)` mechanism and added to `GH_SRC_FILES`, so a module that fails to load is still reported in the top bar. `devtests/diff-core.js`'s module discovery widens from `src/core/` to `src/core/` + `src/state/`.
+- **Gate:** the module loads and its surface is guarded; the four suites stay green; **0** perchance errors; the author's storage map restored byte-identical after every runner; and the 14 screenshots unchanged (there is no user-visible change at all).
+- **Next after this:** §3.4 step 4 — the differential test. Queued below.
+
 ### 2026-09-27 — REFACTOR: P2 step 2b (second half) — the project owns its kept images (the `kept` array)
 
 - **Status:** ✅ **DONE 2026.09.26.16** — implemented, tested and pushed in the same session. The scope was recorded in the .15 entry ("The `kept`-images half of §3.4 step 2b ... follows as **2026.09.26.16** — a hook with no UI until the ⤓ Keep feature is greenlit"); the author greenlit it: **"Yes, do go ahead with 2026.09.26.16!"** (2026-09-27).
