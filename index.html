@@ -1276,8 +1276,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.15 — 2026-09-26 — 📚 Each project now owns its library, and the browser copy becomes a catalogue
-- 📚 Library now has two sections: **📁 This project** — the characters and locations this project owns, saved inside the project and used by its panel dropdowns — and **🗂 My catalogue**, the reusable set shared by every project in this browser. Copy an item in with **⤓**, offer one back with **⤒**; deleting a referenced item now asks whether to leave the panel text in place or clear it too. An older project picks up the library you already have the first time it opens, and importing someone else's file can no longer overwrite your shared set.
+## 2026.09.26.16 — 2026-09-26 — 🗃️ Groundwork for kept images: each project gets its own kept-image list
+- 🗃️ Nothing you can see changes. A project now has its own **kept-image list**, saved with the project and carried by Export / Import and by the project `.zip` — the place a future "keep this image, together with the prompt and seed that made it" action will write into. Nothing fills it yet, so it stays empty; the only visible trace is one new read-only `"kept": []` field in the 🧩 JSON editor.
 </script>
 
 
@@ -1351,7 +1351,7 @@ color-scheme:light;
     if (m.libRefEntry) libRefEntry = m.libRefEntry;
     if (m.libRefDesc) libRefDesc = m.libRefDesc;
   });
-  let newPanelId, defaultPanel, defaultPage, defaultProject, normaliseProject, validateProject, normaliseLibrary;
+  let newPanelId, defaultPanel, defaultPage, defaultProject, normaliseProject, validateProject, normaliseLibrary, normaliseKept;
   coreLoad('schema', './src/core/schema.js', (m) => {
     if (m.newPanelId) newPanelId = m.newPanelId;
     if (m.defaultPanel) defaultPanel = m.defaultPanel;
@@ -1360,6 +1360,7 @@ color-scheme:light;
     if (m.normalise) normaliseProject = m.normalise;
     if (m.validate) validateProject = m.validate;
     if (m.normaliseLibrary) normaliseLibrary = m.normaliseLibrary;
+    if (m.normaliseKept) normaliseKept = m.normaliseKept;
   });
   const coreReady = Promise.all(coreLoads).then((failed) => failed.filter(Boolean));
 
@@ -1411,13 +1412,22 @@ color-scheme:light;
   }
 
   let projectLibrary = [];
+  let projectKept = [];
 
   function normaliseLibArray(arr) {
     return normaliseLibrary(arr);
   }
 
+  function normaliseKeptArray(arr) {
+    return normaliseKept(arr);
+  }
+
   function projectLibraryArray() {
     return projectLibrary.map(o => ({ id: o.id, type: o.type, name: o.name, desc: o.desc }));
+  }
+
+  function projectKeptArray() {
+    return projectKept.map(o => ({ ...o }));
   }
 
   function loadLibraryObjects() {
@@ -1426,6 +1436,15 @@ color-scheme:light;
 
   function saveLibraryObjects(lib) {
     projectLibrary = normaliseLibArray(lib);
+    schedulePanelSave();
+  }
+
+  function loadKept() {
+    return projectKept.map(o => ({ ...o }));
+  }
+
+  function saveKept(kept) {
+    projectKept = normaliseKeptArray(kept);
     schedulePanelSave();
   }
 
@@ -1450,6 +1469,11 @@ color-scheme:light;
       } catch (e) {}
     }
     return projectLibrary;
+  }
+
+  function initProjectKept() {
+    projectKept = normaliseKeptArray(readPanelState().kept);
+    return projectKept;
   }
 
   function objectsOfType(typeLabel) {
@@ -3897,7 +3921,8 @@ color-scheme:light;
       theme: { mode: themeModePref, accent: themeAccent },
       currentPage,
       pages,
-      library: projectLibraryArray()
+      library: projectLibraryArray(),
+      kept: projectKeptArray()
     };
   }
 
@@ -8158,6 +8183,7 @@ color-scheme:light;
       if (legacy.length) fileLib = legacy;
     }
     projectLibrary = normaliseLibArray(fileLib && fileLib.length ? fileLib : loadCatalogue());
+    projectKept = normaliseKeptArray(data.settings && data.settings.kept);
     if (data.settings) {
       scrubMinusOneSeeds(data.settings);
       data.settings = normaliseProject(data.settings);
@@ -8853,6 +8879,7 @@ color-scheme:light;
       try { localStorage.removeItem(LIB_OBJ_KEY); } catch (e) {}
       renderLibrary();
     }
+    projectKept = [];
 
     for (let i = 1; i <= 24; i++) {
       for (let s = 1; s <= 3; s++) {
@@ -9586,6 +9613,10 @@ color-scheme:light;
   window.saveCatalogue = saveCatalogue;
   window.initProjectLibrary = initProjectLibrary;
   window.projectLibraryArray = projectLibraryArray;
+  window.loadKept = loadKept;
+  window.saveKept = saveKept;
+  window.initProjectKept = initProjectKept;
+  window.projectKeptArray = projectKeptArray;
   window.deleteLibraryObject = deleteLibraryObject;
   window.deleteCatalogueObject = deleteCatalogueObject;
   window.applyLibraryDelete = applyLibraryDelete;
@@ -9661,7 +9692,7 @@ color-scheme:light;
     if (path[0] !== 'settings') return 'lock';
     if (path.length === 2) {
       const k = path[1];
-      return (k === 'version' || k === 'currentPage' || k === 'pages' || k === 'theme' || k === 'library') ? 'lock' : 'edit';
+      return (k === 'version' || k === 'currentPage' || k === 'pages' || k === 'theme' || k === 'library' || k === 'kept') ? 'lock' : 'edit';
     }
     if (path[1] === 'theme') return (path.length === 3 && (path[2] === 'mode' || path[2] === 'accent')) ? 'edit' : 'lock';
     if (path[1] === 'library') return (path.length === 4 && (path[3] === 'type' || path[3] === 'name' || path[3] === 'desc')) ? 'edit' : 'lock';
@@ -10216,6 +10247,8 @@ color-scheme:light;
     const lib = Array.isArray(settings.library) ? settings.library : (Array.isArray(doc.libObjects) ? doc.libObjects : null);
     if (lib) projectLibrary = normaliseLibArray(lib);
     settings.library = projectLibraryArray();
+    projectKept = normaliseKeptArray(settings.kept);
+    settings.kept = projectKeptArray();
     try { localStorage.setItem(PANEL_STATE_KEY, JSON.stringify(settings)); } catch (e) { throw new Error('could not write the project settings (' + (e && e.message) + ')'); }
     if (doc.preset && ART_STYLES[doc.preset.style] && COLOR_PALETTES[doc.preset.palette]) {
       document.getElementById('presetStyle').value = doc.preset.style;
@@ -10696,6 +10729,7 @@ color-scheme:light;
   const bootApp = () => {
     migrateLibObjects();
     initProjectLibrary();
+    initProjectKept();
     try { getMaps().then(m => { builtinDescMaps = m; refreshAllPanelLineDescs(); seedPendingPanelBases(); }); } catch (e) {}
     renderLibrary();
     initPresets();
