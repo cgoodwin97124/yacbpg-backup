@@ -556,6 +556,8 @@ color-scheme:light;
   .pl-base-badge.on { display: inline-block; }
   .pl-base-refresh { background: var(--hover-3); color: var(--text-5); border: 1px solid var(--border-5); border-radius: 4px; font-size: 0.62rem; font-weight: bold; padding: 2px 6px; cursor: pointer; line-height: 1.3; }
   .pl-base-refresh:hover { background: var(--hover); color: var(--text-2); }
+  .pl-base-badge.custom { background: var(--well-3); color: var(--text-8); border-color: var(--border-3); }
+  .pl-desc-pick { background: var(--hover-3); color: var(--text-5); border: 1px solid var(--border-5); border-radius: 4px; font-size: 0.62rem; font-weight: bold; padding: 2px 4px; cursor: pointer; line-height: 1.3; max-width: 46%; }
   .pl-base-field.differs textarea { border-color: var(--accent-outline); box-shadow: inset 3px 0 0 var(--accent-outline); }
   .pl-line .po-desc { min-width: 0; width: 100%; margin: 0; box-sizing: border-box; resize: vertical; line-height: 1.4; padding-top: 9px; padding-bottom: 9px; min-height: calc(2.2em + 14px); font-family: inherit; }
   .panel-card.skipped { border-color: var(--border-7); }
@@ -950,7 +952,7 @@ color-scheme:light;
             <button class="btn-view" onclick="panelCutAction()" title="Copy the selected panels to the clipboard and remove them from the page">✂ Cut</button>
             <button class="btn-clear" onclick="clearPanelSelection()" title="Clear the selection (Esc)">✕ Clear selection</button>
           </div>
-          <p class="lib-hint" style="margin-top:16px;"><b>The whole-selection buttons, in one place.</b> These are the same actions as the ones in a selected panel's <b>⚙ Panel</b> menu (and its <b>⇅ Move</b>), so you can run them without opening a panel first. They are greyed out until at least one panel is selected, and their labels show the count. When an action needs a position — <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>⇅ Move</b>, <b>⚡ Generate All To Here</b> and the range picker — it works from the <b>last selected panel</b>, exactly as it does when you click it inside a panel. The destructive ones (<b>🗑 Clear Images</b>, <b>🗑 Clear</b>, <b>🗑 Delete</b>) still ask first. <b>⟳ Refresh descriptions</b> refills the <b>Basic Description</b> of every character and location line in the selected panels from what is saved in your library, leaving lines that have no library description (and the <i>extra description</i> boxes and Action prompts) as they are.</p>
+          <p class="lib-hint" style="margin-top:16px;"><b>The whole-selection buttons, in one place.</b> These are the same actions as the ones in a selected panel's <b>⚙ Panel</b> menu (and its <b>⇅ Move</b>), so you can run them without opening a panel first. They are greyed out until at least one panel is selected, and their labels show the count. When an action needs a position — <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>⇅ Move</b>, <b>⚡ Generate All To Here</b> and the range picker — it works from the <b>last selected panel</b>, exactly as it does when you click it inside a panel. The destructive ones (<b>🗑 Clear Images</b>, <b>🗑 Clear</b>, <b>🗑 Delete</b>) still ask first. <b>⟳ Refresh descriptions</b> refills the <b>Basic Description</b> of every character and location line in the selected panels from what is saved in your library, leaving lines that have no library description (and the <i>Panel Description</i> boxes and Action prompts) as they are.</p>
           <div id="selMenuHint" class="lib-hint" style="color:var(--text-8);">Select at least one panel (the checkbox at the left of a panel's header) to use these buttons.</div>
           <div class="panel-header-btns" style="margin-top:6px;justify-content:flex-start;">
             <button class="btn-reroll" id="selMenuGenBtn" onclick="selMenuAction('generate')" disabled title="Generate every selected panel (with several selected, the in-panel button does the same)">🔄 Generate</button>
@@ -1312,8 +1314,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.21 — 2026-09-26 — 🔧 The backup button works again: it no longer waits forever for the served page, and it no longer runs the page out of memory
-- 🔧 Nothing you can see changes, and nothing about what a backup contains changes — but "⬆ Backup to GitHub…" could hang (it sat at "Pushing…" forever, or died with "out of memory") and now it doesn't. Both faults were in how it read the page it is about to back up: the request for that page had no "don't use a stale copy" hint, and the answer was then walked one character at a time, which is what a long page cannot survive.
+## 2026.09.26.22 — 2026-09-26 — 💬 The Panel Description box can now be saved to your library and reused by any character or location
+- 💬 The box under a character or location — formerly "This panel — extra description" — is now called Panel Description, and it can remember phrases: type one and press 💾 Save to library to keep it under a name, or pick one of your saved descriptions from 💬 Use a saved description… beside the box. Any character or location can use any saved description. A pill beside the label names the saved description the box is holding (or says ✎ not in your library). Picking copies the text; editing the saved copy later leaves panels that already took it alone — pick it again to take a change.
 </script>
 
 
@@ -1386,6 +1388,7 @@ color-scheme:light;
     if (m.extractLibraryItems) extractLibraryItems = m.extractLibraryItems;
     if (m.libRefEntry) libRefEntry = m.libRefEntry;
     if (m.libRefDesc) libRefDesc = m.libRefDesc;
+    if (m.panelDescMatch) panelDescMatch = m.panelDescMatch;
   });
   let newPanelId, defaultPanel, defaultPage, defaultProject, normaliseProject, validateProject, normaliseLibrary, normaliseKept;
   coreLoad('schema', './src/core/schema.js', (m) => {
@@ -1549,7 +1552,7 @@ color-scheme:light;
         if (e && e.id && !have.has(e.id)) { objs.push({ id: e.id, type: typeLabel, name: e.name || '', desc: e.desc || '' }); have.add(e.id); changed = true; }
       }
     }
-    const pruned = objs.filter(o => o.type === 'Character' || o.type === 'Location' || o.type === 'Action');
+    const pruned = objs.filter(o => o.type === 'Character' || o.type === 'Location' || o.type === 'Action' || o.type === 'Panel Description');
     if (changed || pruned.length !== objs.length) saveCatalogue(pruned);
     for (const [, key] of legacy) {
       try { localStorage.removeItem(key); } catch (e) {}
@@ -1558,18 +1561,59 @@ color-scheme:light;
     return pruned;
   }
 
-  function addLibraryEntryByType(type) {
-    const label = type === 'Character' ? 'Character' : (type === 'Location' ? 'Location' : 'Action');
-    const name = prompt('Name your new ' + label.toLowerCase() + ':', 'New ' + label);
-    if (name === null) return;
+  function libTypeLabel(type) {
+    if (type === 'Character' || type === 'Location' || type === 'Action' || type === 'Panel Description') return type;
+    return TYPE_OF[type] || 'Character';
+  }
+
+  function promptPanelDescription(elemName) {
+    const pds = objectsOfType('Panel Description');
+    const saved = pds.length
+      ? ('Saved Panel Descriptions: ' + pds.map(p => String(p.name || '')).filter(Boolean).join(', ') + '. Type one of those names to use its text, or type a new description.')
+      : 'Type a new description, or leave it blank.';
+    const ans = prompt('Panel Description for "' + elemName + '" (optional) — a phrase that flavours this panel only, e.g. "wearing a torn jacket". ' + saved, '');
+    if (ans === null) return null;
+    const val = ans.trim();
+    if (!val) return null;
+    const hit = pds.find(p => String(p.name || '').trim().toLowerCase() === val.toLowerCase());
+    if (hit) return { name: String(hit.name || ''), text: String(hit.desc || ''), saved: true };
+    const saveAs = prompt('Save this Panel Description to your library so any character or location can reuse it? Name it — or Cancel to use it in this panel only:', '');
+    if (saveAs === null) return { name: '', text: val, saved: false };
+    return { name: (saveAs.trim() || 'Panel Description').slice(0, 60), text: val, saved: true };
+  }
+
+  function promptNewLibraryItem(type, firstNote) {
+    const label = libTypeLabel(type);
+    const name = prompt('Name your new ' + label.toLowerCase() + ':' + (firstNote ? ' ' + firstNote : ''), 'New ' + label);
+    if (name === null) return null;
     const finalName = (name.trim() || ('New ' + label)).slice(0, 60);
     const desc = prompt('Add the ' + label.toLowerCase() + ' description for "' + finalName + '" (optional) — shown in 📚 Library and used in every panel prompt that uses it:', '');
+    let panelDesc = null;
+    if (label === 'Character' || label === 'Location') panelDesc = promptPanelDescription(finalName);
+    return { type: label, name: finalName, desc: desc === null ? '' : desc.trim(), panelDesc: panelDesc };
+  }
+
+  function pushPanelDescriptionItem(objs, pd) {
+    if (!pd || !pd.saved || !String(pd.text || '').trim()) return null;
+    const key = String(pd.name || '').trim().toLowerCase();
+    const existing = objs.find(o => o.type === 'Panel Description' && String(o.name || '').trim().toLowerCase() === key);
+    if (existing) { existing.desc = pd.text; return existing.id; }
+    const item = { id: newLibraryId('Panel Description'), type: 'Panel Description', name: pd.name, desc: pd.text };
+    objs.push(item);
+    return item.id;
+  }
+
+  function addLibraryEntryByType(type) {
+    const fresh = promptNewLibraryItem(type);
+    if (!fresh) return null;
     const objs = loadLibraryObjects();
-    const id = newLibraryId(label);
-    objs.push({ id, type, name: finalName, desc: desc === null ? '' : desc.trim() });
+    const id = newLibraryId(fresh.type);
+    objs.push({ id: id, type: fresh.type, name: fresh.name, desc: fresh.desc });
+    pushPanelDescriptionItem(objs, fresh.panelDesc);
     saveLibraryObjects(objs);
     renderLibrary();
     updatePanelSelects();
+    return id;
   }
 
   function sweepDeleteAcrossPages(state, slug, id, clearText, apply) {
@@ -1910,7 +1954,7 @@ color-scheme:light;
         '<span class="rename-row"><label for="renameInput">Rename to</label><input type="text" id="renameInput" maxlength="60" autocomplete="off" spellcheck="false" placeholder="New name" value="' + escapeHtml(obj.name || '') + '"></span>',
         '<span class="rename-preview" id="renamePreview"></span>'
       ],
-      hint: 'Matching is whole-word and case-sensitive, so \u201c' + (from || 'the old name') + '\u201d is replaced but \u201c' + (from || '') + 'something\u201d is not. The sweep covers this ' + typeWord + '\u2019s library description and, in every panel on every page that uses it, the Basic Description, the This-panel extra description and the Panel Action Prompt. Other library items are never touched. This cannot be undone \u2014 a project backup can restore it.',
+      hint: 'Matching is whole-word and case-sensitive, so \u201c' + (from || 'the old name') + '\u201d is replaced but \u201c' + (from || '') + 'something\u201d is not. The sweep covers this ' + typeWord + '\u2019s library description and, in every panel on every page that uses it, the Basic Description, the Panel Description and the Panel Action Prompt. Other library items are never touched. This cannot be undone \u2014 a project backup can restore it.',
       buttons: [
         { label: '✎ Rename everywhere', cls: 'choice-plain', value: 'go' },
         { label: 'Cancel', cls: 'choice-neutral', value: null }
@@ -1975,18 +2019,16 @@ color-scheme:light;
 
   function newPanelLibraryEntry(type, i, s) {
     const label = TYPE_OF[type] || 'Character';
-    const suggested = 'New ' + label;
-    const name = prompt('Name your new ' + label.toLowerCase() + '. It will be saved to your library and used in this panel right away:', suggested);
-    if (name === null) return;
-    const finalName = (name.trim() || suggested).slice(0, 60);
-    const libDesc = prompt('Add the main ' + label.toLowerCase() + ' description for "' + finalName + '" (optional) — the reusable description shown in 📚 Library and used in every panel prompt that uses this ' + label.toLowerCase() + ':', '');
-    const panelDesc = prompt('Add a description to use in THIS panel for "' + finalName + '" (optional) — it fills this panel\'s ' + label.toLowerCase() + ' slot in 📖 Panel Library and is added to this panel\'s prompt:', '');
+    const fresh = promptNewLibraryItem(label, 'It will be saved to your library and used in this panel right away.');
+    if (!fresh) return;
     const objs = loadLibraryObjects();
-    const id = type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-    objs.push({ id: id, type: label, name: finalName, desc: libDesc === null ? '' : libDesc.trim() });
+    const id = newLibraryId(label);
+    objs.push({ id: id, type: label, name: fresh.name, desc: fresh.desc });
+    pushPanelDescriptionItem(objs, fresh.panelDesc);
     saveLibraryObjects(objs);
     renderLibrary();
     updatePanelSelects();
+    const panelDesc = fresh.panelDesc ? String(fresh.panelDesc.text || '') : '';
     const value = libRefValue(type, id);
     if (type === 'char') {
       let slot = s || 0;
@@ -2090,6 +2132,7 @@ color-scheme:light;
     ctn.appendChild(libHintEl('The library this project owns. It is saved inside the project (so it travels with your backups) and it is what this project\u2019s panel dropdowns use. Use ⤒ to offer an item to My catalogue.', 'lib-section-hint'));
     const buckets = [['👤 Characters', 'Character', 'No characters in this project yet — click the green + button to add one, or copy one in from My catalogue below.'], ['📍 Locations', 'Location', 'No locations in this project yet — click the green + button to add one, or copy one in from My catalogue below.']];
     if (objs.some(o => o.type === 'Action') || cat.some(o => o.type === 'Action')) buckets.push(['🎬 Actions', 'Action', 'No actions in this project yet — click the green + button to add one, or copy one in from My catalogue below.']);
+    buckets.push(['💬 Panel Descriptions', 'Panel Description', 'No saved Panel Descriptions yet — click the green + button, use 💾 Save to library beside a panel\u2019s Panel Description box, or let a new character or location create one. They are shared: any character or location can use any of them.']);
     for (const [label, type, emptyHint] of buckets) {
       const hrow = document.createElement('div');
       hrow.className = 'lib-bucket-row';
@@ -2113,7 +2156,7 @@ color-scheme:light;
     ctn.appendChild(libHeadEl('🗂 My catalogue', 'lib-section-h'));
     ctn.appendChild(libHintEl('Reusable items saved in this browser, shared by every project. Copy one into this project with ⤓. Editing or deleting a catalogue entry never changes a project that already has its own copy.', 'lib-section-hint'));
     if (!cat.length) ctn.appendChild(libHintEl('Nothing in the catalogue yet. ⬆ Import… a saved project file to bring items in, or use ⤒ on one of this project\u2019s items.'));
-    for (const [label, type] of [['👤 Characters', 'Character'], ['📍 Locations', 'Location'], ['🎬 Actions', 'Action']]) {
+    for (const [label, type] of [['👤 Characters', 'Character'], ['📍 Locations', 'Location'], ['🎬 Actions', 'Action'], ['💬 Panel Descriptions', 'Panel Description']]) {
       const list = cat.filter(o => o.type === type);
       if (!list.length) continue;
       ctn.appendChild(libHeadEl(label, 'lib-bucket'));
@@ -2121,7 +2164,7 @@ color-scheme:light;
     }
   }
 
-  let LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, libRefEntry, libRefDesc, normalizeLibType, extractLibraryItems;
+  let LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, libRefEntry, libRefDesc, normalizeLibType, extractLibraryItems, panelDescMatch;
 
   function newLibraryId(type) {
     return libIdFor(type, Date.now(), Math.random().toString(36).slice(2, 7));
@@ -3549,11 +3592,89 @@ color-scheme:light;
     }
   }
 
+  function panelDescOptionsHtml() {
+    const pds = objectsOfType('Panel Description');
+    return '<option value="">💬 Use a saved description…</option>' + pds.map(e => '<option value="lib:pd:' + e.id + '">' + escapeHtml(e.name || '(unnamed)') + '</option>').join('');
+  }
+
+  function panelDescFieldIds(kind, i, s) {
+    return kind === 'char'
+      ? { box: 'panel-char-extra-' + i + '-' + s, pick: 'panel-char-extra-pick-' + i + '-' + s, badge: 'panel-char-extra-badge-' + i + '-' + s }
+      : { box: 'panel-loc-extra-' + i, pick: 'panel-loc-extra-pick-' + i, badge: 'panel-loc-extra-badge-' + i };
+  }
+
+  function refreshPanelDescBadge(kind, i, s) {
+    const ids = panelDescFieldIds(kind, i, s);
+    const box = document.getElementById(ids.box);
+    const badge = document.getElementById(ids.badge);
+    if (!box || !badge) return;
+    const text = String(box.value || '').trim();
+    const hit = text && panelDescMatch ? panelDescMatch(loadLibraryObjects(), text) : null;
+    badge.textContent = !text ? '' : (hit ? ('📋 ' + (hit.name || '(unnamed)')) : '✎ not in your library');
+    badge.classList.toggle('custom', !!text && !hit);
+    badge.classList.toggle('on', !!text);
+    box.title = hit ? ('Saved in 📚 Library as “' + (hit.name || '(unnamed)') + '”.') : (text ? 'Not saved in 📚 Library yet — 💾 Save to library makes it reusable.' : '');
+  }
+
+  function refreshAllPanelDescBadges() {
+    for (let i = 1; i <= 24; i++) {
+      for (let s = 1; s <= 3; s++) refreshPanelDescBadge('char', i, s);
+      refreshPanelDescBadge('loc', i, 1);
+    }
+  }
+
+  function pickPanelDescription(kind, i, s) {
+    const ids = panelDescFieldIds(kind, i, s);
+    const pick = document.getElementById(ids.pick);
+    const box = document.getElementById(ids.box);
+    if (!pick || !box) return false;
+    const ref = pick.value;
+    pick.value = '';
+    if (!ref) return false;
+    const entry = loadLibraryObjects().find(e => e.id === ref.split(':')[2]);
+    if (!entry) return false;
+    box.value = String(entry.desc || '');
+    refreshPanelDescBadge(kind, i, s);
+    updatePanelSummary(i);
+    clearPanelPromptOverride(i);
+    schedulePanelSave();
+    return true;
+  }
+
+  function savePanelDescription(kind, i, s) {
+    const ids = panelDescFieldIds(kind, i, s);
+    const box = document.getElementById(ids.box);
+    if (!box) return false;
+    const statusEl = document.getElementById('statusEl');
+    const text = String(box.value || '').trim();
+    if (!text) {
+      if (statusEl) statusEl.textContent = '⚠ Type a Panel Description first — 💾 Save to library stores the text in this box.';
+      return false;
+    }
+    const objs = loadLibraryObjects();
+    const already = panelDescMatch ? panelDescMatch(objs, text) : null;
+    if (already) {
+      if (statusEl) statusEl.textContent = '💬 This Panel Description is already saved as “' + (already.name || '(unnamed)') + '” in 📚 Library.';
+      refreshPanelDescBadge(kind, i, s);
+      return false;
+    }
+    const name = prompt('Save this Panel Description to your library so any character or location can reuse it. Name it:', '');
+    if (name === null) return false;
+    const finalName = (name.trim() || 'Panel Description').slice(0, 60);
+    objs.push({ id: newLibraryId('Panel Description'), type: 'Panel Description', name: finalName, desc: text });
+    saveLibraryObjects(objs);
+    renderLibrary();
+    updatePanelSelects();
+    if (statusEl) statusEl.textContent = '💬 Saved “' + finalName + '” to 📚 Library — every character and location can reuse it now.';
+    return true;
+  }
+
   function refreshAllPanelLineDescs() {
     for (let i = 1; i <= 24; i++) {
       for (let s = 1; s <= 3; s++) refreshPanelLineDesc('char', i, s);
       refreshPanelLineDesc('loc', i);
     }
+    refreshAllPanelDescBadges();
   }
 
   function charRowHtml(i, s) {
@@ -3576,7 +3697,12 @@ color-scheme:light;
           <textarea class="po-desc" id="panel-char-base-${i}-${s}" rows="2" placeholder="Filled from the character's library description when you pick one. Edit it to use your own wording in this panel."></textarea>
         </div>
         <div class="pl-line-field">
-          <span class="pl-line-label">This panel — extra description</span>
+          <div class="pl-base-head">
+            <span class="pl-line-label">Panel Description</span>
+            <select class="pl-desc-pick" id="panel-char-extra-pick-${i}-${s}" title="Fill this box from a saved Panel Description — they are shared, so any character or location can use any of them">${panelDescOptionsHtml()}</select>
+            <button type="button" class="pl-base-refresh" id="panel-char-extra-save-${i}-${s}" onclick="savePanelDescription('char',${i},${s})" title="Save the text in this box to your library as a named Panel Description">💾 Save to library</button>
+            <span class="pl-base-badge" id="panel-char-extra-badge-${i}-${s}"></span>
+          </div>
           <textarea class="po-desc" id="panel-char-extra-${i}-${s}" rows="2" placeholder="Optional. Added after the Basic Description in this panel's prompt."></textarea>
         </div>
       </div>
@@ -3603,7 +3729,12 @@ color-scheme:light;
           <textarea class="po-desc" id="panel-loc-base-${i}" rows="2" placeholder="Filled from the location's library description when you pick one. Edit it to use your own wording in this panel."></textarea>
         </div>
         <div class="pl-line-field">
-          <span class="pl-line-label">This panel — extra description</span>
+          <div class="pl-base-head">
+            <span class="pl-line-label">Panel Description</span>
+            <select class="pl-desc-pick" id="panel-loc-extra-pick-${i}" title="Fill this box from a saved Panel Description — they are shared, so any character or location can use any of them">${panelDescOptionsHtml()}</select>
+            <button type="button" class="pl-base-refresh" id="panel-loc-extra-save-${i}" onclick="savePanelDescription('loc',${i},1)" title="Save the text in this box to your library as a named Panel Description">💾 Save to library</button>
+            <span class="pl-base-badge" id="panel-loc-extra-badge-${i}"></span>
+          </div>
           <textarea class="po-desc" id="panel-loc-extra-${i}" rows="2" placeholder="Optional. Added after the Basic Description in this panel's prompt."></textarea>
         </div>
       </div>
@@ -3682,6 +3813,8 @@ color-scheme:light;
     }
     for (let s2 = 1; s2 <= 3; s2++) refreshPanelLineDesc('char', i, s2);
     refreshPanelLineDesc('loc', i);
+    for (let s3 = 1; s3 <= 3; s3++) refreshPanelDescBadge('char', i, s3);
+    refreshPanelDescBadge('loc', i, 1);
   }
 
   let pausedByVisibility = false;
@@ -4894,6 +5027,12 @@ color-scheme:light;
         paletteSel.innerHTML = '<option value="">[Default (Global)]</option>' + Object.entries(COLOR_PALETTES).map(([id, p]) => `<option value="${id}">${p.label}</option>`).join("");
         if ([...paletteSel.options].some(o => o.value === curP)) paletteSel.value = curP;
       }
+      for (let s = 1; s <= 3; s++) {
+        const cpk = document.getElementById('panel-char-extra-pick-' + i + '-' + s);
+        if (cpk) cpk.innerHTML = panelDescOptionsHtml();
+      }
+      const lpk = document.getElementById('panel-loc-extra-pick-' + i);
+      if (lpk) lpk.innerHTML = panelDescOptionsHtml();
     }
     refreshAllPanelLineDescs();
   }
@@ -6480,6 +6619,10 @@ color-scheme:light;
     const id = (e.target.id) || "";
     const ttl = id.match(/^panel-title-(\d+)$/);
     if (ttl) return runPanelCommand('setTitle', panelIdAt(parseInt(ttl[1], 10)), [e.target.value]);
+    const dpk = id.match(/^panel-(char|loc)-extra-pick-(\d+)(?:-(\d+))?$/);
+    if (dpk) return pickPanelDescription(dpk[1], parseInt(dpk[2], 10), dpk[3] ? parseInt(dpk[3], 10) : 1);
+    const dpb = id.match(/^panel-(char|loc)-extra-(\d+)(?:-(\d+))?$/);
+    if (dpb) refreshPanelDescBadge(dpb[1], parseInt(dpb[2], 10), dpb[3] ? parseInt(dpb[3], 10) : 1);
     const nv = id.match(/^panel-(?:char-select-(\d+)-(\d+)|loc-select-(\d+))$/);
     if (nv && (e.target.value === '__new_char__' || e.target.value === '__new_loc__')) {
       e.target.value = 'none';
@@ -9719,7 +9862,10 @@ color-scheme:light;
   window.deletePanelAct = deletePanelAct;
   window.copyFromPrevPanel = copyFromPrevPanel;
   window.refreshPanelLineBase = refreshPanelLineBase;
-  window.batchRefreshPanelLineBases = batchRefreshPanelLineBases;
+  window.pickPanelDescription = pickPanelDescription;
+  window.savePanelDescription = savePanelDescription;
+  window.refreshPanelDescBadge = refreshPanelDescBadge;
+  window.panelDescOptionsHtml = panelDescOptionsHtml;  window.batchRefreshPanelLineBases = batchRefreshPanelLineBases;
   window.selMenuAction = selMenuAction;
   window.updateCopyPrevChipStates = updateCopyPrevChipStates;
   window.newPanelLibraryEntry = newPanelLibraryEntry;
