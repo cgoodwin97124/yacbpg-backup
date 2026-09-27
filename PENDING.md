@@ -42,6 +42,13 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-27 — REFACTOR: P2 step 4 — the differential test (store vs `collectPanelState`)
+
+- **Status:** 🚧 **IN PROGRESS** — logged here on receipt, before any work, per the 2026-08-13 rule. Author, 2026-09-27, verbatim: **"Saved!  Go ahead and push!  And go ahead with P2 step 4!"** (the push half of the message is the post-Save `ghPush` for 2026.09.26.17; this entry is the step-4 half). Moved here from 🕒 QUEUED, where it was recorded when step 3 shipped.
+- **What:** `REFACTOR-ROADMAP.md` §3.4 step 4 — assert that the store's project object is **identical, key for key**, to today's `collectPanelState()` output, over the fixture corpus. `store.toJSON()` must equal `collectPanelState()` for the full-page fixture, the legacy v1 file, the every-legacy-key file and the author's own project shape, including the edge cases: a project at the 24-panel cap, a multi-page project where a non-current page holds panels, a stored state carrying extra legacy keys, and a custom panel count.
+- **Why it gates the next step:** the roadmap is explicit that **until this passes, nothing reads the store**. Step 5 (switching `savePanelState()` to write from the store while `restorePanelState()` keeps writing the DOM) is only safe once this is green — which is why step 4 is its own release.
+- **Gate:** the differential passes for every fixture shape and for the author's own live project; the four suites stay green; the visual check is unchanged (no user-visible change at all); **0** perchance errors; and the author's storage map is restored byte-identical after every runner.
+
 ### 2026-09-27 — REFACTOR: P2 step 3 — the store (`src/state/store.js`)
 
 - **Status:** ✅ **DONE 2026.09.26.17** — implemented, tested and pushed in the same session. Author, 2026-09-27, verbatim: **"Start it!"**, in reply to "Next up on the roadmap is P2 step 3 — the store (`src/core/store.js`: `load()`/`toJSON()`/`subscribe()` over a pure serializer of the DOM snapshot, then step 4's differential test that `store.toJSON()` equals `collectPanelState()`). Say the word and I'll start it." Logged here on receipt, before any work, per the 2026-08-13 rule.
@@ -840,13 +847,6 @@ a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives 
   Contents: Read+write on THEIR repo (worth a line in the repo README).
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
-
-### 2026-09-27 — REFACTOR: P2 step 4 — the differential test (store vs `collectPanelState`)
-- **Status:** 🕒 **QUEUED 2026-09-27** — recorded when step 3 shipped, so a future session picks it up without re-deriving the plan (`REFACTOR-ROADMAP.md` §3.4 step 4). **Do not start without the author's go-ahead.**
-- **What:** assert, over the fixture corpus, that `store.toJSON()` equals today's `collectPanelState()` output **key for key** — i.e. that `JSON.stringify(window.__storeJson())` and `JSON.stringify(window.collectPanelState())` are identical strings for every fixture shape (the full-page fixture, the legacy v1 file, the every-legacy-key file, and the author's own project). It changes no app behaviour: the roadmap is explicit that **until this passes, nothing reads the store**, and this is the test that licenses step 5.
-- **How it was already spot-checked live (2026.09.26.17):** on the author's own project the two strings are identical, so the shape of the check is known to work — the remaining work is to run it across the fixtures (a `devtests/state-diff.js` page-side suite, or a new group inside `fixtures.page.js`) and to cover the edge shapes: a project at the 24-panel cap, a multi-page project with a non-current page holding panels, a project whose stored state has extra legacy keys, and a page with a custom panel count.
-- **Then step 5** (the next queued refactor item): switch the save path to write from the store — `savePanelState()` becomes `projectStore.load(collectDomSnapshot()).toJSON()` — while `restorePanelState()` keeps writing the DOM, which is what makes the DOM a rendering of the store on load and a proxy for it on input.
-- **Gate for step 5** (from the roadmap): boot → store → DOM → store → save is byte-identical to the old path for every fixture; reload a project and diff the JSON view before/after; zero behaviour change.
 
 ### 2026-09-26 — FEATURE (queued): up to three reference images per library object
 - **Status:** 🕒 **QUEUED 2026-09-26** — logged on receipt (answer `P2-02` 2d of the round-2 form); not started. It is a *hook*, not a feature request for now.
