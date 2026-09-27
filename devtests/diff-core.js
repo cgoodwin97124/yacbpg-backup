@@ -42,6 +42,7 @@ const surface = {
   "src/core/prompt.js": ["composePanelPrompt"],
   "src/core/library-core.js": ["LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"],
   "src/core/schema.js": ["SCHEMA_VERSION", "PANEL_COUNT_OPTIONS", "newPanelId", "defaultChar", "defaultPanel", "defaultPage", "defaultProject", "normalise", "validate", "normaliseLibrary", "normaliseKept"],
+  "src/state/store.js": ["STORE_VERSION", "createStore", "serializeProject", "ensurePages", "defaultPageData", "pageKey", "normaliseSnapshot"],
 };
 
 const deletedInline = {
@@ -53,9 +54,9 @@ const deletedInline = {
   "src/core/library-core.js": ["LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems"],
 };
 
-const declaredNames = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems", "newPanelId", "defaultPanel", "defaultPage", "defaultProject", "normaliseProject", "validateProject", "normaliseLibrary", "normaliseKept"];
+const declaredNames = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems", "newPanelId", "defaultPanel", "defaultPage", "defaultProject", "normaliseProject", "validateProject", "normaliseLibrary", "normaliseKept", "createProjectStore", "serializeProject"];
 
-const discovered = (await fs.listFiles()).filter((f) => f.path.startsWith("src/core/") && f.path.endsWith(".js")).map((f) => f.path).sort();
+const discovered = (await fs.listFiles()).filter((f) => (f.path.startsWith("src/core/") || f.path.startsWith("src/state/")) && f.path.endsWith(".js")).map((f) => f.path).sort();
 const unspecced = discovered.filter((p) => !surface[p]);
 
 for (const path of discovered) {
@@ -72,7 +73,7 @@ for (const path of discovered) {
 
 const manifestMatch = src.match(/const GH_SRC_FILES = \[([^\]]*)\]/);
 const manifest = manifestMatch ? manifestMatch[1].split(",").map((s) => s.trim().replace(/^['"]|['"]$/g, "")).filter(Boolean) : null;
-await t("every extracted src/core module is in the ghPush src manifest", () => {
+await t("every extracted src/ module is in the ghPush src manifest", () => {
   if (!manifest) return no("GH_SRC_FILES not found in index.html");
   const missingFromManifest = discovered.filter((p) => !manifest.includes(p));
   return missingFromManifest.length ? no("not listed: " + missingFromManifest.join(", ")) : ok(manifest.length + " files listed, all " + discovered.length + " modules covered");
