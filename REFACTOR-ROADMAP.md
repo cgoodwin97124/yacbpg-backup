@@ -288,7 +288,7 @@ and there was nothing left to compare — `diff-core.js` keeps its guards); no u
 
 ### 3.4 P2 — a real state layer (read-only first)
 
-**STATUS: steps 1, 2, 2b and 3 are BUILT (2026.09.26.10 / 2026.09.26.15 / 2026.09.26.16 / 2026.09.26.17).** Panels carry ids and
+**STATUS: steps 1, 2, 2b, 3 and 4 are BUILT (2026.09.26.10 / 2026.09.26.15 / 2026.09.26.16 / 2026.09.26.17 / 2026.09.26.18).** Panels carry ids and
 `src/core/schema.js` exists — `SCHEMA_VERSION`, `PANEL_COUNT_OPTIONS`, `newPanelId`, `defaultChar`, `defaultPanel`,
 `defaultPage`, `defaultProject`, `normalise`, `validate`, plus `normaliseLibrary`/`normaliseLibType` — and
 `validate(normalise(x))` is always clean. `normalise` is the migration seam and is **conservative by rule: it never
@@ -319,12 +319,16 @@ store itself (step 3) and the store-vs-`collectPanelState` equality test (step 4
    as well, as a deliberate second copy that a test keeps in agreement with `index.html`'s. `index.html` supplies the DOM
    half, `collectDomSnapshot()`, and creates one store at boot. **Nothing reads the store**, exactly as this step requires —
    `AI-NOTES.md` §30 is the map, `DEV-NOTES.md` BATCH 2026.09.26.17 the detail.
-4. **Differential test:** for the fixture corpus, `store.toJSON()` must equal today's
-   `collectPanelState()` output, key for key. Until that passes, nothing reads the store. *(Queued in `PENDING.md`; already
-   true by hand on the author's own project — the two strings stringify identically.)*
+4. ✅ **Differential test green (2026.09.26.18).** `devtests/state-diff.page.js` (run by `run-state-diff.js`) asserts
+   `JSON.stringify(store.toJSON()) === JSON.stringify(collectPanelState())` over 13 cases: the author's live project, the
+   3-page/24-panel fixture, every page with that page on screen, a **non-current** page (panels only reachable from
+   storage), every per-panel field driven by hand through the DOM, every project-wide field, all six panel-count domains,
+   the legacy v1 and every-dead-key files, edits surviving a page switch away and back, an unknown stored key, and
+   `resetEverything(true)` — reporting the first differing path on failure. **The store is licensed to be read.**
+   `AI-NOTES.md` §31, `DEV-NOTES.md` BATCH 2026.09.26.18.
 5. **Switch the save path** to write from the store; keep `restorePanelState()` writing the DOM. Now the
    DOM is a *rendering* of the store on load and a *proxy for it* on input — the last step of P3 removes
-   the proxy.
+   the proxy. **Next; queued in `PENDING.md`.**
 
 **Exit criteria:** boot → store → DOM → store → save is byte-identical to the old path for every fixture;
 reload a project and diff the JSON view before/after; zero behaviour change.
