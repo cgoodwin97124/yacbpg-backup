@@ -63,7 +63,7 @@ async function loadModule(path) {
   moduleBlobs[path] = url;
   return import(url);
 }
-const MODULE_PATHS = ["src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js", "src/state/store.js"];
+const MODULE_PATHS = ["src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js", "src/state/store.js", "src/state/commands.js"];
 const modules = {};
 const moduleErrors = [];
 for (const p of MODULE_PATHS) {
@@ -526,6 +526,78 @@ if (api.createStore && api.serializeProject && api.ensurePages) {
       "1", 1, true, true, 0,
       "1", 1, 0, 0, 0
     ], "junk");
+  });
+}
+
+if (api.setTitle && api.findPanelById && api.COMMANDS) {
+  const mkProject = () => ({
+    version: 2,
+    projectName: "Commands",
+    currentPage: 1,
+    pages: {
+      1: { name: "One", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "", 1: { id: "p-1", title: "" }, 2: { id: "p-2", title: "two" } },
+      2: { name: "Two", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "", 1: { id: "p-3", title: "three" } },
+    },
+    library: [{ id: "char-1", type: "Character", name: "Ann", desc: "" }],
+    kept: [],
+  });
+  const pathsDiffering = (a, b) => {
+    const out = [];
+    const walk = (x, y, p) => {
+      if (x === y) return;
+      const tx = typeof x, ty = typeof y;
+      if (x === null || y === null || tx !== ty || tx !== "object") { out.push(p + " <" + JSON.stringify(x) + " -> " + JSON.stringify(y) + ">"); return; }
+      const keys = [...new Set(Object.keys(x).concat(Object.keys(y)))];
+      for (const k of keys) walk(x[k], y[k], p + "." + k);
+    };
+    walk(a, b, "$");
+    return out;
+  };
+
+  await t("commands: findPanelById addresses a panel by id, on any page, and never mutates", () => {
+    const proj = mkProject();
+    const before = JSON.stringify(proj);
+    const a = api.findPanelById(proj, "p-1");
+    const b = api.findPanelById(proj, "p-3");
+    const miss = ["p-9", "", null, undefined, 7, {}, []].map((v) => api.findPanelById(proj, v));
+    const junkPages = [{ pages: null }, { pages: "junk" }, { pages: { 1: "not a page" } }, { pages: { 1: { 1: "not a panel" } } }, null, "junk"];
+    return eqArr([
+      a && a.page, a && a.index, a && a.panel === proj.pages[1][1],
+      b && b.page, b && b.index,
+      miss.filter((m) => m !== null).length,
+      junkPages.map((j) => api.findPanelById(j, "p-1")).filter((m) => m !== null).length,
+      JSON.stringify(proj) === before,
+    ], [1, 1, true, 2, 1, 0, 0, true], "found,junk,unmutated");
+  });
+
+  await t("commands: setTitle writes exactly one leaf and reports where", () => {
+    const proj = mkProject();
+    const before = api.findPanelById(proj, "p-2");
+    const wasBefore = JSON.parse(JSON.stringify(proj));
+    const hit = api.setTitle(proj, "p-2", "Panel two");
+    const changed = pathsDiffering(wasBefore, proj);
+    return eqArr([
+      JSON.stringify(hit), proj.pages[1][2].title, proj.pages[1][1].title, proj.pages[2][1].title,
+      changed.join(","), before.panel === api.findPanelById(proj, "p-2").panel,
+    ], [
+      JSON.stringify({ page: 1, index: 2, fields: ["title"] }), "Panel two", "", "three",
+      "$.pages.1.2.title <\"two\" -> \"Panel two\">", true,
+    ], "oneLeaf");
+  });
+
+  await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
+    const proj = mkProject();
+    const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
+    const untouched = JSON.parse(JSON.stringify(proj));
+    const miss = [api.setTitle(proj, "p-9", "nope"), api.setTitle(proj, "", "nope"), api.setTitle(proj, null, "nope")];
+    return eqArr([
+      values.join("|"), miss.filter((m) => m === null).length, JSON.stringify(proj) === JSON.stringify(untouched),
+      api.COMMANDS.setTitle === api.setTitle, api.COMMANDS_VERSION,
+      Object.keys(api.COMMANDS).sort().join(","),
+    ], [
+      "||42|true|[object Object]||  spaced  ", 3, true,
+      true, 1, "setTitle",
+    ], "coercion,noop,registry");
   });
 }
 
