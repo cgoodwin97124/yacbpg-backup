@@ -37,7 +37,7 @@
                    library-core, and (2026.09.26.10) schema. index.html loads each with
                    coreLoad(name, path, apply) — import('./src/core/x.js') — and swaps the
                    declared name (a function declaration or a let) for the module's when it
-                   loads. The boot waits for all seven (window.appReady) and a module that fails
+                   loads. The boot waits for all eight (window.appReady) and a module that fails
                    to load is reported in a bar at the top of the page. P1 is therefore COMPLETE:
                    zip, jsontext, keywords and seeds lost their in-file copies in 2026.09.26.9,
                    prompt and library-core in 2026.09.26.14, so no module has an in-file fallback
@@ -47,6 +47,16 @@
                    module-against-inline. schema.js arrived in 2026.09.26.10: it owns the
                    project/page/panel shape and mints the id every panel now carries.
                    Never edit only one side.
+    src/state/store.js
+                   P2 step 3 (2026.09.26.17) and the first src/state/ module: the state layer
+                   the refactor's §3.4 is built on. A plain store object — load() / toJSON() /
+                   subscribe() / unsubscribe() — whose loader is a PURE serializer over a
+                   snapshot of the DOM (the values collectPageData() reads today), so it runs in
+                   a Worker with no browser at all. index.html owns the DOM half,
+                   collectDomSnapshot(). NOTHING READS THE STORE YET, deliberately: §3.4 step 4
+                   is the differential test that store.toJSON() equals collectPanelState() key
+                   for key, and step 5 is the release that moves the save path onto it.
+                   window.__storeJson() is the read-only test accessor. Never edit only one side.
 
   READ (public repo, no token needed):
     fetch("https://raw.githubusercontent.com/cgoodwin97124/yacbpg-backup/main/PENDING.md")
@@ -75,8 +85,8 @@
   5. End of every task: remind the author to press Save, AND run the GitHub backup in the same
      turn: openGhBackup(); await ghPush(); ghClose();   ghPush reads main.pjs via the perchance
      API, index.html from the SERVED page (the last SAVED build), and every file in GH_SRC_FILES
-     (src/manual.html, the two form files, and src/core/*.js — keep that manifest in step with
-     src/) — the
+     (src/manual.html, the two form files, src/core/*.js and src/state/*.js — keep that manifest
+     in step with src/) — the
      changelog and the other docs live in the repo and are updated with the Contents API. So
      after the author Saves, re-push to capture the new index.html.
   6. Big or ambiguous changes: recon first, then ask the author and wait. Small mechanical
@@ -1276,8 +1286,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.16 — 2026-09-26 — 🗃️ Groundwork for kept images: each project gets its own kept-image list
-- 🗃️ Nothing you can see changes. A project now has its own **kept-image list**, saved with the project and carried by Export / Import and by the project `.zip` — the place a future "keep this image, together with the prompt and seed that made it" action will write into. Nothing fills it yet, so it stays empty; the only visible trace is one new read-only `"kept": []` field in the 🧩 JSON editor.
+## 2026.09.26.17 — 2026-09-26 — 🧱 Groundwork for the state layer: a store that rebuilds the project from a snapshot
+- 🧱 Nothing you can see changes. Under the hood the app gains the first piece of its new **state layer**: a small `src/state/store.js` module that can rebuild the whole project object from a snapshot of the page, ready for the save path to start reading from it. Nothing uses it yet, so every button, menu, file and screen behaves exactly as it did in 2026.09.26.16.
 </script>
 
 
@@ -1287,7 +1297,7 @@ color-scheme:light;
   const CHAR_KEYS = ["none", "hero", "villain", "sidekick", "civilian"];
   const LOC_KEYS = ["none", "city", "lab", "hideout", "rooftop"];
 
-  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null, schema: null };
+  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null, schema: null, store: null };
   const coreLoads = [];
   const coreLoad = (name, path, apply) => {
     coreLoads.push(new Promise((resolve) => {
@@ -1361,6 +1371,12 @@ color-scheme:light;
     if (m.validate) validateProject = m.validate;
     if (m.normaliseLibrary) normaliseLibrary = m.normaliseLibrary;
     if (m.normaliseKept) normaliseKept = m.normaliseKept;
+  });
+  let createProjectStore, serializeProject;
+  let projectStore = null;
+  coreLoad('store', './src/state/store.js', (m) => {
+    if (m.createStore) createProjectStore = m.createStore;
+    if (m.serializeProject) serializeProject = m.serializeProject;
   });
   const coreReady = Promise.all(coreLoads).then((failed) => failed.filter(Boolean));
 
@@ -1474,6 +1490,11 @@ color-scheme:light;
   function initProjectKept() {
     projectKept = normaliseKeptArray(readPanelState().kept);
     return projectKept;
+  }
+
+  function initProjectStore() {
+    projectStore = (typeof createProjectStore === 'function') ? createProjectStore() : null;
+    return projectStore;
   }
 
   function objectsOfType(typeLabel) {
@@ -3924,6 +3945,37 @@ color-scheme:light;
       library: projectLibraryArray(),
       kept: projectKeptArray()
     };
+  }
+
+  function collectDomSnapshot() {
+    return {
+      stored: readPanelState(),
+      currentPage: currentPage,
+      page: collectPageData(),
+      globals: {
+        projectName: document.getElementById('projectNameInput').value,
+        imageSizeSel: document.getElementById('imageSizeSel').value,
+        imageSizeW: document.getElementById('imgSizeW').value,
+        imageSizeH: document.getElementById('imgSizeH').value,
+        guidanceScale: document.getElementById('guidanceScaleInput').value,
+        imgCountDefault: (document.getElementById('bulkImgCountSel') || {}).value || '1',
+        previewDelay: document.getElementById('previewDelayInput').value,
+        previewOn: document.getElementById('previewEnabledCheck').checked,
+        globalPos: document.getElementById('globalPos').value,
+        globalNeg: document.getElementById('globalNeg').value,
+        nsfw: document.getElementById('nsfwCheck').checked,
+        themeMode: themeModePref,
+        themeAccent: themeAccent
+      },
+      library: projectLibraryArray(),
+      kept: projectKeptArray()
+    };
+  }
+
+  function storeJsonNow() {
+    if (typeof serializeProject !== 'function') return null;
+    const snap = collectDomSnapshot();
+    return projectStore ? projectStore.load(snap).toJSON() : serializeProject(snap);
   }
 
   let panelStateRestored = false;
@@ -9617,6 +9669,11 @@ color-scheme:light;
   window.saveKept = saveKept;
   window.initProjectKept = initProjectKept;
   window.projectKeptArray = projectKeptArray;
+  window.initProjectStore = initProjectStore;
+  window.collectDomSnapshot = collectDomSnapshot;
+  window.collectPanelState = collectPanelState;
+  window.__storeJson = storeJsonNow;
+  window.__storeModule = function () { return coreModules.store; };
   window.deleteLibraryObject = deleteLibraryObject;
   window.deleteCatalogueObject = deleteCatalogueObject;
   window.applyLibraryDelete = applyLibraryDelete;
@@ -10588,7 +10645,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js'];
 
   function extractTemplateSource(html) {
     const key = '"outputTemplate":"';
@@ -10730,6 +10787,7 @@ color-scheme:light;
     migrateLibObjects();
     initProjectLibrary();
     initProjectKept();
+    initProjectStore();
     try { getMaps().then(m => { builtinDescMaps = m; refreshAllPanelLineDescs(); seedPendingPanelBases(); }); } catch (e) {}
     renderLibrary();
     initPresets();
