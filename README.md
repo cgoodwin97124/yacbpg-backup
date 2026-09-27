@@ -8,10 +8,10 @@ extracted pure logic — seven modules: P1's six, plus P2's `schema.js`), `src/s
 state layer) and `src/state/commands.js` (P3 step 1a, the named commands). Everything else here is
 documentation for whoever works on it next.
 
-Reading order for a new session:
+Reading order for a new session — start with `SESSION-START.md` (the 2-minute read-order + standing rules), then:
 
-- `DEV-NOTES.md` — the full development log and every hard-won gotcha. **Read before changing anything.**
-- `AI-NOTES.md` — architecture, state shapes and an API map for AI sessions.
+- `DEV-NOTES.md` — the development log, last 8 `## BATCH` blocks (older batches verbatim in `archive/`). **Read the last 2 batches before changing anything.**
+- `AI-NOTES.md` — machine index for AI sessions (§0 first, then only the §§ the task touches).
 - `PENDING.md` — the request queue (START NOW / QUEUED / DONE). Log every request here FIRST.
 - `ISSUES.md` — bug reports and post-mortems; grep it before diagnosing anything.
 - `CHANGELOG.md` — user-facing version history. Its first `## ` heading is the live version, and it must match
