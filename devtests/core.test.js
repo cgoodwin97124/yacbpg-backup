@@ -49,7 +49,7 @@ function grab(name) {
   return lines.slice(i, body + 1).join("\n");
 }
 
-const wanted = ["getEffectiveKeywords", "applyPreset"];
+const wanted = ["getEffectiveKeywords", "applyPreset", "ensurePages"];
 const code = wanted.map(grab).join("\n\n");
 
 const moduleBlobs = {};
@@ -63,7 +63,7 @@ async function loadModule(path) {
   moduleBlobs[path] = url;
   return import(url);
 }
-const MODULE_PATHS = ["src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js"];
+const MODULE_PATHS = ["src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js", "src/state/store.js"];
 const modules = {};
 const moduleErrors = [];
 for (const p of MODULE_PATHS) {
@@ -100,7 +100,7 @@ const sandbox = Object.assign({ window: {}, document: fakeDoc(), localStorage: {
 let api = { modules };
 const missingAtBoot = missing.slice();
 try {
-  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { getEffectiveKeywords, applyPreset }; }");
+  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { getEffectiveKeywords, applyPreset, ensurePagesInline: ensurePages }; }");
   api = Object.assign(factory(sandbox), modules);
 } catch (e) {
   T.push({ n: "extraction", ok: false, d: "could not build the sandbox: " + e.message });
@@ -448,6 +448,84 @@ if (api.normalise && api.validate && api.newPanelId) {
       1,
       24, 0
     ], "broken,compact");
+  });
+}
+
+if (api.createStore && api.serializeProject && api.ensurePages) {
+  const mkPanel = (id) => ({ id, chars: [{ sel: "none", base: "", extra: "" }, { sel: "none", base: "", extra: "" }, { sel: "none", base: "", extra: "" }], title: "", protectSlots: [false, false, false, false], loc: "none", locBase: "", locExtra: "", action: "", seed: "", imgCount: "", style: "", palette: "", sizeSel: "", sizeW: "", sizeH: "", sameSeed: false, promptOverride: null, promptHistory: [] });
+
+  await t("store: serializeProject rebuilds the project envelope from the snapshot", () => {
+    const stored = { pages: { 1: { name: "One", panelCountSel: "4", 1: mkPanel("p-1") }, 2: { name: "Two", panelCountSel: "6" } }, currentPage: 2, projectName: "OLD", legacyKey: true };
+    const page = { name: "Two", summary: "", panelCountSel: "6", panelCountCustom: "", seed: "", 1: mkPanel("p-2") };
+    const snapshot = {
+      stored,
+      currentPage: 2,
+      page,
+      globals: { projectName: "Cow", imageSizeSel: "768x768", imageSizeW: "", imageSizeH: "", guidanceScale: "7", imgCountDefault: "2", previewDelay: "350", previewOn: true, globalPos: "P", globalNeg: "N", nsfw: false, themeMode: "dark", themeAccent: "#ffee00" },
+      library: [{ id: "char-1", type: "Character", name: "Ann", desc: "d" }],
+      kept: [{ id: "k1", prompt: "a cow" }]
+    };
+    const out = api.serializeProject(snapshot);
+    return eqArr([
+      Object.keys(out).join(","), out.version, Object.keys(out.theme).join(","), out.theme.mode, out.theme.accent,
+      out.currentPage, Object.keys(out.pages).join(","), out.pages[2] === page, out.pages[1].name, out.pages[1][1].id,
+      out.library[0].name, out.kept[0].prompt, "legacyKey" in out, stored.pages[2].name
+    ], [
+      "version,projectName,imageSizeSel,imageSizeW,imageSizeH,guidanceScale,imgCountDefault,previewDelay,previewOn,globalPos,globalNeg,nsfw,theme,currentPage,pages,library,kept", 2,
+      "mode,accent", "dark", "#ffee00",
+      2, "1,2", true, "One", "p-1",
+      "Ann", "a cow", false, "Two"
+    ], "envelope");
+  });
+
+  await t("store: load / toJSON / subscribe / unsubscribe behave as documented", () => {
+    const s = api.createStore();
+    const start = s.listenerCount();
+    const seen = [];
+    const off = s.subscribe((st) => seen.push(st.toJSON().projectName));
+    const afterSub = s.listenerCount();
+    s.load({ globals: { projectName: "A" } });
+    const j1 = s.toJSON();
+    const cachedSame = s.toJSON() === j1;
+    const dirtyAfter = s.isDirty();
+    s.load({ globals: { projectName: "B" } });
+    const b = s.toJSON().projectName;
+    const boomFn = () => { throw new Error("boom"); };
+    s.subscribe(boomFn);
+    let survived = true;
+    try { s.load({ globals: { projectName: "D" } }); } catch (e) { survived = false; }
+    s.unsubscribe(boomFn);
+    off();
+    const afterOff = s.listenerCount();
+    s.load({ globals: { projectName: "C" } });
+    return eqArr([
+      start, afterSub, seen.join(","), j1.projectName, cachedSame, dirtyAfter, b, survived, afterOff, seen.length,
+      typeof s.subscribe(null), typeof s.subscribe(1)
+    ], [0, 1, "A,B,D", "A", true, false, "B", true, 0, 3, "function", "function"], "store");
+  });
+
+  await t("store: ensurePages matches index.html's own over the stored shapes", () => {
+    if (typeof api.ensurePagesInline !== "function") return { skip: "index.html's ensurePages could not be extracted" };
+    const raws = [null, {}, { panelCountSel: "24" }, { panelCountSel: "custom", panelCountCustom: "3", seed: "-1", summary: "s", name: "N", 1: { id: "x" }, 7: { id: "y" } }, { pages: { 1: { name: "One" } } }, { pages: null, seed: "9" }, { pages: { 3: { name: "three" }, 1: { name: "one" } } }, { seed: 0, panelCountSel: "" }];
+    const diffs = [];
+    for (const raw of raws) {
+      const a = JSON.stringify(api.ensurePages(raw));
+      const b = JSON.stringify(api.ensurePagesInline(raw));
+      if (a !== b) diffs.push({ raw: JSON.stringify(raw).slice(0, 80), module: a.slice(0, 140), inline: b.slice(0, 140) });
+    }
+    return diffs.length ? no(JSON.stringify(diffs).slice(0, 300)) : ok(raws.length + " stored shapes identical");
+  });
+
+  await t("store: a missing or junk snapshot still serialises a valid project", () => {
+    const a = api.serializeProject(null);
+    const b = api.serializeProject({ stored: "junk", page: 7, library: "no", kept: null, currentPage: "abc" });
+    return eqArr([
+      Object.keys(a.pages).join(","), a.currentPage, a.projectName === undefined, a.previewOn === undefined, api.validate(a).length,
+      Object.keys(b.pages).join(","), b.currentPage, b.library.length, b.kept.length, api.validate(b).length
+    ], [
+      "1", 1, true, true, 0,
+      "1", 1, 0, 0, 0
+    ], "junk");
   });
 }
 
