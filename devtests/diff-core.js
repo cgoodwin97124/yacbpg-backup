@@ -43,6 +43,7 @@ const surface = {
   "src/core/library-core.js": ["LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "normalizeLibType", "extractLibraryItems", "libRefEntry", "libRefDesc"],
   "src/core/schema.js": ["SCHEMA_VERSION", "PANEL_COUNT_OPTIONS", "newPanelId", "defaultChar", "defaultPanel", "defaultPage", "defaultProject", "normalise", "validate", "normaliseLibrary", "normaliseKept"],
   "src/state/store.js": ["STORE_VERSION", "createStore", "serializeProject", "ensurePages", "defaultPageData", "pageKey", "normaliseSnapshot"],
+  "src/state/commands.js": ["COMMANDS_VERSION", "findPanelById", "setTitle", "COMMANDS"],
 };
 
 const deletedInline = {
@@ -54,7 +55,7 @@ const deletedInline = {
   "src/core/library-core.js": ["LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems"],
 };
 
-const declaredNames = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems", "newPanelId", "defaultPanel", "defaultPage", "defaultProject", "normaliseProject", "validateProject", "normaliseLibrary", "normaliseKept", "createProjectStore", "serializeProject"];
+const declaredNames = ["initCrcTable", "crc32", "dataUrlToBytes", "buildZip", "inflateRawDeflate", "unzipEntries", "jsonTokenize", "jsonDecodeRaw", "jsonParse", "ART_STYLES", "COLOR_PALETTES", "DEFAULT_POS", "DEFAULT_NEGATIVES", "composeKeywords", "panelSeedValue", "imageSeed", "scrubMinusOneSeeds", "composePanelPrompt", "LIB_TYPE_PREFIX", "libIdFor", "libRefValue", "isLibRef", "parseLibRef", "libRefNeedles", "countLibRefs", "libRefEntry", "libRefDesc", "normalizeLibType", "extractLibraryItems", "newPanelId", "defaultPanel", "defaultPage", "defaultProject", "normaliseProject", "validateProject", "normaliseLibrary", "normaliseKept", "createProjectStore", "serializeProject", "panelCommands"];
 
 const discovered = (await fs.listFiles()).filter((f) => (f.path.startsWith("src/core/") || f.path.startsWith("src/state/")) && f.path.endsWith(".js")).map((f) => f.path).sort();
 const unspecced = discovered.filter((p) => !surface[p]);
