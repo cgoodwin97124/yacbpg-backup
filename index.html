@@ -418,7 +418,19 @@ color-scheme:light;
   .lib-hint { color: var(--text-8); font-size: 0.85rem; margin-top: 0; margin-bottom: 12px; }
   .lib-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
   .lib-row input, .lib-row textarea { flex: 1; margin-bottom: 0; }
-  .lib-row input:first-child { flex: 0 0 28%; }
+  .lib-row .lib-name-input { flex: 0 0 28%; }
+  .lib-select-wrap { flex: 0 0 auto; display: inline-flex; align-items: center; cursor: pointer; }
+  .lib-row .lib-select-cb { flex: 0 0 auto; width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #4d9fff; }
+  .lib-row.lib-selected { border-radius: 6px; box-shadow: 0 0 0 3px rgba(77,159,255,0.45); background-image: linear-gradient(rgba(77,159,255,0.14), rgba(77,159,255,0.14)); }
+  .lib-scope-row { display: flex; align-items: center; gap: 8px; margin: 18px 0 6px; }
+  .lib-scope-row h3 { margin: 0; }
+  .btn-lib-selectall, .btn-lib-clearsel { border: none; border-radius: 4px; padding: 4px 9px; font-size: 0.78rem; font-weight: bold; cursor: pointer; background: var(--blue); color: var(--text); }
+  .btn-lib-selectall:hover { background: var(--blue-2); }
+  .btn-lib-clearsel { background: var(--red); color: var(--on-danger); }
+  .btn-lib-clearsel:hover { background: var(--red-2); }
+  .btn-lib-clearsel[hidden] { display: none; }
+  .lib-sel-hint { color: var(--blue-text); font-size: 0.85rem; font-weight: bold; margin: 0 0 10px; }
+  .lib-sel-hint[hidden] { display: none; }
   .lib-bucket-row { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 6px; }
   .lib-bucket { margin: 0; color: var(--accent-soft); font-size: 0.9rem; text-transform: uppercase; letter-spacing: .04em; }
   .btn-add-bucket { background: var(--green-3); color: var(--text); border: none; border-radius: 3px; width: 22px; height: 22px; font-size: 1.05rem; font-weight: bold; line-height: 1; cursor: pointer; flex: 0 0 auto; padding: 0; }
@@ -1037,7 +1049,7 @@ color-scheme:light;
             <li><b>Set the art style</b> — open <b>🎨 Edit</b> for art style &amp; palette presets, hand-edit the global positive/negative keywords, or view and copy the full list in the <b>Keyword List</b>. To control how literally the AI follows your words, use the <b>Prompt Obedience</b> slider in <b>📄 File → Page Setup</b> (1–30; 7 is the balanced default). Low values are loose and free, high values are very faithful but with diminishing returns — past ~15 colors oversaturate and halo / text artifacts appear.</li>
             <li><b>Fill in each panel</b> — for every panel, choose up to 3 characters, a location, and an optional action like "kicking the door down". The <code>modifier</code> boxes let you tweak a character's look or mood per panel. Use the <b>Images</b> selector in each panel's header to render 1–4 images from the same prompt (variations of the same scene), <b>📄 File → Images per Panel</b> sets the default that new and blank panels start at — it is saved with the project, so it is still set the next time you open the app — and its <b>Apply to all</b> button sets every panel at once. A panel renders as long as it has <i>any</i> content — a character, location, or action. Completely empty panels (no prompt beyond the presets) are skipped automatically. The character dropdowns list your saved library characters first, with the "No Character Selected" option at the bottom.</li>
             <li><b>Title and reorder your panels</b> — each panel's title bar has a <b>title box</b> (right of "Panel N", display-only — it isn't added to the prompt). The <code>⇅ Move</code> chip opens a 1-to-N picker: choose a position to move that panel there, shifting the panels in between (e.g. moving panel 5 to position 2 makes it Panel 2, and the old 2–4 each move up one). Everything about a panel — title, characters, modifiers, location, action, panel seed, image count, and prompt override — moves with it, and the arrangement survives reloads and is included in your settings backup/import.</li>
-            <li><b>Use saved descriptions</b> — add reusable character or location descriptions in <b>📚 Library</b>. It shows <b>📁 This project</b> (the characters and locations this project owns — saved inside the project and used by its panel dropdowns) and <b>🗂 My catalogue</b> (the reusable set saved in this browser and shared by every project). Copy a catalogue item into this project with <b>⤓</b>; offer one back to the catalogue with <b>⤒</b> to reuse it elsewhere. A panel uses a saved character only when you explicitly select it in a character slot; it never draws one in automatically. The <b>⛶ Full Screen</b> button opens the Library in a full-screen overlay — the same live list, so your edits save as you type — which is a lot easier to work with on a phone; leave it with <b>← Back to page</b> or <b>Esc</b>. The <b>⬆ Import…</b> button there pulls saved characters/locations (and actions, if the file has them) out of a project file — a <code>.json</code> backup or a <code>.zip</code> — <b>into My catalogue</b>, so you can reuse them in another project; you pick which items to bring in and can edit them first. The <b>📊 Analysis</b> button opens a matrix of your library items against the current page's panels — a ✅ marks each item a panel uses, and you can edit that panel's per-item description right in the grid (or <b>＋ Add</b> an unused item to a panel).</li>
+            <li><b>Use saved descriptions</b> — add reusable character or location descriptions in <b>📚 Library</b>. It shows <b>📁 This project</b> (the characters and locations this project owns — saved inside the project and used by its panel dropdowns) and <b>🗂 My catalogue</b> (the reusable set saved in this browser and shared by every project). Copy a catalogue item into this project with <b>⤓</b>; offer one back to the catalogue with <b>⤒</b> to reuse it elsewhere. Tick the checkbox on any row to select it — shift-click a checkbox to select a whole range, or use <b>☑ Select all</b> under a section heading — and the <b>⤒</b>, <b>⤓</b> and <b>🗑</b> buttons on a selected row then act on every selected item at once. A panel uses a saved character only when you explicitly select it in a character slot; it never draws one in automatically. The <b>⛶ Full Screen</b> button opens the Library in a full-screen overlay — the same live list, so your edits save as you type — which is a lot easier to work with on a phone; leave it with <b>← Back to page</b> or <b>Esc</b>. The <b>⬆ Import…</b> button there pulls saved characters/locations (and actions, if the file has them) out of a project file — a <code>.json</code> backup or a <code>.zip</code> — <b>into My catalogue</b>, so you can reuse them in another project; you pick which items to bring in and can edit them first. The <b>📊 Analysis</b> button opens a matrix of your library items against the current page's panels — a ✅ marks each item a panel uses, and you can edit that panel's per-item description right in the grid (or <b>＋ Add</b> an unused item to a panel).</li>
             <li><b>Keep a character consistent</b> — use the small <code>⇤</code> button on a character slot to copy that character + modifier from the panel directly before it (the Location and Panel Action Prompt rows have the same <code>⇤</code> copy buttons). Panel 1 has no previous panel, so its buttons are disabled. Already-set items are overwritten by the copy.</li>
             <li><b>Generate</b> — hit <b>⚡ Generate All</b> in the menu bar — it sits beside File / Edit / Library / Help and stays visible at the top of the menu (and, if you turn on the matching option in <b>Preferences</b>, it also stays visible in the top header bar while the menu is hidden). Each panel takes a few seconds (multiply by the number of images set for that panel). Or render just one panel: press <b>Enter</b> in its <code>Panel Action Prompt</code> or its header <code>Seed</code> box (use <b>Shift+Enter</b> to add a new line in the action box), or click its <code>🔄 Generate</code> button. Each image also has its own <code>🔄 Generate</code> chip above it to regenerate just that image. Each image has its own <code>✕ Clear this image</code> chip (images only). When a panel has more than one image, a <code>🗑 Clear Images</code> chip appears that removes all of that panel's images at once while keeping its characters, location, and action. The panel's <code>🗑 Clear</code> chip removes <i>everything</i> — all images <i>and</i> its characters, locations, and descriptions (this also stops an in-progress generation for that panel). To keep a particular image safe from being overwritten, click its <code>🔓 Protect</code> chip beneath it — Generate (that image's own chip, the panel's, or <code>⚡ Generate All</code>) never touches a protected image; a panel Generate simply keeps the protected images and regenerates the rest. Click <code>🔒 Protected</code> again to unprotect. To reuse a panel's setup, click <code>⧉ Duplicate</code> — it inserts a full copy (title, characters, modifiers, location, action, panel seed, image count, prompt, protect) right after the original, with no images, and widens the page to show it (up to the 24-panel maximum). When a page already has all 24 panels, Duplicate reflows instead of refusing: your page's <i>last</i> panel is pushed to the top of the next page — creating a new page if there isn't one, and cascading on through any further full pages — and the copy takes that last slot, right after the panel you duplicated. You're asked to confirm first, and told how many panels will move. <code>＋ Add Panel</code> does the same thing when the page is full, adding the empty panel right after the one you clicked.</li>
             <li><b>Work with your images</b> — each image has <code>↗ Open</code> (shows it full-size in a new tab) and <code>⬇ Save</code> (downloads it to your device) chips in the row beneath it; both need an image first. Nothing overlays the images. The button row at the bottom of each panel adds <code>↗ Open All</code> (opens every image in that panel in new tabs) and <code>⬇ Save All (.zip)</code> (downloads all of that panel's images packed into a single <code>.zip</code>); these activate once the panel has at least one image. Choose the image size in <b>📄 File</b>: from 512×512 up to 1920×1080 (16:9) or 1080×1920 (9:16), or a custom size up to 1920×1080. Larger sizes are upscaled from the 768px base generation, so they're a bit softer but still crisp for print/web use. To preview any image at a larger size, hover your pointer over it (computer) or press and hold it (mobile). The preview appears after the delay set in <b>📄 File → Image Preview Delay</b> (0 shows it instantly), and can be turned off entirely with the <b>Enable image preview</b> checkbox there. Each image also has a <code>🔓 Protect</code> chip (locks it against regeneration), a <code>⭐ Cover</code> chip (makes it the panel's representative — it moves to the first slot and gets a <code>⭐</code> badge), and an <code>✕ Clear this image</code> chip (removes just that image). A <code>⧉</code> chip <b>copies that image</b> onto other images: it opens a small picker where you tick any of the other images in its own panel — there's a <i>select all</i> shortcut — and/or 1–4 images of another panel on the same page, then press <code>⧉ Copy image</code>. The image you clicked stays where it is, anything already in a chosen slot is replaced, and a <code>🔒</code> protected image is never overwritten (it's skipped and the status line says so). Every copy lands unprotected, so you can regenerate it on its own.</li>
@@ -1314,8 +1326,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.22 — 2026-09-26 — 💬 The Panel Description box can now be saved to your library and reused by any character or location
-- 💬 The box under a character or location — formerly "This panel — extra description" — is now called Panel Description, and it can remember phrases: type one and press 💾 Save to library to keep it under a name, or pick one of your saved descriptions from 💬 Use a saved description… beside the box. Any character or location can use any saved description. A pill beside the label names the saved description the box is holding (or says ✎ not in your library). Picking copies the text; editing the saved copy later leaves panels that already took it alone — pick it again to take a change.
+## 2026.09.26.23 — 2026-09-26 — ☑ Every 📚 Library item can be selected, so you can copy or delete several at once
+- ☑ Tick the checkbox on any Library row — shift-click a checkbox to take the whole range, or use ☑ Select all under a section heading — and the ⤒, ⤓ and 🗑 buttons on a selected row then act on every selected item: ⤒ copies them all into My catalogue (asking first when one is already there, because that updates that catalogue entry), ⤓ copies them all into this project, and 🗑 deletes them all in one dialog with the same "leave the text as plain text" / "clear the references and the text" choice as a single delete, applied to the whole batch. The selection is never saved: it clears after every action, and Esc clears it.
 </script>
 
 
@@ -1679,26 +1691,15 @@ color-scheme:light;
   }
 
   function applyLibraryDelete(id, clearText) {
-    const objs = loadLibraryObjects();
-    const obj = objs.find(o => o.id === id);
-    if (!obj) return null;
-    const typeLabel = obj.type || 'Character';
-    const slug = libraryRenameSlug(typeLabel);
-    const name = String(obj.name || '').trim() || '(unnamed)';
-    const state = collectPanelState();
-    const stats = slug ? sweepDeleteAcrossPages(state, slug, id, !!clearText, true) : { panels: 0 };
-    if (slug) {
-      savePanelStateShape(state);
-      syncDeleteFieldsToDom(state.pages[currentPage], slug, id);
-    }
-    saveLibraryObjects(objs.filter(e => e.id !== id));
-    renderLibrary();
-    updatePanelSelects();
-    refreshAllPanelLineDescs();
-    for (let i = 1; i <= 24; i++) updatePanelSummary(i);
-    if (document.getElementById('analysisOverlay') && !document.getElementById('analysisOverlay').hidden) renderAnalysis();
-    schedulePanelSave();
-    return { name, type: typeLabel, panels: stats.panels, cleared: !!clearText };
+    const res = applyLibraryDeleteMany([id], clearText);
+    if (!res.count) return null;
+    const obj = res.items[0];
+    return {
+      name: String(obj.name || '').trim() || '(unnamed)',
+      type: obj.type || 'Character',
+      panels: res.panels,
+      cleared: !!clearText
+    };
   }
 
   function deleteLibraryObject(id) {
@@ -2071,13 +2072,285 @@ color-scheme:light;
     return h;
   }
 
+  let libSelection = new Set();
+  let libAnchorKey = null;
+
+  function libRowKeysInOrder() {
+    return [...document.querySelectorAll('#libObjects .lib-row')].map(r => r.dataset.libKey).filter(Boolean);
+  }
+
+  function libSelectionKeys() {
+    return libRowKeysInOrder().filter(k => libSelection.has(k));
+  }
+
+  function libBatchMode(key) {
+    return libSelection.size > 0 && libSelection.has(key);
+  }
+
+  function libSelectedOf(where) {
+    const pool = where === 'cat' ? loadCatalogue() : loadLibraryObjects();
+    const pre = where + ':';
+    return libSelectionKeys().filter(k => k.startsWith(pre)).map(k => pool.find(o => o.id === k.slice(pre.length))).filter(Boolean);
+  }
+
+  function onLibSelectClick(key, ev) {
+    const on = !!(ev && ev.target && ev.target.checked);
+    const order = libRowKeysInOrder();
+    const a = order.indexOf(libAnchorKey);
+    const b = order.indexOf(key);
+    if (ev && ev.shiftKey && a !== -1 && b !== -1) {
+      for (let i = Math.min(a, b); i <= Math.max(a, b); i++) {
+        if (on) libSelection.add(order[i]); else libSelection.delete(order[i]);
+      }
+    } else {
+      if (on) libSelection.add(key); else libSelection.delete(key);
+      libAnchorKey = on ? key : null;
+    }
+    updateLibSelectionUI();
+  }
+
+  function selectAllLib(scope) {
+    for (const k of libRowKeysInOrder()) if (k.startsWith(scope + ':')) libSelection.add(k);
+    libAnchorKey = null;
+    updateLibSelectionUI();
+  }
+
+  function clearLibSelection() {
+    if (!libSelection.size) return false;
+    libSelection.clear();
+    libAnchorKey = null;
+    updateLibSelectionUI();
+    return true;
+  }
+
+  function libEscClear() {
+    const lg = document.getElementById('menuGroup-library');
+    if (!lg || lg.hidden || !libSelection.size) return false;
+    return clearLibSelection();
+  }
+
+  function updateLibSelectionUI() {
+    const order = libRowKeysInOrder();
+    for (const k of [...libSelection]) if (order.indexOf(k) === -1) libSelection.delete(k);
+    const n = libSelection.size;
+    for (const row of document.querySelectorAll('#libObjects .lib-row')) {
+      const key = row.dataset.libKey;
+      const sel = libSelection.has(key);
+      row.classList.toggle('lib-selected', sel);
+      const cb = row.querySelector('.lib-select-cb');
+      if (cb) cb.checked = sel;
+      const part = sel && n > 1;
+      const up = row.querySelector('.btn-copy-up');
+      const down = row.querySelector('.btn-copy-down');
+      const del = row.querySelector('.btn-del-lib');
+      if (up) {
+        up.textContent = part ? ('⤒ Copy ' + n) : '⤒';
+        up.title = part ? ('Copy these ' + n + ' selected items into My catalogue, so other projects can use them too') : 'Copy into My catalogue, so other projects can use it too';
+      }
+      if (down) {
+        down.textContent = part ? ('⤓ Copy ' + n) : '⤓';
+        if (!down.disabled) down.title = part ? ('Copy these ' + n + ' selected catalogue items into this project') : 'Copy into this project';
+      }
+      if (del) {
+        del.textContent = part ? ('🗑 Delete ' + n) : '🗑';
+        del.title = part ? ('Delete these ' + n + ' selected items') : (row.classList.contains('lib-row-cat') ? 'Delete from My catalogue' : 'Delete from this project');
+      }
+    }
+    for (const b of document.querySelectorAll('#libObjects .btn-lib-clearsel')) b.hidden = !n;
+    const hint = document.getElementById('libSelHint');
+    if (hint) {
+      hint.hidden = !n;
+      hint.textContent = n
+        ? (n + ' item' + (n === 1 ? '' : 's') + ' selected — the ⤒ / ⤓ / 🗑 buttons on a selected row now act on all of them. Esc clears the selection.')
+        : '';
+    }
+  }
+
+  function libScopeHeadEl(text, scope) {
+    const row = document.createElement('div');
+    row.className = 'lib-scope-row';
+    const h = document.createElement('h3');
+    h.className = 'lib-section-h';
+    h.textContent = text;
+    const all = document.createElement('button');
+    all.className = 'btn-lib-selectall';
+    all.textContent = '☑ Select all';
+    all.title = 'Select every item in ' + (scope === 'cat' ? '🗂 My catalogue' : '📁 This project') + ' shown here';
+    all.onclick = () => selectAllLib(scope);
+    const clr = document.createElement('button');
+    clr.className = 'btn-lib-clearsel';
+    clr.textContent = '✕ Clear';
+    clr.title = 'Clear the selection (Esc)';
+    clr.hidden = !libSelection.size;
+    clr.onclick = () => clearLibSelection();
+    row.append(h, all, clr);
+    return row;
+  }
+
+  function batchCopyToCatalogue() {
+    const items = libSelectedOf('proj');
+    if (!items.length) return;
+    const already = items.filter(o => loadCatalogue().some(e => e.id === o.id));
+    const doIt = () => {
+      const cat = loadCatalogue();
+      let copied = 0, updated = 0;
+      for (const o of items) {
+        const same = cat.find(e => e.id === o.id);
+        if (same) {
+          if (same.name !== (o.name || '') || same.desc !== (o.desc || '')) {
+            same.name = o.name || '';
+            same.desc = o.desc || '';
+            updated++;
+          }
+        } else {
+          cat.push({ id: o.id, type: o.type, name: o.name || '', desc: o.desc || '' });
+          copied++;
+        }
+      }
+      saveCatalogue(cat);
+      clearLibSelection();
+      renderLibrary();
+      const st = document.getElementById('statusEl');
+      if (st) {
+        const bits = [copied + ' copied' + (updated ? ', ' + updated + ' updated' : '')];
+        if (!copied && !updated) bits.push('already identical');
+        st.textContent = '⤒ My catalogue: ' + bits.join(' — ') + '.';
+      }
+    };
+    if (!already.length) { doIt(); return; }
+    const rest = items.length - already.length;
+    showChoiceDialog({
+      title: '⤒ Copy ' + renamePlural(items.length, 'selected item') + ' to My catalogue?',
+      paragraphs: [
+        '<b>' + already.length + ' of ' + items.length + '</b> ' + (already.length === 1 ? 'is' : 'are') + ' already in 🗂 My catalogue: ' + escapeHtml(already.map(o => String(o.name || '(unnamed)')).join(', ')) + '.',
+        'My catalogue keys an entry on the item\\u2019s id, so copying it again <b>replaces that catalogue entry\\u2019s name and description</b> with this project\\u2019s version.' + (rest ? ' The other ' + renamePlural(rest, 'item') + ' ' + (rest === 1 ? 'is' : 'are') + ' simply added.' : '')
+      ],
+      hint: 'Editing or deleting a catalogue entry never changes a project that already has its own copy, so this cannot disturb this project.',
+      buttons: [
+        { label: '⤒ Copy and update', cls: 'choice-plain', value: 'go' },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    }).then(v => { if (v === 'go') doIt(); });
+  }
+
+  function batchCopyToProject() {
+    const items = libSelectedOf('cat');
+    if (!items.length) return;
+    const objs = loadLibraryObjects();
+    let added = 0, skipped = 0;
+    for (const o of items) {
+      if (objs.some(p => p.id === o.id)) { skipped++; continue; }
+      objs.push({ id: o.id, type: o.type || 'Character', name: o.name || '', desc: o.desc || '' });
+      added++;
+    }
+    if (added) saveLibraryObjects(objs);
+    clearLibSelection();
+    renderLibrary();
+    updatePanelSelects();
+    const st = document.getElementById('statusEl');
+    if (st) st.textContent = '⤓ Added ' + renamePlural(added, 'item') + ' to this project\\u2019s library' + (skipped ? ' — ' + skipped + ' ' + (skipped === 1 ? 'was' : 'were') + ' already here.' : '.');
+  }
+
+  function applyLibraryDeleteMany(ids, clearText) {
+    const objs = loadLibraryObjects();
+    const targets = ids.map(id => objs.find(o => o.id === id)).filter(Boolean);
+    if (!targets.length) return { count: 0, panels: 0, cleared: !!clearText, items: [] };
+    const state = collectPanelState();
+    let panels = 0, swept = false;
+    for (const t of targets) {
+      const slug = libraryRenameSlug(t.type || 'Character');
+      if (!slug) continue;
+      swept = true;
+      const stats = sweepDeleteAcrossPages(state, slug, t.id, !!clearText, true);
+      panels += stats.panels || 0;
+      syncDeleteFieldsToDom(state.pages[currentPage], slug, t.id);
+    }
+    if (swept) savePanelStateShape(state);
+    const kill = new Set(targets.map(t => t.id));
+    saveLibraryObjects(objs.filter(e => !kill.has(e.id)));
+    renderLibrary();
+    updatePanelSelects();
+    refreshAllPanelLineDescs();
+    for (let i = 1; i <= 24; i++) updatePanelSummary(i);
+    const ov = document.getElementById('analysisOverlay');
+    if (ov && !ov.hidden) renderAnalysis();
+    schedulePanelSave();
+    return { count: targets.length, panels: panels, cleared: !!clearText, items: targets };
+  }
+
+  function batchDeleteLibrary() {
+    const proj = libSelectedOf('proj');
+    const cat = libSelectedOf('cat');
+    const total = proj.length + cat.length;
+    if (!total) return;
+    const used = proj.reduce((a, o) => a + countLibReferences(o.id), 0);
+    const bits = [];
+    if (proj.length) bits.push('<b>' + renamePlural(proj.length, 'item') + '</b> from 📁 This project');
+    if (cat.length) bits.push('<b>' + renamePlural(cat.length, 'catalogue item') + '</b> from 🗂 My catalogue');
+    const paras = ['This removes ' + bits.join(' and ') + '.'];
+    if (proj.length) {
+      paras.push('From 📁 This project: ' + proj.map(o => '<b>' + escapeHtml(String(o.name || '(unnamed)')) + '</b>').join(', ') + '.');
+      paras.push(used
+        ? ('<b>' + used + '</b> panel slot' + (used === 1 ? '' : 's') + ' use them right now — choose what happens to ' + (used === 1 ? 'it' : 'them') + ':')
+        : 'No panel in this project is using them right now.');
+    }
+    if (cat.length) {
+      paras.push('From 🗂 My catalogue: ' + cat.map(o => '<b>' + escapeHtml(String(o.name || '(unnamed)')) + '</b>').join(', ') + '. A project that already copied one keeps its own copy, so its panels are unaffected.');
+    }
+    paras.push('Deleting cannot be undone — only a project backup can bring these entries back.');
+    const buttons = [];
+    if (proj.length && used) buttons.push({ label: '⤓ Leave the text as plain text', cls: 'choice-neutral', value: 'keep' });
+    buttons.push({ label: used ? '✕ Clear the references and the text' : ('🗑 Delete ' + renamePlural(total, 'item')), cls: 'choice-danger', value: 'clear' });
+    buttons.push({ label: 'Cancel', cls: 'choice-neutral', value: null });
+    showChoiceDialog({
+      title: '🗑 Delete ' + renamePlural(total, 'selected item') + '?',
+      paragraphs: paras,
+      buttons: buttons,
+      hint: proj.length && used
+        ? 'Either choice leaves ' + (used === 1 ? 'the slot' : 'those slots') + ' showing <b>No ' + (proj[0].type || 'Character') + ' Selected</b>. <b>Leave the text</b> keeps every word already in ' + (used === 1 ? 'it' : 'them') + ' (it no longer feeds the prompt); <b>Clear</b> empties ' + (used === 1 ? 'it' : 'them') + ' too. The choice applies to every selected item.'
+        : 'Only the selected library entries are removed — your panels, their text, and their generated images are untouched.'
+    }).then(v => {
+      if (v !== 'keep' && v !== 'clear') return;
+      const clearText = v === 'clear';
+      let panels = 0;
+      if (proj.length) panels = applyLibraryDeleteMany(proj.map(o => o.id), clearText).panels;
+      if (cat.length) {
+        const kill = new Set(cat.map(o => o.id));
+        saveCatalogue(loadCatalogue().filter(e => !kill.has(e.id)));
+      }
+      clearLibSelection();
+      renderLibrary();
+      updatePanelSelects();
+      const st = document.getElementById('statusEl');
+      if (st) {
+        const where = [];
+        if (proj.length) where.push(proj.length + ' from this project');
+        if (cat.length) where.push(cat.length + ' from My catalogue');
+        st.textContent = '🗑 Deleted ' + renamePlural(total, 'item') + ' — ' + where.join(', ') + (panels ? '; ' + renamePlural(panels, 'panel') + (clearText ? ' cleared.' : ' left as plain text.') : '.');
+      }
+    });
+  }
+
   function libRowEl(o, opts) {
     const cat = !!(opts && opts.cat);
     const objs = (opts && opts.objs) || null;
+    const key = (cat ? 'cat:' : 'proj:') + o.id;
     const row = document.createElement('div');
     row.className = 'lib-row ' + (cat ? 'lib-row-cat' : 'lib-row-proj');
+    row.dataset.libKey = key;
+    const selWrap = document.createElement('label');
+    selWrap.className = 'lib-select-wrap';
+    selWrap.title = 'Select this item. Shift-click a checkbox to select the whole range from the last one you ticked.';
+    const selCb = document.createElement('input');
+    selCb.type = 'checkbox';
+    selCb.className = 'lib-select-cb';
+    selCb.checked = libSelection.has(key);
+    selCb.onclick = (ev) => onLibSelectClick(key, ev);
+    selWrap.appendChild(selCb);
+    row.appendChild(selWrap);
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
+    nameInput.className = 'lib-name-input';
     nameInput.placeholder = 'Name (shown in dropdowns)';
     nameInput.value = o.name;
     const descInput = document.createElement('textarea');
@@ -2089,14 +2362,14 @@ color-scheme:light;
     delBtn.className = 'btn-del-lib';
     delBtn.textContent = '🗑';
     delBtn.title = cat ? 'Delete from My catalogue' : 'Delete from this project';
-    delBtn.onclick = () => (cat ? deleteCatalogueObject(o.id) : deleteLibraryObject(o.id));
+    delBtn.onclick = () => (libBatchMode(key) ? batchDeleteLibrary() : (cat ? deleteCatalogueObject(o.id) : deleteLibraryObject(o.id)));
     if (cat) {
       const copyBtn = document.createElement('button');
-      copyBtn.className = 'btn-copy-lib';
+      copyBtn.className = 'btn-copy-lib btn-copy-down';
       copyBtn.textContent = '⤓';
       copyBtn.title = opts.inProject ? 'This project already has a copy' : 'Copy into this project';
       copyBtn.disabled = !!opts.inProject;
-      copyBtn.onclick = () => copyCatalogueItemToProject(o.id);
+      copyBtn.onclick = () => (libBatchMode(key) ? batchCopyToProject() : copyCatalogueItemToProject(o.id));
       nameInput.oninput = () => { o.name = nameInput.value; saveCatalogue(loadCatalogue().map(x => (x.id === o.id ? Object.assign({}, x, { name: o.name }) : x))); };
       descInput.oninput = () => { o.desc = descInput.value; saveCatalogue(loadCatalogue().map(x => (x.id === o.id ? Object.assign({}, x, { desc: o.desc }) : x))); };
       row.append(nameInput, descInput, copyBtn, delBtn);
@@ -2105,10 +2378,10 @@ color-scheme:light;
     nameInput.oninput = () => { o.name = nameInput.value; saveLibraryObjects(objs); updatePanelSelects(); };
     descInput.oninput = () => { o.desc = descInput.value; saveLibraryObjects(objs); refreshAllPanelLineDescs(); };
     const copyUpBtn = document.createElement('button');
-    copyUpBtn.className = 'btn-copy-lib';
+    copyUpBtn.className = 'btn-copy-lib btn-copy-up';
     copyUpBtn.textContent = '⤒';
     copyUpBtn.title = 'Copy into My catalogue, so other projects can use it too';
-    copyUpBtn.onclick = () => copyProjectItemToCatalogue(o.id);
+    copyUpBtn.onclick = () => (libBatchMode(key) ? batchCopyToCatalogue() : copyProjectItemToCatalogue(o.id));
     if (o.type === 'Character' || o.type === 'Location') {
       const renameBtn = document.createElement('button');
       renameBtn.className = 'btn-rename-lib';
@@ -2128,7 +2401,12 @@ color-scheme:light;
     const objs = loadLibraryObjects();
     const cat = loadCatalogue();
     ctn.innerHTML = '';
-    ctn.appendChild(libHeadEl('📁 This project', 'lib-section-h'));
+    const selHint = document.createElement('p');
+    selHint.id = 'libSelHint';
+    selHint.className = 'lib-sel-hint';
+    selHint.hidden = true;
+    ctn.appendChild(selHint);
+    ctn.appendChild(libScopeHeadEl('📁 This project', 'proj'));
     ctn.appendChild(libHintEl('The library this project owns. It is saved inside the project (so it travels with your backups) and it is what this project\u2019s panel dropdowns use. Use ⤒ to offer an item to My catalogue.', 'lib-section-hint'));
     const buckets = [['👤 Characters', 'Character', 'No characters in this project yet — click the green + button to add one, or copy one in from My catalogue below.'], ['📍 Locations', 'Location', 'No locations in this project yet — click the green + button to add one, or copy one in from My catalogue below.']];
     if (objs.some(o => o.type === 'Action') || cat.some(o => o.type === 'Action')) buckets.push(['🎬 Actions', 'Action', 'No actions in this project yet — click the green + button to add one, or copy one in from My catalogue below.']);
@@ -2153,7 +2431,7 @@ color-scheme:light;
       }
       for (const o of list) ctn.appendChild(libRowEl(o, { objs: objs }));
     }
-    ctn.appendChild(libHeadEl('🗂 My catalogue', 'lib-section-h'));
+    ctn.appendChild(libScopeHeadEl('🗂 My catalogue', 'cat'));
     ctn.appendChild(libHintEl('Reusable items saved in this browser, shared by every project. Copy one into this project with ⤓. Editing or deleting a catalogue entry never changes a project that already has its own copy.', 'lib-section-hint'));
     if (!cat.length) ctn.appendChild(libHintEl('Nothing in the catalogue yet. ⬆ Import… a saved project file to bring items in, or use ⤒ on one of this project\u2019s items.'));
     for (const [label, type] of [['👤 Characters', 'Character'], ['📍 Locations', 'Location'], ['🎬 Actions', 'Action'], ['💬 Panel Descriptions', 'Panel Description']]) {
@@ -2162,6 +2440,7 @@ color-scheme:light;
       ctn.appendChild(libHeadEl(label, 'lib-bucket'));
       for (const o of list) ctn.appendChild(libRowEl(o, { cat: true, inProject: objs.some(p => p.id === o.id) }));
     }
+    updateLibSelectionUI();
   }
 
   let LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, libRefEntry, libRefDesc, normalizeLibType, extractLibraryItems, panelDescMatch;
@@ -2663,6 +2942,7 @@ color-scheme:light;
     const ov = document.getElementById('menuOverlay');
     if (!ov || ov.hidden) return;
     e.preventDefault();
+    if (libEscClear()) return;
     requestCloseMenuFullscreen();
   });
 
@@ -6358,10 +6638,10 @@ color-scheme:light;
     if (e.key !== 'Escape') return;
     const choice = document.getElementById('choiceOverlay');
     if (choice && !choice.hidden) { choiceDialogPick(null); return; }
-    if (!panelSelection.size) return;
     const blocked = [...document.querySelectorAll('[id$="Overlay"]')].some(el => !el.hidden && getComputedStyle(el).display !== 'none');
     if (blocked) return;
-    clearPanelSelection();
+    if (panelSelection.size) { clearPanelSelection(); return; }
+    libEscClear();
   });
 
   function duplicatePanel(i) {
@@ -9898,6 +10178,14 @@ color-scheme:light;
   window.copyCatalogueItemToProject = copyCatalogueItemToProject;
   window.copyProjectItemToCatalogue = copyProjectItemToCatalogue;
   window.countLibReferences = countLibReferences;
+  window.onLibSelectClick = onLibSelectClick;
+  window.selectAllLib = selectAllLib;
+  window.clearLibSelection = clearLibSelection;
+  window.updateLibSelectionUI = updateLibSelectionUI;
+  window.batchCopyToCatalogue = batchCopyToCatalogue;
+  window.batchCopyToProject = batchCopyToProject;
+  window.batchDeleteLibrary = batchDeleteLibrary;
+  window.applyLibraryDeleteMany = applyLibraryDeleteMany;
   window.libraryImportFiles = libraryImportFiles;
   window.libImportSelectAll = libImportSelectAll;
   window.confirmLibraryImport = confirmLibraryImport;
