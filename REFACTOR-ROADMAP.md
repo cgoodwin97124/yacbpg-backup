@@ -347,7 +347,16 @@ release:
 1. **Leaf setters:** `setChar`, `setCharBase`/`refreshLine`, `setLoc`, `setAction`, `setTitle`,
    `setImgCount`, `setStyle`, `setSize`, `setPanelSeed`, `setSameSeed`, `setProtect`, `setRepresentative`,
    `setPromptOverride`. Each one is a pure store mutation; the DOM is re-rendered from the store for the
-   affected panel only.
+   affected panel only. ✅ **Started as 2026.09.26.20** — the mechanism plus its first command: `setTitle`.
+   `src/state/commands.js` is pure and DOM-free (`findPanelById` addresses a panel by **id**, not by position;
+   a command mutates one field and returns `{ page, index, fields }`), `index.html` owns `runPanelCommand`
+   (look up → `storeJsonNow()` → apply → `savePanelStateShape` → `renderCommittedFields`) and the routing
+   branch in `handleGridInput`, and the delegated listeners became `if (!handleGridInput(e)) schedulePanelSave()`
+   so a command's own synchronous save replaces the debounce for that one field. `setTitle` went first because
+   it is the only leaf setter with **no side effects at all** (no prompt-override invalidation, no slot flags,
+   no visibility change, nothing in `composePanelPrompt`), so the mechanism landed with nothing riding on it.
+   The rest follow one per release, each adding its field to `renderCommittedFields` and its own check.
+   `DEV-NOTES.md` BATCH 2026.09.26.20, `AI-NOTES.md` §33.
 2. **Structural commands:** `addPanel`, `duplicatePanel`, `deletePanel`, `movePanel`, `reflow`,
    `addPage`, `deletePage`, `renumberPages`. Here the id-based model pays for itself: `movePanel(id,
    targetPage, position)` replaces `movePanelToPage` + `resequencePanel` + `remapPanelSession` +
