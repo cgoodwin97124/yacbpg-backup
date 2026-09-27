@@ -1,0 +1,727 @@
+# CHANGELOG archive (verbatim moves, oldest history)
+
+Moved here from `CHANGELOG.md` on 2026-09-27 in the docs archive-split: every entry older than the live file's cut, byte-identical, newest-first. Human-readable voice preserved. Read only for historical questions.
+
+---
+
+## 2026.09.26.4 — 2026-09-26 — ⚙ Generation keeps running when you switch to another tab or app
+
+- **The run no longer stops when this page loses focus.** Start **⚡ GENERATE ALL PANELS ON PAGE**, switch to another tab, another window or another app, and come back to finished panels — instead of the "Stopped generations — tab went to background" message and a half-done page. This was the thing that made the app sigh-worthy to use, and it was the app's own doing: the old behaviour stopped every in-flight image and broke the run the moment the page was hidden.
+- **New setting: Edit → Preferences → Generation → “Keep generating when I switch to another tab or app”** — on by default, because that is how you actually work with it. Turn it off to get the old behaviour back if you would rather save memory, battery and data; a run then pauses where it was and **⚡ GENERATE ALL PANELS ON PAGE** continues from that panel.
+- **Honest about the limits:** a browser deliberately gives a background page fewer resources, so a backgrounded run can be slower, and a phone may suspend the page completely (iOS in particular). When that happens the run pauses and **⚡** picks it up from the panel it stopped on — nothing is lost, and panels that already finished are never re-rendered.
+- **Nothing else changes.** The per-browser setting is not part of your project, so it does not travel in a Save / Export / Import; the panel grid, the 120-second per-image timeout and the Stop/Pause buttons behave exactly as before.
+
+## 2026.09.26.3 — 2026-09-26 — 🗺️ A refactor plan you can read: the functionality map, the road map, UI ideas — and a form for the questions
+
+- **Your project now has three planning documents in the repo**, written to be read straight through on GitHub. **`FUNCTION-MAP.md`** describes everything the app *does*, capability by capability, with no reference to the interface at all — the data model, pages, panels, generation, seeds, the library, images, history, export, the JSON document, plus the promises the app has to keep. **`REFACTOR-ROADMAP.md`** maps the *current* code — measured, not guessed — explains why it grew tangled, and lays out a six-phase, reversible plan for untangling it, phase by phase, each one ending in something shippable. **`UI-IDEAS.md`** takes the ideas that only make sense once the functionality is mapped: the panel menu pile-up, edit-vs-generate, the accordion maze, selection, a real inspector, progressive disclosure, mobile.
+- **The questions that go with them are a fill-in form.** It has **eight tickets and thirty-one questions**, and every multiple-choice question carries a **recommended** answer, so *"all defaults"* is a perfectly good reply. There is a **✨ Use the recommended answers** button that fills all of them in at once, so you can accept the whole set or change only the few you care about. Your answers are written into the repo's `tickets/` folder from the form itself, and the refactoring is planned from them.
+- **Nothing about the app behaves differently.** The only code change is a small hidden developer overlay — `window.__openRefactorForm()` opens the form full-screen over the page (and `window.openDevForm('src/…html', 'title')` opens any other `src/` document the same way). It has **no menu button**; it exists so the form can be opened from the generator page without a download.
+- **The manual and this changelog record the round**, so a later session can tell that the documents are the plan of record rather than a stray set of files.
+
+## 2026.09.26.2 — 2026-09-26 — ⟳ Refresh every Basic Description in a multi-panel selection + the whole-selection buttons in Edit → Panel Selection
+
+- **Refresh a whole selection's descriptions at once.** With two or more panels selected, the **⟳ Refresh from library** chip beside a character's or location's **Basic Description** now refills that description in **all of the selected panels in one click**, not just the panel you clicked it in. While several panels are selected the chip's label changes to **⟳ Refresh N panels**, so you can see what a click is about to do.
+- **Nothing is guessed, and nothing is blanked.** Only lines that actually have a library description are refilled; a line with nothing saved in the library is left exactly as it is (unlike a single-panel refresh, which would empty it), and so is every **This panel — extra description** box and action prompt. The status line reports both counts — e.g. *⟳ Refreshed 5 basic descriptions from your library across 4 panels. 1 line had no library description to refresh, so it was left alone.*
+- **The whole-selection buttons are now in Edit → Panel Selection too.** That section repeats **🔄 Generate**, **⚡ Generate All To Here**, **⚡ Generate All From Here**, **⚡ Generate (x) to (y)…**, **⧉ Duplicate**, **＋ Add Panel**, **⇅ Move**, **⟳ Refresh descriptions**, **🗑 Clear Images**, **🗑 Clear** and **🗑 Delete**, so you can run any of them without opening a panel's **⚙ Panel** menu first. They are greyed out until at least one panel is selected, their labels show the count, and the ones that need a position — **⧉ Duplicate**, **＋ Add Panel**, **⇅ Move**, **⚡ Generate All To Here** and the range picker — work from the **last selected panel**, exactly as the in-panel buttons do.
+- **Same actions, no surprises.** The copies run the very same code as the chips inside a panel, so behaviour matches. The destructive three still ask before they act; because a menu button belongs to no single panel, those copies confirm without the **🎯 Only This Panel** escape — that escape is still there in a panel's own **⚙ Panel** menu. **⟳ Refresh descriptions** in the menu does the batch refresh described above.
+
+## 2026.09.26.1 — 2026-09-26 — ⧉ Copy an image to other images — in its own panel, or another one
+
+- **New: copy one image onto others.** Every generated image now has a **⧉** chip in the row beneath it, beside ↗ Open, ⬇ Save, ✕ Clear, 🔓 Protect and ⭐ Cover. It opens a small picker: tick any of the other images in the same panel — there is a **select all** shortcut for the rest of the panel — and/or **1–4 images of another panel** on the page, then press **⧉ Copy image** and every ticked slot receives that image at once.
+- **Copy, not move.** The image you clicked stays exactly where it is, and each copy lands **unprotected** so you can regenerate it on its own afterwards.
+- **Nothing is destroyed silently.** Whatever already sat in a chosen slot is replaced, and the picker says up front how many images that will be. A **🔒 protected** image is never overwritten — protected destinations are skipped, and the status line tells you how many were skipped.
+- **The picker only offers what you can see.** The panel dropdown lists the other panels on this page together with how many images each already holds; a destination's slots are offered up to that panel's **Images** setting and the rest are greyed out (raise that panel's image count first if you want them). No image count is ever changed for you.
+
+## 2026.09.25.3 — 2026-09-25 — 🎲 Same seed for every image — a per-panel checkbox in the ⚙ Panel menu
+
+- **New: one seed for a panel's whole set of images.** Every panel's **⚙ Panel** menu now ends with a **🎲 Same seed for every image** checkbox. A panel's images normally get a seed each — the panel's seed, then seed + 1, seed + 2 … — so tick this and every image of that panel is rendered with the panel's seed exactly. Untick it and the one-seed-per-image behaviour comes back.
+- **It works with both kinds of seed.** With a number in that panel's own **Seed** box, all of its images use that number. With the box left empty, they all use the seed the panel would have used anyway — the page seed + this panel's position, the same number the grey placeholder shows.
+- **Saved with the project.** The checkbox is per panel and part of the project: it survives reloads, travels in your settings export/import, appears in the 🧩 JSON editor, and is carried along when you duplicate, move, copy or paste that panel. Regenerating a single image of the panel follows the same rule.
+- **Not retroactive.** Images you already have are untouched until you generate again, and 🔒 protected images are still left alone. Replaying a **🕘 Generated Prompt** entry is also unaffected — it always re-runs with the seeds that entry recorded.
+
+## 2026.09.25.2 — 2026-09-25 — ⚡ Generate (x) to (y)… — pick any inclusive panel range on the page
+
+- **New: choose exactly which panels a run covers.** Every panel's **⚙ Panel** menu now has a **⚡ Generate (x) to (y)…** chip, sitting after **⚡ Generate All To Here** and **⚡ Generate All From Here**. It opens a small dialog with two number boxes — **From panel** and **to** — and a live line that says what you have chosen, e.g. *→ panels 3–7 (5 panels)*. **Both ends are included**, only panels on the current page can be used, and they are rendered in order.
+- **The numbers start out helpfully.** Normally *1* and *this panel*; with several panels ticked they become **the span of your selection** (first … last selected), and the selection is cleared as the run starts — the same as the other batch chips. Every panel in the range is regenerated, including panels that already have images, and 🔒 protected images inside the range are still respected.
+- **Impossible ranges are refused rather than run.** If a number is outside the page, or *From* is greater than *To*, the line becomes a warning (⚠ Use numbers from 1 to 4, with From not greater than To.) and the generate button is disabled. Disabled buttons in this dialog — and in the app's other dialogs — are now visibly dimmed, so a button that cannot be pressed no longer looks like one that can.
+- **Pausing a range run respects the range.** Pressing **⚡ Generate All** after a pause continues from where it stopped and **stops at the range's end**, instead of running on to the end of the page — the same rule the To-Here chip follows (added in 2026.09.25.1).
+## 2026.09.25.1 — 2026-09-25 — ⚡ Generate All To Here · editable 📖 Basic Descriptions · a 📄 Recent project list + a spinner for how many it keeps
+
+- **⚡ Generate All To Here** — a new chip in every panel's **⚙ Panel** menu, sitting between **🔄 Generate** and **⚡ Generate All From Here**. It renders *every panel on the page from panel 1 up to and including the panel you clicked it on*, with the usual progress line. If you have several panels ticked it mirrors **From Here** and finishes at the **last** selected panel. And if you pause a To-Here run, **⚡ Generate All** now remembers where it was heading and resumes **only as far as that end panel** instead of running on to the end of the page.
+- **The Panel Library's description box is now editable and travels with your project.** *Library Description* is renamed **Basic Description**: picking a character or location still fills it in from your library, but you can now type your own wording — and what you type is what that panel's prompt uses. Once you have filled it in it is **yours**: later edits to the library object no longer change it. A Basic Description that no longer matches the library text is called out with a small **edited** pill and a coloured bar down the left of its box, and each one has a **⟳ Refresh from library** chip that puts the library's current text back. The **⇤** copy-from-previous-panel button copies the Basic Description too, edited or not. The **This panel — extra description** box is unchanged and still appends to the Basic Description in the prompt.
+- **New: a 📄 Recent list under File.** Reopen a project with **one click** instead of going through the system file dialog — with the usual warning first, and full support for both **.json** and **.zip** project files. An entry shows the **filename and when it was last used** (browsers deliberately never reveal a file's folder). Where the browser allows it — Chrome, Edge — the entry points at the real file on disk and always loads its current contents; where it does not — **Firefox, Safari** — the entry keeps its own **copy of the project** as it was saved, which even survives moving or deleting the original file. **＋ Add / Open…** puts a project into the list, an entry whose file has gone removes itself when clicked, and **Clear list** empties it. The empty list explains what fills it.
+- **You choose how many recent files are kept.** Under **🎨 Edit → Preferences → Recent files** there is a new **Recent projects to remember** spinner: type a number or click the up/down arrows (default **5**, up to **50**). **0 hides the Recent list completely** — the most recent five are still remembered while it is hidden, so raising the number again brings them straight back. It is a per-browser preference like the list itself, and is not part of your project.
+- Everything an entry holds is trimmed to the **fit** setting: a project saved when the number was 2 still survives a trip to 50 and back (the list always keeps at least the newest five, the spinner only decides how many are *shown*).
+
+- **Docs only (no app change):** the project the AI worker tests against — **“Cow in field”** — is a **throwaway scratch project**. It may be loaded, overwritten or clobbered at any time, by anyone (including a future AI session), so never put anything in it you want to keep. This is now recorded in `AI-NOTES.md`, `PENDING.md` and `ISSUES.md`.
+## 2026.09.24.5 — 2026-09-24 — 🖼️ Every image a 🕘 Generated Prompt entry produced now gets its own thumbnail + the ↩ Restore Previous Project feature removed
+- **Every 🕘 Generated Prompt entry now shows a thumbnail of every image that generation produced**, not just the first. An entry whose run rendered four images shows four thumbnails in a row across the top of the entry, numbered 1, 2, 3, 4 from the left; a single-image entry looks exactly as it did before. **Hover over a thumbnail** (or press and hold it on a touch screen) to open the usual larger preview, now labelled per image — e.g. <em>Saved prompt #2 · Panel 3 · image 2 (seed 123457)</em> — so you can tell which seed produced which picture.
+- The thumbnails still live in their own browser slot (`comicGen.promptThumbs`), **not** in your project, so your project state, the 🧩 JSON editor and Export / Import all stay lean. Entries with several images use a slightly smaller thumbnail (168px instead of 224px), so a four-image entry costs roughly what two used to; the same cap applies as before (the newest few hundred are kept, the oldest dropped first) and thumbnails still disappear with the entry they belong to.
+- Entries saved by earlier versions are unaffected: they kept one thumbnail each, and they keep showing it (and it stays protected from cleanup just like the new ones).
+- **Removed: ↩ Restore Previous Project.** The one-step snapshot that **New Project** and **Reset to Defaults** kept of the project they were about to clear — and both of its buttons (in 📄 File and under Reset to Defaults) — are gone at the author's request. Those two actions behave exactly as before apart from that. Their confirmations now say plainly that they cannot be undone, so keep a route back with **💾 Save & New** or **📄 File → Backup Project**. The other safety nets are untouched: New Project's off-by-default “Also delete my saved library objects” checkbox, the confirmation before deleting a saved character/location/action, and full **⬇ Export Project / ⬆ Import Project**.
+
+## 2026.09.24.4 — 2026-09-24 — 🖼️ Thumbnails on every 🕘 Generated Prompt entry + the 120s generation watchdog can no longer throw an unhandled error
+- **Every 🕘 Generated Prompt entry now shows a small thumbnail of the image it produced**, on the left of its header line. **Hover over it** (or press and hold it on a touch screen) and it opens in the usual larger image preview, labelled with the entry number, the panel and the seed(s) — e.g. <em>Saved prompt #2 · Panel 3 · seed 123456</em>. It is a compact copy (~10 KB, 224px on its long side), an <em>aide-mémoire</em> rather than a replacement for the real image.
+- The thumbnails are stored in their own browser slot, **not** in your project, so your project state, the 🧩 JSON editor and Export / Import all stay lean. They are capped (the newest few hundred are kept, the oldest dropped first), they disappear with the entry they belong to (replaced, pushed past the five-entry limit, or wiped by 🗑 Clear), and they survive a page reload. (That release restored them together with the project through the then-new **↩ Restore Previous Project** snapshot, which was removed again in 2026.09.24.5.)
+- **Fixed: the “Timed out after 120s — click Generate to retry” error pop-up.** That was never a broken image: it came from a generation you had already walked away from — usually by switching tabs mid-run, which pauses and drops the in-flight request. Its 120-second watchdog was left with nobody listening, so the browser reported the late timeout as an unhandled error. The watchdog now shuts itself down the moment a run is paused or stopped, and any late timeout is absorbed silently. A generation that really stalls while you are watching still marks that panel as failed and tells you to press Generate.
+
+## 2026.09.24.3 — 2026-09-24 — The library can never be deleted without its own confirmation
+- **📄 New Project no longer deletes your library behind your back.** Its confirmation carries an explicit **“Also delete my saved library objects”** checkbox — off by default, showing how many are saved. Unticked, your characters, locations and action prompts are kept, exactly as that dialog has always promised.
+- **Deleting a library object always asks first now**, naming the item and telling you how many panel slots are using it (they fall back to “No Character Selected”, and the description stops being added to their prompts). The reset panel's “also delete my library” option is confirmed separately too, with its own button label.
+- The reset confirmation is now the app's standard non-blocking dialog that lists exactly what will be cleared.
+- This release also added a one-step **↩ Restore Previous Project** snapshot for New Project / Reset. **That feature was removed again in 2026.09.24.5** at the author's request — the button no longer exists. Use **💾 Save & New** or **📄 File → Backup Project** if you want a route back.
+
+## 2026.09.24.2 — 2026-09-24 — 🕘 Generated Prompt — a per-panel prompt history (last five prompts + their seeds)
+- **Every panel now keeps a history of the last five prompts it was actually generated with**, in a new collapsible **🕘 Generated Prompt** section inside the panel's **📝 Prompt** menu. Each entry holds the **exact positive and negative prompt text that was sent** — preset style keywords, characters, location, action and any 📝 Prompt override included — plus the **exact seed every image in that generation used**, and when it ran.
+- **The entries are frozen snapshots.** Changing a panel's characters, location or action, the global keywords, the presets or the NSFW flag — or editing the live prompt editor — never alters them, so you can always see what actually produced an image.
+- Each entry has **📋 Copy** (copy that prompt to the clipboard) and its own **🔄 Generate**, which re-renders the panel from that entry's saved prompt text and seed(s) instead of the interface-built prompt — the same recipe again. **Generating from an entry leaves the history exactly as it is**: nothing is added, moved or reordered. 🔒 protected images are still respected and the panel's own Seed box is left alone.
+- Seeds are shown per image (**img 1: 123456 · img 2: 123457**) because image 2 uses the panel seed + 1, and so on.
+- The history is **saved with the project** — it survives reloads and rides in Export / Import and the project .zip — and it is read-only in the 🧩 JSON editor (shown greyed). **⧉ Duplicate** copies it with the panel; **🗑 Clear** wipes it while **🗑 Clear Images** leaves it alone. A reset / New Project starts it empty, and a generation that was already running when the project was reset can no longer write into the fresh project.
+
+## 2026.09.24.1 — 2026-09-24 — ⇤ "Copy from the previous panel" reaches across pages and skips blank panels
+- **The ⇤ copy-from-previous-panel buttons now work on Panel 1 of page 2 and of every later page**, and every ⇤ on every panel now copies from the **nearest earlier panel that actually has that item** instead of only the panel directly above it. Blank panels — and whole blank pages — are stepped over rather than copied as blank.
+- Concretely: with page 1's panels 1–8 filled in and pages 2–10 left empty, **Panel 1 of page 11 copies from page 1's panel 8**. Characters, location and action prompt each resolve independently (and per character slot, so a panel's *second* character copies from the nearest earlier panel that has a second character).
+- Each ⇤ names its source in its tooltip — "Copy this character from Page 1, Panel 8" — and it is greyed out only when nothing before it anywhere in the project has that item (Panel 1 of page 1, for example). Clicking copies the item together with its freeform description/modifier, overwriting what that slot held.
+- The **Seed ⇤ is unchanged**: it still reads the previous page's last panel and keeps its "a blank seed follows the page seed" behaviour.
+
+## 2026.09.23.14 — 2026-09-23 — A floating ＋ Add Page button in the bottom-right corner
+- **A new ＋ Add Page button floats in the bottom-right corner of the screen.** It creates a new empty page (4 panels) and switches to it — exactly what 📄 File → Page Setup → ＋ Add Page does — so you never have to open the menu just to start a page.
+- It is drawn in the same green style as **▧ Hide Panels** and the page navigator bar (dark fill, bright-green border and text), mirrored into the corner opposite ▧ Hide Panels.
+- **It steps out of its own way:** whenever the panel-selection bar or the page navigator would sit on top of it (as they do on a phone), the button rises just above them and settles back into the corner when they are gone.
+## 2026.09.23.13 — 2026-09-23 — Copy, Cut, and Paste whole panels, images and all
+- **📋 Copy and ✂ Cut join the selection bar.** With panels selected, the bar at the bottom of the screen now shows **📋 Copy**, **✂ Cut** and **✕ Clear** beside the count. **Select all** moved to **Edit → Panel Selection**, which now carries Select all panels / 📋 Copy / ✂ Cut / ✕ Clear selection.
+- **📋 Paste appears on every panel header while the clipboard holds something.** Pasting inserts the copied panels *before* the panel you paste on — contiguously, keeping each panel’s title, characters, modifiers, location, action, seed, image count, style, size, protection and prompt override **and its generated images** — then reflows anything that no longer fits onto the following page, creating a new page at the end if needed (it asks first, like Duplicate).
+- **A ✂ Cut is used up by the first Paste** (the Paste chips then disappear); a **📋 Copy stays on the clipboard** so you can paste it again and again until you copy something else.
+- **Cutting every panel of a page** offers to delete the page — or, on a single-page project, to empty it down to one blank panel — after a confirmation; cancelling still leaves the panels on the clipboard.
+- The clipboard is a working aid like the selection: it lives in this tab only, is never saved with the project, survives page switches, and is lost on reload.
+- The selection bar now wraps instead of overflowing on phone-width screens.
+## 2026.09.23.12 — 2026-09-23 — Selected panels can be generated, cleared, or deleted together
+- **The ⚙ Panel menu now batches the rest of its actions across a selection.** With panels selected, **🔄 Generate** renders exactly the selected panels (progress, ⏸ Pause and ■ Stop work as usual), **⚡ Generate All From Here** starts at the first selected panel and runs to the end of the page, **🗑 Clear Images** removes every selected panel's images (keeping their characters, location, and action), and **🗑 Clear** resets the selected panels entirely. Every label shows the count.
+- **A new 🔄 Generate button** was added to the ⚙ Panel menu, beside ⚡ Generate All From Here, so the batch Generate lives with the other panel actions. With nothing selected it generates just that panel, exactly like the other Generate buttons.
+- **The destructive batch actions ask first.** Clear Images, Clear and Delete open a dialog showing the count, with a **🎯 Only This Panel** escape hatch so a mis-click can be narrowed to the one panel you are looking at. Cancel (or Esc) does nothing.
+- **Delete &amp; Refill (projects with more than one page).** Deleting selected panels offers either **🗑 Delete Only** — later panels move up and the page gets shorter, the old behaviour — or **🗑 Delete &amp; Refill**, which pulls panels up from the top of the following page until the page has its panel count back, cascading onward through further pages as needed. A page that is emptied by that pull is **deleted**; the dialog warns you up front and asks once more before it happens. Selecting *every* panel on a page deletes the page itself (with a confirmation).
+- No new saved state: the selection is still session-only and is released after each batch action (except Move, which keeps its panels selected).
+
+## 2026.09.23.11 — 2026-09-23 — Select several panels at once for batch Duplicate, Add, and Move
+- **Panels can now be multi-selected.** Every panel's header row starts with a **checkbox** — tick it to select that panel, or **Shift-click** a checkbox to select the whole range back to the last one you ticked. Selected panels get a blue outline and a tint over the whole card.
+- **The ⚙ Panel menu then acts on the whole selection.** While anything is selected, the **⧉ Duplicate**, **＋ Add Panel** and **⇅ Move** buttons in the ⚙ Panel menu of any *selected* panel work on every selected panel at once, and their labels show the count (*⧉ Duplicate 3 Panels*). **Duplicate** puts a copy right after each selected panel (copies carry no images); **Add Panel** adds one new empty panel per selected panel, all together after the last of them; **Move** opens a picker that shifts the whole block — to a new position on the page, to the front or end of another page, or onto a brand-new page.
+- **A selection bar** at the bottom of the screen shows how many panels are selected, with **Select all** / **Clear** buttons (**Esc** clears too). **Edit → Panel Selection** has the same two buttons plus a short explanation.
+- **The selection is a working aid, not project data:** it is never saved and it clears when you switch pages. Clicking a panel's *body* never changes the selection — only its checkbox (or Esc) does. After a batch **Move** the moved panels stay selected, so you can shift them again.
+- On a page that is **full (24 panels)** the batch **Duplicate** / **Add Panel** still reflow exactly like the single-panel versions, but with **one** combined confirmation instead of one per panel.
+- *This is phase 1 of the panel-selection feature; batch Generate / Clear / Delete (with their Ok / Cancel / Only-this-panel dialogs) and Copy / Cut / Paste are the planned follow-ups.*
+
+## 2026.09.23.10 — 2026-09-23 — Images per panel can be given a remembered default
+- **📄 File → Page Setup → "Images per Panel"** (the control formerly labelled *Image Count for All Panels*) is now a real **setting**, not just an apply-button: new and blank panels start at that count instead of always starting at 1.
+- The setting is **saved with the project** — it rides along in **Export / Import** (both `.json` and `.zip`) and is editable in the **JSON editor** — so it is still set the next time you open the app. Panels that already have their own count are left alone.
+- **Apply to all** still sets every panel's **Images** selector at once. **Reset to Defaults** puts both the default and every panel back to 1.
+
+## 2026.09.23.9 — 2026-09-23 — Panel reflow on a full page, and imported -1 seeds become random
+- **Duplicating a panel on a full page no longer stops you.** Before, Duplicate on a page holding all 24 panels only offered to start a new page with the copy as its first panel. It now reflows instead: your page’s **last** panel is pushed to the **top of the next page**, and if that page is full too, its last panel is pushed onward the same way — cascading through as many full pages as there are, and creating a new page at the end when nothing is left to push into. The copy takes the slot the pushed panel vacated, so it still lands **immediately after the panel you duplicated**. For example, with three full pages, duplicating Panel 6 on Sheet 1 creates Sheet 4 and moves Sheet 3’s Panel 24 there, Sheet 2’s Panel 24 onto Sheet 3, Sheet 1’s Panel 24 onto Sheet 2, and leaves the copy as Sheet 1 Panel 7. You are asked to confirm first, and told how many panels will move; the page you are viewing stays put.
+- **＋ Add Panel does the same thing** on a full page: the empty panel goes immediately after the panel you clicked, and the overflow reflows onward.
+- Panels keep everything they had while reflowing — titles, characters, descriptions, seeds, protection and any generated images all travel with the panel to its new page.
+- **Importing a project that uses -1 as a seed now quietly makes that seed random.** Some external prompt pipelines use -1 to mean “random”; this app took it literally. A project (page) seed or panel seed of -1 — as the number -1 or the text “-1”, padded or not — is now cleared to random when a .json or .zip project is imported. Seeds you type yourself are never changed.
+
+## 2026.09.23.8 — 2026-09-23 — Help → About loads the changelog from GitHub, and the panel-summary separators are readable
+- **Help → About now loads the version history from this repository** instead of carrying it inside the generator. The full changelog is fetched the first time you open the About section (never on page load), so the shipped page is roughly 60 KB smaller and the history can be corrected without republishing. If GitHub cannot be reached, the section falls back to a bundled version stamp and offers a **View on GitHub ↗** link; a short status line above the entries tells you which one you are seeing.
+- **The `·` separators between the character / location / action names in a panel summary line are readable in dark mode now.** They were `#666666` on a `#2a2a2a` panel — about 2.5:1, under the 4.5:1 accessibility floor — and are now `#999999`, about 5:1. They stay dimmer than the names they separate, so nothing else about the summary line changed.
+- **The version-history entries now show their formatting properly** — bold phrases appear in bold and inline code appears as code chips, instead of printing the raw asterisk and backtick markers. This file has always used that Markdown, and the About panel used to show it literally.
+
+## 2026.09.23.7 — 2026-09-23 — Collapsible character & location lines, a tidier Library, and no more doubled descriptions
+- **Each character and location line in a panel's 📖 Panel Library is now collapsible.** Collapsed — the default — a line shows just the name (its dropdown) alongside the ⇤ copy-from-previous-panel and ✕ remove chips. Click the small **▸** arrow and it opens to show two things: the item's **library description**, read-only and pulled live from 📚 Library (edit the library entry and this updates as you type), and a box for a **per-panel extra description** that you can edit for that panel alone. Click the arrow again (**▾**) to fold it back up. Which lines are open is remembered while you work; every reload starts folded, like the panel menus.
+- **Fixed: a description could be sent to the image generator twice.** An empty per-panel box used to be filled in automatically with a copy of the library description — and the library description is **also** added to the prompt — so any panel using a saved character or location with a description was feeding that description to the generator **twice**. The box is no longer auto-filled: the library description and your per-panel text are each applied once, in that order. The box now means "extra detail for this one panel", nothing more.
+- **Your existing projects are cleaned up automatically** the first time each page loads: where a line uses a saved (📚 Library) character or location and its per-panel box holds **exactly** the same text as that item's current description — i.e. it is the old automatic copy — the box is emptied so it can't double up. Anything you actually typed or edited is left untouched.
+- **A panel with only a name now generates.** A panel counts as having content if it has any character, **any location**, or any description/action text. Before, a location on its own — a saved location, or a preset such as "Skyscraper Rooftop", with nothing else filled in — counted as empty and was skipped (a character on its own already worked). Both now render, and the generator makes its best guess — exactly as you asked: a saved "Holstein cow" with no description still generates a Holstein cow.
+- **The 📚 Library menu is flatter and tidier.** The Library now opens straight into its content — no collapsible "Library" heading to click through — so the ⬆ Import… / 📊 Analysis toolbar and your Characters and Locations lists are immediately visible.
+- **File, Edit and Help now open with their sections folded**, in **both** the normal and the full-screen menu. Until now, full-screen mode force-expanded every section of whichever tab you opened. The Library is the one tab that deliberately opens expanded.
+- The Library's own **⛶ Full Screen** button has been removed (the Full Screen button in the top bar does the same job).
+
+## 2026.09.23.6 — 2026-09-23 — A much smaller page: the internal docs moved to GitHub
+- **The page loads smaller.** The generator's internal development documentation — the dev-notes log, the request queue, the AI architecture notes and the issue log, about **360KB of text** — used to be shipped inside this page, so every visitor downloaded it. It now lives in the project's GitHub repo instead. Nothing changes in the app: Help → About, the version history, and every feature work exactly as before.
+- **The project's GitHub repo is now public** (read-only for visitors): the source, the docs and the full version history are visible at github.com/cgoodwin97124/yacbpg-backup. Anyone may read it or **fork** it to build their own version — only the owner can push to it, so a fork is completely independent.
+- Fixed the wording in the **⬆ Backup to GitHub** dialog, which still said a private repo was required — it now works with a public or private repo.
+
+## 2026.09.23.5 — 2026-09-23 — Fixed the full-screen menu's "← Back to page" button
+- **Bug fix:** the **← Back to page** button inside the full-screen menu threw "requestCloseMenuFullscreen is not defined" when clicked. The function existed and the Esc shortcut used it correctly, but it had never been published to the page's global scope, so the button's inline handler couldn't see it. It is now exported like its neighbours, so the button (and Esc) closes the full-screen menu normally.
+- I then audited **every** inline button handler in the app for the same class of mistake — 186 handlers in the source, 1,635 handler calls in the live page — and this was the only one.
+
+## 2026.09.23.4 — 2026-09-23 — Readable buttons in dark mode, a friendlier default color mode, and the Focus button renamed
+- **Dark-mode contrast pass.** The coloured buttons now use slightly deeper fills so their white text is clearly readable — the blues were the worst offender (about 2.7:1) and now sit comfortably above the 4.5:1 guideline. That covers the teal View / JSON-editor / Back-to-page buttons, the blue Add-to-Library / Copy-prompt / Backup / Show-or-Hide-Menus buttons, the green +/Add buttons, and the red Generate / Re-roll / Clear / Stop / Delete / ✕ buttons. Hover shades moved down with the base fills; the hues, the layout and the overall look are unchanged. Light mode is untouched.
+- **Fixed a real bug in dark mode:** the tiny per-panel seed chips — ⇤ copy-previous-seed (blue) and ✕ clear-seed (red) — were being drawn as **amber text on red/blue** (about 2.2:1) because they inherited the panel's accent colour from the platform stylesheet. They are now white, like every other coloured chip, and the ⇅ Move chip (the same problem, amber-on-grey) is fixed too. Light mode already had these fixes; dark mode had been missed.
+- **Import Project button** was white-on-lavender (about 2.0:1); it now uses dark text on purple in dark mode and white text in light mode.
+- **The default color mode is now "Match my device"** instead of Dark, so a first-time visitor gets the light or dark look their device already uses. You can still force Light or Dark in Edit → Preferences → Theme, and a preference you have already saved is respected.
+- **The Focus view's big button is now "⚡ Generate All"** (it used to read "⚡ GENERATE ALL PANELS ON PAGE ⚡"), matching the ⚡ Generate All item in the menu bar.
+
+## 2026.09.23.3 — 2026-09-23 — Light / Dark / System themes and a color accent you choose
+- **New: the whole app can be light.** **Edit → Preferences → Theme** now has a **Color mode** setting — **Light**, **Dark**, or **Match my device**. Every colour in the interface (page, panel cards, menus, header, buttons, the Library, Storyboard, Analysis, the JSON editor) is theme-aware, so switching is instant and complete. The default is **Dark**, so the app looks exactly as it always has until you change it.
+- **New: pick your accent color.** The same panel has an **Accent color** row: eight ready-made swatches (amber, blue, green, purple, teal, pink, orange, red), a custom colour box, and a **Reset** button. The accent is the highlight colour used for borders, active buttons, headings and labels everywhere. If you pick a pale colour, the light theme automatically deepens it just enough to stay readable on white.
+- **It's part of your project.** Your theme is saved with everything else, so 💾 Save / Export / Import carries it and importing a project applies its theme; it's also editable in the 🧩 JSON editor (`settings.theme.mode` and `settings.theme.accent`).
+- **No flash on load** — the theme is applied while the page is still being built, so you never see a dark flash before a light theme or vice versa.
+- **Fixed in light mode:** the small colored chips — ⇤ copy-previous-seed, ✕ clear-seed, ⇅ Move, 📋 Copy — and the red buttons (Delete, Stop, Re-roll, Clear image) were inheriting a low-contrast text colour from the platform stylesheet; they now use white/dark text explicitly. The default dark theme is unchanged, pixel for pixel.
+
+## 2026.09.23.2 — 2026-09-23 — A header that stays put, Generate All / Pause / Stop in the menu, and full-screen menus by default
+- The top header bar (the app title and the Storyboard / Hide Menu / Menu: Side / Full Screen buttons) now stays
+  on screen.** It's pinned to the top of the window, so it no longer scrolls away when you're working on a long
+  page, and it also stays visible while the menu is open full-screen — the menu now starts just below it.
+- **Menus open full screen from now on.** No more pressing ⛶ Full Screen every time: every menu section opens as a
+  roomy full-page overlay (with the tabs still on screen and each section already expanded). Prefer the old
+  compact top/side menu? Turn off **🎨 Edit → Preferences → "Always open the menus full screen"**. The **⛶ Full
+  Screen** button in the header is the same setting — it reads **⤡ Exit Full Screen** while full-screen is on.
+- **⚡ Generate All / ⏸ Pause / ■ Stop are now menu items**, sitting in the row right beside File / Edit / Library /
+  Help and matching their size and style (**Stop** keeps its red button with white text). The old bottom bar is
+  gone; **Generate All Panels On Page** is now simply **⚡ Generate All**. The status line stays at the bottom of
+  the menu — and it now stays visible in full-screen mode too, so you can watch a run from there.
+- **New Preferences option: keep ⚡ Generate All / ⏸ Pause / ■ Stop visible while the menu is hidden.** They move
+  into the header bar, so you can start, pause or stop a run without showing the menu.
+- **New Preferences option: keep the header bar visible in the other full-page views too** (Storyboard, Focus,
+  Library, Analysis, the JSON editor and the user manual). Off by default, so those views still get the whole
+  screen.
+- Preferences (already under **🎨 Edit**) collects these options; they're stored with your project, so they come
+  back with 💾 Save / Export / Import and can be edited in the 🧩 JSON editor alongside the other UI flags.
+- The 🔍 Focus view's own Generate / Pause / Stop row is deliberately unchanged.
+
+## 2026.09.23.1 — 2026-09-23 — Preferences moves to Edit, one-click Library, and a new version numbering scheme
+- **Preferences now lives under 🎨 Edit** instead of the bottom of 📄 File. It still holds the "Ask for a password
+  when hiding the panels" option — and it's where the new look-and-feel preferences (themes, always-visible
+  header, full-screen menus, and so on) will appear.
+- **📚 Library opens straight away.** Clicking 📚 Library now shows your library list immediately — no second click
+  on the "Library" heading to unfold it. 📄 File, 🎨 Edit and ❓ Help still open collapsed so you can see their
+  sections at a glance.
+- **New version numbering: `YYYY.MM.DD.S`** — the date plus that day's release number, restarting at 1 each day
+  (this release is 2026.09.23.1). Nothing about your project changes; it just makes the history easier to follow.
+- Housekeeping: the Library's **⛶ Full Screen** button stays (you asked to keep it), and the standing rules about
+  release numbering/dates now live in the developer notes at the top of `index.html`.
+
+## 2026.08.16.24 — 2026-09-23 — Edit → 🧩 Open JSON Editor: your whole project as an editable document
+- **New: a full-page JSON editor for your project**, opened from **Edit → 🧩 Open JSON Editor**. It shows the
+  entire project — every page and panel, your saved characters/locations, the global art-style keywords, the size
+  and guidance settings, the preset and the UI flags — as one formatted JSON document you can edit directly.
+- **Only the things you can change elsewhere are editable.** Everything else is shown **greyed out and locked**
+  (the `version` numbers, the current page, library ids, the document's structure) so an edit — or a Replace all —
+  can never corrupt the project. Fields backed by a dropdown (image size, panel count, character/location
+  selection) are checked against the same choices the app offers.
+- **Find / Replace inside the editable values only** — with **Regex** and **Match case** options, a 🔍 Find
+  next** that jumps to the next hit, **⇄ Replace** for one at a time, and **⇄ Replace all**, which asks first and
+  tells you how many matches it is about to replace (Cancel leaves the document untouched, and Ctrl+Z undoes it).
+- **Validate, then Apply.** Nothing changes until you press **✔ Apply**, which validates the whole document first:
+  invalid JSON is reported at the exact spot and any problem — a locked field, a bad value, a removed entry — is
+  listed with **‹ Prev / Next ›** navigation that selects the offending text. **🔄 Reload** throws your edits away
+  and rebuilds the document from the live project.
+- **Undo is built in:** **↩ Undo last apply** puts the project back exactly as it was before your last Apply, and
+  **Ctrl+Z / Ctrl+Y** (up to the last 10 edits) undo/redo your typing in the editor.
+- **Line numbers**, a syntax-highlighting checkbox you can turn off for very large documents, and 📋 Copy for the
+  whole document.
+- Generated images are not part of this document — they still only travel in the 💾 Export `.zip`.
+- **Fixed while shipping this:** a long-standing unclosed `<div>` had nested the new editor (and the GitHub backup
+  dialog) inside the hidden "new project" confirmation layer. Both now sit at the top level of the page where they
+  belong — the editor could not be displayed at all until this was fixed.
+- **Fixed (data-safety):** if the page ever failed to load its saved project (a script error before the boot step),
+  the automatic save could write a blank default project over page 1. Saving is now blocked until the saved
+  project has been read back in, so a load error can no longer overwrite your work.
+
+## 2026.08.16.23 — 2026-09-22 — Panel actions no longer break the 🔍 Focus view
+- **Fixed bug:** in 🔍 Focus (single-panel) view, **⧉ Duplicate** — and any other action that rebuilds the panel
+  grid (Add Panel, Delete, switching page, changing the panel count) — threw `NotFoundError: Node.insertBefore:
+  Child to insert before is not a child of this node` and left the page erroring on every click until you
+  reloaded. The Focus view now re-opens by itself on the fresh card, so those actions just work while a panel is
+  focused; the view also can't be left showing nothing.
+- **Duplicate now says where the copy landed** in the status line (e.g. "Panel 1 duplicated — the copy is now
+  Panel 2 (it has no images yet)."), which is the visible confirmation in Focus view that the copy was inserted.
+- Housekeeping: removed a leftover duplicated header + fragment that had been sitting inside the embedded Issue
+  Log ever since the 2026-08-15 docs consolidation (it was being shipped in the GitHub ISSUES.md backup).
+
+## 2026.08.16.22 — 2026-09-22 — Full-screen menu hides the generate bar
+- The full-screen menu no longer shows the bottom bar — **⚡ GENERATE ALL PANELS ON PAGE**, **⏸ Pause**, **■ Stop**
+  and the status line are hidden there, so the section you're working in gets the whole screen. Everything in the
+  normal (non-full-screen) menu is unchanged.
+- A generation that's already running keeps running while you're in full-screen; leave full-screen to pause or
+  stop it.
+
+## 2026.08.16.21 — 2026-09-20 — Menu reappears after the full-screen view; the floating menu button is gone
+- **Fixed: the menu stayed hidden after leaving the full-screen menu.** If the menu happened to be hidden when you
+  opened the full-screen menu, returning with **← Back to page** left it hidden (the one case where the app needed
+  a second click to bring it back). Closing the full-screen menu now always returns you to a page with the menu
+  showing.
+- **The floating ☰ menu button at the bottom of the screen has been removed.** The **☰ Hide Menu** button at the
+  top is now the single control: it reads **Hide Menu** while the menu is showing and **Show Menu** while the menu
+  is hidden. (If you hide the menu while scrolled down, scroll back to the top of the page to show it again.)
+
+## 2026.08.16.20 — 2026-09-20 — Full-screen menu (and full-screen Library)
+- **The whole menu can now open full-screen.** A new **⛶ Full Screen** button in the header (next to **▤ Menu: Side**
+  and **☰ Hide Menu**) expands the menu — File, Edit, Library and Help — to fill the screen, which makes editing far
+  easier on a phone or any cramped window. The tabs stay at the top so you can switch sections without leaving
+  full-screen, and each section opens with its panels expanded so there's no clicking to unfold them first.
+- **📚 Library → ⛶ Full Screen.** The Library toolbar now has a **⛶ Full Screen** button next to **⬆ Import…** and
+  **📊 Analysis** — it opens the same full-screen view already showing the Library, with the Import and Analysis
+  buttons available right there. It's a toggle: press it again (or **← Back to page**, or **Esc**) to return.
+- Nothing about your library changed — it's the exact same live-editable list, so anything you type full-screen is
+  saved immediately and shows up in the panel dropdowns just as before.
+
+## 2026.08.16.19 — 2026-09-20 — Floating bottom buttons no longer cover content
+- **Reserved space at the bottom of the page.** The page now keeps a strip of empty space at the very bottom, so you
+  can always scroll the last panel (and its dropdowns/buttons) up above the floating controls — **▧ Hide Panels**
+  (bottom-left), the **page navigator** (bottom-centre) and **✕ Hide Menu** (bottom-right). The strip is taller in
+  portrait, where the page navigator sits higher to clear the two corner buttons.
+- **Menu-on-the-side: the generate bar is never covered.** With the menu as a side column, the column is now sized
+  so its bottom — the **⚡ GENERATE ALL PANELS ON PAGE** / **⏸ Pause** / **■ Stop** row and the status line — always
+  ends above those floating buttons, and it re-measures itself when the window is resized or rotated. The generate
+  bar also no longer gets squeezed to nothing when the menu content is long: the menu list scrolls instead.
+- No buttons moved and nothing else changed — this is a spacing fix.
+
+## 2026.08.16.18 — 2026-09-20 — Seed chips + header Generate, cross-page panel moves, page titles & reordering
+- **Seed chips in the panel header.** Each panel's header Seed entry now has two small square buttons: **⇤** copies
+  the *preceding* panel's seed (or clears this panel's seed if the preceding seed is blank/random or −1), and **✕**
+  clears this panel's seed. On Page 1 the ⇤ button of Panel 1 is disabled (nothing precedes it); on later pages
+  Panel 1's ⇤ copies the **last panel of the previous page**.
+- **Generate button in the panel header.** A **🔄 Generate** button now also sits in the panel header, right after
+  the Seed entry, doing exactly what the Generate button at the bottom of the card does.
+- **Move a panel to another page.** The **⇅ Move** picker now also lists a **"Move to another page"** group —
+  every other page (pages already at the 24-panel maximum are greyed out and marked "(full)") plus **"＋ New
+  page…"**. Moving to an *earlier* page appends the panel at the end of it; moving to a *later* page inserts it at
+  the beginning; "＋ New page" creates a page holding just that panel. The panel's data **and its generated images**
+  travel with it, the view switches to the destination page, and if the panel was the only one on its page you're
+  asked to confirm deleting that (now empty) page. Same-page reordering is unchanged.
+- **Page Title + Page Summary.** File → Page Setup now has a **Page Title** (the old "Page Name") and a new
+  optional **Page Summary** for each page. Both are saved with the page and shown in the Storyboard view (the
+  title in its heading, the summary in a bar beneath the controls).
+- **"Page N, Panel M" labels.** On a multi-page project, each panel's header now reads **Page N, Panel M** instead
+  of just **Panel M** (single-page projects are unchanged; the Storyboard keeps its plain "Panel M" labels).
+- **Reorder pages by renumbering.** File → Page Setup gains a **⇅ Renumber Page** control (shown when there is
+  more than one page). Move the current page to any position and every page is renumbered around it — e.g. with
+  pages 1–5, renumbering page 4 to 2 makes the old pages 2 and 3 become 3 and 4. All of a page's content (panels,
+  images in memory, title, summary, seed, panel count) stays with the page.
+- **Storyboard page navigator.** The Storyboard view now has its own **◀ / numbered pages / ▶** navigator next to
+  "← Back to page" whenever the project has more than one page, so you can page through the storyboard without
+  leaving it.
+
+## 2026.08.16.17 — 2026-09-19 — Analysis: a dedicated Panel Action Prompt row across the panels
+- The **📊 Library Analysis** matrix now has a dedicated **▶ Panel Action Prompt** row as its **first body row**.
+  Its first cell carries the label and each of the other cells holds that panel's editable action prompt — the
+  same freeform "what happens" text as the panel's Action Prompt box on the main page. It sits directly above the
+  library-item rows, aligned with each panel's column.
+- When you press **⇄ Swap rows / columns** (panels become rows) the action prompts become the **first column**,
+  right after the panel names — i.e. it always stays "first" relative to the panels.
+- Typing in a box edits the panel live (on the current page it updates the real panel Action Prompt and the
+  panel's summary line; on a browsed page it's saved to that page). Boxes grow to fit their text automatically
+  (capped, scrollable beyond that).
+- Any **🎬 Action** library item cells for that panel refresh in place as you type — the ✅ / ＋ Add / — mark
+  updates immediately, and using ＋ Add fills the action box too.
+- Verified live on the "Cow in field" sample: the row shows/edits/saves each panel's action, the swapped view
+  shows it as a column, it stays in sync with the cell editors and ＋ Add, updates an Action item's ✅→—→✅ as
+  the text changes, and works on the current page and a second page; desktop + 390px layouts checked.
+
+## 2026.08.16.16 — 2026-09-19 — Analysis: project defaults + per-panel style/size/seed
+- The **📊 Analysis** overlay now has a **"Project defaults:"** bar at the top with the project's **NSFW**
+  checkbox, **default art style**, **default image size**, and **seed** — all editable right there. Changes
+  write straight through to the real settings (Edit → Art Style / NSFW, File → Page Setup size / seed), so the
+  main page and the Analysis view never disagree; headers/keyword chips update immediately.
+- Each **panel column** (or row) now shows three compact chips under its thumbnail — **🎨 style**, **📐 size**,
+  **🎲 seed** — using the same small-button style as each image's ✕ / protect / ⭐ chips. Click a chip to edit
+  it in place: style and size open a dropdown, custom size reveals W/H boxes with a ✓ apply button, and seed
+  opens a one-line text box (blank = follow the page seed).
+- Inherited values (using the project default) are shown dimmed with a dashed border; a panel's own overrides
+  are shown in normal color (seed overrides in blue). Hover any chip for an explanation + the resolved value.
+- Edits made while browsing **another page** in the Analysis page selector are written to that page's saved
+  state (the same way the per-panel descriptions already work); the currently-loaded page edits the live
+  controls. Nothing else about the project is changed.
+- Verified live on the "Cow in field" sample: NSFW / style / size / seed all round-trip to the real settings;
+  per-panel style, preset size, custom size (W×H), and seed all edit and persist, on both the current page and
+  a second page; desktop + 390px-phone layouts checked (bar wraps cleanly, no overflow).
+- Fix (same batch): **Backup to GitHub** could fail with `PUT 409 … does not match <sha>` on every file except
+  the ones that happened to have a fresh response, because GitHub's contents GET is cacheable for ~60&nbsp;s and
+  handed back a stale file SHA right after a previous backup. The contents-GET now uses `cache: 'no-store'`,
+  and a 409 triggers one re-read-and-retry before reporting failure.
+## 2026.08.16.15 — 2026-09-19 — Library → Analysis (panel × library cross-reference matrix)
+- The 📚 Library menu has a new **📊 Analysis** button. It opens a full-page matrix that cross-references your
+  library items against every panel on a page: **👤 Characters**, **📍 Locations** (and **🎬 Actions**, if you
+  have any) along one axis, the page's **panels** along the other.
+- The **leftmost column** (or top row) shows each library item's **name and global description**; the top
+  row** (or leftmost column) shows each panel's **representative-image thumbnail** (⭐ Cover if set, else its
+  first image; a "No image" placeholder otherwise).
+- Each intersection shows **✅** when that item is used in that panel. When it is, the panel's per-panel
+  description** is editable right there — one field **per character slot** (so a character used in two slots
+  shows both), plus the location modifier. Empty cells offer a **＋ Add** button to drop that item straight
+  into the panel.
+- **⇄ Swap rows / columns** flips which axis is which. A **Page:** selector browses every page (you can edit
+  other pages too — changes are written to that page), and an **Edit global descriptions** checkbox (off by
+  default) makes the global descriptions editable inline.
+- The matrix scrolls both ways with a **sticky first row and first column**. Nothing outside the descriptions
+  you edit is changed — panels' selections only change when you click **＋ Add**.
+- Verified live on the "Cow in field" sample (✅/Add cells, per-slot editing, swap, page selector, sticky
+  headers) at desktop and 390px-phone widths.
+## 2026.08.16.14 — 2026-09-19 — Library → Import (bring Characters / Locations / Actions in from a project file)
+- The 📚 Library menu now has an **⬆ Import…** button. Pick one or more project files — a `.json` backup or a
+  full `.zip` (the settings inside; images are ignored) — and it reads the library objects out of them,
+  including old v1 backups (`charLibrary`/`locLibrary`/`actLibrary`).
+- A selection modal lists the found items grouped into **Characters / Locations / Actions** (the Actions group
+  appears only when the files contain any). Every row has a checkbox, an editable **name** and **description**,
+  and a status tag; there are **Select all** / **Select none** buttons and a live selected count.
+- **Duplicates:** an item whose name *and* description already exist is tagged "identical — skipped" and left
+  out. If the name matches but the description differs, the row is flagged "name already exists" and offers
+  three choices: **append** the new description to the existing one (default), **overwrite** the existing one,
+  or **import as a new item** (new name).
+- Nothing else in your project is touched — panels, settings, and images are left completely alone. Imported
+  items get fresh ids and appear immediately in the Library and in every panel's dropdowns.
+- Because the store now keeps Action items, a **🎬 Actions** bucket appears in the Library whenever any exist.
+- Verified live against the sample "Cow in field" project (a real `.zip` and a legacy `.json` merged in one
+  pass) plus synthetic duplicate/conflict cases; desktop and 390px-phone layouts checked.
+## 2026.08.16.13 — 2026-09-18 — Per-panel Seed moves into the panel header (shows the resolved seed, pins on first run)
+- Each panel's **Seed** box now sits in the **panel header** — right next to its title, **Images** count, and
+  **Style** — instead of being tucked inside the ⚙ Panel accordion. It behaves the same way (type a value to
+  override the page seed for that one panel; clear it to fall back to the page seed), keeps the same Enter-to-
+  generate shortcut, and is still saved with the project.
+- The box now **shows the seed the panel will actually use**: when it's empty it displays the resolved value as
+  ghost text — the page seed + (panel number − 1), or "random" when no page seed is set. So you can see at a
+  glance whether a panel is deterministic or free.
+- **New: the seed is pinned on the first run.** Previously an unseeded panel rolled a fresh random seed every
+  time. Now, when a panel has no seed (and no page seed), one random seed is chosen when it first generates,
+  filled into its Seed box, and reused — so re-generating that panel reproduces the same image until you edit or
+  clear the box. This makes "I liked that result, keep it" the default instead of "reroll every time."
+- Verified live (mocked image service): pinning, page-seed fallback, per-panel override, and the header
+  placeholders all behave correctly; desktop and 390px-phone layouts checked.
+## 2026.08.16.12 — 2026-08-22 — File → New Project now clears the library (bug fix)
+- File → 📄 New Project runs `doNewProject()` → `resetEverything(true)`, which only wiped the saved library
+  objects (`comicGen.libObjects`) when the separate "Also permanently delete my saved library objects" checkbox
+  in Edit → Reset was checked — and that checkbox defaults to unchecked and is reset to off after every reset, so
+  New Project never actually cleared the library. The reusable library is supposed to be a fresh-start thing too.
+- Fixed: `doNewProject()` now always removes `comicGen.libObjects` and re-renders the library panel, so File →
+  New Project starts fully clean (characters, locations, and action-prompt library all wiped), independent of the
+  Edit → Reset checkbox (that path is unchanged and still honors it).
+## 2026.08.16.11 — 2026-08-17 — Panel Library persistence replaced with "copy from previous panel" buttons
+- The ⟳ **persistence** system is gone: characters, Location, and Panel Action Prompt no longer have a
+  ⟳ checkbox that copies them into every later panel (and on to the next page). Per the author's request,
+  each row instead has a small **⇤** button that copies that item — selection plus freeform
+  description/modifier — from the panel directly before it. Click panel 2's ⇤ character button to bring
+  over panel 1's character, panel 3's for the next one, and so on; the Location and Action Prompt rows
+  have the same button. Panel 1 has no previous panel, so its ⇤ buttons are disabled. Nothing copies
+  automatically anymore, and there is no cross-page carry.
+- All chain machinery was removed: `syncState`/`carryNext` (and the cross-page carry to next page's
+  panel 1), the divergence/still-in-sync logic, and the persisted `persist`/`locPersist`/`actPersist`
+  flags. Existing saved projects keep their characters/locations/actions (the flags are simply dropped
+  on the next save) — the author's page-1 data was verified intact.
+- Help text, the user manual, and the developer docs (AI-NOTES) were updated to describe the ⇤ buttons.
+## 2026.08.16.10 — 2026-08-16 — Pause actually pauses (bug fix)
+- A real-world retest found that ⏸ **Pause** stopped the current panel's image but the run kept going.
+  Root cause: the text-to-image plugin's promise has **no `.stop()` method**, so Pause couldn't cancel the
+  in-flight image — it kept rendering (each image takes 10–40s), its result landed on the "paused" panel
+  anyway, and the run only stopped after that panel fully finished. It looked like the run never paused.
+- Fixed: every image request during a run now races against an **abort signal**. ⏸ Pause (and ■ Stop, and
+  the tab-background pause) fires it, so the loop stops **instantly** — the in-flight image is abandoned
+  (no wait, and nothing appears on the paused panel). Pressing ⚡ still continues from exactly the panel
+  it stopped on. As a bonus, ■ Stop now cancels immediately too instead of waiting for the current image.
+## 2026.08.16.9 — 2026-08-16 — Pause and continue a run
+- The generate bar now has a **⏸ Pause** button between ⚡ and ■ Stop. While a *Generate All Panels On
+  Page* run is in progress, ⏸ Pause stops it right after the current panel finishes its image — and ⚡
+  **GENERATE ALL PANELS ON PAGE** then *continues* from exactly where it left off (it does not re-do the
+  panels that already generated). Pause/Stop turn themselves off while paused, and the status line says
+  which panel the run will continue from.
+- **■ Stop** still fully cancels a run (⚡ then restarts from panel 1, as before). Pausing has no effect
+  outside a run.
+- The 🔍 **Focus** view's row got its own ⏸ Pause button that mirrors the sidebar one through the whole
+  run/pause/continue cycle.
+- Tab-background auto-pause (when the generator tab goes to the background mid-run) now also resumes
+  where it left off — press ⚡ when you come back instead of restarting the whole page. A panel started
+  via **Generate This Panel / Generate All From Here** starts fresh from that panel regardless of any
+  stored pause point.
+## 2026.08.16.8 — 2026-08-16 — ⚡ Generate All Panels On Page button in Focus view
+- The 🔍 **Focus** (single-panel) view now has its own **⚡ GENERATE ALL PANELS ON PAGE** button with the
+  exact same behavior — it renders every panel of the current page while you work in Focus. It sits in a
+  row beneath the Focus navigation (◀ Prev / Panel / Next ▶), together with a **■ Stop** button (so you can
+  cancel a run without leaving Focus) and the live status line. All three mirror the main bar exactly:
+  the button is disabled while a run is in progress, ■ Stop becomes active during a run, and the status
+  text stays in sync at all times. The focused panel itself is generated like any other — you can watch the
+  page render panel by panel and flip between panels while it runs.
+## 2026.08.16.7 — 2026-08-16 — "Generate All Panels On Page" + per-page panel counts clarified
+- The ⚡ button is now labeled **⚡ GENERATE ALL PANELS ON PAGE ⚡** and is explicitly a current-page
+  operation: it renders every panel of the page you're on (it always worked that way — the label now says
+  so). The ■ Stop button's tooltip, the pause/stop status messages, the in-app help, and the user manual
+  were updated to match.
+- **Per-page panel counts:** the Number of Panels control in File → Page Setup is per-page — each page
+  remembers its own panel count (1, 4, 6, 12, 24, or Custom 1–24) when you switch away and back, and
+  ⚡ GENERATE ALL PANELS ON PAGE uses that page's count. The control's label now says "Number of Panels on
+  This Page — each page remembers its own" so it's clear.
+- The ⚡ button's label now sits on two clean lines (it was wrapping awkwardly), its text color is properly
+  black-on-yellow again (a platform stylesheet override had silently made it white), and the button + ■ Stop
+  row was rebalanced so both fit comfortably inside the sidebar.
+## 2026.08.16.6 — 2026-08-16 — Page navigator + multi-page chain fixes
+- **Page navigator:** when your comic has more than one page, a green page bar appears at the bottom center
+  of the screen — ◀ Prev, a row of numbered page buttons, ▶ Next (your current page is highlighted). It
+  jumps straight to any page and wraps around with ◀/▶. On landscape browsers it sits in the same bottom
+  row as the floating buttons; on mobile/portrait it floats higher, above the ▧ Hide Panels and ☰ Menu
+  buttons.
+- **⟳ chains no longer break when you delete mid-chain:** removing a character/location/action (✕) from
+  the middle of a copy chain previously froze that panel forever (and could scramble an unrelated panel's
+  chain). Now the chain keeps flowing to every later panel, including the one you deleted.
+- **⟳ chains respect what you set on the next page's panel 1:** when a chain carries to the next page, it
+  only fills panel 1 if that spot is still blank (or already holds the same value). If you'd deliberately
+  put a different character/location/action there, it stays — the chain pauses instead of overwriting it.
+- The one-page-forward carry is unchanged: the chain lands on the next page's panel 1, and you decide there
+  whether to continue it (turn that panel's ⟳ on to keep it flowing page to page, or leave it alone to
+  stop).
+## 2026.08.16.5 — 2026-08-16 — Add characters/locations straight from the Library menu
+- Each section of the 📚 Library menu now has a small green **+** button to the right of its heading
+  (👤 Characters / 📍 Locations). Click it, give the new entry a name and an optional reusable description
+  (the same description used in every panel prompt that references it), and it's saved to that bucket and
+  appears in every panel's dropdown immediately — no need to jump to a panel first.
+## 2026.08.16.4 — 2026-08-16 — Panel Action Prompt box spans the full entry width
+- The Panel Action Prompt textarea in a panel's 📖 Panel Library now spans the same combined width as a
+  row's Identity dropdown + Freeform Description together (grid-column 1/3), so the action box is as wide
+  as the character/location entry controls. The ⟳ copy-to-later-panels checkbox and ✕ remove button stay
+  aligned with the other rows' columns.
+## 2026.08.16.3 — 2026-08-16 — Panel library reverted to fixed slots; Library back to buckets
+- Panels: each panel's accordion is again a single 📖 Panel Library showing **three fixed Character slots**, **one Location slot**, and **one Panel Action Prompt** (a plain freeform text box). Creating a character/location from a panel uses the three-prompt flow again: **name → reusable library description → separate panel description** that fills that panel's own slot. The 2026.08.15.1 row-based "Panel Objects" (Type column, add-object menu, extra rows) and the action library (＋ New Action, "From Action Library" dropdown) are gone; existing saved action prompts and custom-type objects were deleted.
+- 📚 Library menu displays two buckets again — **👤 Characters** and **📍 Locations** — instead of one flat "Panel Library Objects" list with a Type dropdown per row; "+ Add Library Object" removed (entries are created from the panels). Entries keep their name/description/delete, edited in place.
+- Hover/long-press tooltips (2026.08.15.5) still work on the slot dropdowns and description boxes.
+## 2026.08.16.2 — 2026-08-16 — Fix: adding an Action via the Panel Objects Add button
+- Two fixes for adding Actions from a panel's 🧩 Panel Objects menu. (1) If you opened **＋ New Action…** (freeform mode) and then switched to **Add from library → Action…**, the picker stayed stuck in freeform mode — the identity dropdown stayed hidden and the button still read "Ok", so clicking it with an empty description did nothing and the Action was never added. Switching the add menu to any other choice (or back to "— add object —") now fully resets the picker: identity dropdown shown, button back to "Add", placeholder restored. (2) Adding a library Action now uses the library entry's own action text when you don't type a freeform description (previously the slot was set to the empty description and the pick silently failed).
+## 2026.08.16.1 — 2026-08-16 — Panel actions: no more name prompts
+- Adding an Action from a panel's 🧩 Panel Objects "add an object" menu no longer asks for a name or description prompt — just pick **＋ New Action…**, type a **freeform action description**, and hit **Ok** (or press Enter). It lands straight in the panel's action slot (or as an extra action row if the panel already has an action) and appears in the panel's prompt. No library entry is created, so no name is needed. The **Add from library → Action… → ＋ New Action…** path works the same way. Characters, locations, and custom types still ask for a name, as before.
+## 2026.08.15.6 — 2026-08-15 — Fix: image hover preview invisible in 🔍 Focus view
+- Hovering/long-pressing a generated image in a panel's 🔍 Focus (single-panel) view now shows the preview again. The Focus view moves the real panel card into a full-screen overlay (.view-overlay, z-index 10000) that was painted ABOVE the preview overlay (z-index 9999), so the preview fired but rendered invisibly behind it. Bumped .img-preview to z-index 10002.
+
+## 2026.08.15.5 — 2026-08-15 — Panel Objects tooltips + per-panel image size override
+- Hover over (or long-press on touch) a 🧩 Panel Objects **Identity dropdown** or **Freeform Description** and its full contents appear in a floating tooltip — handy when a description is cut off.
+- Every panel now has its own **Size** dropdown in the panel header, right next to Style: **\[Default (Global)\]** follows the Image Size in File → Page Setup, or override it with any of the same presets (512×512 / 768×768 / 1024×1024 / 1920×1080 / 1080×1920) or **Custom…** (own width × height, clamped 64–1920 × 64–1080; blank custom fields fall back to the global size). The override is saved with the panel — it survives saves, loads, imports/exports, and duplicating a panel — and is used by 🔄 Generate, single-slot generation, and ⚡ Generate All From Here.
+## 2026.08.15.4 — 2026-08-15 — Fix: Backup dialog Close button
+- The Close button stopped working right after the visibility fix: the hardened overlay is pinned with inline `display:flex !important`, which overrides perchance's `[hidden]{display:none !important}` rule — so `ghClose()`'s `hidden=true` no longer hid anything. `ghClose()` now also forces `display:none !important`, and a `_ghClosed` flag makes the 2s visibility guard stop re-showing it. Open → Close → Reopen verified.
+## 2026.08.15.3 — 2026-08-15 — Fix: Backup dialog opening invisibly in some browsers
+- The "⬆ Backup to GitHub…" dialog opened invisibly for the author (Firefox, devtools docked) even though it was in the DOM with `display:flex`. Hardened `openGhBackup()`: pins the overlay with inline `!important` styles, moves it to the end of `<body>`, raises its z-index to the max (2147483647), detects any ancestor that breaks `position:fixed` (transform/filter/perspective/contain) and falls back to a viewport-pinned absolute position, locks body scroll while open, and re-asserts visibility for ~2s so nothing can re-hide it. The dialog box is now scroll-safe in short viewports (margin:auto centering + max-height 100% + internal scroll) instead of being clipped. It also logs a diagnostic line (`[gh] opened — …rect… viewport… fixed-breaker…`) so if it ever fails again the console shows exactly why.
+
+## 2026.08.15.2 — 2026-08-15 — "Backup to GitHub" — version history for your generator
+- File → Backup Project → "⬆ Backup to GitHub…" saves your repo settings (owner, repo, token) in your browser. Backups themselves are run by the AI assistant on request — say "back it up to GitHub" in the chat — and each backup is a commit on GitHub you can view, compare, and restore. (There's deliberately no push button in the shipped generator: the token stays in your browser, scoped to your repo, and visitors can't trigger commits.)
+- The backup includes main.pjs, index.html (the full live page), src/user-manual.html, and the PENDING / AI-NOTES / CHANGELOG / ISSUES docs.
+- One-time setup: create a private repo + a fine-grained Personal Access Token (Contents: read & write, scoped to that repo), paste it in the Backup dialog, and press 🔍 Test. The token is stored only in your browser — it's never in exports, backups, or the shipped generator.
+- Each backup lands as a commit titled "backup <version> — <timestamp>"; the dialog shows when the last backup happened.
+## 2026.08.15.1 — 2026-08-15 — Batch: JSON-only backups drop image protection; unified "Panel Objects" in every panel
+- JSON-only backups (⬇ Export / 💾 Save) no longer include the image protection status — restoring a .json-only backup comes back fully unprotected. Backups that also include the images (.zip export) keep the protection exactly as it was.
+- Each panel's Panel Library (Characters / Location / Action) is now a single "🧩 Panel Objects" section: every object in the panel is one row showing its Type, Identity, and Freeform Description, with the same Type dropdown as the main 📚 Library menu.
+- The "add object" dropdown offers ＋ New Character…, ＋ New Location…, ＋ New Action…, and ＋ New <Your Type>… for every custom type you've created (plus ＋ New Type… to invent another), or you can add an existing object from the "Add from library" list.
+- A panel can hold any number of objects — extra characters, extra locations/actions, or objects of a custom type. A warning notes that too many objects can confuse the image AI, and no limit is enforced.
+- Changing a row's Type moves it to the right place automatically (Character → a character slot, Location → the location slot, Action → the action box).
+- Picking a saved character or location now auto-fills the row's Freeform Description with the library description (like actions already did).
+- Your existing panels loaded exactly as before.
+
+## 2026.08.14.7 — 2026-08-14 — Batch: Generate All From Here, floating panels button, hide-panels password, File → New Project, unified Panel Library Objects
+- ⚡ Each panel's ⚙ settings now has "Generate All From Here" — regenerates that panel and everything after it (best for a fresh look after a tweak).
+- The Hide/Show Panels button now floats at the bottom-left of the screen so it's always within reach, no matter how far you've scrolled.
+- You can now require a password to show the panels after hiding them (File → Preferences → "Require password to show panels"). Set it once; hiding the panels locks them, and showing them again asks for the password.
+- File → 📄 New Project starts a fresh project: back up the current one (💾 Save & New), skip the backup (Continue), or abort (Cancel).
+- 📚 Library is now one unified "Panel Library Objects" section — one list with all your saved characters, locations, and action prompts. Each entry has a Type (Character / Location / Action — or make your own type), a name, and a description. What type an entry has decides which panel dropdown it appears in. Your existing saved characters, locations, and action prompts were migrated over automatically.
+- Fixed an import bug (an import from a freshly-loaded page could fail with a "syncState" error).
+
+- New 📚 Library section "My Saved Action Prompts" — save reusable action prompts (what happens in a panel)
+  with a name and text; edit or delete them anytime.
+- Every panel's 🎬 Action Prompt now has a "From Action Library" dropdown: pick a saved action to drop its
+  text into that panel's action box, or "＋ New Action…" to create a new saved action right there. Your own
+  typed actions still work exactly as before.
+
+## 2026.08.14.5 — 2026-08-14 — Creating a character/location: separate panel description
+- When you create a new character or location from the dropdowns, you're now asked three things: a name, the
+  main library description (reusable — shows in 📚 Library and in every prompt that uses that entry), and a
+  separate panel description that fills that panel's own slot in 📖 Panel Library.
+
+## 2026.08.14.4 — 2026-08-14 — New Character / New Location moved into the dropdowns
+- The ＋ New Character / ＋ New Location buttons are gone — each character slot's dropdown and the location
+  dropdown now have their own "＋ New Character…" / "＋ New Location…" option.
+- Pick it, name the entry (description optional), and it's created and placed in exactly the slot you chose.
+
+## 2026.08.14.3 — 2026-08-14 — New characters & locations: optional description
+- The ＋ New Character / ＋ New Location buttons now also ask for an optional freeform description — how the
+  character looks or what the place is like — which is woven into every panel prompt that uses that entry.
+  You can leave it blank and fill it in later from 📚 Library.
+
+## 2026.08.14.2 — 2026-08-14 — Create characters & locations right from a panel
+- Each panel's 👤 Characters and 📍 Location sections now have a ＋ New Character / ＋ New Location button.
+- Click it, give the new entry a name, and it's saved to your library and used in that panel immediately —
+  no need to jump to the Library tab first.
+
+## 2026.08.14.1 — 2026-08-14 — Cleaner start: menus closed by default
+- The app no longer opens a menu or highlights a menu button when it loads — everything starts tucked away,
+  so nothing looks "open" that isn't. (Previously a previously-used menu could stay highlighted while a
+  different menu was actually showing.)
+
+## 2026.08.13.10 — 2026-08-13 — User Manual
+- A full user manual is now included with the generator and opens from **❓ Help → 📖 Open User Manual** —
+  a guide covering building panels, generating images, persistence and backups, multi-page projects, and more.
+- The manual opens in a reader window inside the app (opening it in a separate browser tab isn't supported
+  on this platform, so the in-app reader is the way to read it).
+  (It's a snapshot document, so the very latest revisions are best seen in Help → About / Version History.)
+
+## 2026.08.13.9 — 2026-08-13 — Stop button for any generation, per-image buttons restored, Show/Hide Menus
+- The ■ Stop button now activates whenever ANY generation is running — a ⚡ batch, a single panel, or a
+  single image reroll — and deactivates when nothing is in flight. Stopping still cancels everything cleanly.
+- The per-image ↗ Open / ⬇ Save / ✕ Clear / 🔓 Protect / ⭐ Cover buttons are back directly under each
+  generated image (they had been tucked into a collapsed "Image Controls" accordion). The 🖼 Image Controls
+  accordion is gone; the buttons live under the image again, as small icon chips.
+- Each panel's blue Show Menu button is now a single **Show/Hide Menus** toggle: click to open all of that
+  panel's accordion menus, click again to collapse them.
+
+## 2026.08.13.8 — 2026-08-13 — ⟳ Location & Action persistence + line delete buttons
+- 📍 Location and 🎬 Panel Action Prompt now have a ⟳ persist checkbox (like the character slots): checking it
+  copies that panel's location (with its modifier) or action prompt to all later panels on the page.
+- All ⟳ chains (characters, location, action) now also reach exactly one panel beyond the page — panel 1 of the
+  next page — then stop. The value lands when you switch to that page, and only if you haven't already changed
+  that panel yourself.
+- Each character line, the Location, and the Action Prompt now have a small ✕ delete button that clears the line
+  (No Character Selected / No Location Selected + modifier cleared, action prompt emptied) and turns its ⟳ off.
+- Choosing "No Location Selected" now also clears the location modifier box (matching the character behavior).
+
+## 2026.08.13.7 — 2026-08-13 — Global Stop button
+- The per-panel ■ Stop buttons are now one GLOBAL ■ Stop button next to ⚡ GENERATE ALL PANELS — always
+  visible, and enabled while a run is in progress. Clicking it cancels the run cleanly (stops in-flight
+  images, marks them "Stopped").
+
+## 2026.08.13.6 — 2026-08-13 — Panel info summary + cleaner dropdown label
+- Each panel now shows a one-line summary under its "Panel N" heading: the selected characters (or
+  "No Character Selected"), the location (or "No Location Selected"), and the action prompt (truncated
+  with "…" when too long, or "No Action Prompt"). It updates live as you edit and survives reloads.
+- The "No Location Selected" dropdown option no longer shows square brackets.
+
+## 2026.08.13.5 — 2026-08-13 — Show / Collapse Menu buttons restored
+- Each panel's blue Show Menu button (next to 🔍 Focus) is back — it opens all of that panel's accordion
+  menus (📖 Panel Library, 📝 Prompt, ⚙ Panel, 💾 Files, and the nested 👤/📍/🎬 sections) at once.
+- The ⚙ Panel accordion's Collapse Menu button is back too — it collapses them all again.
+- Like Stop + Hide Panels, these were lost in the same file-merge mishap; re-implemented 2026-08-13.
+
+## 2026.08.13.4 — 2026-08-13 — Stop + Hide Panels restored
+- The ■ Stop button and the ▧ Hide/Show Panels header button are back. They had been lost in a file-merge
+  mishap (Help → About listed them but the app code didn't have them). Re-implemented 2026-08-13:
+- ■ Stop (per panel, appears only while a ⚡ Generate All Panels run is going) cleanly cancels the run —
+  stops in-flight images and marks them "Stopped".
+- ▧ Hide Panels hides every panel card while rendering keeps running invisibly in the background; the choice
+  is remembered and included in backups.
+
+## 2026.08.13.3 — 2026-08-13 — App renamed
+- The app is now called "Yet Another Comic Book Page Generator" — new title in the header and the Help > About page.
+
+## 2026.08.13.2 — 2026-08-13 — Generate always visible + Hide Panels + Stop
+- ⚡ Generate All Panels stays visible even when you hide the menu — it just sits in a slim bar on its own.
+- New ▧ Hide Panels button in the header hides every panel card so you can watch the status line instead, while rendering keeps running invisibly in the background (show it again any time).
+- Each panel now has a ■ Stop button that cleanly cancels a running Generate All Panels run.
+
+## 2026.08.13.1 — 2026-08-13 — Show / Collapse Menu buttons
+- Each panel now has a blue Show Menu button right next to 🔍 Focus that opens all of that panel’s accordion menus (📖 Panel Library, 📝 Prompt, ⚙ Panel, 💾 Files, and the nested sections) at once.
+- The ⚙ Panel accordion now has a Collapse Menu button that collapses them all again.
+
+## 2026.08.12.29 — 2026-08-13 — Deselect polish
+- The "No Character Selected" dropdown option no longer shows square brackets.
+- Selecting "No Character Selected" also clears that slot’s modifier box.
+
+## 2026.08.12.28 — 2026-08-13 — Image buttons back under each image
+- The 🖼 Image Controls accordion is gone — each image now has its own small icon button row right beneath it: ↗ Open, ⬇ Save, ✕ Clear, 🔓 Protect, ⭐ Cover (hover for the tooltip).
+- Protected images keep the little 🔒 badge on their corner.
+
+## 2026.08.12.27 — 2026-08-13 — Panel Library sections collapsible
+- Inside 📖 Panel Library, the Characters, Location, and Action Prompt sections can now each be collapsed or expanded individually.
+
+## 2026.08.12.26 — 2026-08-13 — Panels slimmed down with more accordions
+- Characters, Location, and Panel Action Prompt now hide inside a 📖 Panel Library accordion.
+- Panel Seed moved into the ⚙ Panel accordion.
+- Each image’s buttons (Open / Save / Clear / Protect / Cover) moved into a 🖼 Image Controls accordion, so each panel just shows its images. Protected images show a small 🔒 badge on the corner so you can still tell at a glance.
+
+## 2026.08.12.25 — 2026-08-13 — Panel buttons organized into accordions
+- Each panel now shows just 🔍 Focus and 🔄 Generate, with the rest of the buttons tucked into three slim accordions: 📝 Prompt (prompt editor + copy), ⚙ Panel (duplicate / add / clear / delete), and 💾 Files (open all / save all / export).
+
+## 2026.08.12.24 — 2026-08-13 — Per-panel art style
+- Each panel now has its own Style dropdown (next to the Images selector) — pick any art style for just that panel, or [Default (Global)] to follow the global Art Style.
+- The choice is saved with the panel, copied when you duplicate it, and included in exports.
+- About the "sticky comic style": the style never actually stuck — those were the panel’s old images still displayed (images persist until you regenerate or reload the page). Switching style only affects new generations. If a panel still looks wrong after regenerating, it has a custom 📝 Prompt override pinning its keywords.
+
+## 2026.08.12.23 — 2026-08-13 — Deleting the last panel/page resets the project
+- Deleting the last panel of a page now warns that the page will be deleted too.
+- Deleting the only page (via 🗑 Delete Page in File → Page Setup, or by deleting the only panel) warns you and then resets the whole project to defaults — like Edit > Reset to Defaults.
+
+## 2026.08.12.22 — 2026-08-12 — Add a panel
+- Every panel now has a green ＋ Add Panel chip next to 🗑 Delete — it inserts a new empty panel right after, moving later panels down and renumbering them (the exact inverse of Delete).
+
+## 2026.08.12.21 — 2026-08-12 — Delete a panel
+- Every panel now has a red 🗑 Delete chip. Deleting a panel removes it (settings, generated images, protection) and moves all later panels up, renumbering them.
+- You are asked to confirm before a panel is deleted, and the last panel on a page cannot be deleted.
+- ☝ Heads-up: verifying this feature destroyed the sample project in this browser’s local save (my test cleanup bug). Re-import your last export to bring it back — the generator code is unaffected.
+
+## 2026.08.12.20 — 2026-08-12 — Fixed menu buttons overlapping hint text
+- The small gray hint texts in the menu no longer get pulled up into the buttons above them (fixed for the Storyboard View chip, the Backup Project buttons, and everywhere else).
+
+## 2026.08.12.19 — 2026-08-12 — Storyboard button in File → Project
+- The 📄 File → Project panel now has a ▦ Storyboard View button — handy when the menu is on the side and you do not have to use the header button.
+
+## 2026.08.12.18 — 2026-08-12 — Floating menu button now lives upper-left
+- The floating Show Menu button now appears in the upper-left corner (where the header buttons are) instead of the lower-right.
+- When the menu is open, the floating Hide button stays in the lower-right so it never covers the menu itself.
+- It still only appears once you scroll past the header buttons.
+
+## 2026.08.12.17 — 2026-08-12 — Floating menu button tracks the header
+- On mobile, the floating menu button now appears whenever the header buttons are scrolled out of view — not just when the menu is hidden — so you can hide and unhide the menu from anywhere without scrolling back to the top.
+- It doubles as a Show Menu / Hide Menu toggle and stays labeled accordingly.
+
+## 2026.08.12.16 — 2026-08-12 — Header buttons moved to upper left
+- The Storyboard / Hide Menu / Menu: Side buttons moved from the upper-right to the upper-left corner of the header, next to the title — handier when quickly hiding and unhiding the menu.
+
+## 2026.08.12.15 — 2026-08-12 — Menu visibility toggle
+- A ☰ Hide/Show Menu button in the header now hides or restores the whole menu panel (top or side). A floating ☰ Menu button appears bottom-right when it is hidden, so you can bring it back after scrolling.
+- Your menu visibility choice is remembered between visits and included in project backups.
+
+## 2026.08.12.14 — 2026-08-12 — Side menu stacks menu bar
+- The File / Edit / Library / Help buttons now also stack full-width vertically when the menu is on the side — they stay side-by-side with the top menu.
+
+## 2026.08.12.13 — 2026-08-12 — Side menu stacks chips
+- With the menu moved to the side, the action-chip rows (Backup, Page buttons, Image Count) now stack vertically — they stay horizontal with the top menu.
+
+## 2026.08.12.12 — 2026-08-12 — Guidance slider must be a whole number
+- The Prompt Obedience slider now only allows whole numbers 1–30 — the image service rejects fractional values (your 9.5 was silently killing every generation after it).
+- Saved fractional values (like 9.5) are rounded on load; generation also rounds defensively.
+
+## 2026.08.12.11 — 2026-08-12 — Detect stalled image service
+- If the image service stops responding (e.g. after a tab switch mid-generation), Generate now shows a clear error telling you to reload the page — no more silently doing nothing.
+- Generate All Panels reports per-panel failures instead of stopping without a word.
+
+## 2026.08.12.10 — 2026-08-12 — Generate-after-background fix
+- After a tab-went-to-background pause, clicking a panel or image Generate chip silently did nothing — now it resets the pause flag and generates normally (or shows a real error).
+
+## 2026.08.12.9 — 2026-08-12 — Prompt obedience slider
+- New Prompt Obedience (guidance scale) slider in File → Page Setup (1–30, default 7) — how literally the AI follows your prompt.
+- Green–yellow–red slider track + value readout warn about diminishing returns (red past ~15: oversaturation, halo/text artifacts).
+
+## 2026.08.12.8 — 2026-08-12 — Safer project import
+- Importing warns when you have a project in progress — Save (back it up first), Continue, or Cancel.
+- Import fully clears the current project, including image protection.
+
+## 2026.08.12.7 — 2026-08-12 — Protect Image
+- Protect individual images instead of whole panels.
+- Protected images are never overwritten by Generate — panel Generate keeps them and regenerates the rest.
+- Backup buttons moved under File → Project.
+
+## 2026.08.12.6 — 2026-08-12 — Project export/import + project name
+- Project naming (shown in the header, used for export/save filenames).
+- Export Project (.zip) bundles settings + every generated image (all pages).
+- Import a project .zip to restore settings AND images; .json restores settings.
+
+## 2026.08.12.5 — 2026-08-12 — Multiple pages
+- Add, name, switch, and delete pages — each with its own panels, panel count, and seed.
+- Duplicating a panel on a full page offers to start a new page with a copy of it.
+
+## 2026.08.12.4 — 2026-08-12 — View modes
+- Storyboard view — all panels at a glance with placeholders for empty panels.
+- Single-panel Focus view with a panel list, dropdown, prev/next, and arrow keys.
+
+## 2026.08.12.3 — 2026-08-12 — Panel operations
+- Duplicate a panel — full data/prompt copy, no images.
+
+## 2026.08.12.2 — 2026-08-12 — Image slots
+- Protect a panel’s images from regeneration.
+- Star a panel’s Cover/representative image.
+- Set the image count for all panels at once.
+
+## 2026.08.12.1 — 2026-08-12 — Menu & preview polish
+- Collapsible menu panels.
+- Image hover / long-press preview (configurable delay, with an on/off toggle).
+- No Character Selected moved to the bottom of the dropdowns.
+
+## 2026.08.11.1 — 2026-08-11 — Persistence & export overhaul
+- All menu settings persist across reloads.
+- JSON backup/import, silent Save… / Save as…, ZIP export with images.
+- Per-panel reroll, multi-image panels, prompt editor, image size + upscale.
+
+## 2026.08.10.1 — 2026-08-10 — Initial release
+- Core panel grid with characters, locations, and actions.
+- Menu system (File / Edit / Library / Help), style presets, keyword chips.
+- Mobile memory hardening for generated images.
