@@ -31,7 +31,8 @@
                    The regression harness (P0, 2026-09-26): park/restore of the author's whole
                    localStorage map, the smoke / generation / fixtures / core suites, the module
                    guards for src/core and src/state, the state-layer differential suite
-                   (state-diff, 2026.09.26.18 — the store's project object vs collectPanelState()).
+                   (state-diff, 2026.09.26.19 — the store's project object vs collectPanelState(),
+                   and the save path that writes it).
                    READ devtests/README.md BEFORE running anything — every suite mutates the live
                    preview and must park and restore it.
     src/core/*.js  P1/P2's extracted pure logic — zip, jsontext, keywords, seeds, prompt,
@@ -54,13 +55,19 @@
                    subscribe() / unsubscribe() — whose loader is a PURE serializer over a
                    snapshot of the DOM (the values collectPageData() reads today), so it runs in
                    a Worker with no browser at all. index.html owns the DOM half,
-                   collectDomSnapshot(). NOTHING READS THE STORE YET, deliberately: §3.4 step 5
-                   is the release that moves the save path onto it. window.__storeJson() is the
-                   read-only test accessor. §3.4 step 4 — the differential test that
-                   store.toJSON() equals collectPanelState() key for key — went GREEN in
-                   2026.09.26.18 (devtests/state-diff.page.js, 13 checks over the fixture corpus,
-                   every panel field, every panel-count domain and the author's own project),
-                   which is what licenses step 5. Never edit only one side.
+                   collectDomSnapshot(). THE SAVE PATH WRITES THROUGH IT as of §3.4 step 5
+                   (2026.09.26.19): savePanelState() writes
+                   projectStore.load(collectDomSnapshot()).toJSON(), so the DOM is a rendering of
+                   the store on load and a proxy for it on input — the last step of P3 removes
+                   the proxy. resetEverything()'s factory project now comes from schema.js's
+                   defaultProject()/defaultPanel() instead of hand-written literals, so a reset
+                   cannot drift from a fresh project. window.__storeJson() is the read-only test
+                   accessor. §3.4 step 4 — the differential test that store.toJSON() equals
+                   collectPanelState() key for key — went GREEN in 2026.09.26.18, and step 5's
+                   own checks (the saved bytes are exactly the store's JSON; the reset matches
+                   the schema) went green in 2026.09.26.19: devtests/state-diff.page.js now runs
+                   16 checks over the fixture corpus, every panel field, every panel-count
+                   domain and the author's own project. Never edit only one side.
 
   READ (public repo, no token needed):
     fetch("https://raw.githubusercontent.com/cgoodwin97124/yacbpg-backup/main/PENDING.md")
@@ -1290,8 +1297,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.18 — 2026-09-26 — 🧪 The state layer is proven: the store rebuilds your project exactly as the app does
-- 🧪 Nothing you can see changes — this release adds no new app code. It adds the automated check that the new state-layer module rebuilds your project **exactly** the way the app already does, field for field, across every saved-file shape and every panel field, before anything is allowed to start saving through it. All 13 checks pass, including on your own project.
+## 2026.09.26.19 — 2026-09-26 — 💾 The save path writes through the store (same bytes, one source of truth)
+- 💾 Nothing you can see changes — your project saves exactly the same bytes it always did. What changed is *which* code writes them: the app's autosave now goes through the state-layer module instead of assembling the file itself, so there is one definition of what a project file looks like instead of two. "Reset everything to default" now takes its factory values from that same schema, so a reset cannot drift away from a fresh project. Every suite, including the field-for-field state-layer check, stays green.
 </script>
 
 
@@ -3992,7 +3999,7 @@ color-scheme:light;
 
   function savePanelState() {
     if (!panelStateRestored) return;
-    try { localStorage.setItem(PANEL_STATE_KEY, JSON.stringify(collectPanelState())); } catch (e) {}
+    savePanelStateShape(storeJsonNow() || collectPanelState());
   }
 
   let panelSaveTimer = null;
@@ -8901,79 +8908,83 @@ color-scheme:light;
     currentPage = 1;
     for (const k in pageSession) delete pageSession[k];
 
-    document.getElementById('globalPos').value = DEFAULT_POS;
-    document.getElementById('globalNeg').value = DEFAULT_NEGATIVES;
-    document.getElementById('seedInput').value = "";
-    document.getElementById('pageNameInput').value = "";
+    const fresh = defaultProject();
+    const freshPage = fresh.pages[1];
+    const dp = defaultPanel();
+    document.getElementById('globalPos').value = fresh.globalPos;
+    document.getElementById('globalNeg').value = fresh.globalNeg;
+    document.getElementById('seedInput').value = freshPage.seed;
+    document.getElementById('pageNameInput').value = freshPage.name;
     const sumReset = document.getElementById('pageSummaryInput');
-    if (sumReset) sumReset.value = "";
-    document.getElementById('projectNameInput').value = "";
-    document.getElementById('previewDelayInput').value = "350";
-    document.getElementById('previewEnabledCheck').checked = true;
-    document.getElementById('panelCount').value = '4';
+    if (sumReset) sumReset.value = freshPage.summary;
+    document.getElementById('projectNameInput').value = fresh.projectName;
+    document.getElementById('previewDelayInput').value = fresh.previewDelay;
+    document.getElementById('previewEnabledCheck').checked = fresh.previewOn;
+    document.getElementById('panelCount').value = freshPage.panelCountSel;
     const customInput = document.getElementById('panelCountCustom');
-    customInput.value = "";
+    customInput.value = freshPage.panelCountCustom;
     customInput.hidden = true;
-    document.getElementById('imageSizeSel').value = '768x768';
+    document.getElementById('imageSizeSel').value = fresh.imageSizeSel;
     document.getElementById('imageSizeCustom').hidden = true;
-    document.getElementById('imgSizeW').value = "";
-    document.getElementById('imgSizeH').value = "";
-    document.getElementById('guidanceScaleInput').value = "7";
+    document.getElementById('imgSizeW').value = fresh.imageSizeW;
+    document.getElementById('imgSizeH').value = fresh.imageSizeH;
+    document.getElementById('guidanceScaleInput').value = fresh.guidanceScale;
     onGuidanceScaleChange();
     const bicReset = document.getElementById('bulkImgCountSel');
-    if (bicReset) bicReset.value = '1';
-    imgCountDefaultPref = '1';
-    document.getElementById('nsfwCheck').checked = false;
+    if (bicReset) bicReset.value = fresh.imgCountDefault;
+    imgCountDefaultPref = fresh.imgCountDefault;
+    document.getElementById('nsfwCheck').checked = fresh.nsfw;
 
     localStorage.removeItem('comicGen.preset');
     document.getElementById('presetStyle').value = 'comic';
     document.getElementById('presetPalette').value = 'vibrant';
 
     if (delLib) {
-      projectLibrary = [];
+      projectLibrary = fresh.library.slice();
       saveCatalogue([]);
       try { localStorage.removeItem(LIB_OBJ_KEY); } catch (e) {}
       renderLibrary();
     }
-    projectKept = [];
+    projectKept = fresh.kept.slice();
 
     for (let i = 1; i <= 24; i++) {
       for (let s = 1; s <= 3; s++) {
         const sel = document.getElementById('panel-char-select-' + i + '-' + s);
         const base = document.getElementById('panel-char-base-' + i + '-' + s);
         const extra = document.getElementById('panel-char-extra-' + i + '-' + s);
-        if (sel) sel.value = 'none';
-        if (base) base.value = '';
-        if (extra) extra.value = '';
+        const dc = dp.chars[s - 1];
+        if (sel) sel.value = dc.sel;
+        if (base) base.value = dc.base;
+        if (extra) extra.value = dc.extra;
       }
       const psInput = document.getElementById('panel-seed-' + i);
-      if (psInput) psInput.value = '';
+      if (psInput) psInput.value = dp.seed;
       const ti = document.getElementById('panel-title-' + i);
-      if (ti) ti.value = '';
-      for (let k = 1; k <= 4; k++) setSlotProtected(i, k, false);
+      if (ti) ti.value = dp.title;
+      for (let k = 1; k <= 4; k++) setSlotProtected(i, k, dp.protectSlots[k - 1]);
       const ls = document.getElementById('panel-loc-select-' + i);
       const lb = document.getElementById('panel-loc-base-' + i);
       const le = document.getElementById('panel-loc-extra-' + i);
       const act = document.getElementById('panel-act-' + i);
-      if (ls) ls.value = 'none';
-      if (lb) lb.value = '';
-      if (le) le.value = '';
-      if (act) act.value = '';
-      setPanelSameSeed(i, false);
+      if (ls) ls.value = dp.loc;
+      if (lb) lb.value = dp.locBase;
+      if (le) le.value = dp.locExtra;
+      if (act) act.value = dp.action;
+      setPanelSameSeed(i, dp.sameSeed);
       const ic = document.getElementById('panel-img-count-' + i);
-      if (ic) ic.value = '1';
+      if (ic) ic.value = dp.imgCount || imgCountDefaultPref;
       const stSel = document.getElementById('panel-style-' + i);
-      if (stSel) stSel.value = '';
+      if (stSel) stSel.value = dp.style;
       const palSel = document.getElementById('panel-palette-' + i);
-      if (palSel) palSel.value = '';
+      if (palSel) palSel.value = dp.palette;
       const szSel = document.getElementById('panel-size-' + i);
-      if (szSel) szSel.value = '';
+      if (szSel) szSel.value = dp.sizeSel;
       const sc = document.getElementById('panel-size-custom-' + i);
       if (sc) sc.hidden = true;
       const szw = document.getElementById('panel-size-w-' + i);
       const szh = document.getElementById('panel-size-h-' + i);
-      if (szw) szw.value = '';
-      if (szh) szh.value = '';
+      if (szw) szw.value = dp.sizeW;
+      if (szh) szh.value = dp.sizeH;
       const card = document.getElementById('panel-card-' + i);
       if (card) card.classList.remove('skipped', 'failed', 'paused', 'cleared', 'stopped');
       for (let k = 1; k <= 4; k++) {
@@ -9676,8 +9687,10 @@ color-scheme:light;
   window.initProjectStore = initProjectStore;
   window.collectDomSnapshot = collectDomSnapshot;
   window.collectPanelState = collectPanelState;
+  window.savePanelState = savePanelState;
   window.__storeJson = storeJsonNow;
   window.__storeModule = function () { return coreModules.store; };
+  window.__schemaModule = function () { return coreModules.schema; };
   window.deleteLibraryObject = deleteLibraryObject;
   window.deleteCatalogueObject = deleteCatalogueObject;
   window.applyLibraryDelete = applyLibraryDelete;
