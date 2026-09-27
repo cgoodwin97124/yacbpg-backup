@@ -1296,6 +1296,51 @@ is `DEV-NOTES.md` BATCH 2026.09.26.16.
   4 manual**; `diff-core.js`'s surface + declaration guards now cover `normaliseKept` (**17/0**). Park hash
   `5488036e` → `cfa29083` (the new field landing).
 
+## 30. P2 step 3: the store — `src/state/store.js` (2026.09.26.17)
+
+The state layer's first piece (`REFACTOR-ROADMAP.md` §3.4 step 3). A plain store object plus the **pure** serializer
+it is built on; **nothing in the app reads it yet**, deliberately — step 4 is the differential test that
+`store.toJSON()` equals `collectPanelState()` key for key, and step 5 is the release that moves the save path onto it.
+The user-facing story is `CHANGELOG.md` 2026.09.26.17; the engineering detail (and the park-hash false alarm) is
+`DEV-NOTES.md` BATCH 2026.09.26.17.
+
+- **Location and loading.** `src/state/store.js` — the first file under a new `src/state/` folder. It is loaded by the
+  existing `coreLoad('store', './src/state/store.js', apply)` block, so the boot waits for it (eight modules now,
+  `window.appReady`) and a failure lands in `coreLoadWarning`. It is in `GH_SRC_FILES`, and `devtests/diff-core.js`
+  discovers `src/core/` **and** `src/state/`. `index.html` binds only `createProjectStore` and `serializeProject`.
+- **Exports:** `STORE_VERSION` (2), `createStore()`, `serializeProject(snapshot)`, `ensurePages(raw)`,
+  `defaultPageData()`, `pageKey(v)`, `normaliseSnapshot(snapshot)`.
+- **The store object:** `load(snapshot)` (normalises, marks dirty, notifies subscribers, returns the store),
+  `toJSON()` (caches until the next `load` — `isDirty()` reports the flag), `getSnapshot()`, `subscribe(fn)` (returns
+  its own disposer; a non-function is ignored and returns a no-op), `unsubscribe(fn)` (takes the **listener**, not the
+  disposer — a listener that throws is swallowed so one bad subscriber cannot break a notify), `listenerCount()`.
+- **The snapshot contract (the DOM half, in `index.html`).** `collectDomSnapshot()` returns
+  `{ stored, currentPage, page, globals, library, kept }`, where `globals` carries `projectName`, `imageSizeSel`,
+  `imageSizeW`, `imageSizeH`, `guidanceScale`, `imgCountDefault`, `previewDelay`, `previewOn`, `globalPos`,
+  `globalNeg`, `nsfw`, `themeMode`, `themeAccent`. Every value is one the old `collectPanelState()` read; the
+  assembly is what moved into the module. `page` is `collectPageData()`'s output, so the panel field order the
+  serializer needs comes for free — and the two halves of this contract must be edited together.
+- **`serializeProject(snapshot)`** emits the envelope in the exact insertion order the differential compares:
+  `version, projectName, imageSizeSel, imageSizeW, imageSizeH, guidanceScale, imgCountDefault, previewDelay,
+  previewOn, globalPos, globalNeg, nsfw, theme, currentPage, pages, library, kept` (`theme` = `{mode, accent}`).
+  It shallow-copies the stored page map and then overwrites `pages[currentPage]` with the live page **object itself**
+  — so the serializer never mutates its snapshot, and the current page always wins over the stored copy. `library`
+  and `kept` are sliced, so `toJSON()`'s output cannot be mutated through the snapshot.
+- **`ensurePages` is deliberately duplicated.** The module owns a pure copy (the inline one in `index.html` is still
+  what all ~30 existing callers use — the strangler rule: the copy survives until the module has survived a
+  release). `core.test.js` extracts the inline version by name as `ensurePagesInline` and asserts the two agree over
+  eight stored shapes, so the duplication cannot drift silently in the meantime.
+- **Test seams (all read-only):** `window.collectDomSnapshot`, `window.collectPanelState` (newly exported for this),
+  `window.initProjectStore`, `window.__storeJson()` (snapshot → store → `toJSON()`, falling back to
+  `serializeProject` if the store instance is absent) and `window.__storeModule()` (the loaded module namespace, for
+  unit-level checks). The live proof already run on the author's own project: `__storeJson()` and
+  `collectPanelState()` stringify **identically**.
+- **Tests:** `core.test.js` **30/0** (four new: the envelope + purity + id-key order; the store API including the
+  cached `toJSON`, the dirty flag, and a throwing listener; the `ensurePages` agreement; a null/junk snapshot still
+  serialising a valid project), `diff-core.js` **19/0**. Smoke / generation / fixtures unchanged (88/0/4, 18/0, 18/0)
+  — there is no page-side behaviour to check yet. Park hash `cfa29083` → `a5708568`, which is only the
+  `comicGen.githubLastBackup` timestamp written by this session's `ghPush`, **not** the release.
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
