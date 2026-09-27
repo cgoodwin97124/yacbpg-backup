@@ -1,0 +1,1678 @@
+# PENDING — DONE history (archive)
+
+Moved here verbatim from `PENDING.md` on 2026-09-27 in the docs archive-split: the older ✅ DONE entries out of 🟢 START NOW plus the whole `## ✅ DONE` history block, newest-first, unchanged. Read only for historical questions.
+
+---
+
+### 2026-09-27 — BACKUP: the 2026.09.26.20 push (post-Save) + P3 step 1b summary
+
+- **Status:** the **backup is ✅ DONE** (15 files, head `37bcf0af`); **P3 step 1b is 🕒 QUEUED** — the author asked for a summary *before* we start, so no 1b code has been written yet. Logged here on receipt, before any work, per the 2026-08-13 rule. Author, 2026-09-27, verbatim: **"Saved!  Go ahead and push.  And give me a brief summary of P3 step 1b before we start?"**
+- **The push (what was asked):** `ghPush` from the page **hung** — the dialog opened, the settings loaded (owner/repo/token present), and it sat at "⏳ Pushing…" for **12 minutes** with **0** files pushed; a first attempt had died with `❌ out of memory`. The push was therefore done by hand, file by file, from the page (`window.__putFile(path, content, msg)` + a driver loop): `main.pjs` from the perchance API, `index.html` and every `src/**` file fetched relative, 15 files, one shared commit message `backup 2026.09.26.20 — 2026-09-27T17:39:14.331Z`, **all 15 ok in 49 s**, e.g. `main.pjs 145010ce`, `index.html f3fc1fee`, `src/state/commands.js 30fe94fd`.
+- **Verified (2026-09-27):** a git-tree diff of `75fa5963` (the last docs commit) against the new HEAD shows **`index.html` as the ONLY changed blob** — no added, no removed, no `src/**` change, tree count unchanged at **86**. That is exactly the intended change: the repo's `src/` and `main.pjs` already matched the workspace (the `.20` drift check proved it) and their blob shas are byte-identical after the re-push, while `index.html` moved from the served `.19` (`aa3b5c6e`) to the workspace `.20` (`f3fc1fee`). The pushed `index.html` blob sha `f3fc1fee` **equals the local `.20` file's own git-blob sha** from the drift report, and the served template was read back as **564,315 chars with the stamp `## 2026.09.26.20`** before the push — so the served build and the workspace file are byte-identical and there is no drift left. (The drift runner could not be re-run to confirm: the renderer's **isolated worker** stopped being creatable after the OOM — `execute_js` reports "the generator page's renderer process is frozen" while `page_eval` still answers. A browser-tab reload clears it.)
+- **FINDING (bug, to fix): `ghPush` cannot fetch the served page in the editor preview.** `ghPush` does `fetch(location.href.split('#')[0])` — the bare URL, no cache-buster — and that request **never returns** in the preview (the editor's service worker intercepts it); with `?_=<ts>` appended the identical fetch returns in about a second. Its companion `extractTemplateSource` then walks the ~590 KB escaped JSON string **one character at a time** (`raw += c`), which is the other half of the "out of memory": the page dies at that loop. Proposed one-release fix: append a cache-buster to that fetch and replace the char walk with a quote-scan + `slice` (find the unescaped closing quote by counting preceding backslashes — O(n), no big intermediates). **Not yet scheduled**; folded into 1b unless the author prefers it alone.
+- **Bookkeeping:** `comicGen.githubLastBackup` was set by hand to `2026-09-27T17:39:14.331Z` (the push's own stamp) so the dialog's "last backup" is truthful, exactly as a completed `ghPush` would have left it. The author's **project data is untouched** — a diff of the live map against `scratch/p0/parks/visual.json` shows only `activeMenu` (`edit`→`file`), `menuVisible` (`0`→`1`), the park's deliberate omission of `githubToken` (the runner re-injects the live one), and the stamp itself. Live-map FNV is now **`f5658a60`** (it was `087fdd3f` immediately before the stamp; the `.20` run recorded `a9ccf378`, and the parked file predates the `.19` backup, so those three numbers are not directly comparable — the token key alone is 93 bytes the park does not carry).
+- **Then:** P3 step 1b — `setImgCount` (see the roadmap's leaf list), one field, one release, same mechanism as `setTitle`.
+
+### 2026-09-27 — REFACTOR: P3 step 1a — the first leaf-setter command (`setTitle`)
+
+- **Status:** ✅ **DONE 2026.09.26.20** — implemented, tested and documented in the same session; the push follows the author's save. Logged here on receipt, before any work, per the 2026-08-13 rule. Author, 2026-09-27, verbatim: **"Saved!  Push the backup and then we can start P3!"** (the push half of the message was the post-Save `ghPush` for 2026.09.26.19, done first — 14 files, head `823de29b`, drift check 0 drift / no unknown local files).
+- **What:** `REFACTOR-ROADMAP.md` §3.5 step 1 — *mutations become named commands, leaf setters first, one command per release*. The first command is the **smallest** of the leaf set (`setTitle`): it has no side effects beyond the field itself (no prompt-override invalidation, no slot flags, no reflow), so it introduces the command machinery without touching behaviour. The machinery is the point of the release: a **pure, DOM-free command module** (`src/state/commands.js`) that mutates the project object, plus a thin DOM adapter in `index.html` that owns the mapping from a committed field back to its element. After this the title's *writer* is the command, not the DOM-read save — the first crack in the "the DOM is a proxy for the store" state `.19` left behind.
+- **Gate (from the roadmap):** zero behaviour change — the saved bytes after a title edit must be **identical** to the old debounced path (the command writes the same value the DOM holds); the suites stay green including the differential; 0 perchance errors; the author's map restored byte-identical after every runner; the visual check unchanged.
+- **IMPLEMENTATION (2026.09.26.20):** new **`src/state/commands.js`** — `findPanelById(project, id)` (canonical numeric page keys then slot keys; returns `{ page, index, panel }` or `null`; never mutates), `setTitle(project, id, value)` (writes `text(value)` — `null`/`undefined` → `""`, else `String(...)`; returns `{ page, index, fields: ["title"] }`), `COMMANDS = { setTitle }` and `COMMANDS_VERSION = 1`; no imports and no DOM, so it is tested in a Worker. `index.html`: `commands` added to `coreModules` and a `coreLoad('commands', './src/state/commands.js', …)` filling a declared `let panelCommands`; `runPanelCommand(name, id, args)` (`storeJsonNow()` → apply → `savePanelStateShape(project)` → `renderCommittedFields(project, hit)`, returning `false` on a missing module/command/id so the old path still saves); `renderCommittedFields(project, hit)` — the single field→element map (`title` → `#panel-title-<index>`, only when `hit.page === currentPage`, skipping the write when the value already matches); `panelIdAt(i)`; one branch at the top of `handleGridInput` (`const ttl = id.match(/^panel-title-(\d+)$/); if (ttl) return runPanelCommand('setTitle', panelIdAt(...), [e.target.value]);`); the two delegated grid listeners became `if (!handleGridInput(e)) schedulePanelSave();` (every other branch still ends in a bare `return;` → `undefined`, so the debounce is untouched for every other input); `src/state/commands.js` added to `GH_SRC_FILES` (13 entries); read-only `window.__commandsModule()` and `window.runPanelCommand` for the harness. Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.20, `AI-NOTES.md` §33, `REFACTOR-NOTES.md`, `REFACTOR-ROADMAP.md` §3.5, `devtests/README.md`, `README.md`, and this entry. **`src/manual.html` deliberately untouched** (nothing user-visible).
+- **Verified:** state-layer differential **17/17** (new `SD17`: a real `input` event on `#panel-title-1` is in `localStorage` **synchronously** — before the debounce could fire — and equals both `window.__storeJson()` and `collectPanelState()`, with the neighbour untouched, `runPanelCommand` returning `false` for an unknown command, and the title surviving a switch to page 2 and back), smoke **88 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, core **33/0** (three new DOM-free checks, one a recursive differ proving `setTitle` writes **exactly one leaf**), module guards **21/0** (`unspecced: []`, 9 modules, 13-file manifest, 40 declared names), **0** perchance errors, and the author's map restored **byte-identical after every runner** (`strays: []`, 23 keys, "Cow in field", `a9ccf378` — moved from `0442faa8` only because the `.19` backup rewrote `comicGen.githubLastBackup`, trap 5). **Visual:** the 14-capture run was killed by the platform's wedged-preview state three times (once with the **`.19` build** loaded, which is how we know it is not this release), so the gate was taken at the DOM level: a fingerprint of every `[id]` element (rect, computed display/visibility/opacity/font-size/colour/background, value, leaf text, `hidden` flags, `body.scrollHeight`) for `desktop-dark-grid` is **identical on `.19` and `.20` in the same session** (`8eee1954`, 213,179 chars, 2,125 elements) once the version string — present 11 times in the page — is normalised; the `.20` grid capture is also byte-identical to a `.19` capture from the previous session, and the `*-json` (10,343 px) / `*-analysis` (10,204 px) deltas against their baselines are inside the documented trap-6 thumbnail bands. Phone 390×844: `documentElement.scrollWidth` 390, no horizontal overflow. Three new harness traps recorded in `devtests/README.md` (a no-op `set_viewport_size` hangs the tool call; one heavy `page_eval` per `page_refresh`; a wedge that reproduces on the previous build is the platform's). The `.19` note's "+222 CSS px" analysis finding was re-measured and is **not** reproducible without `analysisAutoGrowAll()` — the queued baseline refresh is cosmetic.
+- **Then:** P3 step 1b — the next leaf setter (smallest first), then the structural commands of §3.5 step 2.
+
+### 2026-09-27 — REFACTOR: P2 step 5 — the save path moves onto the store
+
+- **Status:** ✅ **DONE 2026.09.26.19** — implemented, tested and pushed in the same session. Logged here on receipt, before any work, per the 2026-08-13 rule. Author, 2026-09-27, verbatim: **"Let's do it!  P2 step 5."** Moved up from 🕒 QUEUED, where it was recorded when step 4 went green (the gate the roadmap set for this step: *"until that passes, nothing reads the store"*).
+- **What:** `REFACTOR-ROADMAP.md` §3.4 step 5 — make the app's own saving go **through** the store: `savePanelState()` writes `projectStore.load(collectDomSnapshot()).toJSON()` (written by `savePanelStateShape`), while `restorePanelState()` keeps writing the DOM. After this the DOM is a *rendering* of the store on load and a *proxy* for it on input; the last step of P3 is what removes the proxy. §3.4 step 2's leftover belongs with this step too: the hand-built fresh state inside `resetEverything` becomes the schema's `defaultProject()` / `defaultPanel()`.
+- **Why the gate is met:** the differential suite of 2026.09.26.18 (`devtests/state-diff.page.js`, 13/13) proves `store.toJSON()` and `collectPanelState()` produce the same object for every fixture shape, every panel field, every panel-count domain, a non-current page, edits surviving a page switch, an unknown stored key and a factory reset — so writing from the store cannot change what is saved.
+- **Gate (from the roadmap):** boot → store → DOM → store → save is **byte-identical** to the old path for every fixture; reload a project and diff the JSON view before/after; **zero behaviour change**; the suites stay green (including the differential, which must still pass with `savePanelState` on the store); the visual check unchanged; 0 perchance errors; and the author's map restored byte-identical after every runner.
+- **IMPLEMENTATION (2026.09.26.19):** `savePanelState()` is now `savePanelStateShape(storeJsonNow() || collectPanelState())` — the store's project object written by the same writer, with the pre-`.19` expression kept as the fallback for a missing `src/state/store.js`. `resetEverything()` builds `const fresh = defaultProject();` + `const dp = defaultPanel();` and every project-wide, page and per-panel value comes from them (the ~40 hand-written literals are gone; the two deliberate divergences are `dp.imgCount || imgCountDefaultPref` for the image-count select and the direct `hidden` attributes, neither of which is project state). Unchanged on purpose: the debounce, the `panelStateRestored` guard, `restorePanelState()`, and every structural `savePanelStateShape(...)` call site (`switchPage`, `addPage`, `deletePage`, `jsonApplyDoc`, export/import) — those write a state they *derive*, and P3's commands replace them. New read-only accessors for the harness: `window.savePanelState`, `window.__schemaModule()`. `devtests/state-diff.page.js` grew to **16 checks**: `SD14` (an edit + `window.savePanelState()` leaves exactly the store's JSON in storage, and it equals `collectPanelState()`'s), `SD15` (the same on the re-imported 3-page/24-panel fixture) and `SD16` (a factory reset matches the schema's `defaultProject()`/`defaultPanel()` field for field — 11 globals, 5 page fields, 18 panel fields). Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.19, `AI-NOTES.md` §32, `REFACTOR-NOTES.md`, `REFACTOR-ROADMAP.md` §3.4 (now COMPLETE), `devtests/README.md`, `README.md`, and this entry. **`src/manual.html` deliberately untouched** (nothing user-visible; the `.9`/`.14`/`.16` precedent). A doc repair in the same pass: the `.17` batch heading had been lost from `DEV-NOTES.md`, and the `.17`/`.16` headings from `CHANGELOG.md`, by earlier prepends.
+- **Verified:** state-layer differential **16/16**, smoke **88 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, core **30/0**, module guards **19/0** (`unspecced: []`), **0** perchance errors, the author's map restored **byte-identical after every runner** (`strays: []`, 23 keys, "Cow in field", `0442faa8`). The reset's saved state is **character-identical** before and after the change (masked FNV `0ad2fdb6`; `scratch/p0/reset-fp.js` run against both builds). Visual: `desktop-dark-grid` and `phone-dark-grid` **0 differing pixels** against the committed baselines; the `*-analysis` views differ by +222 CSS px, which an in-page A/B (pre-`.19` save path restored, same view, 0 pixels) proves is **not** this release — the analysis table's shape follows the project library, the fixture lands **4** items from its top-level `libObjects`, and those baselines have been stale since **2026.09.26.15**. One check bug found and fixed mid-run (`SD16` read `imgCountDefault` off the page object instead of the project).
+- **Then:** P3 (mutations become named commands) — the phase that turns position-identity into id-identity across add/duplicate/delete/move/reflow/batch, and the one the roadmap calls the phase that must not stall halfway.
+
+### 2026-09-27 — REFACTOR: P2 step 4 — the differential test (store vs `collectPanelState`)
+
+- **Status:** ✅ **DONE 2026.09.26.18** — the suite was written, run green and pushed in the same session. Author, 2026-09-27, verbatim: **"Saved!  Go ahead and push!  And go ahead with P2 step 4!"** (the push half of the message was the post-Save `ghPush` for 2026.09.26.17, done first; this entry is the step-4 half). Logged here on receipt, before any work, per the 2026-08-13 rule; moved here from 🕒 QUEUED, where it was recorded when step 3 shipped.
+- **What:** `REFACTOR-ROADMAP.md` §3.4 step 4 — assert that the store's project object is **identical** to today's `collectPanelState()` output, over the fixture corpus: `JSON.stringify(window.__storeJson()) === JSON.stringify(window.collectPanelState())` for every case, with the **first differing path** reported on failure.
+- **IMPLEMENTATION (2026.09.26.18):** new `devtests/state-diff.page.js` (13 checks, `SD1`–`SD13`) and its runner `devtests/run-state-diff.js` (modelled on `run-fixtures.js`: park → dump the map to `scratch/p0/parks/state-diff-<stamp>.json` → inject `fixtures/*.json` as `window.__fixtures` → run → restore → reload → verify the hash). **No app code changed** — the only `index.html` edits are the `#embeddedVersion` stamp and the pointer comment (the suite's mention, and step 4's green status). Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.18, `AI-NOTES.md` §31, `REFACTOR-NOTES.md`, `REFACTOR-ROADMAP.md` §3.4, `devtests/README.md`, `README.md`, and this entry.
+- **The 13 cases:** the author's live project; the boot store instance vs the pure `serializeProject()` (+ `STORE_VERSION === 2`); the full-page fixture (3 pages, 24 panels); **every page** of the multi-page fixture with that page on screen; a **non-current** page (its panels can only come from storage); every per-panel field driven by hand through the DOM (all three character slots incl. a `lib:char:` reference, base/extra, title, seed, image count, style, palette, custom size W/H, location + its base/extra, action, same-seed, a protected slot) with an `eqArr` on the collected model so the check cannot pass vacuously; every project-wide field; all six panel-count domains; the legacy v1 file after migration; the every-dead-key file; edits surviving a page switch away and back; a stray unknown key written straight into `comicGen.panelState` (dropped by both sides, and the stored copy left unmutated); and a full `resetEverything(true)`.
+- **Verified:** differential **13/13**, smoke **88 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, core **30/0**, module guards **19/0** (`unspecced: []`), **0** perchance errors, the author's map restored byte-identical after every runner (`strays: []`, 23 keys, "Cow in field"), and the visual check unchanged at **12/14 pixel-identical** with the two `*-json` views at the known ~0.01% and **no size change**.
+- **One harness trap found and fixed in the same session:** `run-state-diff.js`'s first draft over-escaped the page-side `__hash()` join (a literal backslash-n instead of a real newline), which reported `byteIdentical: false` on a **perfectly clean restore**. Dumping the live map and hashing it both ways in the page settled it: the real-newline hash was `bb80c43e` (the parked hash exactly) and the mis-escaped one `a48b68bf` (the reported mismatch). The fix uses `String.fromCharCode(10)`. Recorded in `DEV-NOTES.md` and in `devtests/README.md`'s traps, because the general rule — **diff the maps field by field before believing an FNV mismatch lost anything** — has now paid off twice.
+- **Gate:** met — see Verified above. Released **2026.09.26.18**, one release per step (P2-06 6a). **The store is now licensed to be read: next is §3.4 step 5** (queued below).
+
+### 2026-09-27 — REFACTOR: P2 step 3 — the store (`src/state/store.js`)
+
+- **Status:** ✅ **DONE 2026.09.26.17** — implemented, tested and pushed in the same session. Author, 2026-09-27, verbatim: **"Start it!"**, in reply to "Next up on the roadmap is P2 step 3 — the store (`src/core/store.js`: `load()`/`toJSON()`/`subscribe()` over a pure serializer of the DOM snapshot, then step 4's differential test that `store.toJSON()` equals `collectPanelState()`). Say the word and I'll start it." Logged here on receipt, before any work, per the 2026-08-13 rule.
+- **What:** the first **`src/state/`** module (`REFACTOR-ROADMAP.md` §3.4 step 3) — a plain store object with `load()` / `toJSON()` / `subscribe()`, whose loader is a **pure serializer over a snapshot** of the values `collectPageData()` reads today, so the whole thing can be tested in a Worker with no browser. `index.html` gains only the DOM adapter that builds that snapshot (`collectDomSnapshot()`), the loader entry, and a test accessor. **Nothing reads the store yet** — that is deliberate: §3.4 step 4 is the differential test (`store.toJSON()` must equal `collectPanelState()` key for key, and "until that passes, nothing reads the store") and step 5 is the release that moves the save path onto it.
+- **IMPLEMENTATION (2026.09.26.17):** `src/state/store.js` shipped — `STORE_VERSION` (2), `createStore()` (`load` / `toJSON` with its dirty-flag cache / `subscribe` returning its own disposer / `unsubscribe(listener)` / `getSnapshot` / `isDirty` / `listenerCount`, a throwing listener swallowed), `serializeProject(snapshot)` (the envelope in `collectPanelState()`'s exact key order; the stored page map shallow-copied so the snapshot is never mutated; the live page object inserted as-is so `pages[currentPage] === snapshot.page`; `library`/`kept` sliced), `ensurePages` (a deliberate pure copy of `index.html`'s, which all ~30 existing callers still use — the strangler rule, with the agreement pinned by a test), `defaultPageData`, `pageKey`, `normaliseSnapshot`. `index.html`: `src/state/store.js` added to `GH_SRC_FILES` (12 entries), a `store` slot in `coreModules`, `coreLoad('store', './src/state/store.js', …)` binding `createProjectStore` / `serializeProject`, `let projectStore` + `initProjectStore()` in `bootApp()` (a no-op if the module failed to load), `collectDomSnapshot()` (the DOM half of the contract) and `storeJsonNow()`, and the read-only window surface `collectDomSnapshot` / `collectPanelState` (newly exported for the harness) / `initProjectStore` / `__storeJson` / `__storeModule`. Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.17, `AI-NOTES.md` §30, `REFACTOR-NOTES.md`, `REFACTOR-ROADMAP.md` §3.4, `devtests/README.md`, `README.md`, and this entry. **`src/manual.html` deliberately untouched** (nothing user-visible; the `.9`/`.14`/`.16` precedent).
+- **Harness:** `devtests/diff-core.js` discovers `src/core/` + `src/state/` and guards the new module's surface and manifest entry (**19/0**); `devtests/core.test.js` imports it and gained four checks — the envelope (key order, `theme`, the live page winning over the stored copy, the snapshot left unmutated), the store API (cached `toJSON`, the dirty flag, subscribe/unsubscribe, a throwing listener), the `ensurePages` agreement with the inline copy (eight stored shapes), and a null/junk snapshot still serialising a valid project (**30/0**).
+- **Verified:** smoke **88 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, core **30/0**, module guards **19/0** (`unspecced: []`, 12 files in the manifest, 8 modules, 39 declared names), **0** perchance errors, the author's map restored byte-identical after every runner (`strays: []`, 23 keys, "Cow in field"), visual **12/14 pixel-identical** with the two `*-json` views at the known ~0.01% (168/169 px) and **no size change at all**, and the live equality spot-check on the author's own project: `JSON.stringify(window.__storeJson()) === JSON.stringify(window.collectPanelState())` is **true**.
+- **The park hash moved `cfa29083` → `a5708568`, and it is not this release:** a field-by-field diff against the previous session's park file shows the only changed key is `comicGen.githubLastBackup`, the timestamp written by this session's `ghPush` of `.16`. (A useful class of false alarm: a GitHub backup writes a timestamp key.)
+- **Gate:** met — see Verified above. Released **2026.09.26.17**, one release per step (P2-06 6a). **Next: §3.4 step 4 — the differential test** (queued below), then step 5, which moves the save path onto the store.
+
+### 2026-09-27 — REFACTOR: P2 step 2b (second half) — the project owns its kept images (the `kept` array)
+
+- **Status:** ✅ **DONE 2026.09.26.16** — implemented, tested and pushed in the same session. The scope was recorded in the .15 entry ("The `kept`-images half of §3.4 step 2b ... follows as **2026.09.26.16** — a hook with no UI until the ⤓ Keep feature is greenlit"); the author greenlit it: **"Yes, do go ahead with 2026.09.26.16!"** (2026-09-27).
+- **What:** a `kept` array on the project (`settings.kept`, inside `comicGen.panelState`) — the project's own list of kept images, and the container the ⤓ Keep feature will write into. **No UI.** It is saved, exported, imported, JSON-edited and reset like any other project data.
+- **IMPLEMENTATION (2026.09.26.16):** `src/core/schema.js` gained `normaliseKept` (array-of-objects, shallow copies, **unknown keys and field types preserved — it invents no shape**), `kept: []` on `defaultProject()`, `normalise()` normalising `kept` only when the key is present, and `validate()` flagging a non-array `kept` or a non-object entry. `index.html` gained `projectKept`, `projectKeptArray()`/`loadKept()`/`saveKept()`/`normaliseKeptArray()`/`initProjectKept()` (exported on `window`), `kept:` in `collectPanelState()`, the file's `settings.kept` in `applyImportedSettings`, the round-trip pair in `jsonApplyDoc`, `projectKept = []` in `resetEverything`, and a **locked** `settings.kept` in `jsonFieldClass`. No seeding (there is nothing to seed from); nothing writes to it yet. Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.16, `AI-NOTES.md` §3/§29, `REFACTOR-NOTES.md`, `REFACTOR-ROADMAP.md` §3.4, `devtests/README.md`, `README.md`, and this entry. `src/manual.html` deliberately untouched.
+- **Verified:** smoke **88 pass / 0 fail / 4 manual** (new group `G18`, checks 89–91), generation **18/0** (+1 manual), fixtures **18/0**, core **26/0**, differential (guards) **17/0**, **0** perchance errors, the author's map restored byte-identical after every runner (`cfa29083`, 23 keys, "Cow in field", `strays: []`), and the visual check **12/14 pixel-identical** (the two `*-json` views at the known 0.01%, now 180 px — the new read-only `"kept": []` text row; no size change, so no baseline regeneration). The park hash moved `5488036e` → `cfa29083` (the new field landing).
+- **OPEN — for the ⤓ Keep feature round (do NOT decide here):** what a kept entry holds (image + prompt + seed + id?) and **where the bytes live** — `panelState` is autosaved on a 250 ms debounce and the origin quota is ~5 MB while a kept image is ~121 KB, so "in `panelState`, autosaved" is a non-starter; the options are to exclude `kept` from the ordinary autosave, store the bytes in IndexedDB, or hold them in memory until the file is saved. The export-side decisions stand (compact export button; ~40 MB warning).
+- **Gate:** met — see Verified above. Released **2026.09.26.16**, one release per step (P2-06 6a). **Step 2b is now COMPLETE.** Next: §3.4 **step 3, the store**.
+
+### 2026-09-26 — REFACTOR: P2 step 2b — the project owns its library (the browser library becomes a catalogue)
+
+- **Status:** ✅ **DONE 2026.09.26.15** — implemented, tested and pushed in the same session. Author greenlit: **"Saved!  Go ahead and push, then continue."** (2026-09-26), logged on receipt before any work per the 2026-08-13 rule. The shape is the author's own round-2 decisions (`REFACTOR-NOTES.md` §1b, verbatim in `questions/REFACTOR-ROUND-2-ANSWERS.md`): **P2-02 2a** two sections ("This project" then "My catalogue"), **2b** importing a file *offers* to copy its objects in rather than replacing anything, **2c** deleting a referenced object warns and then lets the author clear the references / leave them as plain text / cancel, and **P2-02 4c/§3** the project owns its library with the browser library kept as a catalogue to copy from.
+- **What:** `settings.library` becomes the project's own library (it lives in `comicGen.panelState`, so it saves, exports, imports and JSON-edits with the project); `comicGen.libObjects` stays as the browser-wide **catalogue**; `loadLibraryObjects()`/`saveLibraryObjects()` keep their names but now address the *project's* library, so all ~25 existing call sites — and every `lib:<type>:<id>` panel reference — resolve against the project. An older project (no `library` in its state) is seeded from the catalogue the first time it loads, so nothing is lost and its existing references keep resolving. A project import takes the file's own library (top-level `libObjects` in v1/v2 files, legacy `charLibrary`/… for v1) and **never touches the catalogue** — the "importing someone's file rewrote my library" class of surprise is gone.
+- **UI:** 📚 Library renders **"📁 This project"** (the editable buckets, `+` add, ✎ rename-with-sweep, 🗑) then **"🗂 My catalogue"** (the browser-wide set: name/description editable, ⤓ copy-into-this-project, 🗑 — no ✎, because the sweep is a project-library operation). `⬆ Import…` moves into the catalogue section (its historical job: pull objects out of a saved file to reuse), and `resetEverything`'s "also delete my saved library objects" now clears both.
+- **Delete (2c):** a three-way choice — **⤓ Leave the text in the panels** (the slot goes back to "No X Selected", the panel keeps every word it had), **✕ Clear the references and the text** (the slot goes back to "No X Selected" and its description is cleared), or **Cancel** — with the reference count in the warning.
+- **IMPLEMENTATION (2026.09.26.15):** `settings.library` (inside `comicGen.panelState`) is the project's own library and `comicGen.libObjects` the catalogue; `loadLibraryObjects()`/`saveLibraryObjects()` keep their names but address the project (so all ~25 call sites and every `lib:<type>:<id>` reference resolve against it), with new `loadCatalogue()`/`saveCatalogue()`, `projectLibraryArray()`, `normaliseLibArray()`, `initProjectLibrary()` (the boot-time seed, written straight into the stored state rather than through the debounced `schedulePanelSave`), `deleteCatalogueObject`, `copyCatalogueItemToProject` (⤓), `copyProjectItemToCatalogue` (⤒), `sweepDeleteAcrossPages`, `syncDeleteFieldsToDom` and `applyLibraryDelete(id, clearText)`. `renderLibrary()` renders **📁 This project** (editable rows, +, ✎, ⤒, 🗑) then **🗂 My catalogue** (name/desc editable, ⤓, 🗑); the delete dialog is the three-way leave/clear/cancel; `buildExportData` attaches the project library (mirrored in top-level `libObjects`), `applyImportedSettings`/`jsonApplyDoc` take the file's library and never touch the catalogue, the JSON editor locks `libObjects` and edits `settings.library`, and `resetEverything`/`newProject` cover both stores. `src/core/schema.js` gains `normaliseLibrary`/`normaliseLibType` plus `library` in `defaultProject()`, normalised only when present. A live light/dark check of the new Library menu then tightened `.btn-copy-lib:disabled` to `opacity: 0.45` + `cursor: not-allowed` (keeping the teal fill), because the first draft's `background: var(--surface-3)` made a disabled ⤓ look like a bare grey glyph on the light theme. Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.15, `AI-NOTES.md` §3/§10/§11/§28, `REFACTOR-NOTES.md`, `REFACTOR-ROADMAP.md` §3.4, `devtests/README.md`, `README.md`, `src/manual.html` and this entry. **Verified:** smoke **85 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, core **25/0**, differential (guards) **17/0**, **0** perchance errors, the author's map restored byte-identical after every runner (`5488036e`, 23 keys, "Cow in field", `strays: []`), and the visual check **12/14 pixel-identical** with the 2 `*-json` views at the known ~0.01% (141/142 px) — no baseline regeneration. The park hash moved from `7a1123b0` because the first load of the new build migrates the author's own project (it writes the seeded `library` into `comicGen.panelState`).
+- **Gate:** the five suites green at their updated numbers (smoke 85/0/4, generation 18/0, fixtures 18/0, core 25/0, diff-core 17/0), 0 perchance errors, the author's map restored byte-identical after every runner, and the visual baseline re-checked (the library menu is in no captured view, so no regeneration). Released **2026.09.26.15**. The `kept`-images half of §3.4 step 2b (`kept` array on the project) follows as **2026.09.26.16** — a hook with no UI until the ⤓ Keep feature is greenlit.
+
+### 2026-09-26 — REFACTOR: P1 cleanup, part 2 — delete the last two in-file copies (`prompt`, `library-core`)
+
+- **Status:** ✅ **DONE 2026.09.26.14** — deleted, tested and pushed in the same session. Author, 2026-09-26, verbatim: **".14 is next. Let's do it!"** — logged here on receipt before any work, per the 2026-08-13 rule.
+- **What:** remove the in-file implementations of the last two modules that have survived a release (`composePanelPrompt` in `index.html`, and the `library-core` block — `LIB_TYPE_PREFIX`, `libIdFor`, `libRefValue`, `isLibRef`, `parseLibRef`, `libRefNeedles`, `countLibRefs`, `libRefEntry`, `libRefDesc`, `normalizeLibType`, `extractLibraryItems`), leaving only the declared names for `coreLoad` to fill, exactly as `zip`/`jsontext`/`keywords`/`seeds` were done in 2026.09.26.9. `newLibraryId` (not a module export) stays. `devtests/diff-core.js` then drops its differential half and the inline-extraction machinery, keeping its surface/manifest/declaration guards (with `prompt` and `library-core` added to the "the inline copies are really gone" list).
+- **IMPLEMENTATION (2026.09.26.14):** `composePanelPrompt` is now `let composePanelPrompt;` and the library block is one `let LIB_TYPE_PREFIX, libIdFor, libRefValue, isLibRef, parseLibRef, libRefNeedles, countLibRefs, libRefEntry, libRefDesc, normalizeLibType, extractLibraryItems;` line; `newLibraryId` stays as a function beside it (it was never a module export). Safe because nothing in either group runs at IIFE time — `composePanelPrompt` is reached only through `buildPanelPrompt`, and every library helper only from inside functions. Harness: `devtests/diff-core.js` lost `specs`, the `braceEnd`/`grab` extraction machinery and the three stranded zip/jsontext helpers, keeping the four guards and extending the "deleted copies are really gone" list from 17 to **29** names (17 guards' checks total); `devtests/core.test.js`'s `wanted` list dropped from 14 names to the two DOM-bound ones (`getEffectiveKeywords`, `applyPreset`) and picks the rest up from the merged modules — still **24/0**. Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.14, `AI-NOTES.md` §22/§27, `REFACTOR-NOTES.md`, `REFACTOR-ROADMAP.md` §3.3, `devtests/README.md`, `README.md`, and this entry. `src/manual.html` deliberately untouched (no user-visible change; the `.9` precedent). **Verified:** smoke **85 pass / 0 fail / 4 manual**, differential (guards only) **17/0** (`unspecced: []`), core **24/0**, generation **18/0** (+1 manual), fixtures **18/0**, **0** perchance errors, the author's map restored byte-identical (`7a1123b0`, 23 keys, "Cow in field") after every runner (`strays: []`), and the visual check **12/14 pixel-identical** with the 2 `*-json` views at the known ~0.01% (158/162 px, maxDelta ~70) — no baseline regeneration and no manual change needed.
+- **Gate:** the four suites stayed green, `diff-core` green over its remaining guards, 0 perchance errors, the author's map restored byte-identical after every runner, and the 14 screenshots unchanged (no user-visible change). Release **2026.09.26.14** — one release per step. **This completes P1.** Next: P2 step 2b (`REFACTOR-ROADMAP.md` §3.4).
+
+### 2026-09-26 — FEATURE: rename a library character/location and propagate the new name into the panels
+
+- **Status:** ✅ **DONE 2026.09.26.13** — implemented, tested and pushed in the same session. Author greenlit: **"Saved!  Go ahead and push and then implement!"** after answering all seven questions. Logged on receipt (QUEUED 2026-09-26, per the 2026-08-13 rule); recon and the question batch done before implementation, as the author asked.
+- **Author, 2026-09-26, verbatim (original request):** "I'd like the Library to have a name changer for characters and locations, which will propagate the name change to the panels where the library item appears. Name change parameters: * Changes the item's name in its main Library entry; the name change propagates to the panels where the item has been selected. (For example, if I have a character named John, and I change John's name to Bill, I want every panel where John was selected to have Bill in the same slot.) * If the item's name (exact match) appears in the Library description, change it there as well (via search/replace). * In panels where the item appears, if the item's name (exact match) appears in the Basic Description field, change it there via search/replace. * In panels where the item appears, if the item's name (exact match) appears in This Panel — Extra Description, change it there via search/replace * In panels where the item appears, if the item's name (exact match) appears in the Panel Action Prompt, change it there via search replace."
+- **Recon notes (turned into the seven questions):** a panel selects a library item by reference (`lib:char:<id>` / `lib:loc:<id>`) and the dropdown renders the object's live name, so the slot itself needs NO rewriting — renaming the object already renames every slot that references it. What DOES need a search/replace pass: the object's `desc` (Library description), and — in every panel that references that object — that character/location's per-panel `base`/`extra` textarea, the panel `locBase`/`locExtra` fields, and the panel `action` field. Open questions for the author: whether the panel text fields to sweep are exactly those listed (per-slot base/extra + action), whether "exact match" means whole-word only (so "Johnny" is untouched) or any substring, whether matching should be case-sensitive, whether the old name should also be replaced when it appears as a different object's name, and whether the rename should be undoable.
+- **LOCKED SPEC (the author's seven answers, 2026-09-26):** 1) Scope — the item's Library description, plus, in every panel on every page where the item is selected, that item's Basic Description and This-panel extra description, and the panel's Action Prompt. Untouched: panel titles, page titles/summaries, the global keyword fields, other slots'/items' descriptions, and the frozen 🕘 Generated-Prompt history. 2) Match — **whole-word and case-sensitive** ("John" → "Bill" leaves "Johnny" and "john" alone). 3) UI — a dedicated **✎ Rename** action per library row opening a small preview dialog ("Bill will replace John in N panels — X descriptions, Y actions") that applies only on confirm; the plain name box still renames the label with no sweep. 4) Collisions — **block**: refuse a new name that matches an existing library item. 5) Undo — none (the confirm-with-counts dialog is the safety net; a real undo stack waits for P2). 6) **Characters and locations only**, not Actions. 7) Only the renamed item's own fields are rewritten — never another item's, even when another item in the same panel shares the name.
+- **Implementation notes:** the panel slot already renders the object's live name (`updatePanelSelects()`), so only the text sweep is new. Whole-word/case-sensitive replacement uses `(^|[^A-Za-z0-9_])<escaped name>(?![A-Za-z0-9_])` (no `\b`, so a name whose edges are not word characters still matches); the name is regex-escaped. Cross-page edits go through `collectPanelState()` + `savePanelStateShape()` (like `analysisSetPanelStyle`) and the current page's DOM is then synced from the saved state; `refreshAllPanelLineDescs()` / `updatePanelSummary()` / `renderLibrary()` / `updatePanelSelects()` and the 📊 Analysis overlay (when open) are refreshed, and `schedulePanelSave()` runs.
+- **IMPLEMENTATION (2026.09.26.13):** new helpers beside the library code — `escapeRegExpLiteral`, `libraryNameRegex` (`(^|[^A-Za-z0-9_])<escaped name>(?![A-Za-z0-9_])`, global, no `i` flag), `countWholeWordName`, `replaceWholeWordName`, `libraryRenameSlug`, `libraryNameTaken`, `sweepPanelForRename`, `sweepRenameAcrossPages`, `syncRenameFieldsToDom`, `renamePlural`, `applyLibraryRename` and `openLibraryRename` (the last two exported as `window.openLibraryRename` / `window.applyLibraryRename`). `renderLibrary()` gives every Character and Location row a `✎` button (class `btn-rename-lib`, between the description and the trash can; Action rows have none) that calls `openLibraryRename(o.id)`. The dialog is the app's own `showChoiceDialog` with a `#renameInput` text box and a live `#renamePreview` line, a disabled-on-invalid confirm button, Enter-to-confirm and a `#renameInput` focus/select; it blocks a duplicate name, an empty name and the unchanged name, and previews exactly what will change (`"Bill" will replace "John" in N panels — X descriptions and Y action prompts`, plus a note when the library description changes or when nothing else mentions the old name). `applyLibraryRename` sweeps the object's `desc` plus, for every panel on every page that selects the object, that item's `base`/`extra` (or `locBase`/`locExtra`) and the panel's `action`, through `collectPanelState()` → `savePanelStateShape()`, then writes the current page's DOM back from the saved state (`syncRenameFieldsToDom`), rebuilds the slot options (`updatePanelSelects`), re-renders the library, refreshes the edited-badges and every panel summary, refreshes the 📊 Analysis overlay when it is open, and schedules a save. CSS: `.btn-rename-lib` (+hover), `.rename-row`, `.rename-preview` (+`.bad`). **Verified:** smoke **85 pass / 0 fail / 4 manual** (new group `G17`, checks 84–88: the dialog previews and refuses a duplicate, the sweep is whole-word/case-sensitive and touches only that item's fields, the slot label + composed prompt follow, another page is swept, the library description is swept), differential **23/0**, core **24/0**, generation **18/0**, fixtures **18/0**, **0** perchance errors, the author's map restored byte-identical (`1fc18dde`) after every runner (`strays: []`), and the visual check **12/14 pixel-identical** (the 2 `*-json` views at the known ~0.01% wobble) — the new button is not in any captured view, so the baseline needed no regeneration. Live probes: the dialog renders and the preview counts update in dark and light themes at 1440 px and at 390 px (no horizontal overflow), and the ✎ button is visible between the description and the 🗑 button on both the Character and Location rows. Docs: `CHANGELOG.md` 2026.09.26.13, `DEV-NOTES.md` BATCH 2026.09.26.13, `AI-NOTES.md` §26, `REFACTOR-NOTES.md` running log, `REFACTOR-ROADMAP.md` §3.3 (the `prompt`/`library-core` deletion moves to **2026.09.26.14**), the repo `README.md`, `devtests/README.md` and the shipped manual.
+
+### 2026-09-26 — FEATURE: a per-panel Color Palette override (dropdown after Style, before Size)
+- **Status:** ✅ **DONE 2026.09.26.12** — shipped, tested and pushed the same session; the author said "Proceed with the Color Palette implementation now" (first of a two-feature message). Logged on receipt, before any work, per the 2026-08-13 rule.
+- **Author, 2026-09-26, verbatim:** "Add the Color Palette dropdown chooser to the panels, after Style and before Size.  Thank you!" — with "if you have any questions about this part, I trust your recommendations, unless the part of the change you're asking about would break something."
+- **What:** a Color Palette select in every panel's header row, immediately after Style and before Size, with a `[Default (Global)]` first option that follows the global Color Palette dropdown — exactly parallel to the existing per-panel Style override. Stored per panel as `palette`, so it is saved, exported, imported, duplicated, moved, cut/pasted and shown in the 🧩 JSON editor for free.
+- **Semantics (decided, non-breaking):** a panel with no override keeps using the global keyword fields verbatim (unchanged); a panel with a Style override behaves exactly as it does today when its palette is left on Default; a panel with a Palette override composes the panel's effective style (its own Style override, else the global Art Style dropdown) with the panel's palette. Any override clears that panel's manual prompt override, as a Style change already does.
+- **Gate:** the four suites stay green, the differential finds zero differences, 0 perchance errors, the author's map restores byte-identical, and a visual pass confirms the new select renders in both themes at phone + desktop widths. Release `2026.09.26.12` (one release per step).
+- **IMPLEMENTATION (2026.09.26.12):** `#panel-palette-<i>` in every panel's header row (between Style and Size; options built in `updatePanelSelects()` from `COLOR_PALETTES`); `collectPageData`/`restorePanelState` carry a per-panel `palette` field, so save/export/import/duplicate/move/cut/paste and the 🧩 JSON editor (`JSON_PANEL_FIELDS` + a `case 'palette'` validator) all carry it; `getPanelKeywords(i)` composes the panel's effective style (own || global `presetStyle`) with its effective palette (own || global `presetPalette`) whenever either override is set, and falls back to the global keyword fields verbatim when neither is — so existing projects are byte-unchanged; `onPanelPaletteChange(i)` clears the panel's prompt override and schedules a save (exported); `resetEverything()` clears it; `schema.js` gained `palette` in `STRING_FIELDS` + `defaultPanel()`. The 📊 Analysis matrix gained a `🌈` palette chip + editor between its style and size chips. **Verified:** differential **23/0**, core **24/0** (its default-panel key list updated), smoke **80 pass / 0 fail / 4 manual** (new `G7:47`: a palette override changes only that panel's prompt), generation **18/0** (+1 manual), fixtures **18/0** (the full-page fixture's panel 4 now carries `"sepia"` and FX2 asserts the saved + rendered value), **0** perchance errors, park hash `ccdd4096` restored byte-identical after every runner (`strays: []`). Live probes confirmed: the select renders between Style and Size in dark/light at desktop and phone widths with no overflow; a `neon` override changed panel 1's prompt and left panel 2's alone; the value persisted to `comicGen.panelState`; `duplicatePanel` carried `sepia` to the copy; the JSON editor text and the Analysis chip both showed it. The screenshot baseline was **regenerated** (each panel header gains one row: +74 CSS px over the 6-panel desktop grid, +214 px on the phone column) — 12/14 pixel-identical, the 2 `*-json` views differing by ~0.01% (the editor's text rows). `make-baseline.js`'s `grid` subject was aligned with `visual-diff.js`'s so the two recipes agree.
+
+### 2026-09-26 — REFACTOR: P1 cleanup — delete the four in-file copies that have survived a release (`zip`, `jsontext`, `keywords`, `seeds`)
+- **Status:** ✅ **DONE 2026.09.26.9** — deleted, tested and pushed in the same session. Author, 2026-09-26, verbatim: **"Saved!  Go ahead to push.  Then do cleanup, then schema."** — "cleanup" is the deletion `REFACTOR-ROADMAP.md` §3.3 and `REFACTOR-NOTES.md` §2 had scheduled for the release after the modules survived one. Logged on receipt, before any work started, per the 2026-08-13 rule.
+- **What:** remove the in-file implementations of the four modules that had survived a full release (`zip`, `jsontext`, `keywords`, `seeds` — shipped 2026.09.26.5), leaving only the declared names for `coreLoad` to fill; make the boot wait for the modules and *report* a module that cannot load instead of silently degrading (the in-file fallback was the thing being deleted).
+- **Gate:** the differential finds zero differences, the four suites stay green, 0 perchance errors, the author's map restores byte-identical after every runner, the 14 screenshots are unchanged (A/B against the previous build in the same session), and the new failure path is tested with a deliberately broken build. Release **2026.09.26.9** — one release per step (the author's 6a answer).
+- **IMPLEMENTATION (2026.09.26.9):** the six in-file implementations (17 names, 357 lines, ~16 KB) came out of `index.html` and each is now a bare `let` the loader fills; `coreLoad` collects a promise per module and `coreReady = Promise.all(coreLoads)` resolves to the names that failed (created *after* the six calls — before them it captured an empty array and booted with everything undefined); the flat init block became `bootApp()` behind `coreReady.then(...)`, with `window.appReady` for tests and `coreLoadWarning(names)` showing a fixed bar at the top of the page when a module could not load. `devtests/core.test.js` now **imports the modules** (18 checks, was 14) and `devtests/diff-core.js` covers the two modules that still keep an in-file copy plus three guards (manifest, "the deleted copies are really gone", "every module-provided name is still declared") — 21 checks, `unspecced: []`. `ghPush` was fixed: it had been pushing the *platform wrapper* page as `index.html` (725 KB) instead of the generator's source, which it now extracts from the served page's `outputTemplate`. `devtests/park.js` no longer re-parks the live map when injected on its own (`window.__parkReady = true;`). Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.9, `AI-NOTES.md` §22, `REFACTOR-NOTES.md` §2 + running log, `REFACTOR-ROADMAP.md` §3.3, `devtests/README.md`.
+- **Author, 2026-09-26, verbatim:** "Saved!  Go ahead to push.  Then do cleanup, then schema."
+
+### 2026-09-26 — REFACTOR: P2 step 1 — panel ids + `core/schema.js` (✅ DONE 2026.09.26.10)
+- **Status:** ✅ **DONE 2026.09.26.10** — shipped, tested and pushed the same session. Author, 2026-09-26, verbatim: **"The ids are fine being written into the files.  Go ahead and start P2 step 1!"** — logged here before any work, per the 2026-08-13 rule. (The 2026.09.26.9 build was pushed first in the same turn: 12 files, commit `12cee2e5`.)
+- **What:** give every panel a stable `id` (created with `addPanel`/`duplicatePanel`/paste/import, migrated on load) and add `src/core/schema.js` — `defaultProject()`, `defaultPage()`, `defaultPanel()`, `normalise()`, `validate()` — the first step of P2 (a real state layer). Decisions of record are `REFACTOR-NOTES.md` §1b; one release per step, release note leading with plain language and ending with the numbers.
+- **IMPLEMENTATION (2026.09.26.10):** `src/core/schema.js` shipped (`SCHEMA_VERSION`, `PANEL_COUNT_OPTIONS`, `newPanelId`, `defaultChar`, `defaultPanel`, `defaultPage`, `defaultProject`, `normalise`, `validate`; the seventh module and the first to import a sibling, `./keywords.js`) and joined `GH_SRC_FILES`. `newPanelId()` = `p-<base36 time>-<6 base36 chars>`, minted in `collectPageData`, set in `restorePanelState`, given fresh to every copy (`duplicatePanel` both branches, `batchDuplicatePanels`, `panelPasteAction`); `applyImportedSettings` normalises the imported settings and `buildExportData` exports `normaliseProject(collectPanelState())`; the JSON editor **locks** the `id` field. `normalise` keeps unknown keys and is idempotent, and folds an out-of-domain `panelCountSel` into `custom` + `panelCountCustom` — the one deliberate behaviour change (the fix `REFACTOR-NOTES.md` §3 asked for). **Verified:** differential **23/0** (`unspecced: []`), core **24/0**, smoke **79 pass / 0 fail / 4 manual** (new group `G16`, checks 78–83), generation **18/0** (+1 manual), fixtures **18/0** (new `FX17`/`FX18`), **0** perchance errors, park hash `beead0c6` restored byte-identical after every runner (`strays: []`), and the visual check 14/14 — 7 pixel-identical, 5 dark views at exactly 3 antialiasing px, 2 `*-json` differing only where the new `id` lines are drawn. The long-standing "224 CSS px" `visual-diff` artefact was solved in the same session (it was the capture recipe — the `grid` subject called `switchMenu('file')`, which toggles). Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.10, `AI-NOTES.md` §22/§23, `REFACTOR-NOTES.md` §2/§5 + running log, `REFACTOR-ROADMAP.md` §3.3/§3.4, `README.md`, `ISSUES.md`, `devtests/README.md`. **Next P2 work:** the project-owned library + kept images (§3.4 step 2b), then the store (step 3).
+- **Shape:** additive and non-destructive (no behaviour change beyond the documented `panelCountSel` fold); `coreLoad` + a module in `GH_SRC_FILES` + tests, as with P1.
+### 2026-09-26 — REFACTOR: P1 steps 4 and 5 — core/prompt.js and core/library-core.js
+- **Status:** ✅ **DONE 2026.09.26.8** — both modules extracted, verified and pushed in the same session. The author's "Saved! Go ahead and push, then proceed!" (2026-09-26) was the go-ahead; logged here before any work, per the 2026-08-13 rule.
+- **What:** the last two pure-logic modules of P1 (`REFACTOR-ROADMAP.md` §3.3 steps 4 and 5) — `core/prompt.js` (`buildPanelPrompt` **minus its DOM reads**; the DOM reader stays in `index.html` as a thin adapter) and `core/library-core.js` (`lib:<type>:<id>` parsing, reference counting, `extractLibraryItems`). Same strangler pattern as the first four: `coreLoad(name, path, apply)`, the inline copy kept as the fallback, the module added to `GH_SRC_FILES`, and `devtests/diff-core.js` extended to compare the module against the inline copy.
+- **Gate:** the differential suite finds zero differences, the four suites stay green, `visual-diff`'s 14 views are unchanged, 0 perchance errors, and the author's map restores byte-identical (`1c13afe4`). Release 2026.09.26.8 — one release per step, per the author's 6a answer.
+- **IMPLEMENTATION (2026.09.26.8):** `src/core/prompt.js` (`composePanelPrompt` — `buildPanelPrompt` minus its DOM reads, which stayed in `index.html` as `collectPanelPromptInput` plus a three-line adapter) and `src/core/library-core.js` (`LIB_TYPE_PREFIX`, `libIdFor`, `libRefValue`, `isLibRef`, `parseLibRef`, `libRefNeedles`, `countLibRefs`, `normalizeLibType`, `extractLibraryItems`, `libRefEntry`, `libRefDesc`) shipped, loaded through two more `coreLoad` blocks and added to `GH_SRC_FILES` (now 10 files). **Verified:** differential **31/0** over ~4,500 generated cases across 6 modules, core 14/0, smoke 73/0/4, generation 18/0, fixtures 16/0, 0 perchance errors, and the author's map restored byte-identical after every runner. The park hash is now `0ab7c060` — it moved from `1c13afe4` because their map also holds `comicGen.keepAwake` and the round-2 form's draft/sent keys, which is expected. `visual-diff`: an A/B against the previous build in the same session produced identical numbers for both, so nothing changed on screen (the six dark captures being 112 px taller than the stored baseline is the documented session-order artefact). Harness fixes this batch: `run-smoke/gen/fixtures` and `visual-diff/make-baseline` now compare page-side hashes and filter the redacted token before hashing; `G14:76` no longer assumes an absent keep-awake key. Docs: `DEV-NOTES.md` BATCH 2026.09.26.8, `AI-NOTES.md` §22, `REFACTOR-NOTES.md` §2, `REFACTOR-ROADMAP.md` §3.3, `devtests/README.md`.
+- **Author, 2026-09-26, verbatim:** "For P2-01, defaults. / Saved!  Go ahead and push, then proceed!"
+
+### 2026-09-26 — DOCS/FORM: ROUND 2 of the refactor questions (P2) + the outstanding BUG-01 follow-up
+- **Status:** ✅ **DONE 2026.09.26.7** — both deliverables shipped the same session (see the IMPLEMENTATION bullet). The author asked for both in one message ("Remind me of what answers you need... I'll give you those, and then let's do the round-2 question batch for P2 as well."). Logged on receipt, before any work, per the 2026-08-13 rule.
+- **Deliverable 1 — the BUG-01 follow-up (questions only; no work until answered).** The five questions from the 2026-09-22 entry are unchanged and are now ticket `BUG-01` inside the form: does anything actually break, the red console line, how often and where, browser + extensions, and whether a workaround is wanted. The console line is the only thing that can pin the cause, because the platform's dialog hides the exception text for engine-located errors.
+- **Deliverable 2 — round 2 of the refactor questions, scoped to P2.** Seven tickets: `BUG-01`, `P2-01` projects become first-class (switching, what loads at startup, what a Recent entry remembers), `P2-02` the project's own library vs the browser catalogue (the library UI, import semantics, deleting a referenced object), `P2-03` kept images inside the project file (a compact export, browser copies, size warnings), `P2-04` old files / version stamps / the upgrader (how far the ladder reaches, what the upgrader hands back, the JSON editor's fate), `P2-05` autosave + undo + where the GitHub backup points, `P2-06` P2's release cadence and what each release note shows.
+- **Shape:** `src/round2-form.html` — the round-1 form's shell and GitHub submit path, with `FORM_META.id = yacbpg-round2-2026-09-26` so its drafts and answers cannot collide with round 1's — opened with `window.__openRound2Form()`, listed in `GH_SRC_FILES`, answers written to the repo's `tickets/` folder as in round 1. Release: **2026.09.26.7** (dev tool + docs only; the app's behaviour is untouched).
+- **IMPLEMENTATION (2026.09.26.7):** `src/round2-form.html` shipped (the round-1 shell with a new `FORM_META.id` and a new `TICKETS` data block — 7 tickets, 25 questions), `window.__openRound2Form()` added beside the other dev-form openers, the file added to `GH_SRC_FILES`, the `#embeddedVersion` stamp and `CHANGELOG.md` bumped to 2026.09.26.7, and the doc comment at the top of `index.html` extended. Verified live in the preview: 7 tickets / 25 questions render, 17 selects / 10 checkboxes / 36 text fields, title + intro from `FORM_META`, 0 console errors, and a capture + vision pass show the cards laid out and legible. `DEV-NOTES.md` BATCH 2026.09.26.7, `AI-NOTES.md` §21 and `REFACTOR-NOTES.md` §2/§4 updated.
+- **ANSWERED 2026-09-26 10:10** (sent in chat from the form; verbatim in `questions/REFACTOR-ROUND-2-ANSWERS.md`, digested in `REFACTOR-NOTES.md` §1b). `BUG-01` closed — not seen since, nothing misbehaves, no console line available; they will re-report it with the console text if it returns, and the platform report `923578bb` stays as the record. The P2 decisions: a Recent entry remembers nothing beyond the project data; the library UI gets two sections ("This project" / "My catalogue"); an import *offers* to copy its objects in; deleting a referenced object warns and then offers clear-references / leave-as-plaintext / cancel (today's behaviour — a warning carrying the reference count, then delete, with the slots falling back to "No X Selected" — was explained to the author); kept images get two export buttons (full + compact), the file is the ONLY home (no browser copy), warn at ~40 MB; the migration ladder covers v2 onward with a download-only upgrader; the JSON editor stays an editor; autosave is panel-data-only and user-configurable; undo is 50 deep and survives a reload; GitHub backups become one file per project in `projects/`; one release per P2 step, notes leading with plain language then the numbers. **Two questions came back blank** — `P2-01` 1a/1b — and the author said "For P2-01, defaults." the same day, so both are the recommended defaults (switch: save the current project to Recent, then switch, no prompt; startup: reopen last time's project). **Nothing is outstanding.**
+
+### 2026-09-26 — FEATURE: keep the browser tab awake while the AI helper works (near-silent audio loop, opt-in)
+- **Status:** ✅ **DONE 2026.09.26.6** — implemented, verified live and pushed on 2026-09-26 (see the IMPLEMENTATION bullet, `CHANGELOG.md` 2026.09.26.6, `DEV-NOTES.md` BATCH 2026.09.26.6 and `AI-NOTES.md` §20).
+- **IMPLEMENTATION (2026.09.26.6):** new browser preference `comicGen.keepAwake` (**off by default**), a checkbox in **Edit → Preferences → Generation** with a small `#keepAwakeState` state line, and a Web Audio `AudioContext` → `OscillatorNode` (220 Hz) → `GainNode` at `KEEP_AWAKE_GAIN = 0.0001` (−80 dBFS). That is the whole mechanism: both engines exempt a page that is *playing audio* from background-timer throttling, and they test it differently — Chromium's Web Audio audibility is literally `energy > 0` (so the gain must not be 0), and Firefox's `TimeoutManager::IsActive()` is true whenever any `AudioContext` in the window is `running` (so level does not matter there). The loop starts at the author's first click (autoplay policy: an armed `pointerdown`/`keydown`/`touchstart` listener, never an `AudioContext` before a gesture — which is what keeps Firefox's console clean), self-heals on `visibilitychange`/`pageshow`, and stops instantly when the box is unticked. Exported: `applyKeepAwake`, `startKeepAwake`, `stopKeepAwake`, `keepAwakeStateText`, `onPrefKeepAwakeChange`. **Verified:** 77 smoke checks (73 pass, 4 manual, incl. the new `G14:76`/`G14:77`), generation 18/0, fixtures 16/0, core 14/0, differential 21/0, 0 perchance errors, the author's map restored byte-identical (`1c13afe4`) after every runner, and an A/B against the previous build (new/old/new/old captures at the same session position) proving the new preference row changes **nothing** on screen (0 differing pixels). Manual, CHANGELOG, DEV-NOTES, AI-NOTES §20 and the version stamp all updated.
+- **Measurement:** the passive probe that lost its samples to the editor's reload-on-Save has been replaced by the reload-proof `devtests/keepawake-probe.page.js` (samples kept in `sessionStorage`, hidden heartbeat gaps split by whether the preference was on).
+- **MEASURED (2026-09-26), both halves of the A/B run by the author:** hidden 250 ms heartbeat median **1005 ms with the preference off** (189 samples in a 190 s hidden period — Firefox's documented 1 s clamp) versus **262 ms with it on** (1374 samples, 1371 under 400 ms); `requestAnimationFrame` while hidden 28 frames (timers, not painting). The keep-awake mechanism is confirmed on the author's engine. Docs-only update — no version bump, no code change: `DEV-NOTES.md` (BATCH 2026.09.26.6, new subsection), `AI-NOTES.md` §20, `devtests/README.md`.
+
+- **Author, 2026-09-26, verbatim:** "I would like the audio added, even though I use Firefox mostly.  Is there something similar that Firefox uses? / I was away from the keyboard for a while.  I switched away and back when I got back, but I don't know if that got you the measurements you needed. / I did save, so you can push when ready!"
+- **RELATES TO:** the 2026-09-26 tab-background INQUIRY entry below (same subject — that one measured the throttling and offered this preference; this one builds it).
+- **Why audio (both engines):** Chromium clamps hidden-tab timers (1 Hz, then ~1/min after ~5 hidden minutes) and stops `requestAnimationFrame`, but exempts a tab that is *playing audio*; Firefox clamps hidden-tab timers to ≥ 1 s (`dom.min_background_timeout_value`) and also exempts a tab that is playing audio. A near-silent looping clip is therefore the one lever that keeps a hidden tab — and with it the AI helper's page-level work — at full speed.
+- **Design (proposed, easy to change):** an opt-in per-browser preference `comicGen.keepAwake`, **off by default**, with a checkbox in **Edit → Preferences → Generation** beside the existing background-generation checkbox; the loop starts only from a real user gesture (autoplay policy), is deliberately quiet (volume ≈ 0.005, i.e. inaudible in practice, but *not* muted — a muted element is not counted as audible and would not defeat the throttling), and stops when the preference is unticked.
+- **Measurement note:** the passive probe installed for the INQUIRY entry did not survive the author's save/reload, so the hidden-tab numbers were never read. The redo uses a reload-proof probe (samples kept in `sessionStorage`) so the author can switch away and back whenever convenient.
+
+### 2026-09-26 — FEATURE: generation must not stop when the browser tab loses focus (the author's single biggest annoyance)
+- **Status:** ✅ **DONE 2026.09.26.4** — implemented and verified live on 2026-09-26 (see the IMPLEMENTATION bullet, `CHANGELOG.md` 2026.09.26.4, `DEV-NOTES.md` BATCH 2026.09.26.4 and `AI-NOTES.md` §19).
+- **Author, 2026-09-26, verbatim:** "The fact that generation work stops when the browser tab loses focus.  If there's no way around this then we'll live with it, but I really hope there's a way around it. This makes me sigh, so, so much.  I really hope there's a way around it." (R-08 question 8a; they picked the same thing as their #1 interface win in 7b — "The run panel! I hate that taking focus off the browser page loses image generation".)
+- **RECON (2026-09-26):** the pause was entirely the app's own `document.addEventListener('visibilitychange', …)` handler — it set `pausedByVisibility`, fired the run signal, called `.stop()` on every `inFlightGen` entry, deleted each partial image, marked the boxes `.paused` and broke `generateComicPage`'s per-panel loop. It was added 2026-08-10 as defensive mobile memory hardening after a suspected memory-pressure tab kill, but (a) that incident was traced to stale session state, and (b) the part of that hardening that matters — `imgObserver` evicting off-screen `<img>`s — is untouched by this change. One page of images held in JS is ~3 MB (a 512×512 JPEG data URL measured 124,323 chars ≈ 121 KB; a whole page ≈ 3 MB), so the pause was buying almost nothing. No platform rule requires it.
+- **IMPLEMENTATION (2026.09.26.4):** new browser preference `comicGen.bgGenerate` — `applyBgGenerate(on)` / `onPrefBgGenerateChange()` / `#prefBgGenerate` under a new **Edit → Preferences → Generation** section, **on by default** (absent key = on, so nothing to migrate). The handler is gated by one line (`if (bgGeneratePref) return;`), so the old stop-everything path is intact when the pref is off. Deliberately a per-browser preference, not project data. Manual (■ Stop bullet + a new **Generation** paragraph) and the version stamp were updated with it.
+- **Verified live:** with the visibility state faked (`Object.defineProperty(document, 'hidden', …)` + a dispatched `visibilitychange`) and `root.generateImage` stubbed to a never-settling promise that counts `.stop()` calls, a run started with `generateSinglePanel(1, {pos, neg})` survived the hide with **pref ON (0 stops, box still `.generating`, no status message)** and was stopped exactly as before with the **pref OFF (2 stops, box `.paused`, "Stopped generations — tab went to background.")**. All 21 stored keys parked (`devtests/park.js`, hash `6548bd20`) and restored byte-identical; no stray keys; no console errors.
+- **Known limit, documented not hidden:** a browser (especially iOS Safari) may suspend a hidden page outright; when that happens the run pauses and the existing resume ladder continues from the interrupted panel on the next ⚡. The setting cannot defeat the OS, only the app's own pause.
+
+### 2026-09-26 — DOCS: a UI-independent functional map + refactoring roadmap, a follow-up UI-ideas document, and the questions packaged as an answerable HTML form
+- **Status:** ✅ **DELIVERED 2026.09.26.3** (docs + form + handoff notes pushed to the repo; no change to how the app behaves). **ANSWERED 2026-09-26 — the eight R-tickets were answered the same day and are the decision of record** (digest in `REFACTOR-NOTES.md` §1; agreed target **P0 + P1**, with features still shipping). The refactor itself is tracked in `REFACTOR-NOTES.md` from here on; this entry is closed.
+- **Author, 2026-09-26, verbatim:** "I have something pretty ambitious in mind.  I'd like you to create a document that is a road map for eventually refactoring the code.  What I really would like is to have this document cover the functions and functionality of the app, independently of user interface.  Maybe a second one that suggests user interface ideas once the functionality is fully mapped out.  You are free to use whatever tools you have at your disposal for this.  I'd like it to be human readable, so that I can look through it and see what all we've got.  My requests have all been essentially, functions that I wanted right then, without any user interface design in mind at all, so I am sure the whole thing is pretty tangled and crufty.  You'll have questions, I know!  I'd like you to package those into HTML document(s) using the question-form.html file as a guide, to make it easier for me to answer, the way we did for T-01 through T-05.  Go ahead and begin this right now.  Make sure to push the documents to the Github when necessary, including whatever info you'll want to have handy as handoff notes and the like.  Thank you!"
+- **DELIVERED — all in the repo, so they are human-readable on GitHub and survive this session:**
+  1. **`FUNCTION-MAP.md`** — the app described as *capabilities*, with no reference to the interface: the project/page/panel data model, pages and reflow, panel content, the library, globals and presets, seeds, prompt assembly, the generation engine, images and their per-slot flags, prompt history + thumbnails, selection/clipboard/batch, export/import/GitHub backup, the analysis matrix, the JSON document, the manual/changelog, save & migrations, and a 21-item invariants list plus a capability ledger and a dead/legacy-surface table.
+  2. **`REFACTOR-ROADMAP.md`** — the map of the *current* code structure (measured, not guessed: a 36-row cluster map of index.html's line ranges, the biggest functions, the duplicated patterns, the global surface, the DOM-as-state-model), the platform constraints, a target architecture (`src/core` / `src/state` / `src/services` / `src/ui` / `src/styles` + `app.js`), and a six-phase reversible migration plan (P0 harness → P1 pure logic → P2 state layer → P3 commands → P4 services → P5 UI extraction → P6 redesign) with the extract-with-fallback strangler pattern, exit criteria, a testing strategy and a risk register.
+  3. **`UI-IDEAS.md`** — 17 interface proposals (A–Q) that only make sense once the functionality is mapped (each with Problem → Proposal → Depends on → Risk), a "what not to change" list, and a 10-step suggested sequence.
+  4. **`src/refactor-form.html`** — the questions as a fill-in form built on the same driver as `src/question-form.html` (same select / checkboxes / text question types, same ✕ close path and same "write the answers into the repo" send path), opened with `window.__openRefactorForm()` on the preview page. 8 tickets (R-01 … R-08), 31 questions; every `select` carries a "(recommended)" option so "all defaults" is a valid answer. Answers come back as ticket files in `tickets/`.
+  5. **`questions/REFACTOR-ROUND-1.md`** — the same 8 tickets and 31 questions as plain markdown, so they can still be read (and answered by hand) if the form cannot be opened.
+- **RECON (2026-09-26, measured by script — not estimated):** `index.html` is one classic IIFE — **10,194 lines / 525,856 chars**, no modules, no build step, all of it shipped to every visitor. It contains **543 callables** (527 `function` declarations + 16 arrow consts), of which **199** are `window.*` exports (the de-facto public API, because every inline `onclick=` needs one), and **224** inline handler attributes exist; **636** `getElementById` calls and **28** `querySelector(All)` calls across **43** `addEventListener` registrations; **251** unique element ids. Output safety: **40** `innerHTML` writes vs **21** `escapeHtml` calls vs 202 `textContent` writes. Largest functions: `buildPanelGrid` 152 L, `resetEverything` 138 L, `renderAnalysis` 101 L, `jsonParse` 89 L, `restorePanelState` 88 L, `movePanelToPage` 88 L, `reflowInsertOnFullPage` 87 L, `generateSinglePanel` 83 L, `batchDeletePanels` 75 L, `generateComicPage` 74 L, `buildZip` 71 L, `copyImageToAction` 68 L. The living state is split across module-scope variables, the DOM itself (textarea/select values are read back on every collect), `comicGen.*` localStorage keys, and a per-page in-memory image store. `main.pjs` holds only the pjs metadata + the `text-to-image-plugin` import.
+- **HOW TO ANSWER:** the form is `src/refactor-form.html`; open it on the preview page with `window.__openRefactorForm()` (a ✕-closable overlay; `window.openDevForm(file, title)` opens any other `src/` html the same way). Answers draft-save in this browser as you type; a **✨ Use the recommended answers** button fills every multiple-choice question that is still blank with its recommended option; **Send answers** writes one markdown file per ticket plus an updated `tickets/INDEX.md` into the repo through the same GitHub token the backup feature uses.
+- **IMPLEMENTATION (2026.09.26.3):** the only code change is the hidden developer overlay in `index.html` — `openDevForm(file, title)`, exported as `window.openDevForm` / `window.__openDevForm` / `window.__openRefactorForm()` / `window.__openQuestionForm()`. It fetches the `src/` file and loads it as a blob URL so the form stays same-origin and can read the saved `comicGen.github*` settings; if the fetch fails it says "press Save once". There is no menu button for it — it is a development tool, not a feature. Handoff notes live in `AI-NOTES.md` §18 and `DEV-NOTES.md` BATCH 2026.09.26.3.
+
+### 2026-09-26 — FEATURE: duplicate an image — copy one image onto other slots in its own panel, or onto slots of another panel
+- **Status:** ✅ **DONE 2026.09.26.1** — implemented and verified live on 2026-09-26 (see the IMPLEMENTATION bullet below, plus `CHANGELOG.md` 2026.09.26.1 and `DEV-NOTES.md` BATCH 2026.09.26.1).
+- **Author, 2026-09-26, verbatim:** "I'd like an option to duplicate an image within a panel. I'd like a chip button under the images that would allow me to copy that image over one, two, or all three of the other images in the panel, or to one to four images in another panel."
+- **RECON (2026-09-26):** panel images are a plain in-memory array — `panelImages[i][k-1]`, per page as `pageSession[page].images` — and are deliberately NOT part of `panelState`, so a copy is just `panelImages[target][k-1] = sourceDataUrl` plus `showPanelImage(target, k, dataUrl)` (which sets the `img.src` through the lazy observer, enables that slot's chips and refreshes the panel's Open All / Clear Images buttons). Each slot's chips live in `#slotbtns-panel-i-k` (↗ Open · ⬇ Save · ✕ Clear · 🔓 Protect · ⭐ Cover) and `setPanelImageButtons(i, k, has)` disables the ones that need an image — a new chip joins that row and must be disabled the same way (`btn-view`, `btn-dl`, `btn-star` are the classes it loops). 🔒 is per slot (`isSlotProtected(i, k)` reads the `.btn-img-protect.active` class; `setSlotProtected` writes it) and every generation path skips protected slots. A panel shows only the slots up to its **Images** setting (`getPanelImageCount`, 1–4) — `updatePanelImgSlots` hides the rest — so a destination panel's usable slots depend on that setting. The app's generic dialog `showChoiceDialog` accepts raw HTML in `paragraphs` (the ⚡ Generate (x) to (y)… range picker of 2026.09.25.2 builds a custom row inside it), so the copy picker needs no new overlay. `makeRepresentative(i, k)` is the precedent for moving an image between slots (it moves the 🔒 flag with the image), and `getPanelCount()` / `pageLabel()` give the panels on the current page.
+- **DESIGN QUESTIONS SENT TO THE AUTHOR (2026-09-26)** — proposed defaults in brackets:
+  1. **Chip + dialog shape:** a new `⧉` chip at the end of each image's chip row (tooltip "Copy this image to other images in this panel, or to another panel") opening ONE dialog with (a) the panel's other slots as checkboxes plus a *select all 3* shortcut, and (b) a dropdown of the panels on this page plus their slot checkboxes, and a single **⧉ Copy image** button that applies to every ticked destination at once. [proposed]
+  2. **Occupied destinations:** overwrite them silently, with the dialog hint saying how many images will be replaced and the status line reporting it afterwards — or ask for confirmation first? [proposed: overwrite, no extra confirmation]
+  3. **🔒 protected destinations:** skip them and say so (🔒 means "keep this image"), or overwrite them anyway on the grounds that a copy is not a generation? [proposed: skip + warning]
+  4. **Destination panels:** list only the panels on the current page, and offer only the slots up to that panel's **Images** setting (slots above it are hidden on the page, so writing to them would be invisible) — or should the copy also be able to raise the target panel's image count? [proposed: current page only, no count changes]
+- Also assumed (say if otherwise): the source image stays where it is (it is a copy, not a move); the copy lands **unprotected** (🔒 does not travel — the point is to be able to regenerate the new image independently); copies are as ephemeral as every other in-memory image; and "another panel" means another panel on the same page rather than another page.
+- **IMPLEMENTATION (2026.09.26.1):** a `⧉` chip (`.btn-copyto`) as the sixth chip in every image's row, disabled with the other image chips via `setPanelImageButtons`; `copyImageToAction(i, k)` (exported) opens the app's shared `showChoiceDialog` and builds the picker in `paragraphs` — `.copy-same` boxes for the other slots of this panel, a `#copySameAll` "select all N" link, then `#copyPanelSel` (the other panels on this page, labelled "Panel N — <title> · no images / 2 images") with four `.copy-other` boxes. `copyImageRefresh()` re-reads the DOM on every change, disables the go button when nothing is ticked or when every chosen destination is 🔒 protected (⚠ line), greys `.copy-other` above the destination panel's `getPanelImageCount`, and writes the `#copyInfoEl` line ("→ Panel 1 · Image 2, Panel 2 · Image 1 · 3 will be replaced · 1 🔒 protected (skipped)"). `applyImageCopy(i, k, dests)` writes `panelImages[d.i][d.k-1] = src` + `showPanelImage(...)` per destination, skipping 🔒 slots and counting replaced/skipped; the status line then reports it ("⧉ Copied Panel 1 · Image 1 to 3 images (…) 3 images were replaced."). Copies are in-memory only and land unprotected. VERIFIED live: 3-destination copy (panel 1 slots 2+3, panel 2 slot 1) with the replaced count; a 🔒 destination skipped and reported while the protected slot kept its image and its lock; an all-protected selection disabling the button with the warning; Cancel changing nothing; the destination-slot limit following the target panel's Images setting; the single-image panel message; the dialog inspected with `vision`; all 19 of the browser's stored keys for this generator parked in `__test_backup_v9` and restored byte-for-byte (FNV-1a hash identical before and after a full reload, 0 mismatches, no stray keys). Docs: CHANGELOG + DEV-NOTES BATCH 2026.09.26.1 + AI-NOTES §9/§17 + the shipped manual (image-chip list, changelog list, version).
+
+
+### 2026-09-25 — FEATURE: a "same seed for every image" checkbox in each panel's ⚙ Panel menu
+- **Status:** ✅ **DONE 2026.09.25.3** — implemented and verified live on 2026-09-25 (see the IMPLEMENTATION bullet below, plus `CHANGELOG.md` 2026.09.25.3 and `DEV-NOTES.md` BATCH 2026.09.25.3).
+- **Author, 2026-09-25, verbatim:** "I'd like to have a checkbox under the panels Panel menu that forces all images in the panel to use the same seed, rather than (seed) for panel 1, (seed+1) for panel 2, etc."
+- **RECON (2026-09-25):** the arithmetic lives in `renderPanelSlot` — `const seed = useSeed ? seedOverride : pinPanelSeedForRun(i);` then `if (seed !== -1) opts.seed = useSeed ? seed : (seed + (k - 1));` — so image *k* of a panel renders with the panel's seed + (k − 1). A panel's seed is its own Seed box when filled, else the page seed + panel index − 1, else a random number pinned into the Seed box. The new per-panel checkbox goes in the ⚙ Panel accordion body and is stored as `sameSeed` on `pages[N][i]`, which flows through `collectPageData` / `restorePanelState` — so it is saved, exported, imported, duplicated, moved, cut/pasted and shown in the 🧩 JSON editor for free.
+- **INTERPRETATION (the ambiguity, recorded because the author may want the other reading):** "all images in the panel" was read as the images *within one panel* (image 1 gets the panel seed, image 2 gets seed + 1, …). The checkbox therefore removes only the per-image offset: with it on, every image of that panel renders with the panel's seed exactly (the panel's Seed box value, or the page seed + this panel's position when that box is empty). The other possible reading — "ignore the page-seed + panel-index offset so every panel uses the page seed verbatim" — is a one-line change and was offered to the author in the reply.
+- **DESIGN CALLS:** per panel (not a global/page setting); reuses the app's `.check-label` styling as a full-width row at the foot of the ⚙ Panel menu; 🔒 protected images are untouched; a 🕘 Generated Prompt replay is deliberately NOT affected — it re-runs with the per-image seeds that entry recorded (`seedForSlot`), because the history is a frozen snapshot.
+- **IMPLEMENTATION (2026.09.25.3):** new per-panel state field `sameSeed`, stored on `pages[N][i]` and collected/restored with the rest of a panel (`collectPageData` / `restorePanelState`), so it is saved, exported, imported, shown in the 🧩 JSON editor and carried by Duplicate / Add / Move / reflow / Cut / Paste for free. UI: a full-width `.check-label.panel-acc-check` row with `<input type="checkbox" id="panel-sameseed-i" onchange="onPanelSameSeedChange(i)">` as the LAST child of the ⚙ Panel accordion body, so it reads "🎲 Same seed for every image — no +1 per image." under the other chips (the accordion body is a flex-wrap row, hence `flex: 1 1 100%`). Helpers `panelSameSeedOn(i)` / `setPanelSameSeed(i, on)` / `onPanelSameSeedChange(i)` (status line + `schedulePanelSave()`), all exported on `window`; `resetEverything()` unticks every panel. The seed arithmetic change is the single condition in `renderPanelSlot`: `opts.seed = (useSeed || panelSameSeedOn(i)) ? seed : (seed + (k - 1))`. VERIFIED live with a stubbed `root.generateImage` capturing the plugin options: checkbox off, panel seed 500, 3 images → 500, 501, 502; on → 500, 500, 500; page-seed path (seed 1000, panel 2 blank) → placeholder 1001 and images 1001, 1001, 1001; ticking persists to `comicGen.panelState`, survives a `buildPanelGrid()` re-render, and an unticked panel stays unticked (default). Layout checked at 390 px (no overflow; label wraps to 3 lines) and desktop, in dark and light themes (vision). All 20 `comicGen.*` keys were parked in `__test_backup_v8` and restored byte-for-byte — an FNV-1a hash of the whole storage map matched before and after a full page reload (0 mismatches, 0 extra keys). Docs: CHANGELOG + DEV-NOTES BATCH 2026.09.25.3 + AI-NOTES §6/§17 + the shipped manual (Seeds section, changelog list, version). **Open question left with the author:** the request could also mean "ignore the page seed + panel index offset so every panel uses the page seed verbatim" — the reply says that is a one-line change if that is what was wanted.
+### 2026-09-24 — FEATURE: a thumbnail for EVERY generated image in a 🕘 Generated Prompt entry (not just the first)
+- **Status:** ✅ **DONE 2026.09.24.5** — every image a run produced now gets its own thumbnail. Verified live: a 3-image panel rendered 3 labelled thumbnails (badges 1/2/3, per-image seed labels) and the author's pre-existing single-thumb entry beside it still rendered correctly; all `comicGen.*` keys were then restored byte-for-byte.
+- **Author, 2026-09-24, verbatim:** "Is it possible to get a thumbnail of each generated image, rather than just the first/representative image, in the filed prompt under Generated Prompts?"
+- **RECON (2026-09-24):** an entry already records `seeds: [{k, seed}, …]` — one per image the run generated (`renderPanelSlot` pushes `{k, seed}` for every slot) — but `attachPromptHistoryThumb(i, entry, run)` only ever looked at `run.seeds[0].k` and stored a single `entry.thumb` key, so an entry that generated 4 images showed 1 thumbnail. Fix: store one thumb per image (`entry.thumbs = [{k, key}, …]`), render them side by side, and keep reading the legacy single `entry.thumb` for already-saved entries.
+- **IMPLEMENTATION (2026.09.24.5):** `attachPromptHistoryThumb` builds every slot image the run produced; `promptHistoryThumbHtml` renders each as a labelled `.gp-thumb`; `promptHistoryThumbKeys`/`prunePromptThumbs` keep all of an entry's keys alive; legacy `entry.thumb` is folded into `entry.thumbs` on load.
+
+### 2026-09-24 — REMOVAL: remove the ↩ Restore Previous Project feature (File menu + Edit → Reset to Defaults)
+- **Status:** ✅ **DONE 2026.09.24.5** — removed whole (UI, snapshot machinery, storage key, all copy). Verified live: neither button exists, no `restoreUndoSnapshot` on `window`, the Reset panel and New-Project dialogs no longer mention a snapshot, and `resetEverything` still works.
+- **Author, 2026-09-24, verbatim:** "Also: I'd like to remove the Restore Previous Project function under Edit -> Reset to Defaults."
+- **RECON (2026-09-24):** the feature added in 2026.09.24.3 = the two `↩ Restore Previous Project` buttons (`#fileUndoProjectBtn` in 📄 File, `#resetUndoProjectBtn` + `#resetUndoHint` in the Reset panel), the `comicGen.undoProject` snapshot (`captureUndoSnapshot` / `undoSnapshot` / `applyUndoSnapshot` / `restoreUndoSnapshot` / `updateUndoRestoreControls` / `readStoredUndoSnapshot` / `hasUndoSnapshot`), the snapshot paragraph in the Reset and New-Project confirmations, and the snapshot scan inside `prunePromptThumbs` (it kept thumbnails alive for a restore — now pointless).
+- **SCOPE DECISION (2026-09-24):** remove the feature whole — UI, capture/restore machinery, the `comicGen.undoProject` key and its orphaned snapshot — rather than leaving dead machinery behind an invisible button. The separate, unrelated safety nets are untouched: the New-Project / Reset confirmations, `🗑 Delete` asking before removing a library object, and project export/backup.
+- **IMPLEMENTATION (2026.09.24.5):** removed `#fileUndoProjectBtn`, `#resetUndoProjectBtn` + `#resetUndoHint`, the `.reset-undo-row` / `.undo-btn` CSS, the whole snapshot block (`UNDO_PROJECT_KEY`, `undoSnapshot`, `undoSnapshotLabel`, `readStoredUndoSnapshot`, `hasUndoSnapshot`, `captureUndoSnapshot`, `updateUndoRestoreControls`, `applyUndoSnapshot`, `restoreUndoSnapshot`), the boot call, the `window.restoreUndoSnapshot` export, the `prunePromptThumbs` snapshot scan, the `reason` option threaded from `doNewProject()` into `resetEverything()`, and every mention in the Reset panel, the New-Project overlay and the reset confirmation. Kept: `hasActiveProject()` (used by Import), `collectAllPageImages()` (used by Export .zip), `repopulateImportedImages()` (used by Import), and the whole library-safety half of 2026.09.24.3. The now-inert `comicGen.undoProject` key was left in the author's browser rather than deleted (their storage is not ours to clean); it is documented as dead in `AI-NOTES.md`.
+
+### 2026-09-24 — BUG (non-critical): unhandled promise rejection "Timed out after 120s — click Generate to retry"
+- **Status:** ✅ **DONE 2026.09.24.4** — the watchdog can no longer produce an unhandled rejection; verified live with instrumented timers + an `unhandledrejection` listener (a paused run clears its 120s timer at +0.5s, and 130s after an abandoned timeout nothing is reported).
+- **Author, 2026-09-24, verbatim:** "I keep getting this message: 'An error has occurred somewhere in your code
+  (in lists or HTML): An unhandled promise rejection occurred: Timed out after 120s — click Generate to retry
+  withTimeout/timeout injectedScript:2307:39 ... This error message has been sent to the AI helper message box.'
+  This isn't particularly critical, is it? It just means that we've lost an image in transit, correct? If that's
+  all it is, can we trap it or otherwise gracefully prevent it?"
+- **RECON (2026-09-24):**
+  - `GENERATION_TIMEOUT_MS = 120000` and `withTimeout(promise, ms)` = `Promise.race([promise, timeout]).finally(() =>
+    clearTimeout(timer))`, used once, in `renderPanelSlot`:
+    `await withRunSignal(withTimeout(pending, GENERATION_TIMEOUT_MS))`.
+  - The abandoned path: the `visibilitychange` handler (and pause / stop) call `runSignal.fire()`, so
+    `withRunSignal`'s race settles with 'abort' and the slot returns 'cleared' — but the INNER withTimeout race was
+    left pending. `pending.stop()` does not settle the plugin promise, so ~120s later the timeout rejected with no
+    consumer: an `unhandledrejection`, which the perchance engine reports in its error dialog. So the author's
+    reading was right — NON-CRITICAL, one image from an already-abandoned run (usually a tab switch mid-generation);
+    pressing Generate re-renders it.
+  - The watchdog is still needed for the genuine case (an image service that really stalls while the author is
+    watching): the awaiting caller catches it and marks that panel `.failed` with "Generation failed: Timed out after
+    120s — click Generate to retry".
+- **IMPLEMENTATION (2026.09.24.4):** `withTimeout(promise, ms, abortPromise)` — `renderPanelSlot` passes the current
+  `runSignal.p`, so the watchdog settles and CLEARS its timer the instant a run is paused / stopped; plus
+  `raced.catch(() => {})` marks the returned promise handled for the residual case (no / superseded abort promise).
+  Success and failure semantics are unchanged. Verified live with a `preambleJs` that wrapped
+  `setTimeout`/`clearTimeout` (recording the 120000ms timers) and listened for `unhandledrejection`, plus a
+  never-settling stubbed `root.generateImage`: pausing a real `generateComicPage` run cleared its watchdog at
+  +512ms, and the residual path produced no unhandled rejection even 130s past its timeout.
+
+### 2026-09-24 — FEATURE: a small thumbnail on each 🕘 Generated Prompt entry (hover / long-press to enlarge)
+- **Status:** ✅ **DONE 2026.09.24.4** — thumbnails render, enlarge on hover / press-and-hold, are pruned with their entries, survive reloads and return with a ↩ Restore Previous Project snapshot (224×224 JPEG ≈ 11 KB each, verified with a stubbed generator).
+- **Author, 2026-09-24, verbatim:** "When a prompt gets filed under Generated Prompts, can we add a small
+  thumbnail of the image it generated? It can be maybe 8-16kb in file size. I'd like to be able to hover over it
+  and see it larger, even if it doesn't have as much detail; I'd just like to have an idea of what the prompt plus
+  seed generated."
+- **RECON (2026-09-24):**
+  - The entry shape `{pos, neg, seeds:[{k,seed}], at}` is built by `addPromptHistoryEntry(i, run)` and lives in
+    `panelState` (`pages[N][i].promptHistory`) — which is persisted on every panel save AND rendered into the
+    🧩 JSON-editor document, so base64 image data was deliberately kept OUT of the entry (it would bloat both). The
+    entry stores only a short `thumb` key into a separate store.
+  - The app already has a hover / press-and-hold image preview: delegated `pointerover` / `touchstart` handlers ->
+    `previewDataFromTarget()` (hard-wired to `.panel-img-box`) -> `showImagePreview(info, center)` with `#imgPreview`
+    (respecting 📄 File → Image Preview Delay and the "Enable image preview" checkbox). Reusing it gives the
+    thumbnail identical behaviour for free.
+- **IMPLEMENTATION (2026.09.24.4):**
+  - Store: `comicGen.promptThumbs` = `{key: dataUrl}` + a module cache; `PROMPT_THUMB_MAX = 240` entries /
+    `PROMPT_THUMB_BUDGET = 1400000` chars (oldest, unreferenced-first eviction); `PROMPT_THUMB_SIDE = 224` /
+    `PROMPT_THUMB_QUALITY = 0.6` (~11 KB measured); `savePromptThumbStore()` keeps evicting if localStorage refuses a
+    write.
+  - Creation: `attachPromptHistoryThumb(i, entry, run)` at the end of `addPromptHistoryEntry` takes
+    `panelImages[i][run.seeds[0].k - 1]`, downscales it via `buildPromptThumb()`, stores it, sets `entry.thumb` and
+    re-saves + re-renders; `promptHistoryThumbHtml()` prepends `<img class="gp-thumb">` (84x84, object-fit contain)
+    to `.gp-head` with a `data-thumb-label`.
+  - Preview: `previewDataFromTarget()` recognises `img.gp-thumb`; `showImagePreview()` renders `info.label` and
+    toggles `.img-preview--thumb` (CSS caps that preview at min(85vw, 420px)).
+  - GC: `prunePromptThumbs()` keeps only keys referenced by the live state AND by the last New Project / Reset
+    snapshot, so ↩ Restore Previous Project restores the thumbnails with the entries; called from
+    `addPromptHistoryEntry`, `clearPanelImage`, `resetEverything` and the end of `applyImportedSettings`.
+  - Verified live (stubbed `root.generateImage`): thumbnail renders undistorted, hover opens the preview with the
+    right label, `clearPanelImage` drops only that panel's thumbs, reset + restore keeps and re-renders the
+    snapshot's thumbs, a reload renders them from localStorage, and a 390x844 viewport shows no overflow. The
+    author's own storage was backed up and restored byte-for-byte.
+
+### 2026-09-24 — SAFETY NETS (2 items) + a doc note: one-step undo for New Project / Reset · the library can never be deleted without its own confirmation
+- **Status:** ✅ **DONE 2026.09.24.3** — implemented, verified in the live preview (all four reset paths, both library-deletion paths, the three restore modes), docs + GitHub backup pushed.
+- **Author, 2026-09-24, verbatim:** "Go ahead and implement them.  Also, put a note into wherever the right place is that \"Cow in field\" is my throwaway test project."
+  "Them" = the two safety nets offered after the AI-worker test protocol wiped the live project + library:
+  (1) New Project / Reset keeps a one-step undo snapshot with a "restore previous project" item;
+  (2) library objects are never deleted without a library-specific confirmation; and (3) a note recording
+  that "Cow in field" is the author's THROWAWAY TEST PROJECT (they have it saved on their hard drive, so a
+  wipe of the live preview state needs no recovery).
+- **Author decision (2026-09-24):** the New Project overlay has always *promised* "your saved characters,
+  locations, and action prompts are kept", while `doNewProject()` silently deleted `comicGen.libObjects` —
+  that mismatch is what destroyed the library. Fixed by turning the promise into a choice: a new
+  "Also delete my saved library objects" checkbox in the New Project overlay, UNCHECKED by default.
+- **RECON (2026-09-24):**
+  - Reset path: `resetEverything(noConfirm)` (index.html:7243) reads `#resetDelLibCheck` from the reset
+    panel itself (so `doNewProject()` -> `resetEverything(true)` deleted the library based on an unrelated
+    checkbox), and its confirm is a native `confirm()`. `doNewProject()` (index.html:6766) then also did
+    `localStorage.removeItem('comicGen.libObjects')` unconditionally.
+  - Callers of `resetEverything(true)`: deletePage (only-page case, :3165), panel multi-select delete
+    (:4786), deletePanel (only-panel case, :5040), doNewProject (:6767) — plus the armed reset button (:834).
+  - The only other library-deletion site is `deleteLibraryObject(id)` (:1277), wired to the Library list's
+    per-row trash button (:1368). Library *import* only merges/appends (never deletes), and
+    `migrateLibObjects()` only drops legacy-type junk.
+  - Snapshot primitives already exist for the JSON editor: `jsonBuildDoc()` (:7974) = `buildExportData(true)`
+    minus `exportedAt` (settings + libObjects + preset + layout/UI flags) and `jsonApplyDoc(doc)` (:8684)
+    which writes the settings, the library, the preset, rebuilds the grid and re-applies the flags. Images
+    travel separately via `collectAllPageImages()` (:3294) / `repopulateImportedImages()` (:6526).
+  - The app already has a non-blocking promise-based dialog: `showChoiceDialog({title, paragraphs, hint,
+    buttons})` (:4660, `#choiceOverlay`) used by the panel-selection batch operations.
+- **IMPLEMENTATION (2026.09.24.3):**
+  - One-step snapshot: `comicGen.undoProject` + module `undoSnapshot` hold `{at, reason, imgCount, doc,
+    pageImages}`; `captureUndoSnapshot(reason)` runs in `resetEverything()` after the confirmation and before any
+    mutation (covers the armed reset button, New Project, deletePage only-page, deletePanel only-panel and
+    multi-select delete). `restoreUndoSnapshot()` -> confirm -> `applyUndoSnapshot()` = clear in-memory image /
+    override / prompt-history maps, clamp `currentPage`, `jsonApplyDoc(doc)`, then `repopulateImportedImages` when
+    the in-memory snapshot (images included) is still alive. Buttons: `#fileUndoProjectBtn` (📄 File, after New
+    Project) and `#resetUndoProjectBtn` + `#resetUndoHint` (Reset to Defaults), kept in sync by
+    `updateUndoRestoreControls()` (called at boot). The Reset panel no longer claims "this cannot be undone".
+  - Library: `deleteLibraryObject()` confirms via `showChoiceDialog`, naming the item and counting its panel
+    references (`countLibReferences()`); `doNewProject()` reads the new `#newProjectDelLibCheck` ("Also delete my
+    saved library objects", OFF by default) and passes it as `resetEverything(noConfirm, {delLib, reason})` — the
+    unconditional `localStorage.removeItem('comicGen.libObjects')` is gone; the reset confirmation is now the
+    app's standard choice dialog and spells out the library deletion (with its own button label); the new-project
+    overlay text now matches reality.
+  - Note: `docs` — see CHANGELOG / DEV-NOTES / AI-NOTES / ISSUES (the "Cow in field" throwaway-project note lives
+    in AI-NOTES §1 TEST DATA and in the ISSUES post-mortem follow-up).
+  - Verified live: delete-item dialog (Cancel keeps it, Delete removes it and reports the usage count), reset with
+    the library kept (3 objects intact) and with it deleted, restore in all three modes (in-memory with images,
+    in-memory without, stored-only after a reload), byte-identical project round-trip apart from the two panel
+    slots whose library item had been deliberately deleted mid-test, and both new UI surfaces visually checked
+    (snapdom + vision). The author's own state was backed up and restored byte-for-byte (7672 bytes, djb2
+    3579177367).
+### 2026-09-24 — "Generated Prompt" accordion: a per-panel prompt history (up to 5 prompts + their seeds)
+- **Status:** ✅ **DONE 2026.09.24.2** — implemented, verified in the live preview, docs + GitHub backup pushed.
+- **Request (author, 2026-09-24, verbatim):** "Under the panel's Prompt menu, I'd like to add an accordion
+  menu: generated prompt. When a panel is generated, its full prompt is copied into the field; this text
+  remains protected from *any* prompt changes, and there's a space for the seed used as well. Generated Prompt
+  will hold up to five prompts with seed. Its purpose is to act as a prompt history for that panel."
+- **RECON (2026-09-24):**
+  - Target home: the panel's `📝 Prompt` accordion — markup in `buildPanelGrid()` (index.html:3627–3641):
+    `.panel-acc-toggle` "📝 Prompt" → body with the `📝 Prompt` editor toggle (`togglePromptEditor`), the
+    `📋 Copy Prompt` chip (`copyPanelPrompt`), and the inline editor `#prompt-pos-i` / `#prompt-neg-i`.
+    `panelPromptOverrides[i] = {pos, neg}` is the live override, persisted per panel as
+    `promptOverride` (`collectPageData`, index.html:2879; restored at :3413) and wiped by
+    `clearPanelPromptOverride` on any interface change (that is the "resets when you change a character"
+    behaviour the new history must NOT have).
+  - Prompt assembly: `buildPanelPrompt(i)` (index.html:5076, ASYNC) returns
+    `{fullPrompt, negativePrompt, hasContent}` — effective global style keywords + palette + characters +
+    location + action, or the override when one exists. It is the single source of truth for what is actually
+    sent: called by `copyPanelPrompt` (:5107), `populatePromptEditor` (:5172), and by the two generation
+    entry points `generateSinglePanel` (:5347) and `generateSinglePanelSlot` (:5373).
+  - Seeds: `pinPanelSeedForRun(i)` (:5382) resolves the seed for a run — the panel's Seed box if set, else
+    page seed + (i−1), else a random value it PINS into the panel's box — and `renderPanelSlot` (:5232) sends
+    `opts.seed = seed + (k − 1)`, i.e. image k of a panel uses the panel seed plus a fixed slot offset.
+    `getPanelSeed(i)` (:5370) reads the same value without pinning. So after any generation the panel's Seed
+    box holds the base seed the run used.
+  - Generation entry points that would feed the history: `generateSinglePanel(i)` (a whole panel — 1..4
+    images in one `renderPanelSlot` loop) and `generateSinglePanelSlot(i, k)` (one image); `generateComicPage`
+    (:6708, "Generate All" / selection batches) just loops `generateSinglePanel`. `renderPanelSlot` is the only
+    place where prompt AND the actual seed are known together.
+  - Storage shape: per panel, i.e. a new `promptHistory` array inside `pages[N][i]` in
+    `comicGen.panelState` — collected by `collectPageData` and restored by `restorePanelState`, so it would
+    ride along in Save / Export / Import / the project ZIP automatically. The JSON editor
+    (`jsonFieldClass`) needs an explicit decision on whether these are editable values.
+  - Sizing: 5 prompts × 24 panels × ~0.5–1.5 KB ≈ 60–180 KB worst-case in `panelState` (localStorage has room;
+    the JSON editor shows the document but syntax colouring already pauses above 220k chars).
+- **QUESTIONS SENT (2026-09-24):** (1) one history entry per GENERATION EVENT (a panel Generate that renders
+  4 images = one entry) vs one per IMAGE (recommendation: per event); (2) which seed to store — the panel's
+  base seed (image N = base + N−1, which is what the Seed box shows) vs the exact per-image value
+  (recommendation: the base seed, with the +N−1 convention explained in the entry's tooltip); (3) include the
+  NEGATIVE prompt in each entry too (recommendation: yes, as a secondary line); (4) persist the history with
+  the project (survives reload, travels in Export/Import/JSON) vs session-only (recommendation: persist);
+  (5) the small calls — identical prompt+seed repeats move-to-top instead of duplicating, ⧉ Duplicate copies
+  the history, 🗑 Clear wipes it (🗑 Clear Images does not), each entry gets a 📋 Copy chip + a timestamp, and
+  nothing ever auto-applies an entry back into the live prompt.
+- **AUTHOR'S ANSWER (2026-09-24, verbatim):** "1. Per generation. 2. If we can store the exact seed of each seed,
+  yes. 3. Yes. 4. Yes. 5. Your suggestions are good." — i.e. one entry per generation event; store the EXACT
+  per-image seeds rather than just the panel's base seed (so answer 2 overrides my recommendation); include the
+  negative prompt; persist with the project; and all five small calls approved. Plus a new requirement: "I'd
+  actually like each entry to have its own generate button, and the tooltip specifies that it's generated from
+  this prompt. Generating from here doesn't reorder the entries."
+- **Implementation (2026.09.24.2):** a nested `🕘 Generated Prompt` accordion inside each panel's 📝 Prompt menu,
+  holding the newest five generations as `{pos, neg, seeds:[{k,seed}], at}` — the exact positive and negative text
+  that was sent plus the exact seed every image used. `readPanelItem`-style plumbing: state lives at
+  `pages[N][i].promptHistory` (collected by `collectPageData`, restored by `restorePanelState`, cleared by
+  `applyImportedSettings` / `resetEverything` / the six page-map reset sites), so it saves, exports and imports
+  with the project and shows greyed (read-only) in the 🧩 JSON editor. Capture happens per generation event via the
+  per-panel `promptHistoryRuns` map: `renderPanelSlot` pushes the actual `opts.seed` after each successful image,
+  and `commitPromptHistoryRun` writes one entry in the run's `finally`. Each entry has `📋 Copy` and its own
+  `🔄 Generate` (tooltip: "Generate this panel from this prompt — the exact prompt text and seed(s) saved in this
+  entry are used instead of the interface-built prompt. The saved history is left alone: nothing is added, moved or
+  reordered.") which passes the entry's prompt + per-slot seeds through
+  `generateSinglePanel(i, {pos, neg, seedForSlot})` / `renderPanelSlot`'s `seedOverride` — the panel's Seed box is
+  not touched and no history is written. Verified live (stubbed image service, throwaway state, author's state
+  restored): exact prompts and seeds recorded, de-dupe on repeats, newest-first ordering, the 5-entry cap, the
+  history-neutral `🔄 Generate`, `🗑 Clear` wiping it, `📋 Copy`, and a clean JSON-editor load/apply. Also guarded
+  against a generation that finishes AFTER a project reset writing into the fresh project (the run map is cleared by
+  every reset/import). Details in `DEV-NOTES.md` (BATCH 2026.09.24.2); the test-protocol disaster that happened
+  alongside this work is documented in `ISSUES.md` (2026-09-24).
+
+### 2026-09-24 — "Copy (x) from previous panel" across page boundaries (skip panels with no example)
+- **Status:** ✅ **DONE 2026.09.24.1** — implemented, verified in the live preview, docs + GitHub backup pushed.
+- **Request (author, 2026-09-24, verbatim):** "I'd like the \"Copy (x) from previous panel\" to be available on
+  panel 1 of page 2 and subsequent pages. Generally speaking, I'd like the \"Copy (x) from previous panel\"
+  buttons to copy from the last panel on the last page that has an example of the item. So if page 1 has 24
+  panels, and only up to panel 8 is populated, and I create 10 empty pages after that, I'd like panel 1 of page
+  11 to be able to pull from panel 8 of page 1."
+- **RECON (2026-09-24):**
+  - The three target chips are the `⇤` buttons on the Characters rows (`charRowHtml`, index.html:2530), the
+    Location row (`locRowHtml`, :2553) and the Panel Action Prompt row (`actRowHtml`, :2572); each is
+    `onclick="copyFromPrevPanel(i, kind, s)"` and hard-`disabled` in the template whenever `i === 1`, so panel 1
+    of page 2+ is dead today.
+  - `copyFromPrevPanel(i, kind, s)` (index.html:3440) reads ONLY the DOM at panel `i-1` of the CURRENT page
+    (`panel-char-select-(i-1)-s`, `panel-loc-select-(i-1)`, `panel-act-(i-1)`) — it cannot reach another page.
+  - Panel numbers are PER PAGE (page objects hold `1..24`: `collectPageData()`/`collectPanelState()` write
+    `pages[N][i]`), so a cross-page copy must read the stored state instead of the DOM. Precedent exists:
+    `previousPanelSeedRaw(i)` (index.html:5377) already handles panel 1 of page ≥ 2 by reading the previous
+    page's LAST panel via `analysisPanelCount(prevPage)` out of `ensurePages(readPanelState())`, and
+    `updateSeedChipStates()` (:5413) is what enables that chip when `currentPage > 1`. Stored-page read helpers:
+    `analysisPanelCount` / `analysisCharSel` / `analysisCharExtra` / `analysisLocSel` / `analysisLocExtra` /
+    `analysisActText` (:1760–:1800). Natural refresh hook = `buildPanelGrid()`'s tail (:3632, next to
+    `updateSeedChipStates()`) plus the grid's existing `input`/`change` listener.
+  - The intended rule: walk the global panel sequence BACKWARDS from the clicked panel and copy from the nearest
+    panel that HAS an example of that item (character slot = a real selection ≠ `none`; location = selection
+    ≠ `none`; action = non-blank text), skipping empty/unpopulated panels. With page 1 panels 1–8 populated and
+    pages 2–10 empty, page 11 panel 1 resolves to page 1 panel 8.
+  - Consequence to confirm: applying the rule "generally" also changes the WITHIN-page behaviour (panel 5 would
+    copy panel 3's character when panel 4's slot is empty, where today it copies panel 4's empty `none`), and the
+    chip becomes disabled only when NO earlier panel anywhere has an example.
+- **QUESTIONS SENT (2026-09-24):** (1) confirm the within-page skip (recommendation: yes — "the last panel …
+  that has an example"); (2) should the Seed `⇤` — which already crosses pages but reads the previous page's
+  LAST panel without skipping back past empty pages — follow the same nearest-populated search, or keep its
+  deliberate "copy the previous panel's seed / blank follows the page seed" semantics ($1
+- **AUTHOR'S ANSWER (2026-09-24, verbatim):** "Your reading is good, and go with your recommendations on both." —
+  the within-page skip is approved (one uniform "nearest panel that has an example" rule) and the Seed ⇤ keeps
+  its existing behaviour.
+- **Implementation (2026.09.24.1):** `readPanelItem` / `panelItemIsSet` / `prevItemSource` resolve the source
+  panel by walking backwards through the panel sequence (the current page from the DOM, earlier pages from stored
+  `pages[pg][j]`, each page from its `analysisPanelCount`-th panel down); `copyFromPrevPanel` was rewritten on
+  that source but keeps its original write path, so nothing on an earlier page is ever touched.
+  `updateCopyPrevChipStates()` (+ `applyCopyPrevChips` / `copyPrevChipTitle` / `absorbPanelItems`) sets each
+  chip's `disabled` + a "Copy this character from Page 1, Panel 8" tooltip, hooked from `buildPanelGrid()` and
+  `updatePanelSummary()` so the chips stay live while you type; the three row templates lost their hard-coded
+  `i === 1` disable and gained ids. Verified live on a throwaway 4-page fixture (page 1 populated 1–3 and 5–8
+  with panel 4 blank, pages 2–4 blank, currentPage 4): page 4 panel 1 resolved to Page 1 Panel 8 (slot 1),
+  Page 1 Panel 1 (slot 2), greyed (slot 3), and Page 1 Panel 8 for the location and action prompt, with clicking
+  copying `hero|E8` / `city|L8` / `ACT8`; on page 1, panel 5 resolved to Panel 3 (skipping the blank panel 4)
+  and panel 24's click copied `hero|E8`; the author's 7,671-byte "Cow in field" state was restored
+  byte-for-byte. Details and the forward-scan gotcha: `DEV-NOTES.md` (BATCH 2026.09.24.1) + `ISSUES.md`
+  (2026-09-24).
+
+### 2026-09-23 — Floating "＋ Add Page" button in the bottom-right corner
+- **Status:** ✅ **DONE 2026.09.23.14** — implemented, verified in the live preview and pushed.
+- **Request (author, 2026-09-23, verbatim):** "Let’s add a floating \"Add Page\" button, in the same color
+  scheme as the page navigator, to the bottom right corner of the screen." Follow-up: "Let’s make it in the
+  same visual style as the Hide Panels and page navigator buttons as well."
+- **Plan:** a fixed `#addPageFab` (a `＋ Add Page` button) pinned bottom-right that calls the existing
+  `addPage()`, styled exactly like `#panelsToggleBtn` / the `#pageNav` bar — `var(--bg)` fill, 2px
+  `var(--green)` border, `var(--green-text)` bold label, same radius / padding / shadow / hover. It rises
+  above `#selectionBar` while that bar is visible, because the bar is nearly full-width on a phone and would
+  otherwise cover it.
+- **Implementation (2026.09.23.14):** `#addPageFab` (a `＋ Add Page` button pinned `right:16px / bottom:16px` at
+  `z-index:1000`) calling the existing `addPage()`, styled from the `#panelsToggleBtn` / `#pageNav` recipe, plus
+  `positionAddPageFab()` — a small fixed-point loop that lifts it above `#selectionBar` / `#pageNav` /
+  `#panelsToggleBtn` when their boxes would overlap (called from `updateSelectionUI`, `resize` and
+  `orientationchange`). No new persisted state and no show/hide logic (the opaque full-page overlays cover it).
+  See `DEV-NOTES.md` (BATCH 2026.09.23.14).
+
+### 2026-09-23 — BATCH (3 items): default images-per-panel is remembered · New Panel on a full page uses the Duplicate reflow · PANEL SELECTION (multi-select + batch ops)
+- **Status:** item 1 ✅ DONE (2026.09.23.10); item 2 ✅ DONE — it was already implemented in 2026.09.23.9; item 3 🟢 GREENLIT, RECON ANSWERS RECEIVED 2026-09-23 ("all of your recommendations are good") — **PHASE 1 SHIPPED as 2026.09.23.11** (selection + highlight + Shift-range + Select all + batch Duplicate / Add / Move) and **PHASE 2 SHIPPED as 2026.09.23.12** (batch Generate / Generate All From Here / Clear / Clear Images / Delete with the Ok / Only-This-Panel / Cancel dialog and Delete &amp; Refill); phase 3 (Copy / Cut / Paste) **SHIPPED as 2026.09.23.13** — item 3 is now COMPLETE (all three phases done).
+- **Item 1 (author, verbatim):** "Number of images per panel default setting can be saved: I'd like to be able to set the number of images per panel and have it default to that when I open the app next time, or at least have it saved to a project's JSON and have it default to that within that project. This one is probably low hanging fruit, and if there are no questions you can implement this one immediately. I trust your recommendations enough that if there's something you would need my input on for this function, implement using your recommendations and alert me."
+  - **Implemented (2026.09.23.10):** a remembered **Images-per-panel default**. File → Page Setup's control is now "Images per Panel:" (was "Image Count for All Panels"); its value is stored as `imgCountDefault` in the project state (so it rides in `comicGen.panelState` AND in Export/Import .json + the project ZIP + the JSON editor), is what new / blank / reset panels start at. "Apply to all" still sets every panel immediately. (Project-scoped by design — a brand-new project still starts at 1. The author was told on 2026-09-23 and offered an app-wide mirror if he wants one; awaiting his call.)
+- **Item 2 (author, verbatim):** "Creating a New panel on a full page: it should use the same logic as duplicating a panel. I don't think I mentioned it, I don't know if you assumed it and implemented it, but if not, please do."
+  - **Verified:** already implemented in 2026.09.23.9 — `addPanel(i)` takes the same full-page branch as `duplicatePanel(i)` (same `planReflow` confirm wording, same `reflowInsertOnFullPage(i, {}, null)` recursive carry, one collected state + one save). Nothing to change; re-verified in the .9 tests ("[24,10] ＋ Add → blank at 7, 1 move").
+- **Item 3 (author, verbatim):** "Panel Selection: This one has a lot of moving parts and a lot of verbiage from me, so definitely ask me clarifying questions." — the full spec (checkboxes on panels, Select All, visual highlight, shift-click range select, explicit deselect, selected panels' Panel-menu buttons acting on the whole selection for Duplicate / Add Panel / Move / Generate / Generate All From Here / Clear / Clear Images / Delete with an Ok / Cancel / Only-This-Panel warn dialog, optional Copy / Cut / Paste, multi-panel full-page reflow, duplicate-pairs placement vs contiguous paste, delete-with-refill Yes / No / Cancel, and a possible later phase for multi-image selection).
+  - **Notes:** the full spec message is in that session's conversation — condensed here. RECON questions were sent; the author answered **"all of your recommendations are good"** (2026-09-23), approving these eleven decisions: (1) the checkbox is the first item in each panel's header row, before "Panel N", with a coloured outline + tint on the whole card when selected; (2) Shift-click selects a range **on the current page** by panel number (an anchor on another page just selects that one); (3) only the checkbox (and Esc) deselects — clicking a panel's body never changes the selection; (4) the selection is **in-memory only**, cleared on page switch, never saved into the project; (5) after a batch op the selection clears — except **Move**, where the moved panels stay selected so moves can be chained; (6) with a selection the menu labels show the count ("Duplicate 3 Panels"), and only destructive/ambiguous ops ask; (7) a multi-panel full-page reflow shows **one combined** confirmation ("creates 2 pages and reflows 9 panels — Continue?"), not one per page; (8) delete-with-refill pulls recursively from following pages until the page is full or later panels run out, and deletes a page emptied that way, with its own confirm; (9) Add Panel × N shows one advisory and places all the new panels after the last selected one; (10) Copy/Cut/Paste get a **selection bar** (Copy / Cut / Clear + "N selected") shown only while something is selected, plus a Paste chip on each panel header shown only while the buffer is non-empty, with Edit → Select hosting Select all / Clear; (11) Cut is consumed by Paste, Copy persists until replaced (repeat-paste), and Paste inserts the group contiguously *before* the clicked panel using the full-page reflow. Delivery is phased with a review after each: **P1** selection mechanics + highlight + Select all + batch Duplicate / Add / Move — ✅ **DONE 2026.09.23.11**; **P2** batch Generate / Clear / Clear Images / Delete + their Ok / Cancel / Only-this-panel dialogs and the multi-panel full-page reflow confirmations; **P3** Copy / Cut / Paste + the buffer.
+  - **Implementation (P1, 2026.09.23.11):** `panelSelection` (a `Set` of 1-based panel numbers) + `selectionAnchor`; `updateSelectionUI()` renders the checkbox states, the `.panel-selected` tint, the per-card ⚙ Panel button labels and the `#selectionBar`; `panelDuplicateAction` / `panelAddAction` route those buttons through the batch functions whenever the clicked panel is selected; `cascadePageSequence(srcPage, entries)` generalises `reflowInsertOnFullPage` to insert any number of panels and cascade the overflow; `batchDuplicatePanels` / `batchAddPanels` / `moveSelectionWithinPage` / `batchMoveToPage(target, replaceTarget)` / `batchMoveToNewPage`; the ⇅ Move picker switches to a group picker (`populateGroupReorderSelect` + a `_groupMode` flag) that routes `onReorderSelect` to the batch move. The selection is cleared inside `loadCurrentPage` (so page switches and every single-panel structural op reset it) and re-applied by the Move paths. No new persisted state. Full details + the verified test matrix are in `DEV-NOTES.md` (BATCH 2026.09.23.11).
+  - **Implementation phase 2 (2026.09.23.12):** `generateComicPage(startPanel, panelList)` gained an optional panel-list parameter so a run can cover exactly the selected panels; `panelGenerateAction` / `panelGenerateFromHereAction` / `panelClearAction` / `panelClearImagesAction` / `panelDeleteAction` are the new ⚙ Panel handlers (each falling through to the single-panel function when fewer than two panels are selected); `#choiceOverlay` + `showChoiceDialog()` provide the Ok / Only-This-Panel / Cancel dialog (reusing the import-confirm chrome, with uniform `choice-*` button styles); `batchDeletePanels()` / `performBatchDelete(refill)` implement Delete and **Delete &amp; Refill** — panels are pulled up from the top of the following page(s) until the source page is back to its pre-delete panel count, a page emptied by that pull is deleted after its own confirmation (warned about in the dialog), and selecting every panel of a page deletes the page. A `🔄 Generate` button was added to the ⚙ Panel menu so the batch Generate sits with the other panel actions. Details, gotchas and the verified test matrix are in `DEV-NOTES.md` (BATCH 2026.09.23.12).
+  - **Implementation phase 3 (2026.09.23.13):** the feature is COMPLETE. `panelClipboard` (an in-memory
+    array of `{panel, img}` for the selected panels, plus `panelClipboardCut`) + `copySelectionToClipboard(mode)`
+    / `panelCopyAction()` / `panelCutAction()` / `panelPasteAction(i)` / `updatePasteUI()` / `emptyPageAfterCut()`.
+    The selection bar traded Select all for `📋 Copy` and `✂ Cut` (`#selectionBar`); every panel header gained a
+    `📋 Paste` chip (`#panel-paste-btn-N`) shown only while the clipboard is non-empty; Edit → Panel Selection
+    carries Select all / Copy / Cut / Clear. Paste inserts the buffer *before* the clicked panel and reflows with
+    `cascadePageSequence`, so the overflow cascades onto the following pages (one combined `batchReflowPlan`
+    confirm, and a new page when there is nothing left to cascade into). A cut is consumed by the first paste; a
+    copy persists for repeat pastes. Cutting every panel of a page goes through `showChoiceDialog` (delete the
+    page, or empty it to one blank panel on a single-page project) and Cancel keeps the panels in the clipboard.
+    Details, the layout gotchas and the verified test matrix are in `DEV-NOTES.md` (BATCH 2026.09.23.13).
+
+### 2026-09-23 — Dark-mode coloured-chip contrast (the "53 low-contrast nodes" I offered to fix)
+- **Status:** DONE 2026-09-23 (changelog 2026.09.23.4). Author's answer (verbatim): "Your rec. And it covers the
+  two small offers too. Go ahead and implement!" — i.e. bucket 1 + the saturated fills (my recommendation) plus
+  BOTH small offers. SHIPPED: (1) the seed-chip amber-inheritance bug fixed for all themes (⇤ copy-previous-seed
+  and ✕ clear-seed now white), plus the same trap on the ⇅ Move chip; (2) the dark --teal*/--blue*/--red*/
+  --green-3/4 fills darkened so their white text clears 4.5:1 (light untouched); (3) the Import Project button
+  given the new theme-aware --on-purple text colour; (4) default color mode 'dark'->'system' (first-time
+  visitors match their device — verified live); (5) Focus view button -> "⚡ Generate All" (mixed-case,
+  text-transform:none). The decorative .ps-sep dots were left as-is per my rec. Post-fix dark audit: 9 nodes
+  under 4.5, all intentional (8 decorative dots + 1 exempt disabled chip). Verified live, then backed up.
+- **Request (author, 2026-09-23, verbatim):** "Yes please!" — answering my offer "the light-theme contrast
+  audit exposed ~53 low-contrast amber-on-red chip nodes in dark mode; I deliberately left dark untouched.
+  Want me to fix those?" (My earlier "53 amber-on-red" phrasing was imprecise — see RECON.)
+- **RECON (2026-09-23):** ran a full dark-mode audit (every visible text node vs its nearest opaque background;
+  flag < 3.4): **53 nodes / 20 groups**, in three distinct buckets.
+  1. **The real bug — AMBER text on a coloured fill (8 nodes).** Root cause: `.panel-imgs-sel { color:
+     var(--accent) }` (around line 1895) wraps the per-panel seed chips, and normalize.css's
+     `button:not([disabled]) { color: inherit }` (specificity 0,1,1) makes the `<button>`s INHERIT that amber
+     `#ffcc00`, out-specifying `.btn-line-del { color: var(--on-danger) }` and `.btn-copy-prev { color:
+     var(--text) }` (both 0,1,0). Result: 4 × `#seed-clear-N.btn-line-del` = amber on `--red` #ff4d4d (≈2.18),
+     4 × `#seed-copy-prev-N.btn-copy-prev` = amber on `--blue-3` #4d7fff (≈2.47). This is the SAME normalize trap the
+     LIGHT-READABILITY tail block already fixes — but that block is scoped to `:root[data-theme="light"]` (and
+     its light-media mirror), so dark was left broken. The disabled `#seed-copy-prev-1` (grey 2.0) is exempt
+     (disabled controls aren't held to contrast).
+  2. **WHITE text on a saturated fill (~44 nodes, all only slightly under 3.4).** `.btn-view` / `.btn-copy-prompt`
+     white on `--teal` #2a9d8f ≈3.32 (9 nodes), `.btn-add-lib` / `.btn-view.menu-show` white on `--blue`
+     #4d9fff ≈2.72 (14), `.btn-reroll` / `.btn-img-reroll` / `.btn-img-clear` / `#globalStopBtn` /
+     `#deletePageBtn` / `.btn-reroll.btn-header-gen` white on `--red` #ff4d4d ≈3.30 (~16). Fixing these means
+     DARKENING `--teal`/`--blue`/`--red` in dark (or switching those buttons to dark ink text) — a visible
+     change to the app's signature button colours, not a pure bug-fix.
+  3. **Dim greys (8 nodes).** `.ps-sep` `--text-10` #666 on `--surface` #2a2a2a ≈2.47 — the `•` separators in
+     the panel summary; purely decorative.
+- **QUESTION (awaiting author):** scope = (A) just bucket 1 (fix the amber chips — unambiguously correct; I'd
+  pin `.panel-imgs-sel .btn-line-del` + `.panel-imgs-sel .btn-copy-prev:not(:disabled)` to `#fff`, which also
+  matches the light theme and every other red button in the app), or (B) A **plus** bucket 2 (also darken
+  `--teal`/`--blue`/`--red` in dark so white button text clears 4.5, which visibly darkens the View / Add /
+  Generate / red buttons)? Bucket 3 (decorative `•`) I'd leave unless asked. Also: does "Yes please!" also
+  include the two small offers (default mode → "Match my device", and renaming Focus's "⚡ GENERATE ALL PANELS
+  ON PAGE" → "⚡ Generate All")? Ship everything as ONE version (`2026.09.23.4`) once the scope is confirmed.
+
+### 2026-09-23 — BUG: "requestCloseMenuFullscreen is not defined" (full-screen menu's "← Back to page" button)
+- **Status:** DONE 2026-09-23 (changelog 2026.09.23.5).
+- **Report (author, 2026-09-23, verbatim):** the perchance HTML error — "There was an error in the onclick
+  attribute of this element in your HTML panel: <button class="btn-view"
+  onclick="requestCloseMenuFullscreen()" ...>← Back to page</button>. Here's the error: ReferenceError:
+  requestCloseMenuFullscreen is not defined".
+- **RECON:** the function IS declared in the IIFE, immediately above the Esc keydown handler that also calls it
+  internally — so the internal Esc path worked while the inline onclick did not. It was simply never added to the
+  big window.<fn> = <fn> export list at the end of the IIFE. Introduced with ship 2 (2026.09.23.2); NOT a
+  2026.09.23.4 regression.
+- **FIX + AUDIT:** added "window.requestCloseMenuFullscreen = requestCloseMenuFullscreen;". Then audited for the
+  same class of bug two ways — LIVE DOM (every on* attribute: 1635 calls / 120 distinct functions, only this one
+  missing) and STATIC (all 186 on* attributes in the source vs the window.X = list: the same single miss). No
+  others. Recorded as a rule in AI-NOTES + the dev-notes.
+
+### 2026-09-23 — QUESTION: can the four in-app doc blocks live only on GitHub (with a dev-notes pointer)?
+- **Status:** DONE 2026-09-23 (changelog 2026.09.23.6). Author: "the three files plus dev-notes", then
+"make whatever outstanding changes there are for the doc move". IMPLEMENTED: the top-of-file dev-notes
+comment + the TROUBLESHOOTING note became DEV-NOTES.md (created 2026.09.23.6); the PENDING / AI-NOTES /
+ISSUES `<script type="text/plain">` blocks were DELETED from index.html — each was verified byte-identical to
+its repo copy BEFORE deletion, so nothing was lost; #embeddedChangelog stays embedded (it renders Help →
+About and supplies the version number). index.html went 819426 → 455047 bytes (-44%); the served page should
+drop from ~986KB to ~650KB. A compact "PROJECT DOCS LIVE ON GITHUB" pointer comment now sits at the top of
+index.html: repo URL, how to READ (raw.githubusercontent.com, no token — the repo is public now), how to
+WRITE (Contents API + comicGen.githubToken / .githubOwner / .githubRepo from localStorage), and the rules
+that still apply (never create these .md files in src/; do not re-add the blocks; versioning YYYY.MM.DD.S
+Pacific; log every request here FIRST; end every task with the Save reminder + ghPush backup). ghPush was
+left UNCHANGED — its docMap skips missing/empty blocks, so it pushes main.pjs / index.html /
+src/user-manual.html / CHANGELOG.md and no longer touches this file, AI-NOTES.md or ISSUES.md. The repo was
+made PUBLIC the same day (read + fork; push = owner only) and the ⬆ Backup to GitHub dialog no longer claims
+a private repo is required. NOTE FOR FUTURE SESSIONS: the request log now lives HERE, not in index.html.
+- **Question (author, 2026-09-23, verbatim):** "I remember that on the Perchance side we had problems when the
+  in-app doc blocks were broken out as .md files. Would it be possible for those to live entirely on Github and
+  to leave a note in dev-notes for future AI instances to look there? Or are there technical reasons to keep
+  them in index.html?"
+- **RECON (2026-09-23):**
+  - The remembered problem was perchance's OWN src/ storage, not GitHub: writing PENDING.md / AI-NOTES.md /
+    CHANGELOG.md / ISSUES.md / src/README.md into src/ wedges the platform save flow
+    (another_upload_in_progress) and the sync is killed by the next hard reload (see the FILE-CLEANUP 2026-08-15
+    + src rules in the dev-notes). GitHub is entirely outside perchance, so that problem does NOT apply to docs
+    living in the repo — and these four files are ALREADY on GitHub (ghPush writes them).
+  - Who actually READS the blocks — only two places: (1) renderChangelog() reads #embeddedChangelog → the
+    Help → About → Version History list AND the version number (#aboutVersion = the first `## ` heading), and
+    ghPush derives the commit-message version from it too; (2) ghPush()'s docMap reads #embeddedPENDING /
+    #embeddedAINOTES / #embeddedIssues / #embeddedChangelog ONLY to write the four .md files to GitHub.
+    NOTHING in the app ever displays PENDING / AI-NOTES / ISSUES.
+  - renderChangelog() already falls back to fetch('src/CHANGELOG.md'), but src/ cannot hold it (the src/ rule).
+  - BLOCKER for a full move: the backup repo cgoodwin97124/yacbpg-backup is PRIVATE (verified: unauthenticated
+    API + raw.githubusercontent both 404; with the token: private:true, default branch main). So the app cannot
+    fetch the docs from GitHub at runtime without embedding a token in the PUBLIC source — never do that. That
+    is the real technical reason to keep the CHANGELOG embedded: otherwise Version History + the About version
+    number break for every visitor (and offline), and only the author's browser (which holds the token) sees them.
+  - Sizes: source index.html 814745 = dev-notes comment 161502 + the four blocks 260523 (PENDING 116244,
+    CHANGELOG 59806, AI-NOTES 54405, ISSUES 30068) + the app 392720. The served page (986652) is the platform
+    document with the whole source escaped (~172KB of boilerplate + escaping overhead).
+- **ANSWER / RECOMMENDATION:** yes, it is possible. Move PENDING + AI-NOTES + ISSUES (200717 bytes — all
+  internal, never displayed) to GitHub-only and KEEP the CHANGELOG embedded. ghPush needs NO code change: it
+  already skips missing/empty blocks, so it would keep pushing main.pjs / index.html / src/user-manual.html and
+  simply leave the four .md files to be maintained on GitHub (by the AI, via comicGen.githubToken in this
+  browser's localStorage). Optionally move the 161502-byte dev-notes comment to a DEV-NOTES.md as well, leaving
+  a compact invariants + pointer note in index.html. TRADEOFFS: the docs stop travelling with the generator
+  source; GitHub becomes the single source of truth (today index.html + GitHub are two copies); a future AI
+  session must fetch them from GitHub, so it needs the token still in localStorage. NOT recommended: moving the
+  changelog out too (breaks Version History for visitors/offline, since the repo is private).
+- **GITHUB PAT SCOPE (reference, 2026-09-23 — author asked "what permissions should I add for the fine-grained
+  PAT?"):** the app uses exactly THREE endpoints — `GET /repos/{owner}/{repo}` (ghTest "Test connection"),
+  `GET /repos/{owner}/{repo}/contents/{path}` (read the current file sha) and
+  `PUT /repos/{owner}/{repo}/contents/{path}` (write). No DELETE, no /git/ refs, no issues / pull requests /
+  actions / webhooks / admin calls anywhere. So a fine-grained PAT needs ONLY: Repository access = "Only select
+  repositories" → this one repo; Repository permissions = **Contents: Read and write** (Metadata: Read-only is
+  added automatically and cannot be removed); every other permission stays "No access". Contents write also
+  covers CREATING a new file and DELETING one — which is what moving the doc blocks to GitHub needs. NOT needed:
+  Administration (changing repo visibility is done by the human in Settings), Actions, Issues, Pull requests,
+  Webhooks, Secrets. Anyone who FORKS and wants to use the app's Backup dialog needs their own token with
+  Contents: Read+write on THEIR repo (worth a line in the repo README).
+
+## ✅ DONE — implemented (history, newest first)
+### 2026-09-26 — BUG: importing a project closed or re-opened the active menu (`switchMenu` is a toggle) — ✅ **2026.09.26.11**
+- **Status:** ✅ **DONE 2026.09.26.11.** Author, 2026-09-26, verbatim: **"Go ahead and fix the cosmetic wart."** Logged in QUEUED on discovery (2026-09-26, while testing P2 step 1's export round trip), then moved here.
+- **Symptom:** after an import or a JSON-editor apply the drawer menu flipped — the open menu closed, or one that should have stayed closed appeared — and a file's `menuVisible:false` was over-ridden whenever fullscreen was on.
+- **Cause:** both restore paths called `switchMenu(...)`, which **toggles** (`openNow = !group.hidden`), and `applyMenuFullscreenPref` ran before the file's own visibility was applied.
+- **IMPLEMENTATION (2026.09.26.11):** a new `applyMenu(name)` setter (hide every group, then show the named one with its active button and panel expansion; a blank/unknown name closes everything; exported as `window.applyMenu`), used by `applyImportedSettings` and `jsonApplyDoc`; `applyMenuFullscreenPref(on, section, keepVisibility)` gained `keepVisibility`, which the restore paths set so a file's `menuVisible` survives. The menu buttons keep `switchMenu` and still toggle.
+- **Verified:** smoke `G9:50` was tightened to a **full** export → import → export comparison (the `activeMenu`/`menuVisible` exception removed) and passes; a live park/restore probe drove the real import path four ways (same menu → stays open, `''` → all closed, a different menu → opens, `menuFullscreen:true`+`menuVisible:false` → really hidden); differential **23/0**, core **24/0**, smoke **79/0/4**, generation **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, park hash `bb2bf3c8` byte-identical. **No visual change** — the predicted 5-baseline shift did not occur (`visual-diff` identical to .10). Docs: `CHANGELOG.md`, `DEV-NOTES.md` BATCH 2026.09.26.11, `AI-NOTES.md` §24, `REFACTOR-NOTES.md` §2/§5 + running log, `ISSUES.md`, `devtests/README.md`.
+### 2026-09-26 — FEATURES: batch "⟳ Refresh from library" across a multi-panel selection + the multi-panel buttons inside Edit → Panel Selection
+- **Status:** ✅ **DONE 2026.09.26.2** — logged on receipt as QUEUED (2026-08-13 rule), recon done and the six design questions answered the same day ("Defaults are all correct!"), implemented and verified live on 2026-09-26. See the IMPLEMENTATION bullet below, plus `CHANGELOG.md` 2026.09.26.2 and `DEV-NOTES.md` BATCH 2026.09.26.2.
+- **Author, 2026-09-26, verbatim:** "If multiple panels are selected, and Refresh From Library is clicked, I would like all of the basic descriptions in the selected panels to refresh from the library.  Also, I would like the Edit -> Panel Selection menu to have its own copies of all of the buttons that can affect multiple panels.  Please perform the usual pre-implementation tasks first. Thank you!"
+- **RECON (2026-09-26) — `⟳ Refresh from library`:**
+  - The button is per *line*, not per panel: `#panel-char-baseref-i-s` (kind `char`, three slots) and `#panel-loc-baseref-i` (kind `loc`), each sitting inside its line's `.pl-base-field` beside the "Basic Description" label (with the `.pl-base-badge` "edited" marker). They live in the **📖 Panel Library** accordion of each panel.
+  - Handler `refreshPanelLineBase(kind, i, s)` (index.html ~2634) was five lines: read that line's `<select>`, set its base `<textarea>` to `plLineDescText(kind, sel.value)` (the text saved in the library for the selected character/location), `delete baseEl.dataset.needSeed`, then call `refreshPanelLineDesc(kind, i, s)` which recomputes the "edited" badge and the field's `differs` class.
+  - Only the **Basic Description** is library-backed. Next to it is a separate "This panel — extra description" box (`panel-char-extra-i-s` / `panel-loc-extra-i`), and the Action line (`actRowHtml` → `#panel-act-i`) is one freeform textarea with no library/description split at all — neither is in scope for "the basic descriptions".
+  - Persistence: `collectPanelState()` → `collectPageData()` read those textareas back out of the DOM (`sel`/`base`/`extra` per character, `loc`/`locBase`/`locExtra`, `action`), so a batch refresh only has to write the textareas and call `schedulePanelSave()`.
+  - Batch idiom already in the codebase: `panelBatchMode(i)` is `panelSelection.size > 0 && panelSelection.has(i)`; every selection-aware ⚙ Panel button does `if (panelBatchMode(i) && panelSelection.size > 1) { …for (const p of panelSelectionSorted())… }`, and `updateSelectionUI()` (~4396) rewrites each button's label to carry the count (e.g. "🔄 Generate 3").
+  - `dataset.needSeed` is the wrinkle: a base box marked `needSeed==='1'` is auto-filled from the library the first time it is needed (`seedPendingPanelBases`), and a single-panel refresh on a "none"/placeholder line blanks the box and re-marks it — hence the explicit "leave lines with no library text alone" rule below.
+- **RECON (2026-09-26) — Edit → Panel Selection menu:**
+  - The section (index.html ~865, inside 🎨 Edit) held only four buttons: ☑ Select all panels, 📋 Copy, ✂ Cut, ✕ Clear selection.
+  - Everything that can act on more than one panel, and where it lives: the ⚙ Panel accordion — 🔄 Generate (`#panel-gen-btn-i` → `panelGenerateAction`), ⚡ Generate All To Here (`#panel-gento-btn-i`), ⚡ Generate All From Here (`#panel-genfrom-btn-i`), ⚡ Generate (x) to (y)… (`#panel-genrange-btn-i`), ⧉ Duplicate (`#panel-dup-btn-i` → `batchDuplicatePanels`), ＋ Add Panel (`#panel-add-btn-i` → `batchAddPanels`), 🗑 Clear Images (`#panel-clear-imgs-btn-i`), 🗑 Clear (`#panel-clear-btn-i`), 🗑 Delete (`#panel-del-btn-i` → `batchDeletePanels`); and in the panel's title bar, ⇅ Move (`#reorder-btn-i` → `toggleReorderPicker`, which moves the selection as a block) plus the conditional 📋 Paste chip. Each gates on `panelBatchMode(i)` and uses its owning panel's index `i` as the anchor — Duplicate inserts after the **last** selected panel, Add Panel adds one empty panel per selected panel after the last, To Here ends at the last selected, From Here starts at the first selected, the range picker prefills first…last, and Delete lets `batchDeletePanels` choose how the page refills. The top bar's ⚡ Generate All / ⏸ Pause / ■ Stop act on the whole page (not the selection) and stay reachable while the menu is hidden, so they were out of scope.
+  - Stale help text spotted while reconning: the Panel Selection paragraph (index.html ~866) listed ⇅ Move as if it were one of the ⚙ Panel buttons (it is a title-bar button) and omitted ⚡ Generate All To Here and ⚡ Generate (x) to (y)… from the selection-aware list — corrected in the same pass, in both index.html and the shipped manual.
+  - A Panel Selection menu button has no owning panel, so the position-aware actions (Duplicate / Add / Move / To Here / range prefill) needed a defined anchor — resolved as the **last selected panel**.
+- **DESIGN QUESTIONS SENT TO THE AUTHOR (2026-09-26) — all six answered "Defaults are all correct!" (defaults as proposed in brackets):**
+  1. Scope and trigger for the batch refresh: from the ⟳ button inside a panel's 📖 Panel Library, when 2+ panels are selected and this panel is one of them, refresh the **Basic Description** of every character slot **and** the location line of every selected panel — leaving the "This panel — extra description" boxes and the Action prompt alone — and keep exactly the previous single-panel behaviour with 0–1 selected? [yes]
+  2. Lines with nothing library-backed (selection "none" / placeholder): during a batch refresh, leave them as they are, or blank them the way a single-panel refresh would? [leave untouched, and report "N descriptions refreshed · M skipped — nothing to refresh" in the status line]
+  3. Should the Panel Selection menu also get its own ⟳ refresh button? [yes — the same action, which needs no owning panel]
+  4. Which buttons to copy into the menu — 🔄 Generate, ⚡ Generate All To Here, ⚡ Generate All From Here, ⚡ Generate (x) to (y)…, ⧉ Duplicate, ＋ Add Panel, ⇅ Move, 🗑 Clear Images, 🗑 Clear, 🗑 Delete, plus ⟳ Refresh descriptions? [yes; the menu's existing ☑ Select all / 📋 Copy / ✂ Cut / ✕ Clear selection stay]
+  5. Anchor for the position-aware copies (Duplicate / Add Panel / Move / To Here / range prefill), now that no panel owns the click: the **last selected panel**, i.e. what the batch paths already do? [yes]
+  6. With nothing selected: disable the new buttons (greyed, "select some panels first" hint) rather than falling back to a single-panel action; the destructive copies keep their confirmations but without the "🎯 Only This Panel" escape; and the labels carry the selection count like the in-panel buttons? [yes to all three]
+- **IMPLEMENTATION (2026.09.26.2):**
+  - **Batch ⟳ refresh:** the first line of `refreshPanelLineBase` is now `if (panelBatchMode(i) && panelSelection.size > 1) { batchRefreshPanelLineBases(null); return; }`; 0–1 selected keeps the old single-line behaviour exactly. `panelLibDescRefreshOne(kind,i,s)` returns `'done'` / `'skipped'` / `'none'` (`'skipped'` only when the line HAS a selection but `plLineDescText` is empty; an empty slot is `'none'` and not counted), and `batchRefreshPanelLineBases(selOverride)` loops the three character slots + the location line of every selected panel, writes `ids.base`, deletes `data-needSeed`, calls `refreshPanelLineDesc`, then `schedulePanelSave()` once and writes "⟳ Refreshed N basic description(s) from your library across M panel(s). K line(s) had no library description to refresh, so …". Never touches the extra-description boxes or the Action prompt. Both new functions are exported on `window`.
+  - **Chip labels:** `updateSelectionUI()` walks `.pl-base-refresh`, parses the panel number from the id (`/-baseref-(\d+)/`) and sets "⟳ Refresh N panels" when that panel is in a 2+ selection, else "⟳ Refresh from library".
+  - **Edit → Panel Selection copies:** a new `.panel-header-btns` row + `#selMenuHint` after the existing row, carrying `selMenuGenBtn`, `selMenuGenToBtn`, `selMenuGenFromBtn`, `selMenuGenRangeBtn`, `selMenuDupBtn`, `selMenuAddBtn`, `selMenuMoveBtn`, `selMenuRefreshBtn`, `selMenuClearImgsBtn`, `selMenuClearBtn`, `selMenuDelBtn`. `selMenuSelection()` returns the sorted live selection or null; `selMenuAction(kind)` dispatches to the SAME functions the in-panel chips use with `anchor = sel[sel.length - 1]`; `move` opens the anchor's reorder picker and scrolls it into view; `refresh` calls `batchRefreshPanelLineBases(sel)`; the destructive three pass `{ noSingle: true }`. `window.selMenuAction` exported.
+  - **`opts.noSingle`:** `panelClearAction(i, opts)` / `panelClearImagesAction(i, opts)` assemble their `buttons` into a local `btns` and push the `🎯 Only This Panel` escape only when `!(opts && opts.noSingle)`; `panelDeleteAction(i, opts)` forwards `opts` to `batchDeletePanels(opts)`, which skips its escape the same way. In-panel calls pass nothing, so the escape is unchanged there.
+  - **Enabled state:** `updateSelectionUI()` writes each copy's text (counts on the multi forms) and `disabled = (n === 0)`, and toggles `#selMenuHint.hidden`; the markup ships them `disabled`, and `selMenuAction` still guards with a ⚠ status line.
+  - **Docs/copy:** the Panel Selection help paragraph in index.html and the shipped manual now list the full selection-aware set (adding ⚡ Generate All To Here and ⚡ Generate (x) to (y)…, noting ⇅ Move is a title-bar button) and describe the batch ⟳ and the new menu row.
+  - **VERIFIED live:** 4 panels (3 with a library character, 2 with a library location) — one ⟳ click refreshed exactly 5 Basic Descriptions and reported 1 skipped (a line whose library entry has an empty `desc`); unused slots and an unselected panel kept their stale text; labels read "⟳ Refresh 4 panels" for selected panels and "⟳ Refresh from library" otherwise; 0- and 1-panel selections still refreshed only the clicked line; the debounced save persisted the new text. Menu copies: labels/disabled at 0 and 4 selected; ⟳ refresh; range picker prefilled 1–4 with Cancel keeping the selection; Clear Images / Clear / Delete dialogs carried no escape and applied ("Cleared the images of 4 panels", "Cleared 2 panels (panel 1, 3).", "Deleted 2 panels from Page 1.") while the in-panel paths still showed it; Duplicate 4→6 and Add 6→8; Move opened the picker in group mode on the anchor and moved the block to position 1; Generate/gento/genfrom acted on the right panels with `root.generateImage` stubbed. Layout checked with `vision` at 390 px (all eleven greyed, wrapped, unclipped) and 1440 px (all enabled with count labels, hint hidden). All 20 stored keys were parked in `__test_backup_v10` + `scratch/test-v10-backup-raw.json` and restored byte-for-byte (FNV-1a `1c13afe4` identical before and after a full reload, 0 mismatches, only the parked key removed, no stray keys, no perchance errors).
+
+### 2026-09-25 — BATCH: the five 2026-09-25 tickets (T-01 … T-05) — all shipped as **2026.09.25.1**
+- **Status:** ✅ **DONE 2026.09.25.1** (2026-09-25). The author answered the five tickets and said "Go ahead and implement!"; T-01/1c, T-03, T-04, T-05 are code, T-02 is docs-only. Everything is verified live, documented in the user manual and in `DEV-NOTES.md` (BATCH 2026.09.25.1) / `AI-NOTES.md` (§17), and each ticket file now carries `status: done` with its `## Implementation` section filled in. The individual entries follow.
+
+### 2026-09-25 — FEATURE: "Generate To Here" button (Panel menu), mirroring "Generate From Here" — T-01
+- **TICKET:** T-01 — `tickets/T-01-generate-to-here.md` (✅ answered 2026-09-25 → ✅ done 2026.09.25.1).
+- **Status:** ✅ **DONE 2026.09.25.1** — the ⚡ **Generate All To Here** chip renders every panel on the page from panel 1 up to and including the panel it was clicked on, mirroring the multi-selection (it finishes at the LAST selected panel), and a To-Here run that is paused now resumes only as far as the end panel it was aiming for.
+- **Author, 2026-09-25, verbatim:** "I'd like a \"Generate To Here\" button to go with \"Generate From Here\" under the Panel menu. Clicking this button will generate all of the current page's panels from panel 1 up to and including the panel where it was clicked."
+- **Answers:** 1a label/placement = "⚡ Generate All To Here", between 🔄 Generate and ⚡ Generate All From Here; 1b mirror the selection (finish at the LAST selected panel) — with a NOTE floating a separate "Generate (x) to (y)" arbitrary-range chip (logged as its own QUEUED entry above, NOT shipped); 1c "Remember the To-Here end panel and resume only up to it".
+- **IMPLEMENTATION (2026.09.25.1):** `#panel-gento-btn-i` inserted between the two existing generate chips; `panelGenerateToHereAction(i)` builds `[1 … min(end, totalPanels)]` and calls the existing `generateComicPage(null, list)`; a new `runEndPanel` module var records each run's end panel so a paused run resumes with `endPanel = min(runEndPanel, totalPanels)`, cleared by `stopAllGenerations` / `haltGenerations` / the stop branch. Verified with a call-counting stub (multi-select 2+5 → 5 calls; To Here on 3 → 3 calls; plain Generate All afterwards → the whole page) and by pausing a To-Here(3) run on a 6-panel page ("Paused … continue from panel 2." → the resume made exactly 2 calls and never touched panels 4–6). Details in `DEV-NOTES.md`.
+
+### 2026-09-25 — FEATURE: "Recent" list under 📄 File, and how many are kept is configurable — T-03 + T-05
+- **TICKETS:** T-03 — `tickets/T-03-recent-list-under-file.md`; T-05 — `tickets/T-05-recent-count-preference.md` (both ✅ answered 2026-09-25 → ✅ done 2026.09.25.1). Shipped together because T-05 only configures T-03's list.
+- **Status:** ✅ **DONE 2026.09.25.1** — a **Recent** list sits directly under the Backup Project chips in 📄 File: click an entry to reopen that project (through the usual warning), ＋ Add / Open… to put a .json or .zip in the list, Clear list to empty it. **Edit → Preferences → Recent files** gains a **Recent projects to remember** spinner (default 5, max 50; 0 hides the list).
+- **Author, 2026-09-25, verbatim (T-03):** "Can we add a \"Recent\" list under File that would hold the path and filename of the saved file? Clicking on that would directly load the project (JSON or ZIP) with the usual warning to the user rather than going through the system's Load File dialog." — and (T-05) "Let's add in: Allow the number of recent filename/paths kept to be configured by the user under Edit -> Preferences."
+- **Answers:** 3a filename + time is enough (browsers never reveal a folder) and add a ＋ Add… picker; 3b allow ZIPs as well as JSON; 3c directly under the Backup Project chip row with a Clear-list action; 3d keep 5 by default; 5a the count should be a **spinner**; 5b **0 hides the list**, but keep populating the newest five in memory anyway; 5c store it as the browser preference `comicGen.recentMax`.
+- **IMPLEMENTATION (2026.09.25.1):** entries live in the existing `comicGenSaveState` IndexedDB (key `recent`) as `{kind:'handle', handle, name, at}` or `{kind:'snapshot', name, at, text}`; `beginImport(file, isZip)` was factored out of `importSettingsFromFile` so a Recent click reuses the exact import path; entries are added by Save as…, by the download fallback, by Import and by ＋ Add / Open…; `recentStoreCap() = max(5, recentMaxPref)` implements the 5b rule (the stored list always keeps the newest five — the spinner only decides how many are shown); `#prefRecentMax` writes `comicGen.recentMax`. **The snapshot flavour exists because the author's browser is Firefox, which has no File System Access API** — without it the whole feature would have been dead for them; where the API is missing the entry keeps its own copy of the project and still opens after the original file is moved or deleted. Details + the verification log are in `DEV-NOTES.md`.
+
+### 2026-09-25 — FEATURE: Panel Library's read-only "Library Description" → editable, project-saved "Basic Description" — T-04
+- **TICKET:** T-04 — `tickets/T-04-basic-description.md` (✅ answered 2026-09-25 → ✅ done 2026.09.25.1).
+- **Status:** ✅ **DONE 2026.09.25.1** — the read-only box is now the editable **Basic Description**: seeded from the library when a selection is made, saved with the project, frozen once edited, marked with an **edited** badge + coloured left bar when it differs from the library text, with a **⟳ Refresh from library** chip; ⇤ copies the previous panel's Basic Description edited or not; a differing Basic Description replaces the library text in the prompt.
+- **Author, 2026-09-25, verbatim:** "In the Panel Library menu, let's rename Library Description to Basic Description. By default it populates from the character or location's Library Description stored in the main Library, but it *can* be edited, and editing it causes the panel to use the edited description rather than pulling it in from the library. I'd like to be able to save it with the project, and I'd also like a small chip button that refreshes it from the library's description. If the character or location's Basic Description differs from the description stored in the library, use the Basic Description instead of the library's description. Clicking the \"copy from the previous panel\" button copies the previous panel's Basic Description, regardless of whether it's edited. Also, I'd like each one to in some way visually call out a Basic Description that is different from the library's description."
+- **Answers:** 4a **keep both** fields — add Basic Description on top of the existing "This panel — extra description" (the extras ARE the panel-specific description and must survive); 4b (migration) answered by 4a — keep the old extras, prompts must not change; 4c an untouched Basic Description **stays frozen** at the text it was filled with, and ⟳ Refresh from library is how the user pulls the saved library text back; 4d built-ins get identical treatment; 4e trimmed, exact, **case-sensitive** comparison; 4f badge + coloured border only.
+- **IMPLEMENTATION (2026.09.25.1):** `.pl-base-field` + `.pl-base-head` (label / `.pl-base-badge` "edited" / `.pl-base-refresh` "⟳ Refresh from library") replaced the read-only `div.pl-libdesc`; state gained `chars[].base` and `locBase` (project-saved, in Export/Import and the JSON editor); `migratePanelBaseDescriptions` seeds legacy projects (their prompt is byte-identical — verified by capture/reload/re-capture); `refreshPanelLineDesc` does the trimmed exact comparison and toggles the call-out; `seedPendingPanelBases` fills built-in selections once `getMaps()` resolves (the `data-needSeed` sentinel); `buildPanelPrompt` prefers the edited text. Verified live in both themes: 96 fields / 96 badges / 96 ⟳ chips, zero `.pl-libdesc`, the badge and border follow edits (off for a whitespace-only change, on for a case change, cleared by ⟳), ⇤ copies an edited base, and the built prompt contains the custom text instead of the library text. Details in `DEV-NOTES.md`.
+
+### 2026-09-25 — DOC NOTE: "Cow in field" is a throwaway project and may be clobbered at any time — T-02
+- **TICKET:** T-02 — `tickets/T-02-cow-in-field-throwaway-note.md` (✅ answered 2026-09-25 → ✅ done 2026-09-25).
+- **Status:** ✅ **DONE 2026-09-25** — docs only, no code and no changelog entry. The standing note now appears in `AI-NOTES.md` §1 TEST DATA, in the STANDING NOTES at the top of this file (the test protocol), and in the `ISSUES.md` 2026-09-24 post-mortem.
+- **Author, 2026-09-25, verbatim:** "Add a note in your documents that the \"Cow in field\" project is a throwaway, and if it's loaded it can always be clobbered."
+- **Answer:** 2a — add it later, together with the go-ahead for the other requests (i.e. now).
+- **IMPLEMENTATION:** the wording added to all three docs says that anything loaded under that name — including a project a session just built there — may be loaded, overwritten or wiped without warning by anyone, including a future AI session, that nothing important should ever be parked in it, and that it must never be treated as a source of truth for the author's real work (the test protocol still applies to every other project).
+
+### 2026-09-25 — TOOLING: GitHub-backed author ticket system (question form → repo tickets/)
+- **Status:** ✅ DONE 2026-09-25 — infrastructure only; the five tickets it carries still await the author's answers (nothing implemented).
+- **Author, 2026-09-25, verbatim (three asks in a row while the ticket write-ups were being prepared):** (1) "is it possible that when you have questions, you could generate a really basic HTML (plus CSS or Javascript) that would have dropdowns for yes or no or other 'choice' answers, checkboxes for multiple possible answers to a single question, and freeform text entry for me to type answers in? It would have a 'copy to clipboard' button at the bottom ... the answers themselves, into the clipboard so I can just paste it here?"; (2) "since you're doing it in the preview pane, instead of copy and pasting, can we just do a 'Send answers' button?"; (3) "It almost sounds like we're creating a ticketing system. The answers can be stored in Github if that helps, with links. Let's build this with future expandability in mind into a ticketing system to interface with Github's change request system."
+- **What was built:** src/question-form.html — ONE self-contained, data-driven ticket form (inline CSS + vanilla JS, no build step, works from file://). All content lives in a single TICKETS = [...] block; each ticket has an id (T-01 …), a file slug, a kind (feature/doc/bug), the author's verbatim request, and its clarification questions (single-choice dropdown / multi-select checkboxes / free text, each with an optional notes field).
+- **How the author uses it:** the AI mounts it full-screen over the preview pane (window.__openQuestionForm() on the live page, with a ✕ close button). It runs on the generator's own origin, so it silently picks up comicGen.githubOwner / comicGen.githubRepo / comicGen.githubToken — no setup and no token typing. Pressing 📤 Send answers writes one markdown ticket per request and updates the ticket index; the form then lists the links and the author replies "sent". 📋 Copy answers and a localStorage draft remain as fallbacks, and the same file works when downloaded and opened locally (there it asks for owner/repo/token once).
+- **Where tickets live:** tickets/T-0x-<slug>.md with a YAML header (ticket, title, kind, status, answers, form, updated, generator), a "## Original request (verbatim)" quote, a "## Clarification questions & answers" list and a "## Implementation" placeholder; tickets/README.md is the index table (rebuilt on every send by merging the existing rows).
+- **Statuses:** open / partially-answered / answered. When a ticket is implemented, its file gets its status flipped and its Implementation section filled in (branch / PR, released version, changelog entry).
+- **Two targets, room for more:** ticket files (default — enough with the existing fine-grained PAT's Contents: read+write) and GitHub Issues (optional — needs Issues: read+write on the token; if the token refuses, the form falls back to ticket files and says so). Another backend is one more send() function — the "future expandability" the author asked for.
+- **The five queued 2026-09-25 entries are now tickets T-01 … T-05** (each has a TICKET line below its heading) — awaiting answers, still not implemented.
+- **VERIFIED:** (a) mocked end-to-end in the live page: 17 questions render, the PUTs carry the right paths/messages/branch, ticket markdown + index table are correct, partial answers give status partially-answered, and the no-connection path copies to the clipboard; (b) a real round-trip on the repo: tickets/.selftest.md created (PUT 201), read back byte-exact (UTF-8 intact), read unauthenticated through the public API, then deleted (DELETE 200).
+
+### 2026-09-23 — BUG: Save produced no feedback at all; the generator stayed on 2026.09.23.8 (DONE — 2026.09.23.9)
+- **Status:** ✅ DONE (2026.09.23.9). Author, verbatim: "Saved!  Go ahead and re-push." then "It didn't
+  give me any feedback that it was saving, the dot didn't clear, and there were no messages."
+- **Notes:** the root cause was the editor tab's save machinery returning silently (see the ISSUES.md
+  entry of the same date) — the generator was fine, the .9 code was already in the editor, and the pending
+  src file was correctly queued. It was cured by leaving and re-entering edit mode. While hunting it the
+  author confirmed the files-panel dot on `src/user-manual.html`, so the manual was renamed to
+  `src/manual.html` (a fresh name escapes the per-file upload lock) and all index.html references were
+  repointed. The repo was then re-pushed (index.html 583,894 B, main.pjs, src/manual.html); the stale repo
+  `src/user-manual.html` and the one-off `safety/` copy were deleted.
+
+### 2026-09-23 — FEATURE REQUEST (2 items): recursive panel reflow when duplicating on a full page · scrub `-1` seeds on import
+- **Status:** ✅ DONE — shipped as **2026.09.23.9** (2026-09-23); both items implemented, verified with synthesised import fixtures, and documented (DEV-NOTES batch + CHANGELOG + user manual + in-app Help).
+- **Request 1 — duplicate a panel when the page is full.** Today, duplicating a panel on a page that already has 24 panels offers to start a new page with the copy as its first panel. The author wants that replaced by an automatic reflow:
+  - No free later page → advise the user that a new page is being created, then let the overflow reflow automatically and insert the duplicate after the panel being duplicated.
+  - A later page exists → automatically reflow the 25th panel onto the next page and advise the user, with **Ok / Cancel** choices.
+  - Recurse through any number of full pages. The author's worked example: three pages of 24, duplicating panel 6 on page 1 → create page 4; move page 3's panel 24 → page 4 panel 1; move page 2's panel 24 → page 3 as its panel 1; move page 1's panel 24 → page 2 as its panel 1; insert the duplicate of panel 6 as page 1 panel 7.
+  - Advise succinctly ("a new page will be created and panels reflowed") with Ok / Cancel.
+- **Request 2 — `-1` seeds on import.** Any imported project whose project seed or any panel seed is `-1` must have that value quietly removed (→ random). No confirmation needed.
+- **Answers (author, 2026-09-23):** (1) the ORIGINAL last panel is the one pushed to the next page, and the copy keeps the slot immediately after the panel it copies — so duplicating Panel 24 leaves the copy at 24 and pushes the original Panel 24; (2) ＋ Add Panel gets the same recursive reflow, with the new panel going immediately after the panel clicked; (3) the −1 scrub is import-only and must never touch a seed the user typed.
+- **Implementation notes (2026.09.23.9):**
+  - New `reflowInsertOnFullPage(i, panel, img)` plus `sortedPageKeys()` / `pageImagesOf()` / `setPageImagesFor()` / `planReflow()` sit beside `duplicatePanel`; `duplicatePanel` and `addPanel` now share the full-page branch (confirm → reflow). The old `duplicateToNewPage()` was deleted; ＋ Add Page is untouched.
+  - It rebuilds the source page at 24 panels with the new panel at `min(i+1, 24)`, pushes the page's original last panel to position 1 of the next page, and cascades onward while each next page is full, creating a page (max key + 1) when none follows. Everything about a panel — settings, descriptions, seeds, protection and its generated images — travels with it; `currentPage` stays put so the user sees the result where they clicked.
+  - Confirm text: "<Sheet> is full (the 24-panel maximum). Duplicating Panel N will [create a new page and ]reflow X panel(s) onto the following page(s). Continue?" — Ok/Cancel, Cancel only writes a status line.
+  - `scrubMinusOneSeeds()` runs inside `applyImportedSettings()` just before the settings are saved, so it covers both the .json and .zip import paths; `-1`, `'-1'` and `' -1 '` are cleared on the page (project) seed, panel seeds 1..24 and the legacy flat shape. `42` / `92` / blank are untouched.
+  - Verified: [24,10] duplicate → 1 panel moves, next page at 11, no new page; [24,24] duplicate → new page created, 24/24/1; ＋ Add on [24,10] → blank inserted at 7, 1 move; Cancel → nothing changes; duplicating Panel 24 of a full page → the original (with its image) goes to the new page and the copy stays at 24 with no images; a page that is not full → unchanged, no dialog; the author's 3x24 example reproduces exactly (24/24/24/1). Pages 2/3/4 panel 1 rendered the images that had been on the previous page's panel 24, proving images travel.
+  - Known side effect: the editor preview shares the generator's real browser storage, so importing the test fixtures replaced the preview's own project (panelState + library list). The preview was reset to defaults and the author informed; AI-NOTES now carries a "snapshot `comicGen.*` before destructive tests" gotcha.
+
+### 2026-09-23 — POLISH (2 items): fix the decorative panel-summary separator contrast · move the embedded changelog to GitHub
+- **Status:** ✅ DONE — shipped as **2026.09.23.8** (2026-09-23); both items implemented, verified live, and documented (DEV-NOTES batch + CHANGELOG entry + user manual).
+- **Item 1 — `.ps-sep` contrast.** The `·` separators in a panel summary line (`.panel-summary .ps-sep`) were `var(--text-10)` (#666666) on the panel surface (#2a2a2a): a **2.50:1** ratio, the last sub-4.5:1 text node left in dark mode. Now `var(--text-8)` (#999999) → **5.04:1** dark (5.03:1 light on `--bg`), still dimmer than the item names themselves so the visual hierarchy is unchanged.
+- **Item 2 — changelog moved to GitHub.** `#embeddedChangelog` (~60 KB — the biggest remaining embedded doc block) is gone from `index.html`. Help → About now fetches `CHANGELOG.md` from the repo (`raw.githubusercontent.com/<owner>/<repo>/main/CHANGELOG.md`; owner/repo from localStorage, falling back to the project repo) the first time the About section is expanded — NOT on page load — and a tiny bundled `#embeddedVersion` stamp (one `## <ver> — <date> — <title>` line plus a note that the history lives online) renders instantly as the offline/error fallback. A "View on GitHub ↗" link and a status line sit under the About blurb.
+- **Item 2 follow-ons.** `ghPush` no longer pushes `CHANGELOG.md` (the embedded stamp would overwrite the live file) and reads the commit-message version from `#embeddedVersion`. The top-of-file doc comment and `src/user-manual.html` were updated: the changelog source of truth is now `CHANGELOG.md` in the repo, edited via the Contents API.
+
+- **Implementation notes (2026.09.23.8):**
+  - Item 1 was a one-line CSS change: `.ps-sep` moved from `--text-10` to `--text-8` (2.50:1 → 5.04:1, measured with a WCAG luminance calculation in page_eval and confirmed visually from a 3x capture). It is still dimmer than the item names it separates, so the summary line hierarchy is unchanged.
+  - Item 2: the 62,582-char `#embeddedChangelog` block was replaced by a tiny `#embeddedVersion` stamp (one heading + one bullet). Help → About renders the stamp instantly, then fetches the real `CHANGELOG.md` from the repo the FIRST time the About section is expanded — never at page load (confirmed with a `preambleJs` fetch logger showing zero changelog requests at load).
+  - Two read URLs are tried: the GitHub Contents API first (`Accept: application/vnd.github.v3.raw`, ~60 s cache), then `raw.githubusercontent.com`. Measured while shipping: raw is edge-cached for ~5 minutes and a `?cb=<ts>` query does NOT bust it (the API served the new 85-entry file while raw still served the previous 84) — hence the API-first order. If both fail, a ⚠️ "Could not load the full history" status and a "View on GitHub ↗" link appear next to the bundled stamp.
+  - `ghPush` no longer pushes CHANGELOG.md (the embedded-docs docMap was deleted, so it pushes only main.pjs / index.html / src/user-manual.html) and it takes the commit-message version from `#embeddedVersion` now.
+  - Bonus fix found while verifying with `vision`: changelog bullets are Markdown and the About panel had ALWAYS printed the raw asterisk/backtick markers. New `appendInlineMarkdown()` renders bold and inline code (recursively, DOM nodes only) — 165 `<strong>` + 34 `<code>` nodes and zero stray markers across all 235 bullets. Four historical bullets had a dangling unmatched `**` (they were truncated when first written); those markers were dropped from CHANGELOG.md.
+  - index.html: 460,851 → 403,805 chars (−57 KB); the served page loses the same escaped text.
+  - The repo copy of `index.html` is pushed from the SERVED page, so it only reflects this release after the author presses Save.
+
+### 2026-09-23 — FEATURE REQUEST (2 items): Library-tab sections flat/open while the other menu groups default collapsed · COLLAPSIBLE per-panel Character/Location lines (read-only library description + editable per-panel text)
+- **Status:** DONE 2026-09-23 — shipped as **2026.09.23.7**.
+- **AUTHOR'S ANSWERS (round 2, 2026-09-23, verbatim):** "1. Your guess is correct. Collapsed line is the
+  dropdown itself with the chips, and expanding reveals the text. 2. Confirmed. 3. Your rec/guess is correct: if
+  the box text exactly equals the current description, clear it. 4. Agreed. 5. Session-only. 6. Yes, this is
+  fine. / Menu groups: 1. Confirmed. 2. Let's remove the collapsible header entirely and have the toolbar and
+  lists always visible. 3. We can drop it. / Go ahead and implement!"
+- **IMPLEMENTED (2026.09.23.7):** collapsible character/location lines (folded = name only; open = read-only
+  library description + editable per-panel extra description; fold state is session-only); the auto-fill was
+  removed; `migratePanelExtraCopies` clears a box that exactly duplicated its library description (custom text
+  kept); a location name alone now counts as content; the Library group is flat (no collapsible header) and lost
+  its `⛶ Full Screen` button; File/Edit/Help now default to collapsed sections in full-screen mode too. See
+  changelog 2026.09.23.7, DEV-NOTES BATCH 2026.09.23.7 and AI-NOTES §5/§8.
+- **NOTE:** the Library's own `⛶ Full Screen` button was ALSO item 8 of the 2026-09-23 eight-item request
+  ("drop the Library's Full Screen button") — now done, here.
+- **Request (author, 2026-09-23, verbatim):**
+  ```
+  One minor thing I've noticed and one minor thing that's been bothering me for a while:
+
+  Minor thing I just noticed:
+  * Under the Library menu, I'd like to have everything under the Library group just live directly under the
+    top level Library menu tab.  All of the other menu item groups are defaulting to open; I'd like those
+    defaulting to closed.
+
+  Minor thing that's been bothering me a while:
+  * Under each panel's Panel Library, sometimes a character or location description is stale; if I want to
+    regenerate it from the app's library, at the moment I need to delete it from the Panel Library and then
+    reselect it.  What I'd like is to either just be able to reselect it, or to have a chip next to it that
+    regenerates it from the app's library.
+
+  Go ahead and perform the usual pre-implementation procedures.
+  ```
+- **AUTHOR'S ANSWERS (2026-09-23, verbatim):**
+  ```
+  1. Your rec.  Ask before overwrite.
+  2. Show only when panel text differs from library text.  Though now that I'm thinking about it... see below.
+  3. At the moment no, but the below request might make this moot.
+  4. Correct.
+
+  I'd like to change the panel behavior slightly.  Each character and location line should be collapsible, and
+  when collapsed (the default behavior) only shows the name.  Opening up the line shows the library's
+  description (not editable from here) and the per-panel text for that item (editable from here).  I think this
+  would eliminate the need to refresh, because we'd be seeing the library's description.  The panel's prompt for
+  the character or location would pull both the library's description and the panel description.  We can allow
+  the panel to generate if there's at least a character name, even without a library description, panel
+  description, location name or description, or action prompt; if we do that, it's the image generator's best
+  guess what we get, but that's acceptable to me.  (For example, we could have a character in the library called
+  "Holstein cow" with no description; selecting it would of course have no description in the "library
+  description" space, and if we leave the per-panel text, location, and action prompts blank we'll get the
+  generator's idea of what that represents. Which IMO is acceptable and desired behavior.)
+
+  Go ahead and rerun the pre-implementation tasks given this new/expanded request.
+  ```
+  → Answers 1–3 (the ↻ refresh chip, "ask before overwrite", and the staleness flag) are SUPERSEDED by the
+    expanded design — with the library description always shown AND always fed into the prompt, there is nothing
+    left to "refresh". Answer 4 (Characters + Locations only) stands.
+- **RECON FINDINGS (2026-09-23):** see below.
+- **QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet):** see below.
+
+#### RECON — item 1 (Library group vs. the other menu groups)
+- The menu is four `.menu-group` blocks — `menuGroup-file|edit|library|help`. `setupMenuCollapse()`
+  (`index.html:6147`) wraps every `.config-panel` / `.library-section` / `.help-panel` inside a group into a
+  collapsible `.menu-collapse-body`; its header becomes `.menu-collapse-toggle` (▾ open / ▸ closed) and
+  `data-collapsed="1"` hides the body (`index.html:166`).
+- `switchMenu(name)` (`index.html:6179`) decides the default when a group is OPENED:
+  `if (document.body.classList.contains('menu-fullscreen') || name === 'library') expandGroupPanels(group); else collapseGroupPanels(group);`
+- **NORMAL (non-fullscreen) menu — verified live 2026-09-23:** Library's one section is EXPANDED
+  (`Library=0`); File (`Project=1, Page Setup=1`), Edit (6 sections `=1`) and Help (3 sections `=1`) all
+  default COLLAPSED. So in the normal menu only Library is open already.
+- **FULL-SCREEN menu — verified live 2026-09-23:** opening any group expands ALL of its sections
+  (`Project=0`, `Page Setup=0`, Edit all `=0`, Library `=0`). This is the state that matches the author's
+  "all of the other menu item groups are defaulting to open" — i.e. the author is using full-screen menus.
+- Library group markup (`index.html:806`): ONE `.library-section` titled "Library" holding a toolbar
+  (`⬆ Import…`, `📊 Analysis`, `⛶ Full Screen`) + `#libObjects` (the 👤 Characters / 📍 Locations buckets).
+  Note the Library still carries its own `⛶ Full Screen` button (the author once called it redundant).
+
+#### RECON — item 2 (stale per-panel character/location descriptions)
+- Library items = `comicGen.libObjects`, an array of `{ id, type: 'Character'|'Location'|'Action', name, desc }`;
+  `desc` is the reusable library description.
+- Each panel's 📖 Panel Library renders three Character rows + one Location row + the Action box. A Character
+  row (`charRowHtml`, `index.html:3003`) = `<select id="panel-char-select-{i}-{s}">` +
+  `<textarea id="panel-char-extra-{i}-{s}" placeholder="Freeform description (library desc auto-fills)">` +
+  a `⇤` copy-from-previous-panel chip + a `✕` remove chip. The Location row (`locRowHtml`, `index.html:3012`)
+  is identical with `panel-loc-select-{i}` / `panel-loc-extra-{i}`.
+- Library choices have value `lib:char:<id>` / `lib:loc:<id>`; the special `none` option is
+  "No Character Selected".
+- **The bug's mechanism** — the delegated change handler (`index.html:4599`–`4618`) auto-fills the panel
+  textarea from the library `desc` ONLY when the textarea is EMPTY:
+  `if (extra && !extra.value) { … extra.value = le.desc }`. So once the box holds any text (auto-filled once,
+  or hand-typed), it never refreshes; and re-picking the SAME option fires no `change` event at all — which is
+  exactly why the author has to delete the row and re-select it.
+- The panel description IS what feeds the image prompt (`buildPanelPrompt` reads `panel-char-extra-*` /
+  `panel-loc-extra-*`, `index.html:4532`/`4538`), so a stale box silently produces a stale prompt.
+
+#### RECON — item 2, EXPANDED design (2026-09-23, round 2: collapsible lines + read-only library text)
+- **KEY DISCOVERY — the prompt ALREADY pulls both texts.** `buildPanelPrompt(i)` (`index.html:4529`) does
+  `charParts.push(resolveDesc(sel.value, charMap)); charParts.push(extra.value);`, and `resolveDesc()`
+  (`index.html:4075`) resolves a `lib:char:<id>` selection LIVE from `comicGen.libObjects`. So the library
+  description AND the per-panel text are both already in the prompt — no prompt-building change is needed for
+  that part of the request. Locations are the same (`locDesc = resolveDesc(locKey, locMap)`, then `locExtra`).
+- **KEY DISCOVERY — the description is currently DUPLICATED.** The select-change handler (`handleGridInput`,
+  `index.html:4580`) auto-fills an EMPTY panel box with a full copy of the library description
+  (`if (extra && !extra.value) { … extra.value = le.desc }`). Verified live 2026-09-23: selecting a library
+  Character whose desc is `ZZUNIQUEDESC` into an empty slot leaves the box holding `ZZUNIQUEDESC` AND produces
+  `…, ZZUNIQUEDESC, ZZUNIQUEDESC` in the built prompt — the text appears TWICE. So today the box is a *copy* of
+  the library text, not an addition to it.
+- **KEY DISCOVERY — "generate with just a name" already works for Characters but NOT for Locations.**
+  Verified live 2026-09-23: a selected library Character with NO description → `hasContent === true` (panel
+  generates); a selected library Location with NO description → `hasContent === false` (panel SKIPPED).
+  Cause: `hasContent = charParts.length > 0 || locParts.length > 0 || …` (`index.html:4552`) and `charParts`
+  gets two pushes per selected character (so any selected character counts), while `locParts` is declared and
+  NEVER pushed to (dead variable, `index.html:4537`) — a selected location only contributes via `locDesc`, so
+  a description-less location contributes nothing.
+- **No data-shape change is required.** Panel state stores `chars:[{sel,extra}]` plus `loc`/`locExtra`
+  (`index.html:3308`, `3315`–`3321`; JSON-editor path rules `index.html:7276`); the library description is never
+  stored per panel — it is resolved live. So the redesign needs no new persisted fields, only presentation
+  (collapsible lines) plus removal of the auto-fill.
+- **Reusable mechanics found:** a row is `.po-row` (`display:grid; grid-template-columns:1fr 1.8fr 28px 32px`,
+  `index.html:396`) built by `charRowHtml`/`locRowHtml` (`index.html:3003`/`3012`); the panel accordions use the
+  `.panel-acc` + `data-collapsed="1"` + `togglePanelAcc()` pattern (`index.html:5174`) with CSS-gated bodies.
+  Rows are rebuilt by `renderPanelObjects(i, mode)` and the dropdowns by `updatePanelSelects()`, so any
+  collapsed/expanded state must live in a JS map keyed by slot to survive those re-renders.
+- **Migration concern:** because of the auto-fill, existing projects' saved `extra` values are (at least
+  partially) copies of the library description. Once the auto-fill stops, those copies stay in the box and keep
+  double-feeding the prompt. Needs an explicit decision (question 3 below).
+
+#### QUESTIONS FOR THE AUTHOR (awaiting answers; do NOT implement yet)
+**Item 1 — Library group / menu defaults (re-asked — STILL UNANSWERED):**
+1. Just to confirm the trigger: you're seeing this in the FULL-SCREEN menu, right? In the normal
+   (non-fullscreen) menu File/Edit/Help already open collapsed and only Library is open — it's full-screen mode
+   that force-expands every section of the group you open. Plan: make File/Edit/Help default to COLLAPSED in
+   full-screen too, while Library stays expanded. OK?
+2. "everything under the Library group just live directly under the top level Library menu tab" — should I
+   REMOVE the collapsible "Library" header entirely (so the ⬆ Import… / 📊 Analysis toolbar and the
+   Characters/Locations lists are always visible, with no ▾/▸ toggle), or just keep the section
+   expanded-by-default as it is now (still clickable to collapse)? I read it as the former, but it changes the
+   Library header, so I want to confirm.
+3. While I'm in there: the Library still has its own "⛶ Full Screen" button (you called it redundant earlier).
+   Drop it now, or leave it?
+
+**Item 2 — EXPANDED design (answering these supersedes the earlier Item-2 Q1–Q3):**
+1. Collapsed line = the Character/Location **dropdown itself** (so the visible "name" stays the picker), plus the
+   `⇤` copy-from-previous-panel and `✕` remove chips; expanding reveals, below it, the read-only library
+   description and the editable per-panel text. Is that the right reading of "when collapsed only shows the
+   name", or do you want the collapsed line to be a plain name LABEL with a separate control for changing the
+   selection?
+2. Confirm I should STOP the auto-fill (so the per-panel box becomes a genuine addition, never a copy of the
+   library text) and drop the `↻` refresh chip entirely — your answers 1–3 then become moot, as you suspected.
+3. **Migration:** existing projects' saved per-panel boxes already contain the library text copied by the old
+   auto-fill. Left alone, they'd keep double-feeding the prompt. I propose a one-time cleanup on load: for a
+   slot whose selection is a `lib:` item and whose per-panel text EXACTLY equals that library item's current
+   description, clear the box (safe + idempotent; anything you actually edited is kept). OK — or would you
+   rather I leave existing boxes untouched and let you clear them by hand?
+4. Requirement "generate with at least a name": Characters already qualify (verified); Locations do NOT
+   (verified). I'll make a selected Character **or Location** name count as content even with no descriptions
+   and no action — i.e. a location-name-only panel generates too. Agreed? (Built-in presets like
+   "Hero (Cyber-Ninja)", which carry their own description, are unchanged.)
+5. Should each line's expanded/collapsed state survive a reload (saved with the panel), or just for the session
+   (every load starts fully collapsed, like the panel accordions)? Default I'd pick: session-only.
+6. When expanded on a BUILT-IN (non-`lib:`) choice such as "Hero (Cyber-Ninja)", I'd show that preset's
+   description from the generator's own lists as the read-only text. Fine?
+
+### 2026-09-23 — FEATURE REQUEST: JSON editor in a full-page overlay (Edit menu) with Find/Replace
+- **Status:** DONE 2026-09-23 (changelog 2026.08.16.24). Shipped as **Edit → 🧩 Open JSON Editor** — a full-page
+  overlay editing the whole project as one JSON document.
+- **Request (author, 2026-09-23, verbatim):** "Would it be possible to add a simple JSON editor in a full-page
+  overlay? It should live under the Edit menu. The main functions I want are the ability to Find/Replace with an
+  option for a global replace, and for the only editable fields in this JSON editor to be the ones the user could
+  edit elsewhere in the app (i.e. panel titles, seed values, library data). Please ask any clarifying questions
+  you need answers to before implementing. Thank you!"
+- **RECON (2026-09-23):**
+  - **Edit menu:** `#menuGroup-edit` holds 4 blocks — Art Style & Keywords (`#globalPos`/`#globalNeg`/`#nsfwCheck`),
+    Presets (`#presetStyle`/`#presetPalette` → `comicGen.preset`), Full Keyword List (read-only chips), Reset to
+    Defaults. The new "🧩 Open JSON Editor" block went at the end of that group.
+  - **Full-page overlay precedent:** `.view-overlay` — `#singleOverlay`, `#storyboardOverlay`, `#analysisOverlay`,
+    `#menuOverlay` — each `.view-overlay` > `.view-top` (`← Back to page` + `.view-title` + toolbar) + body;
+    `#analysisOverlay` was the closest model (full-page tool with its own toolbar). z-index: `.view-overlay` 10000,
+    `#manualOverlay` (`.manual-overlay`) 10001. Needed Esc handling + exports on `window`.
+  - **What's actually persisted** (AI-NOTES §state): `comicGen.panelState` = `{version:2, projectName,
+    imageSizeSel, imageSizeW, imageSizeH, guidanceScale, previewDelay, previewOn, globalPos, globalNeg, nsfw,
+    currentPage, pages:{N: {name, summary, panelCountSel, panelCountCustom, seed, 1..24: {chars:[{sel,extra}]×3,
+    title, protectSlots:[bool×4], loc, locExtra, action, seed, imgCount, style, promptOverride,
+    extras:[{type,sel,desc}]}}}}`; `comicGen.libObjects` = `[{id,type,name,desc}]`; `comicGen.preset` =
+    `{style,palette}`; UI prefs `activeMenu`/`layoutMode`/`menuVisible`/`panelsVisible`/`hidePasswordPref`.
+    **GitHub creds (`comicGen.githubOwner/Repo/Token/LastBackup`) must NEVER appear in this editor.**
+  - **An export JSON shape already exists:** `buildExportData()` / `exportSettings()` (File → Export →
+    `comic-generator-settings.json` = `{version, exportedAt, settings:<collectPanelState()>, preset, libObjects,
+    layoutMode, menuVisible, panelsVisible, activeMenu}`), applied back by `importSettingsFromFile()`. The editor
+    uses THAT shape (minus `exportedAt`) so it round-trips with File → Export/Import.
+  - **Editable elsewhere (candidate editable set):** per panel — title, seed, chars, loc, locExtra, action,
+    extras, imgCount, style, promptOverride, protectSlots; per page — name, summary, seed, panelCountSel,
+    panelCountCustom; globals — globalPos, globalNeg, nsfw, imageSize*, guidanceScale, previewDelay, previewOn;
+    library — name/desc/type; preset — style/palette. **Not editable anywhere:** `version`, library `id`s,
+    `currentPage`, `promptOverride` keys.
+  - **NOT in the JSON at all:** generated images (in-memory only: `panelImages` / `pageSession[N].images`; only
+    the ZIP export carries them) and `panelPromptOverrides` (session-only).
+  - **Apply plumbing to reuse:** `savePanelStateShape(state)` (+ `loadCurrentPage()`, `populatePageSel()`,
+    `updateDeletePageBtn()`), `saveLibraryObjects()` + `renderLibrary()` + `updatePanelSelects()` for the library,
+    and the globals' own DOM controls + `schedulePanelSave()`/`renderKeywordChips()`/`updatePanelVisibility()`.
+- **QUESTIONS ASKED + THE AUTHOR'S ANSWERS (2026-09-23, verbatim):**
+  1. Document scope → **"Your recommendation."** → whole project, in the File→Export shape
+     (`{version, settings, preset, libObjects, layoutMode, menuVisible, panelsVisible, activeMenu}`; no
+     `exportedAt`, and GitHub creds are never included).
+  2. Exact editable set → **"Your recommendation."** → every field that has a control elsewhere in the app.
+  3. Read-only fields → **"Show whole document with locked parts greyed."**
+  4. Find/Replace → **"I'd like to choose between replace all at once vs. confirming. Regex plus match case is
+     fine. Replace only in editable values. I'd prefer searching only in editable values as well; if the user
+     wants more editing functionality than that, they can hand edit the saved JSON file in the external text
+     editor of their choice."**
+  5. Apply semantics → **"Yes to Apply with validation and Reload (discard changes). Let's do an \"undo last
+     apply\" along with a Ctrl-Z undo edits buffer of maybe the last 10 edits if that's reasonably do-able."**
+  6. Structure edits → **"Your recommendation is fine."** → value edits only; adding/removing entries is rejected
+     with a readable message.
+  7. Editor surface → **"Your recommendations are fine. Let's also do line numbers. Maybe a checkbox option to
+     highlight syntax. The validator should highlight any incorrect JSON entered by the user and provide
+     Prev / Next navigation as well."**
+- **IMPLEMENTED (2026.08.16.24):** new markup `#jsonEditorOverlay` (modeled on the other `.view-overlay`s:
+  `← Back to page` + title, an actions row — ✔ Apply / 🔄 Reload / ↩ Undo last apply / 📋 Copy + status — a
+  find/replace row, a validation row with syntax-highlight checkbox + ‹ Prev / Next › problem navigation + hint,
+  and the editor body: `.json-gutter` line numbers + `.json-mirror` (colour/mark layer) under a transparent
+  `.json-area` textarea). A new self-contained module (`jsonEditor*`, ~870 lines) provides: a position-aware
+  recursive-descent JSON parser (per-token ranges + escape maps), editable/locked classification
+  (`jsonFieldClass`: globals/preset/page/panel/library leaf fields + `promptOverride.pos|neg` are editable;
+  `version`, `settings.version`, `settings.currentPage`, library ids, keys and structure are locked), a
+  validate-then-Apply flow (`jsonValidateNow` → `jsonWalkProblems`/`jsonCountChanges`, option validation for
+  select-backed fields, structural add/remove rejection, type checks), Find/Replace confined to editable string
+  values (plain or Regex, Match case toggle, ⇄ Replace one, ⇄ Replace all with a confirm naming the match count),
+  a 10-deep Ctrl+Z / Ctrl+Y undo buffer (Ctrl+F find, Ctrl+S apply, Esc close, Tab inserts two spaces), tests-free
+  Apply/Reload/Undo-last-apply with a pre-Apply snapshot of panelState + libObjects + preset, and mirror/gutter
+  scroll sync. Apply deliberately does NOT wipe `panelImages`/`pageSession`/`panelPromptOverrides` the way
+  `applyImportedSettings` does. Perf: `jsonMarksHtml` is an O(N) boundary sweep (83KB doc: 1516ms → 36ms) and
+  syntax colouring pauses above `JSON_SYNTAX_MAX_CHARS` (220k chars) while locked/match/problem marks still show.
+- **BUG FIXED WHILE SHIPPING:** the new overlay was invisible because `#newProjectOverlay` had been left
+  unclosed since an earlier session, so `#jsonEditorOverlay` (and `#ghBackupOverlay`, the embedded doc blocks)
+  were nested inside a `hidden` container; its close tag was a stray `</div>` much further down (before
+  `#embeddedIssues`). Both are now properly closed — see the matching ISSUES entry.
+- **BOOT GUARD ADDED:** `savePanelState()` now refuses to write until `restorePanelState()` has finished
+  (`panelStateRestored`), so a load-time JS error can no longer make the already-scheduled debounced save write a
+  defaulted `collectPanelState()` over page 1.
+- **VERIFIED LIVE (866×604):** editor opens from the Edit menu and Esc/← closes with a confirm when dirty; the
+  document is 17.6KB / 824 lines with matching mirror+gutter heights (16500px), 13px/20px monospace, aligned
+  gutter; 507 key / 403 string / 3 number token spans and 132 greyed locked marks (and the Syntax highlighting
+  checkbox removes the colour spans but keeps the grey locks); searching "comic book art"/"768" finds 1/2
+  matches, "version"/"promptOverride" find "No matches in the editable values."; Match case and Regex both
+  filter correctly; ⇄ Replace all with 2 matches asks to confirm (Cancel leaves the document byte-identical) and
+  Ctrl+Z restores it; a hand-typed seed + `panelCountSel` 4 → 6 validated as "Valid — 2 fields changed, ready to
+  apply.", updated the live selects/storage on Apply ("Applied ✓ …"), and ↩ Undo last apply put the storage, the
+  DOM and the text back; invalid JSON reports the exact offset and the "N problem(s)" message with working
+  ‹ Prev / Next › navigation; locked fields (`settings.currentPage`, `version`) and a bad `imageSizeSel` value
+  each report a readable read-only/option problem; no window errors. The four overlays and the app itself were
+  re-checked after the markup fix (New Project, Import confirm, Library import and the GitHub dialog all render
+  full-screen).
+
+### 2026-09-22 — ⧉ Duplicate in the 🔍 Focus view threw and broke the page
+- **Status:** DONE 2026-09-22 (changelog 2026.08.16.23).
+- **Request (author, 2026-09-22).** "With an open project (confirmed it happens in test project 'Cow in field'),
+  select Focus on a panel. Inside the panel, open the Panel menu. Select Duplicate. Expected result: it
+  duplicates the panel."
+- **ACTUAL (verbatim):** duplicate click → `singleNavTo@ line 55 > injectedScript:3498:26` /
+  `openSingleView/li.onclick … :3465:37`; then "← Back to page" → `NotFoundError: Node.insertBefore: Child to
+  insert before is not a child of this node` in `closeSingleView`, after which EVERY click errored until Ctrl-R.
+- **RECON (2026-09-22):** 🔍 Focus MOVES the real `#panel-card-N` into `#singleStage` and remembers
+  `singleAnchor = card.nextElementSibling`. Duplicate calls `buildPanelGrid()`, which does
+  `grid.innerHTML = ''` and rebuilds all 24 cards — so the staged card + its anchor were left detached from the
+  new grid and putting the card back threw NotFoundError. The staged old card and the fresh card also shared the
+  id `panel-card-N`, which is why every later click broke inside
+  `PERCH.reAttachSpecificDomElementEventWithRoot`. Duplicate itself actually succeeded — the throw came after
+  (nav click / close). The same latent bug applied to Add Panel, Delete, page switch and panel-count changes.
+- **IMPLEMENTED (2026.08.16.23):** `buildPanelGrid()` captures `singleResume`, calls new `detachSingleStage()`,
+  then re-opens at the end (`openSingleView(Math.min(singleResume, getPanelCount()))`, or `closeSingleView()`
+  when the page has no panels); new `restoreSingleCardToGrid()` replaces the raw `insertBefore` in
+  `closeSingleView` + `singleNavTo`; `openSingleView` is re-entrant; `onPanelCountChange` re-opens the view
+  clamped while focused; `duplicatePanel` now reports the copy's new number in the status line.
+- **VERIFIED (author's own Cow-in-field state; restored afterwards):** focus → duplicate keeps the overlay open on
+  the rebuilt card (nav 6 → 7) with exactly 24 unique `panel-card-N` ids; nav to another panel, close, Add Panel,
+  Delete, shrinking the count 6 → 4 while focused on 6, and open→close all produce ZERO window errors and leave
+  the grid in order 1..24; snapshot + vision of the focus view after a duplicate shows one card, one image slot,
+  no overlap.
+- **NOTE:** the author's other report (the `interactionPointerMoveHandler` platform dialog) is unrelated to this
+  fix — it stopped happening for them, and that entry remains in QUEUED awaiting their console line.
+
+### 2026-09-22 — Hide Generate All / Pause / Stop in full-screen menu mode
+- **Status:** DONE 2026-09-22 (changelog 2026.08.16.22).
+- **Request.** Author: "when the menu is in Full Screen mode, the Generate All Panels On Page / Pause / Stop
+  buttons should not be visible."
+- **RECON (2026-09-22):** those three buttons all live in `#menuFrame`'s LAST child, the `.gen-actions` bar
+  (`index.html` ~line 2047): `.gen-actions` > `.gen-row` > [`.btn-generate` GENERATE ALL PANELS ON PAGE,
+  `#globalPauseBtn` Pause, `#globalStopBtn` Stop] + a sibling `#statusEl.status`. CSS:
+  `.gen-actions { flex: 0 0 auto; min-height: 0; overflow-y: auto; padding-top: 12px; margin-top: 12px;
+  border-top: 2px solid #ffcc00 }` inside the flex-column `#menuFrame`, below the flex-1 `.menu-scroll`.
+  Since the full-screen overlay MOVES the real `#menuFrame` (changelog 2026.08.16.20), hiding it for
+  full-screen only needs a `body.menu-fullscreen .gen-actions` CSS rule — the DOM, the Pause/Stop disabled
+  state, and any running generation are all untouched (generation keeps running; the buttons just aren't shown;
+  the Focus view keeps its own `.focus-gen` Pause/Stop row). The `#statusEl` status line lives INSIDE
+  `.gen-actions`, so hiding the bar hides the status line too — hence the open question.
+- **ANSWER (author, 2026-09-22):** "Your default is good. Go ahead and implement." — i.e. hide the WHOLE
+  `.gen-actions` bar (buttons + status line), unconditionally (a running generation keeps going; leave
+  full-screen to pause/stop it).
+- **IMPLEMENTED (2026-09-22):** `body.menu-fullscreen .gen-actions { display: none }` (one CSS rule, next to the
+  other `body.menu-fullscreen` overrides) — no JS change, so the Pause/Stop disabled states and every handler are
+  untouched. Verified live: at 866×604 side-mode `.menu-scroll` clientHeight goes 177 → 536 in full-screen and
+  returns on close; no `.btn-generate`/`.btn-pause-global`/`.btn-stop-global` has a non-zero rect while
+  full-screen; no overflow/overlap at 866×604 or 390×844.
+  VERSION 2026.08.16.22.
+
+### 2026-09-20 — Menu hidden after leaving the full-screen menu + remove the floating menu button
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.21).
+- **Requests.** (1) "When I go to the full screen menus and then go Back to Page, the page menu is completely
+  hidden. I have to Hide Menu and then Show Menu in order to get it to return." (2) "I'd like to remove the
+  floating Show Menu button at the bottom right, and just have the Hide Menu button at the top toggle whether the
+  menu is hidden. Have it say Hide Menu when the menu is showing and Show Menu when the menu is hidden."
+- **RECON (2026-09-20):**
+  - BUG REPRODUCED: `openMenuFullscreen()` forced the menu visible when `body.menu-hidden` and remembered it in
+    `menuFullscreenRestoreHidden`; `closeMenuFullscreen()` then put the hidden state back. So if the menu was
+    hidden when the full-screen menu was opened (e.g. via the header's ⛶ Full Screen button, which sits right
+    next to ☰ Show Menu), "← Back to page" returned to a page with NO menu — the exact report. Verified live:
+    after Back, body had `menu-hidden`, `#menuFrame` display:none, header button read "☰ Show Menu". Every other
+    flow (menu already visible, portrait or landscape, opened from the header or the Library button) restores the
+    menu correctly.
+  - The floating button is ONE element, `#menuRevealBtn` (body-level), whose label and position change with
+    state: `body.hdr-offscreen #menuRevealBtn { display:block }` (shown when the header buttons scroll out of
+    view), `body:not(.menu-hidden) #menuRevealBtn { bottom:16px; right:16px }` + "✕ Hide Menu", and
+    `body.menu-hidden #menuRevealBtn { top:12px; left:12px }` + "☰ Show Menu"; its onclick is `toggleMenu()`.
+    `applyMenuVisible(visible)` sets both its and `#menuToggleBtn`'s labels; `refreshHdrOffscreen()`
+    (scroll/resize) toggles `body.hdr-offscreen` — which NO other CSS rule uses, so it becomes vestigial once
+    the floating button is gone.
+- **IMPLEMENTED.** (1) `openMenuFullscreen` still makes the menu visible when it was hidden, but closing no longer
+  re-hides it — "← Back to page" always returns to a page with the menu showing (drop
+  `menuFullscreenRestoreHidden`). (2) Delete `#menuRevealBtn` + its CSS block; the header `#menuToggleBtn`
+  becomes the only menu-visibility control and already flips its own label ☰ Hide Menu ↔ ☰ Show Menu.
+  TRADE-OFF (flagged to the author): with the floating button gone, if the menu is hidden while the header is
+  scrolled out of view, the only way to bring it back is to scroll to the top. VERSION 2026.08.16.21.
+### 2026-09-20 — Full-screen Library overlay (and full-screen whole menu)
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.20).
+- **Request.** Author: "I'd like to add a button under Menu -> Library that will toggle showing the Library in a
+  full-screen overlay." Author's follow-up question: "Would it make more sense to allow the entire Menu
+  ( File / Edit / Library / Help ) to open in a full-screen overlay? I ask because I'm starting to have screen
+  real estate issues on my phone; I can't actually edit library objects there. Whatever the answer to this one is,
+  I do want the full-screen Library overlay."
+- **RECON (2026-09-20):** the Library is the ONE `comicGen.libObjects` store, rendered by `renderLibrary()` into the
+  single `#libObjects` container inside `#menuGroup-library` (`.library-section` = `.library-header` + `.lib-hint` +
+  `.lib-toolbar` [⬆ Import… `.btn-lib-import`, 📊 Analysis `.btn-lib-analysis`, `#libImportHint`] + hidden
+  `#libImportInput` + `#libObjects`; each row = name input + `.lib-desc` textarea + 🗑 `.btn-del-lib`). The
+  full-page overlay pattern is `.view-overlay` (fixed inset:0, z-index 10000) with a `.view-top` bar and
+  `openX()`/`closeX()` exported on `window`; the opaque overlay automatically covers the floating bottom buttons
+  (#panelsToggleBtn/#pageNav/#menuRevealBtn, z-index 1000/1001). Recon conclusion: build ONE generic full-screen
+  menu overlay that hosts the REAL `#menuFrame`, and have the Library button open that same mechanism scoped to
+  the Library tab — it delivers the requested Library overlay with a single source of truth AND fixes cramped
+  editing in every menu section on a phone.
+- **ANSWERS (author, 2026-09-20):** (1) "Editable, one source of truth. It should be the same live-editable library
+  and reusing the #libObjects list." (2) "Your recommendation works. Next to Import / Analysis." (3) "The overlay
+  should keep the Import / Analysis actions. Esc can also close it, but I want a Back to page button in it as
+  well."
+- **IMPLEMENTED (2026-09-20):** `#menuOverlay` (`.view-overlay`, markup just before `#analysisOverlay` so Analysis
+  still paints above it) with a `.view-top` (← Back to page + `#menuOverlayTitle`) and `#menuOverlayBody`;
+  `openMenuFullscreen(section)` moves the real `#menuFrame` into it (home remembered in `menuFrameHome`, restored
+  on close by `closeMenuFullscreen()`), plus `toggleMenuFullscreen(section)`. Entry points: header
+  `#menuFullscreenBtn` (`.menu-fs-toggle`, whole menu) and Library toolbar `#libFullscreenBtn` (`.btn-lib-fullscreen`,
+  Library tab). Esc closes; switching tabs stays fullscreen and expands the section (`expandGroupPanels`), and
+  re-clicking the active tab no longer empties the overlay. Full details in the BATCH 2026.08.16.20 dev-note.
+  Verified live at 866×604, 1920×1080 and 390×844.
+- **NOTE (2026-09-20):** a first cut put the general toggle in the `.menu-bar` as a 5th tab; that clipped the
+  stacked side-menu tabs on short viewports, so it moved to the header next to ☰ Hide Menu / ▤ Menu: Side.
+
+### 2026-09-20 — Floating bottom buttons cover content: reserve bottom space (menu + main page)
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.19).
+- **Request.** Author: "the floating buttons at the bottom (Hide Panels, page navigator, Hide Menu) sometimes hide
+  selectors. When the Menu is on the side, the Hide Panels button hides parts of the bottom (the Generate All
+  Panels button, or the status message). Can we somehow add margin space at the bottom of the page (menu and main
+  page both) so that we can scroll to the point where those aren't covering things we need to access?"
+- **RECON (2026-09-20):** the three floating controls are viewport-fixed: `#panelsToggleBtn` (▧ Hide Panels —
+  `bottom:16px; left:16px; z-index:1000`), `#menuRevealBtn` (☰ Menu — `bottom:16px; right:16px` while the menu is
+  visible; when `body.menu-hidden` it moves to `top:12px; left:12px`), and `#pageNav` (page navigator —
+  `bottom:16px` centred; in `@media (orientation: portrait)` it is raised to `bottom:74px` so it clears the two
+  corner buttons). `body` has only `padding:20px`, so a scrolled-to-bottom page can never bring its last rows
+  above those buttons. In SIDE mode (`@media (orientation: landscape) { body.side-mode .menu-frame { position:
+  sticky; top:10px; max-height: calc(100vh - 20px) } }`) the left column's bottom edge sits ~10px above the
+  viewport bottom, and `.gen-actions` (⚡ GENERATE ALL PANELS ON PAGE + `.gen-row` + `#statusEl`) is the LAST child
+  of `.menu-frame` (`.menu-scroll` scrolls above it) — so the fixed buttons sit right on top of the generate bar
+  and its status line. In TOP mode the sticky 45dvh `.menu-frame` is at the top and `.canvas-frame` (the panel
+  grid) scrolls underneath, so only the page body needs extra room there.
+- **FIX (2026-09-20):** (1) reserve bottom space on the page: `body { padding-bottom: 96px }` (+
+  `@media (orientation: portrait) { body { padding-bottom: 156px } }` for the raised `#pageNav`), so the last
+  panel/row can be scrolled clear of the floating buttons. (2) shorten the side-mode menu column so its
+  `.gen-actions` bar (and status line) always ends ABOVE the floating buttons:
+  `body.side-mode .menu-frame { max-height: calc(100vh - 112px) }` (was `calc(100vh - 20px)`) — only bites when
+  the menu content is tall enough to fill the column, i.e. exactly when the bar would be covered. No JS changes;
+  CSS-only.
+- **NOTE (2026-09-20):** author also authorised clearing the leftover
+  `comicGen.panelState.preClobberBackup` localStorage key (blonde woman / elf / apartment project — the author has
+  their own copy). Deleted via `localStorage.removeItem(...)`; a data cleanup, not a code change.
+
+### 2026-09-20 — Storyboard page navigator (multi-page)
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "The storyboard view should have a page navigator, if there's more than one page. It can
+  be right next to the 'Back To Page' button."
+- **RECON (2026-09-20):** `#storyboardOverlay` / `.view-top` holds the `← Back to page` button +
+  `#storyboardTitle`; `openStoryboard()` renders the CURRENT page only, `closeStoryboard()` hides it. The
+  full-page page navigator (`#pageNav`, bottom-centre) is hidden while an overlay is open, so the storyboard
+  needs its own controls.
+- **IMPLEMENTED (2026-09-20):** `#storyboardNav` (◀ Prev + `#storyboardNavPages` numbered buttons + ▶ Next)
+  sits in the storyboard `.view-top`, hidden when there is only one page; `updateStoryboardNav()` re-renders it
+  and highlights the current page, `storyboardNavDelta(delta)` wraps via `switchPage` + `openStoryboard`.
+  Because switching re-renders the current page, the storyboard live-updates in place.
+
+### 2026-09-20 — Page reordering by renumbering the page
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "We need a way to reorder pages; if there are multiple pages, we should be able to
+  renumber a page, which moves it in the page order. Renumbering the page puts it in ahead of the previous page
+  with that number, and renumbers subsequent pages (e.g. if the pages are 1, 2, 3, 4, and 5, if we renumber page
+  4 to 2, then the previous pages 2 and 3 are renumbered to 3 and 4, respectively). All other page data remains
+  with the page."
+- **RECON (2026-09-20):** pages are keyed by number in `state.pages` (+ `pageSession`); `populatePageSel` /
+  `updatePageNav` / `pageLabel` render them sorted. Nothing renumbers keys today, and `deletePage` can leave
+  gaps, so the original label is preserved in `page.name` (= the page title) and moves with the page.
+- **IMPLEMENTED (2026-09-20):** a "Reorder Pages" control in File → Page Setup (`#pageRenumberGroup`, shown
+  only when there are ≥2 pages) with a `⇅ Renumber Page` button + a hidden position `<select>`
+  (`togglePageRenumberPicker` / `onPageRenumberSelect`) → `renumberPageTo(fromKey, toPos)`: the moved page is
+  spliced into the target POSITION and every page is renumbered 1..N in the new order, while each page's own
+  data (panels, seed, title, summary) stays with it. `pageSession` + `currentPage` (+ `analysisPage` when the
+  Analysis overlay is open) are remapped too.
+
+### 2026-09-20 — Panel header shows the page number ("Page 1, Panel 1") on multi-page projects
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "If there is more than one page, have the panel number also display the current page,
+  so instead of 'Panel 1' followed by the Panel title entry, it would say 'Page 1, Panel 1' followed by the
+  panel entry. This doesn't need to carry over to the Storyboard view."
+- **IMPLEMENTED (2026-09-20):** `buildPanelGrid`'s header label renders `Page <currentPage>, Panel <i>` when
+  `pageCount() > 1`, else `Panel <i>`. The Storyboard keeps its plain `Panel <i>` labels.
+
+### 2026-09-20 — Per-page Title + Summary, shown in the Storyboard
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "Each page should have an entry for a user editable, optional page title/summary, and
+  the page title should show in the Storyboard view."
+- **ASSUMPTION (no blocking question asked; noted 2026-09-20):** the app already had an optional per-page
+  `name` (shown in the page selector / navigator / Storyboard title), so it was RELABELLED to "Page Title" and
+  a NEW optional "Page Summary" textarea was added (`page.summary`). Both are editable in File → Page Setup;
+  the Storyboard shows the title in its heading and the summary in a bar under the controls.
+- **IMPLEMENTED (2026-09-20):** `#pageNameInput` ("Page Title") + new `#pageSummaryInput` ("Page Summary"),
+  both persisted (`collectPageData`/`restorePanelState`), carried by every page-preserving operation (added
+  `'summary'` to the resequence/duplicate/add/delete key lists, `defaultPageData`, `ensurePages` legacy
+  migration, and the export/`hasActiveProject` skip lists), and shown in the Storyboard (`#storyboardSummary`,
+  plus the title in `#storyboardTitle`).
+
+### 2026-09-20 — Panel header: seed clear/copy chips + panel Generate in the header
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **REQ 1 — seed chips.** Author: "a pair of chips next to the panel's Seed value in the header: one to clear the
+  panel's seed, and one to copy the preceding panel's seed; the latter will overwrite the current panel's seed
+  (including clearing it if the preceding panel's seed is empty)."
+- **REQ 2 — panel Generate in the header.** Author: "bring the Generate button for the entire panel up to the
+  panel's header, immediately after the panel's Seed entry."
+- **RECON (2026-09-20):** the panel header row is built in `buildPanelGrid()` (~line 5690) as
+  `.panel-header-row` = [Panel N title] [`#panel-title-N`] [Images: `#panel-img-count-N`] [Style:
+  `#panel-style-N`] [Size: `#panel-size-N`] [Seed: `#panel-seed-N` (`.panel-seed-input`, wrapped in a
+  `.panel-imgs-sel`) with class `.panel-header-row input.panel-seed-input`] [⇅ Move `#reorder-btn-N` +
+  hidden `#panel-reorder-N`]. The row is `display:flex; flex-wrap:wrap; gap:6px` so extra items just wrap.
+  Seed semantics: blank = follow the page seed; the box shows the RESOLVED seed as a placeholder
+  (`updatePanelSeedPlaceholders()`), and `getPanelSeed(i)`/`pinPanelSeedForRun(i)` (right after it, ~line 6450)
+  resolve panel > page > random. Existing "copy from previous panel" precedent = `.btn-copy-prev` (⇤, 22px
+  square, disabled on panel 1) calling `copyFromPrevPanel(i, kind, s)` (~line 5624) — it reads the previous
+  panel's DOM, is same-page only, and ends with `clearPanelPromptOverride`/`schedulePanelSave`. The panel-level
+  Generate button currently lives at the BOTTOM of the card in `.panel-header-btns`:
+  `<button class="btn-reroll" onclick="generateSinglePanel(${i})">🔄 Generate</button>` (~line 5751), next to
+  Show/Hide Menus and 🔍 Focus. `.btn-reroll` = red, uppercase, bold.
+- **QUESTIONS (asked 2026-09-20):** (1) Move the bottom Generate up to the header, or keep BOTH (header +
+  bottom)? (2) Chip style — reuse the small square ⇤/✕ look (like `.btn-copy-prev`/`.btn-line-del`) or the
+  `.btn-img-chip` pill look? (3) Copy-seed chip disabled on Panel 1 (no previous panel)? (4) When the previous
+  panel's seed box is blank (following the page seed), confirm "copy" CLEARS this panel's seed (i.e. copies the
+  raw box value, not the resolved placeholder).
+- **ANSWERS (author, 2026-09-20):** (1) Chip style — REUSE the small square ⇤/✕ look. (2) Copy-from-previous:
+  disabled on Panel 1 of PAGE 1 only. (3) Copy the previous panel's raw seed value if it has one (already
+  generated/entered); if that value is blank (random) or -1, the copy chip CLEARS this panel's seed. (4)
+  Generate — DUPLICATE it: keep the bottom one AND add one in the header immediately after the Seed entry.
+- **IMPLEMENTED (2026-09-20):** `.seed-chips` ⇤ `.btn-copy-prev` (`copySeedFromPrevPanel`) + ✕ `.btn-line-del`
+  (`clearPanelSeed`) inside the seed `.panel-imgs-sel`; header `<button class="btn-reroll btn-header-gen">🔄
+  Generate</button>` right after the seed entry (bottom one kept). Panel 1's ⇤ is disabled only on page 1
+  (`updateSeedChipStates`); on later pages it copies the last panel of the PREVIOUS page (read from stored
+  state), per the "preceding panel in document order" reading.
+
+### 2026-09-20 — Move a panel to another page (with "create new page")
+- **Status:** DONE 2026-09-20 (changelog 2026.08.16.18).
+- **Request.** Author: "When moving a panel, I'd like to be able to move it to another page, with the option to
+  create a new page to move it to. The selector should grey out the pages that are already at 24 panels."
+- **RECON (2026-09-20):** the Move UI is `#reorder-btn-N` (⇅ Move) toggling `#panel-reorder-N`, a `<select>` of
+  positions 1..`getPanelCount()` built by `populateReorderSelects()` (~line 5872); `onReorderSelect(i, sel)` →
+  `resequencePanel(from, to)` (~line 5917) reorders WITHIN the current page only (rebuilds `state.pages[
+  currentPage]` with a reordered key map, `remapPanelSession(order, total)` remaps `panelImages`, then
+  `buildPanelGrid()`). Pages live in `panelState.pages[n]` = `{name, panelCountSel, panelCountCustom, seed,
+  1..24}`, max 24 panels/page (`panelCountStateFor(n)`); a stored page's count is computed by
+  `analysisPanelCount(page)` (same rule: 'custom' → clamp 1..24, else parse). Cross-page precedent:
+  `duplicateToNewPage(i)` (~line 6003) creates a new numbered page, puts a copy of a panel at slot 1, switches
+  to it, and `addPage()` (~line 5419) creates an empty 4-panel page. Per-page generated images live in
+  `pageSession[pg].images` (current page's = the live `panelImages`); `switchPage`/`loadCurrentPage` swap them,
+  so a cross-page move has to move the panel's `pageSession` images too (or accept losing them). Page labels =
+  `pageLabel(page, n)`. There is currently NO empty page (min 1 panel), and deleting a page's last panel deletes
+  (or resets) the page — see `deletePanel`.
+- **Likely implementation:** give the Move picker a richer `<select>`: an `<optgroup>` of positions on the
+  current page (existing behaviour) + an `<optgroup>` of "→ <page label>" options for other pages, with the
+  24-panel pages rendered `disabled` (greyed) + an "＋ New page…" option. Choosing a page removes the panel from
+  the current page (closing the gap / renumbering) and appends it to the target page (or to a new page), moving
+  its images along.
+- **QUESTIONS (asked 2026-09-20):** (1) Landing position on the target page — append at the END, or should the
+  picker also let you choose a slot there? (2) After the move, stay on the current page or switch to the target
+  page? (3) If the panel is the ONLY one on its page, is that allowed (which page handling — leave an empty
+  page, delete the source page, or refuse)? (4) Do the panel's generated images travel with it to the other
+  page? (5) Should the existing same-page reorder keep working exactly as now (just with the page options
+  added)?
+- **ANSWERS (author, 2026-09-20):** (5) Landing position — moving to a PREVIOUS (earlier-numbered) page with
+  space APPENDS the panel at the END; moving to the FOLLOWING (later-numbered) page with ≤23 panels INSERTS it
+  at the BEGINNING (slot 1, others shift down). (6) After the move, SWITCH to the target page. (7) If the panel
+  is the only one on its page, DELETE the source page — on confirm. (8) Yes — the panel's existing images and
+  all its other data travel with it. (9) The existing same-page reorder stays exactly as it is.
+- **IMPLEMENTED (2026-09-20):** `populateReorderSelects` now adds a "Move to another page" `<optgroup>` (each
+  other page as `pg-<n>`, DISABLED/greyed when that page is already at 24 panels, labelled " (full)") plus an
+  "＋ New page…" option. `onReorderSelect` dispatches to the new `movePanelToPage(i, target, mode)` /
+  `movePanelToNewPage(i)`; mode = `prepend` when target > source, `append` when target < source, `replace`
+  for a freshly created page. The move relocates the panel data + its `pageSession` images, shifts/renumbers
+  the source page (and deletes it on confirm when it was the panel's only one), then switches to the target.
+
+### 2026-09-19 — Analysis: add the Panel Action Prompt field (as the first field per panel)
+- **Status:** DONE 2026-09-19 (changelog 2026.08.16.17). Author request: "On the Library Analysis page, I'd like to
+  add the Panel Action Prompt field for each panel. On this page I'd like it to be the first field for each
+  panel." First built as a field inside each panel's header; the author then CLARIFIED: "I did mean a dedicated
+  first row across the panels instead." So the header field was removed and the final implementation is a
+  dedicated **▶ Panel Action Prompt** row as the FIRST BODY ROW of the matrix (one editable box per panel column,
+  aligned under each panel). When ⇄ Swap makes panels the rows, it becomes the FIRST COLUMN (right of the panel
+  names) — the transpose, so it stays "first" relative to the panels. It edits the panel's real action live
+  (current page) or saves to the browsed page, auto-grows to fit its text, keeps that panel's Action-item cells in
+  sync, and stays in sync when the action is changed via a cell or ＋ Add. Verified live, desktop + 390px.
+
+### 2026-09-19 — Analysis: project defaults + per-panel style/size/seed in the matrix
+- **Status:** DONE 2026-09-19 (changelog 2026.08.16.16). Author request: "I'd like the Analysis page to show the
+  project's NSFW state and its default style, image size, and seed (all of these in the header), and to be able to
+  modify them from here. I'd also like each panel's column to show its style, size, and seed, and to be able to
+  edit them from here as well; make these as compact as possible. (Probably a small button for each under the
+  image, similar to each image's 'view in new tab/download/clear/protect/set representative' buttons in the main
+  view.)" Implemented: a "Project defaults:" bar in the Analysis header (NSFW, default style, default size, seed,
+  all editable and writing through to the real settings) + three compact 🎨/📐/🎲 chips under each panel header
+  that open in-place editors. Inherited values are dimmed/dashed; overrides are highlighted. Edits on a browsed
+  (non-current) page are written to that page's saved state. Verified live on the Cow sample, desktop + 390px.
+- **Assumption (no blocking question asked):** the header "seed" is per-PAGE in this app (File → Page Setup stores
+  it as `page.seed`), so it reads/writes the page selected in the Analysis page selector.
+
+### 2026-09-19 — Library → Analysis: panel × library cross-reference matrix
+- **Status:** DONE 2026-09-19 (changelog 2026.08.16.15). Author idea: a new 📚 Library menu
+  tool showing a matrix of the current page's panels vs. the whole library, marking at each intersection
+  whether that library item is used in that panel (✅ green check), with the per-panel description editable
+  right there. The user can toggle which thing (panels or library items) is rows vs. columns. Assumed
+  orientation (library items as ROWS, panels as COLUMNS): the leftmost column shows each library item's
+  GLOBAL description; the top row shows each panel's representative-image thumbnail; a cell shows ✅ when the
+  item is used in that panel, and when used, that panel's per-panel description is editable in the cell.
+- **DECISIONS (author, 2026-09-19):** (1) A used cell edits exactly the character slot's modifier
+  (panel-char-extra-N-S) or the location modifier (panel-loc-extra-N), and autosaves. (2) When an item is used
+  in MORE THAN ONE slot of a panel, show it PER SLOT (up to 3 character slots). (3) Scope = the CURRENT PAGE,
+  with a page selector to browse pages. (4) Show ALL library items, including ones used in no panel.
+  (5) Thumbnail = the panel's representative image (⭐ Cover if set, else the panel's first image; placeholder
+  when the panel has none). (6) The global-description column is READ-ONLY by default; an "allow inline
+  editing" checkbox (unchecked by default) makes it editable inline. (7) Placement = a FULL-PAGE overlay like
+  the ▦ Storyboard view and the user manual; the grid scrolls BOTH horizontally and vertically with a STICKY
+  first row and first column. (8) Clicking a non-✅ intersection offers to ADD that library item to that panel.
+
+### 2026-09-19 — Library → Import: pick Characters / Locations out of a project file
+- **Status:** DONE 2026-09-19 (changelog 2026.08.16.14). Author request: "add a function under
+  the Library menu item called Import. When the user selects Import, it will allow them to select a project
+  file (either zip or json). It will allow the user to select Library items (either Characters or Locations)
+  from that file and import them into the current project."
+- **Recon (2026-09-19):** Library is ONE store `comicGen.libObjects` = `[{id, type, name, desc}]` (type
+  'Character'|'Location'|'Action'; migrateLibObjects prunes Action, so only Character/Location are surfaced).
+  renderLibrary() (~line 3454) builds the 📚 Library menu (`#libObjects`) as two buckets each with a green +
+  add button. Project backups (File → Project, per-panel ⬇ Export, Export .zip) all carry `libObjects` (v2) —
+  or, for OLD v1 files, `charLibrary`/`locLibrary`/`actLibrary` arrays (applyImportedSettings migrates them).
+  Zip support already exists: unzipEntries() (~5860) returns {name: Uint8Array}; the settings file inside is
+  `comic-generator-settings.json`. Current whole-project import = doImportFile()/importSettingsFromFile()
+  (~6038/~6076) with a hasActiveProject() gate + 3-choice Save/Continue/Cancel modal. Panel selects reference
+  library items by `lib:${char|loc}:${id}`, so imported items should get FRESH ids to avoid collisions.
+- **Likely implementation:** new "Import" button/section in the 📚 Library menu + a hidden file input
+  (.json/.zip) → parse to the libObjects array (handle legacy v1 keys too) → a selection modal (checkbox list
+  grouped Characters/Locations, showing name + description, Select All / None, Import button) → append the
+  chosen items to `comicGen.libObjects` with new ids, then renderLibrary() + updatePanelSelects(). Nothing else
+  from the file is touched (no panels, settings, or images).
+- **DECISIONS (author, 2026-09-19):** (1) DUPLICATES — skip when the name AND description both match an
+  existing item; if the NAME matches but the description differs, highlight it and offer three choices:
+  append the new description to the current one, overwrite the current one, or import it under a new name.
+  (2) SELECTION UI — modal with checkbox list grouped Characters/Locations (good), AND the user can edit each
+  item's name/description before importing. (3) SCOPE — Characters and Locations; if the file contains saved
+  Action items, offer to import those too. Never touch panels, settings, or images. (4) OLD FILES — accept
+  legacy v1 backups (charLibrary/locLibrary/actLibrary arrays) as well. (5) MULTIPLE FILES — allow selecting
+  several files and merging their items into one list.
+- **NOTE (author, 2026-09-19):** UX handling = library items only on import (no art-style/seed changes).
+
+### 2026-09-18 — Show each panel's seed in the panel header (user-editable)
+- **Status:** DONE 2026-09-18 (changelog 2026.08.16.13). Author request: "Is it possible to have each panel
+  display the seed it uses? I'd like to have it placed in the panel header area, where the panel title, number
+  of images, style, and size are. I'd also like to make this user-editable, so if the user changes it here it
+  uses that seed for that panel." Implemented: the per-panel seed input moved from the ⚙ Panel accordion into
+  the panel header row (next to title/Images/Style), keeps the id `panel-seed-N` and its Enter-to-render
+  behavior, and now SHOWS the resolved seed (panel override > global+(N−1)) via a live placeholder ("random"
+  when neither is set; typing = override, clearing = follow global). New pin-on-generation: when a panel's
+  seed would be random, one random integer is chosen at generation, written into that panel's seed field, and
+  held for later regenerations (so results are reproducible after the first run). Verified live with a mocked
+  image service; desktop + 390px layouts checked (no overflow/overlap).
+
+### 2026-08-22 — File → New Project should clear the library (bug report)
+- **Status:** DONE 2026-08-22 (changelog 2026.08.16.12). Author: "File -> New is not clearing the
+  library." Root cause: doNewProject() → resetEverything(true) only wiped comicGen.libObjects when the Edit→Reset
+  "Also permanently delete my saved library objects" checkbox was checked (it defaults off and resets to false), so
+  New Project never cleared it. Fixed: doNewProject() now always removes comicGen.libObjects + re-renders the
+  library panel. Edit→Reset checkbox path unchanged.
+
+### 2026-08-17 — Remove Panel Library persistence; add "copy from previous panel" buttons
+- **Status:** DONE 2026-08-17 (changelog 2026.08.16.11). Author request: "I'd like to eliminate the Panel
+  Library persistence function. Instead, I'd like to replace it with a small button that copies the
+  corresponding item from the previous panel. And we'll go ahead with this now." Implemented: the entire ⟳
+  persistence system (checkbox propagation to later panels + cross-page carry) was removed and replaced
+  with a small ⇤ button on each character slot, the Location row, and the Panel Action Prompt row that
+  copies that item (selection + modifier) from the panel directly before it. Panel 1's buttons are
+  disabled. Nothing copies automatically anymore. Old saved projects keep their content (persist flags
+  dropped on next save). Help + user manual + dev docs updated. Verified live; author's project intact.
+
+### 2026-08-16 — Pause a run and continue it (implemented 2026.08.16.9)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.9). Author request: "Is there a way we can pause a run
+  rather than disabling it, and be able to continue it?" Implemented: a ⏸ Pause button (sidebar gen-row
+  between ⚡ and ■ Stop, plus a mirrored ⏸ in the Focus overlay's .focus-gen row) that pauses the running
+  Generate All Panels On Page run after the current panel; pressing ⚡ GENERATE ALL PANELS ON PAGE again
+  CONTINUES from the panel it paused on — done panels are NOT regenerated. ■ Stop still fully cancels
+  (⚡ then restarts from panel 1). Tab-background auto-pause now also resumes mid-run instead of
+  restarting. Mechanics: `pausedManually` + `resumePanel` state; `pauseGenerations()` (guard on
+  generateAllRunning) stops the in-flight generation like Stop does; the generateComicPage loop's break
+  block records `resumePanel = (result === 'cleared') ? i : i + 1` (clamped to totalPanels) and the next
+  ⚡ click starts from there; "Generate All From Here" (startPanel) clears resumePanel; button states:
+  ⏸+■ disabled while paused, ⚡ enabled. Verified live with mocked image generation: pause mid-run →
+  status "Paused — press ⚡ ... to continue from panel N", resume regenerated only from panel N (skipped
+  count correct, done panel images kept), Stop still cancels cleanly (loop breaks, ⚡ restarts fresh from
+  panel 1), Focus overlay ⏸ mirrors sidebar state through a full pause/resume cycle, from-here overrides a
+  stored resume point. Test page deleted and author's project data verified intact after testing.
+  (REVISED 2026-08-16 after author retest: the first live verification used a mock WITH a `.stop()`
+  method, which the real text-to-image plugin does not have — so Pause couldn't cancel the in-flight
+  image, the current panel kept rendering and its result landed anyway, and the run only paused after it
+  finished. Fixed in 2026.08.16.10 with a per-run abort signal raced against each image request; see the
+  BATCH 2026.08.16.10 dev-note. Re-verified live with a realistic no-.stop mock.)
+
+### 2026-08-16 — ⚡ Generate All Panels On Page button in Focus view (implemented 2026.08.16.8)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.8). Author request: put the Generate All Panels On Page
+  button on the Focus page with the same functionality; implement now. Implemented: a `.focus-gen` row in
+  the #singleOverlay (Focus) with its own ⚡ button (calls the same generateComicPage), a ■ Stop button, and
+  a status line. No changes to generation internals — state is mirrored via MutationObservers
+  (syncFocusControls/initFocusSync): sidebar ⚡ disabled → focus ⚡, globalStopBtn disabled → focus Stop,
+  statusEl text → focusStatusEl. Verified live: both buttons disabled during a run and both Stops enabled,
+  status synced through the run, black-on-yellow label rendering, visual pass. Author's project verified
+  intact after testing.
+
+### 2026-08-16 — "Generate All Panels On Page" label + per-page panel counts (implemented 2026.08.16.7)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.7). Author request: Generate All Panels should generate
+  only the current page and be labeled "Generate All Panels On Page"; also be able to vary the number of
+  panels per page. Findings: Generate All ALREADY only generated the current page, and per-page panel counts
+  ALREADY worked (each page stores its own count). Implemented: relabeled the ⚡ button, ■ Stop tooltip, 3
+  status strings, embedded help, and src/user-manual.html to "GENERATE ALL PANELS ON PAGE"; made the Page
+  Setup control's label explicit ("Number of Panels on This Page — each page remembers its own"). Plus layout
+  fixes the longer label forced: two-line `<br>` button text, compact sizes, `color:#000` restored (a
+  platform `button:not([disabled]){color:inherit}` override had silently made the ⚡ button white-on-yellow),
+  and a 6px right margin so ■ Stop sits fully inside the sidebar. Verified live: black-on-yellow two-line
+  label, Stop fully inside, generation uses the current page's count only. Author's project data verified
+  intact after testing.
+
+### 2026-08-16 — Page navigator + multi-page chain fixes (implemented 2026.08.16.6)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.6). Author go-ahead given 2026-08-16. Combined
+  implementation: (1) **Page navigator** — `#pageNav` (◀ Prev + numbered `.page-nav-page` buttons with
+  `.active` + ▶ Next) shows fixed bottom-center only when pageCount() > 1; `updatePageNav()` called from
+  `populatePageSel` (covers switch/add/delete/rename), `pageNavDelta(delta)` wraps. Landscape: bottom 16px;
+  `@media (orientation: portrait)` bottom 74px so it clears the fixed ▧ Hide Panels (bottom-left) and ☰ Menu
+  (bottom-right) buttons. (2) **BUG 1** — `clearChainFor(i, suffix)` now deletes `syncState[i + suffix]`
+  (was `currentPage + suffix`); deleting mid-chain no longer permanently breaks the chain or corrupts an
+  unrelated panel's entry. (3) **BUG 2** — `applyCarryToPanel1` + new `panel1IsPristine()` only land a
+  cross-page carry on a pristine panel 1 (matches applied, or holds the same value, or is untouched
+  default); a deliberately different value set there is preserved. One-page-forward carry + decision point
+  unchanged (verified continue + stop paths). All verified live with mocked image generation; test pages
+  deleted and author's project data restored afterwards.
+
+### 2026-08-16 — Library menu: add Characters/Locations via green + button (implemented 2026.08.16.5)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.5). Author request: in the main Library menu, a small
+  green square button with a + sits to the right of the Characters / Locations subheaders, above the rows'
+  Delete buttons, and adds a new Character / new Location. Implemented: renderLibrary's bucket header is
+  now a `.lib-bucket-row` flex row (h3 + `.btn-add-bucket`, 22×22 green #2ea043, "+") with
+  title "Add a new Character/Location"; clicking calls the new `addLibraryEntryByType(type)` — two
+  prompts (name, then the reusable library description), saves to libObjects, re-renders the library +
+  all panel dropdowns. No panel is involved, so there's no separate panel-description prompt. Verified
+  live: both buttons render green with correct titles, Character creation lands in the right bucket with
+  the typed description, and panel dropdowns pick it up.
+
+### 2026-08-16 — Panel Action Prompt box width (implemented 2026.08.16.4)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.4). Author request: the Panel Action Prompt entry
+  control should have the combined width of the dropdown + freeform description controls of the
+  Characters/Location rows. The action textarea (a 4-column grid row with nothing filling the description
+  column) now gets `grid-column: 1 / 3` via a `.pl-act-wide` class — it spans both columns, leaving the ⟳
+  and ✕ to auto-place into their correct columns (previously they sat misaligned in the middle columns).
+  Verified by pixel measurement: action box left edge == dropdown left edge, right edge == description
+  right edge, ⟳/✕ x-positions identical to the other rows.
+
+### 2026-08-16 — Panel library → fixed slots; Library → Character/Location buckets (revert, 2026.08.16.3)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.3). Author request: revert panel adding of chars/locs
+  to 2026.08.14.5 (name → reusable library description → separate panel description), keep one panel
+  accordion, and revert the main Library menu display to separate Character/Location buckets. Author
+  decisions: delete saved Action prompts + custom types; migrate any extra panel objects into empty main
+  slots (none existed); remove "+ Add Library Object"; keep hover tooltips. Implemented: 📖 Panel Library
+  accordion renders 3 fixed char slots + loc slot + freeform action box (no type column, no add-object
+  menu, no extra rows, no action library); char/loc creation goes through newPanelLibraryEntry's 3 prompts
+  via handleGridInput; Library menu renders 👤 Characters / 📍 Locations buckets (name+desc+🗑 rows);
+  migrateLibObjects prunes non-Character/Location entries + deletes comicGen.libTypes; migratePanelExtras
+  folds legacy extras into main slots at restore. Verified live: 3-prompt flows (library desc vs panel
+  desc distinct), save→reload round trip, buckets render, tooltips intact, page error-free, panel library
+  layout vision-checked.
+
+### 2026-08-16 — Bug: Panel Objects "Add" button doesn't add an Action (fixed 2026.08.16.2)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.2). Author report: "When I click the Add button in
+  order to add an Action to the Panel Objects, the Action is not added." Two root causes found + fixed:
+  (1) switching the add menu from "＋ New Action…" (freeform) to "Add from library → Action…" left the
+  picker in stale freeform mode — identity dropdown stayed hidden, button still said "Ok", and clicking
+  it with an empty description returned early (nothing added). onPanelAddSelect now fully resets the
+  picker on every menu change (mode cleared, dropdown shown, label "Add", placeholder restored), including
+  "— add object —". (2) routeObject's Action branch ignored the library selection and set the action slot
+  to the (possibly empty) freeform description — picking a library Action with no typed description
+  silently added nothing; it now falls back to the library entry's action text. Verified live: the stale-
+  switch sequence, clean library pick + prefill, freeform (slot + extra-row), and full reset.
+
+### 2026-08-16 — Panel Menu: adding an Action without a name (implemented)
+- **Status:** DONE 2026-08-16 (changelog 2026.08.16.1). Author request: when adding an Action via the
+  Panel Menu's add flow, the name doesn't matter — a freeform description alone should suffice. Flow now:
+  selecting "Action" from either entry point (the add-bar dropdown's "＋ New Action…" option, or the
+  object picker's pick:Action → "＋ New Action…") switches the add bar into freeform mode: no name prompt,
+  no library entry created. The description textarea shows "Freeform action description — goes straight
+  into the panel prompt", the Add button relabels to "Ok", and Enter (without Shift) confirms. On Ok,
+  the trimmed description lands directly in the panel's Action slot (#panel-act-N) and its summary
+  (#ps-act-N); if the panel already has an action, it queues as an extra row. The picker's "＋" (__new_act__)
+  now routes to the same freeform mode. Library entries (__new_char__ / __new_loc__) are unaffected.
+
+### 2026-08-15 — Bug: hover-to-preview for images invisible in Focus view (fixed 2026.08.15.6)
+- **Status:** DONE 2026-08-15 (changelog 2026.08.15.6). Author report: "The hover-to-preview for images
+  doesn't work when the panel has Focus." Root cause: Focus moves the real panel card into #singleOverlay
+  (.view-overlay z-index 10000), which painted ABOVE #imgPreview (z-index 9999). Fixed by bumping .img-preview
+  to z-index 10002. Verified with real-browser hit testing (elementsFromPoint returns imgPreviewImg first),
+  since html2canvas can't capture fixed-position elements.
+
+### 2026-08-15 — Panel Objects tooltips + per-panel image size selector (implemented)
+- **Status:** DONE 2026-08-15 (changelog 2026.08.15.5). Greenlit same day ("Go ahead and greenlight these,
+  unless you need me to make any decisions..."). (1) Hover / long-press over a Panel Objects Identity dropdown
+  (.po-sel) or Freeform Description (.po-desc) shows the full contents in a floating tooltip (delegated
+  document listeners + a single #poTooltip div, 350ms hover / 500ms long-press delay, viewport-clamped,
+  hidden on scroll/touchmove; perchance engine reload-proof). (2) Each panel header now has a Size dropdown
+  (panel-size-N) next to Style: [Default (Global)] / the same presets as File → Page Setup / Custom… (inline
+  panel-size-w/h inputs). getPanelImageSize(i) falls back to the global getImageSize() when blank/custom-empty;
+  used by generateSinglePanel + generateSinglePanelSlot. Saved in panelState page[i].sizeSel/sizeW/sizeH
+  (version stays 2 — fields are optional/back-compatible), restored on load, reset by Edit → Reset to Defaults,
+  copied by Duplicate (whole-page[i] deep copy). Verified live: override/custom/fallback logic, save→restore
+  round trip (persisted to localStorage, restored on reload), both tooltip types.
+
+### 2026-08-15 — Bug: Backup dialog's Close button did nothing (fixed 2026-08-15.4)
+- **Status:** DONE 2026-08-15 (changelog 2026.08.15.4). After the dialog-visibility hardening made the overlay
+  visible for the author at last (2026.08.15.3), Close stopped working: the hardening pins the overlay with
+  inline `display:flex !important`, which beats perchance's `[hidden]{display:none !important}` — so
+  `ghClose()`'s `hidden=true` had no visual effect. Fixed by forcing `display:none !important` in ghClose and
+  having the 2s visibility guard stop once `_ghClosed` is set. Open → Close → Reopen verified live.
+
+### 2026-08-15 — Tier 3: "Backup to GitHub" feature (implemented)
+- **Status:** DONE 2026-08-15 (changelog 2026.08.15.2). Greenlit 2026-08-14 evening; built + verified live
+  2026-08-15. File → Backup Project → "⬆ Backup to GitHub…" → #ghBackupOverlay (owner/repo/token inputs; 💾
+  Save settings / 🔍 Test connection / ⬆ Push to GitHub). Token stored ONLY in the browser (localStorage
+  comicGen.githubOwner/Repo/Token/LastBackup) — never in panelState/exports/shipped code. ghPush() pushes:
+  main.pjs (via the CORS-open perchance getGeneratorsAndDependencies API), index.html (fetch(location.href) =
+  the live page — raw index.html is unreachable at runtime), src/user-manual.html (relative fetch), and the 4
+  embedded docs as .md files; GitHub Contents API with GET-first sha resolution; commit msg "backup <ver> —
+  <timestamp>". Verified live: dialog open/close, settings round-trip, auth-error handling. REMAINING for the
+  author: create the fine-grained PAT and run the first real push (repo exists: cgoodwin97124/yacbpg-backup).
+
+### 2026-08-15 — Batch (2 items, author: "Go ahead and make it happen!")
+- **Status:** DONE 2026-08-15 (changelog 2026.08.15.1). Both items implemented + verified live;
+  documented in the index.html dev-notes "BATCH 2026-08-15.1" block (incl. a TESTING GOTCHA about the
+  debounced panel save overwriting test restores).
+- **(1) Export protection gating** — `buildExportData(includeProtection)`; JSON-only paths pass false
+  (exportSettings, settingsBlob → saveSettings/saveSettingsAs/confirmImportSave/confirmNewProjectSave) so
+  protectSlots is stripped from all exported panel entries; exportZip passes true (kept). Import unchanged
+  (nukes then applies). Verified: JSON-only export has NO protectSlots; zip export HAS them.
+- **(2) Panel Objects consolidation** — each panel's 📖 Panel Library accordion (👤/📍/🎬 sub-accordions)
+  replaced by one 🧩 Panel Objects accordion: warning, unified rows (Type/Identity/Freeform Description/⟳/✕,
+  same Type dropdown as main menu incl ＋ New Type…), add bar ("Create new…" ＋ New Character/Location/
+  Action/<CustomType>…/＋ New Type… + "Add from library…" picker). Primary rows reuse existing element ids
+  (empty slots render no row); new per-panel `extras` array supports arbitrary objects; type change routes
+  rows (Character→char slot else extras, Location→loc slot else extras, Action→action box else extras,
+  custom→extras); ensurePanelObjectRow keeps ⟳ chains + carry working on previously-empty slots;
+  buildPanelPrompt null-safe + appends extras; lib-desc auto-fills rows; desc-only rows preserved.
+  Verified live: migration of existing data (author's panel 1: Blonde Woman + monkey + "hiding behind a
+  door" all intact), picker add + prefill, custom-type creation ("＋ New Object…"), extras overflow +
+  persistence across reload, type routing, desc-only loc preservation, prompt inclusion, real generation.
+  (NOTE: the author's libTypes contains a custom "Object" type and libObjects has a few extra entries —
+  "Sword", blank rows, "hide" — which appear to be the author's own experiments; left untouched.)
+
+### 2026-08-14 — Batch (5 items, author: "Let's go ahead and start now!")
+- **Status:** DONE 2026-08-14 (changelog 2026.08.14.7). All five greenlit items implemented + verified live;
+  documented in the index.html dev-notes "BATCH 2026-08-14.7" block.
+- **(1) Generate All From Here** — `generateComicPage(startPanel)` takes an optional start (guard + `from`);
+  ⚡ button in each panel's ⚙ accordion (after Collapse Menu) calls `generateComicPage(i)`. Verified: button
+  present, param honored.
+- **(2) Floating Hide/Show Panels button** — `#panelsToggleBtn` now fixed bottom-left (16px/16px, z-index 1000).
+  Verified position.
+- **(3) Hide-panels password + Preferences** — `panelsPassword` (session-only, cleared on reveal);
+  `#hidePasswordPref` in File → Preferences (persisted comicGen.hidePasswordPref); `#passwordOverlay`
+  (set/enter modes, 👁 eyes, wrong password stays hidden). All dialogs exported. Verified live end-to-end.
+- **(4) File → New Project** — `newProject()` + 3-choice overlay (Save & New / Continue / Cancel) →
+  `doNewProject()` = resetEverything(true) + optional name. Verified overlay opens + cancels.
+- **(5) Panel Library Objects consolidation** — one `comicGen.libObjects` store `[{id,type,name,desc}]` +
+  custom types (comicGen.libTypes); Library menu is one "Panel Library Objects" section (Type select/name/
+  desc/🗑 rows, "＋ New Type…"); dropdowns filter by type (char/loc/act slugs); `migrateLibObjects()` merges
+  the legacy charLibrary/locLibrary/actLibrary (ids preserved) and deletes the keys — runs at boot AND inside
+  applyImportedSettings so old backups import correctly; buildExportData exports libObjects (version 2);
+  imports accept either format; reset consolidated to one checkbox (resetDelLibCheck). Author's 6 saved
+  entries migrated with types intact and panel selections preserved. Verified: migration, per-row type
+  changes, custom types, all three create flows, resolveDesc in prompts, legacy-key removal, old-format
+  import → merged.
+- **Bonus fix:** `let syncState = {}` was missing (implicit global only set by loadCurrentPage) — importing
+  from a fresh page threw "syncState is not defined". Declared at IIFE top; legacy-format import now reports
+  "Imported ✓".
+
+- **Status:** DONE 2026-08-14 (changelog 2026.08.14.6) — new `comicGen.actLibrary` + 📚 Library "My Saved
+  Action Prompts" section (renderLibrary('act'), + Add Action Prompt, name/desc/delete rows). Each panel's
+  🎬 Action Prompt gained a "From Action Library:" dropdown (`panel-act-lib-N`) above the freeform textarea:
+  saved actions INSERT their text into `panel-act-N` (dropdown resets to ''; textarea remains the source of
+  truth so freeform actions are untouched); "＋ New Action…" → `newActLibraryEntry(i)` runs the same 3-prompt
+  flow (name, library action text, optional panel action text). ⟳ re-propagates when persisted; summary/
+  override/save updated. Backup/import/reset round-trip actLibrary (new reset checkbox). Verified live.
+- **Request (author):** "I'd like to have a library of action prompts as well, working with the same options
+  as the ones for characters and locations."
+- **Plan:** new library `comicGen.actLibrary` (`{id, name, desc}`) + a 📚 Library tab section for it (+ Add
+  Action Prompt button, name/desc/delete rows, renderLibrary/import/export/reset all extended). Each panel's
+  🎬 Action Prompt section gets an "Action Library" dropdown: "(none)", "My Actions" optgroup, "＋ New
+  Action…". Picking a saved action INSERTS its description into the existing freeform action textarea (the
+  textarea stays the source of truth so freeform actions keep working — decision noted); "＋ New Action…" runs
+  the same 3-prompt create flow (name, main library desc, panel desc) and inserts the panel desc (or lib
+  desc) as the panel's action. ⟳/✕/summary/persistence all stay driven by the textarea.
+
+### 2026-08-14 — Clarified (NOT a bug): description entered at creation doesn't appear in the panel's slot
+- **Status:** DONE 2026-08-14 (changelog 2026.08.14.5) — the description typed at creation is the LIBRARY
+  description (`entry.desc`, reusable, shown in 📚 Library, woven into every prompt that uses the entry via
+  resolveDesc). The slot's own description field (modifier textarea) is intentionally per-panel and separate.
+  Per the author's clarification, the create flow now asks THREE prompts instead: (1) name, (2) main library
+  description, (3) a PANEL description that fills the placed slot's own description field
+  (`panel-char-extra-i-s` / `panel-loc-extra-i`). Both feed this panel's prompt (library desc + slot desc as
+  the modifier) — deliberately distinct. Brief write-up in src/ISSUES.md.
+
+### 2026-08-14 — Request: move "New Character / New Location" into the dropdown (per-slot placement)
+- **Status:** DONE 2026-08-14 (changelog 2026.08.14.4) — the ＋ buttons are gone. Every character slot + the
+  location select now end with a "＋ New Character…" / "＋ New Location…" option (`__new_char__` / `__new_loc__`).
+  handleGridInput intercepts the special value, reverts the select to 'none' first, then
+  `newPanelLibraryEntry(type, i, s)` (name prompt, optional description prompt) creates the entry in the
+  library and places it in THAT slot (s), updates summary/override/save, and re-propagates ⟳ chains if that
+  line is persisted. Guards in propagateSlot/propagateLoc skip the special values so they never reach syncState.
+  Verified live (picked option from a slot dropdown with stubbed prompt → entry created, placed in that slot).
+
+### 2026-08-14 — Request: New Character / New Location buttons should also ask for a description
+- **Status:** DONE 2026-08-14 (changelog 2026.08.14.3) — `newPanelLibraryEntry(type, i)` now runs TWO native
+  prompts: a name (cancel aborts), then an OPTIONAL freeform description (cancel just skips it → desc:'').
+  The description is stored on the library entry `{id, name, desc}` (same field 📚 Library edits) and feeds
+  panel prompts via resolveDesc. Verified live with a stubbed prompt() (name + desc both saved, selected in
+  the panel, summary updated, state restored afterwards).
+
+### 2026-08-14 — Request: in Panel Library, create a new character / location right from a panel, then use it immediately
+- **Status:** DONE 2026-08-14 (changelog 2026.08.14.2) — each panel's 📖 Panel Library → 👤 Characters and
+  📍 Location sections now have a "＋ New Character" / "＋ New Location" button → `newPanelLibraryEntry(type, i)`
+  (exported on window). It prompts for a name (native prompt(); cancel aborts), adds `{id, name, desc:''}` to
+  comicGen.charLibrary / comicGen.locLibrary, re-renders the library tab + all panel dropdowns
+  (renderLibrary + updatePanelSelects), then immediately SELECTS the new entry in that panel (char → first
+  empty slot else slot 1; loc → the location slot), refreshes the panel summary, clears the panel prompt
+  override, and saves. Buttons are in buildPanelGrid markup, so single-panel view (reuses the same card DOM)
+  gets them too. Verified live (create char + loc, both selected immediately, persisted to localStorage).
+- **Request:** The 👤 Characters and 📍 Location sections of each panel's 📖 Panel Library should offer a way
+  to CREATE a new character / location. After creating it, the new entry must be selected/used in THAT panel
+  immediately (dropdown repopulates, value set, modifier maybe left empty). The new entry must also persist
+  to the normal library storage (comicGen.charLibrary / comicGen.locLibrary) so it appears everywhere.
+
+### 2026-08-14 — Fix: on load, highlighted menu button didn't match the open menu (default state = all closed)
+- **Status:** DONE 2026-08-14 (changelog 2026.08.14.1) — the app now ALWAYS starts with every menu group
+  closed and no menu button highlighted. initMenu() hides all .menu-group's + strips .active from all
+  .menu-btn's (no auto-restore of 'comicGen.activeMenu' on load; switchMenu still writes it for import-time
+  restore). Also added the missing `hidden` to menuGroup-file so nothing flashes before initMenu runs. Root
+  cause: old initMenu opened only the saved group and never hid the others (the File group was HTML-visible
+  by default), so a saved 'help' left Help highlighted while File stayed open. Full write-up in src/ISSUES.md.
+
+### 2026-08-14 — Fix: manual "↗ Open in new tab" → "No src manifest available for this page"
+- **Status:** DONE 2026-08-14 — top-level navigation to a `src/` asset is NOT supported in this
+  environment: the perchance service worker only holds "src manifest" state for the app page itself, so
+  `window.open(location.origin + '/src/user-manual.html')` (the absolute URL the previous fix computed)
+  opened a tab showing "No src manifest available for this page (service worker had no state for the client)".
+  Since the in-app overlay reader works reliably, the "↗ Open in new tab" button and `openUserManualTab()`
+  were REMOVED — the manual now opens ONLY in the in-app reader. Full write-up in src/ISSUES.md (2026-08-14,
+  second entry). No changelog version (folded into the 2026.08.13.10 entry, same as the 404 fix).
+
+### 2026-08-14 — Fix: 📖 Open User Manual 404 ("Cannot GET /src/user-manual.html")
+- **Status:** DONE 2026-08-14 — manual now opens in an in-app overlay (`#manualOverlay` + `<iframe#manualFrame>`
+  srcdoc from `fetch('src/user-manual.html')`), with a secondary new-tab button using the corrected URL
+  `location.origin + '/src/user-manual.html'`. Root cause: Perchance's injected `<base>` makes relative URLs
+  resolve against `perchance.org/<name>`, which 404s top-level `/src/...`. Full write-up in src/ISSUES.md.
+  (The secondary new-tab button was later removed — see the entry above.)
+
+### 2026-08-13 — Ship the HTML design doc as an in-project user manual
+- **Status:** DONE 2026-08-14 (changelog 2026.08.13.10) — `src/user-manual.html` (copy of the styled design
+  doc, footer updated to v2026.08.13.10 + snapshot caveat) + Help menu panel with 📖 Open User Manual →
+  `openUserManual()` (window.open relative URL). Note: the manual is a SNAPSHOT — keep it roughly current
+  when major features land (regenerate from the design doc / markdown or hand-edit), since it ships with the app.
+
+### 2026-08-13 — Design document (markdown + styled HTML) delivered
+- **Status:** DONE 2026-08-14 — user-facing doc written from the code + AI-NOTES, both versions handed over
+  via attach_file (also kept at `scratch/design/` for this session). Docs-only; no changelog entry.
+  Note: `src/AI-NOTES.md` remains the AI-facing architecture reference; the design doc is the human one.
+
+### 2026-08-13 — ■ Stop button active during ANY generation
+- **Status:** DONE 2026-08-13 (changelog 2026.08.13.9) — `syncStopButton()` =
+  `setStopButtonEnabled(inFlightGen.size > 0 || generateAllRunning)` wired into renderPanelSlot (register +
+  finally), generateComicPage finally, haltGenerations, stopAllGenerations, visibilitychange, and the three
+  clear functions. Verified live: enables within ~200ms of a single-panel run starting, disables after stop/done.
+
+### 2026-08-13 — Per-image Open/Save/Clear/Protect/Cover buttons back under each image
+- **Status:** DONE 2026-08-13 (changelog 2026.08.13.9) — the `slotbtns-panel-N-K` rows moved out of the
+  collapsed 🖼 Image Controls accordion into each `.panel-img-slot` (after the image box); the accordion was
+  removed; buttons are icon-only chips (↗ ⬇ ✕ 🔓/🔒 ⭐) and `setSlotProtected` now toggles '🔒'/'🔓'.
+  Same ids, so all JS selectors still work. Verified live (96 rows under the 24×4 slots).
+
+### 2026-08-13 — Show/Hide Menus button (single button does both)
+- **Status:** DONE 2026-08-13 (changelog 2026.08.13.9) — static label "Show/Hide Menus"; click →
+  `togglePanelMenus(i)` (any `.panel-acc` open ⇒ collapse all, else open all). Verified live.
+
+### 2026-08-13 — ⟳ propagate Location + Action Prompt to later panels (cap at next page's panel 1); add per-line Delete buttons
+- **Status:** DONE 2026-08-13 (changelog 2026.08.13.8). Delete-button chain decision made: ✕ also unchecks the
+  line's ⟳ checkbox and clears its syncState/carry chain entries (delete = full line reset).
+- **Request:**
+  - In the panel menus, give 📍 Location and 🎬 Panel Action Prompt the SAME ⟳ persist checkbox the
+    character entries have, so checking it propagates that panel's location (incl. the location modifier)
+    / action prompt to the later panels too.
+  - Character propagation (and the new location/action propagation) should extend NO FURTHER than
+    panel 1 of the NEXT page, if a next page exists (same-page panels + next page's first panel, then stop).
+  - Add a small DELETE button next to each character line, and next to the Location and the Panel Action
+    Prompt lines. Pressing it clears that line:
+    1. Characters → set select to "No Character Selected" (value `none`) and clear that character's
+       modifier text (`#panel-char-extra-N-S`).
+    2. Location → set select to "No Location Selected" (value `none`) and clear the location modifier
+       (`#panel-loc-extra-N`).
+    3. Panel Action Prompt → clear the prompt entry (`#panel-act-N`).
+- **Notes / current behavior:**
+  - Character ⟳ propagation already exists: `.persist-check[data-s]` in each char slot →
+    `isPersisted(i,s)` → `propagateSlot(i,s)` (copies sel+extra to panels i+1..24 of the CURRENT page via
+    per-page `syncState['i-s'] = {sel, extra}`; a `stillInSync` check skips later panels the user has
+    diverged from the chain).
+  - Location (`panel-loc-select-N` / `panel-loc-extra-N`) and action (`panel-act-N`) currently have NO
+    persist flag and NO propagation.
+  - The `none` dropdown options exist and read exactly "No Character Selected" / "No Location Selected"
+    (no brackets); `handleGridInput` already clears a char's extra field when its select flips to `none`,
+    and the same pattern applies to `panel-loc-select-N` → `panel-loc-extra-N`. `schedulePanelSave()`
+    persists after grid edits; `updatePanelSummary(i)` must be refreshed after any delete-button click so
+    the `.panel-summary` line stays in sync. Decide (and note) whether the Delete button also unchecks the
+    line's ⟳ persist checkbox / clears the chain (`syncState` / `stillInSync`).
+  - Pages: `currentPage` + `panelState.pages` + `pageSession`; each page has its own 24-card grid
+    (`loadCurrentPage` → `buildPanelGrid`). The NEXT page's panel 1 is NOT in the DOM until you switch to
+    it, so cross-page propagation must buffer the value (e.g. in page/session state) and apply it when the
+    next page loads.
+  - Suggested implementation order: (1) extend the panel model + persistence with `persistLoc`/`persistAct`
+    flags (collect/restore/export/import/reset), add the ⟳ checkboxes to the Location and Action rows, and
+    wire them to same-page propagation; (2) add the cross-page panel-1 propagation (buffer on page switch,
+    apply on page load); (3) add the Delete buttons (a small × next to each char line, the Location, and the
+    Action Prompt) with the clear behaviors above. Keep character propagation behavior consistent.
+
+### 2026-08-13 — Stop Generation button: improve discoverability (author couldn't find it)
+- **Status:** DONE 2026-08-13 (changelog 2026.08.13.7) — implemented as a single GLOBAL ■ Stop button next
+  to the ⚡ button, always visible, enabled while a Generate All run is active.
+- **Request:** The per-panel ■ Stop Generation button EXISTS and works (24 × `.btn-view.btn-stop` →
+  `haltGenerations()`, verified live 2026-08-13) but is `hidden` unless a ⚡ Generate All Panels On Page run is
+  active (`setStopButtonsVisible`), so the author couldn't see it in normal use. Pick/implement a more
+  discoverable presentation — e.g. always visible (disabled when nothing is running), or a single global
+  ■ Stop in the Generate bar (`#gen-actions`), while keeping it functional during runs.
+- **Notes / current behavior:** hidden-by-default design (changelog 2026.08.13.2 / 2026.08.13.4);
+  `setStopButtonsVisible(visible)` toggles all; `haltGenerations()` sets `stopRequested`, stops in-flight
+  gens, marks boxes `.stopped`. If "always visible" is chosen, the touch points are the `hidden` attribute,
+  `setStopButtonsVisible`, and the `.stopped` reset paths.
