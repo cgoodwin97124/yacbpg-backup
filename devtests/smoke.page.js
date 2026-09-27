@@ -27,6 +27,7 @@ const GROUPS = {
   G16: "panel identity (the id on every panel)",
   G17: "renaming a library character/location and propagating it",
   G18: "the kept-image hook (the project's own kept array)",
+  G19: "the GitHub backup (the served page read back, the fifteen files)",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -1305,6 +1306,42 @@ async function run() {
     closeJsonEditor(true);
     await sleep(200);
     return eqArr([hasKept, dirty, /problem/i.test(status), unchanged], [true, true, true, true], "hasKept,edited,refused,unchanged status=" + status.slice(0, 70));
+  });
+
+  await t("G19: 92 the backup assembles all fifteen files (the served page read back with a cache-buster)", async () => {
+    const realFetch = window.fetch;
+    const puts = [];
+    window.fetch = function (url, opts) {
+      const u = String(url && url.url ? url.url : url);
+      if (u.indexOf("api.github.com/repos/") !== -1) {
+        if (opts && opts.method === "PUT") {
+          let n = 0;
+          try { n = JSON.parse(opts.body).content.length; } catch (e) {}
+          puts.push({ path: u.split("/contents/")[1], len: n });
+          return Promise.resolve(new Response(JSON.stringify({ content: { sha: "stub" } }), { status: 200, headers: { "Content-Type": "application/json" } }));
+        }
+        return Promise.resolve(new Response(JSON.stringify({ sha: "stub" }), { status: 200, headers: { "Content-Type": "application/json" } }));
+      }
+      return realFetch.apply(window, arguments);
+    };
+    try {
+      openGhBackup();
+      await sleep(150);
+      const tok = $("ghTokenInput") ? $("ghTokenInput").value : "";
+      if (!tok) { ghClose(); return { skip: "no token in this browser" }; }
+      await window.ghPush();
+      const status = $("ghStatusEl").textContent;
+      const names = puts.map((p) => p.path);
+      const want = ["main.pjs", "index.html", "src/manual.html", "src/question-form.html", "src/refactor-form.html", "src/round2-form.html", "src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js", "src/state/store.js", "src/state/commands.js"];
+      const order = want.every((p, i) => names[i] === p);
+      const idxLen = names.indexOf("index.html") >= 0 ? puts[names.indexOf("index.html")].len : 0;
+      const sizes = puts.every((p) => p.len > 900);
+      ghClose();
+      await sleep(120);
+      return eqArr([names.length, order, sizes, /Pushed 15 files/.test(status), idxLen > 500000], [15, true, true, true, true], "files=" + names.length + " idxB64=" + idxLen + " status=" + status.slice(0, 60));
+    } finally {
+      window.fetch = realFetch;
+    }
   });
 
   const pass = T.filter((x) => x.ok === true).length;
