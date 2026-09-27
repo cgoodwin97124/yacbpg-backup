@@ -604,6 +604,23 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "oneLeaf");
   });
 
+  await t("commands: setImgCount writes exactly one leaf and reports where", () => {
+    const proj = mkProject();
+    proj.pages[1][1].imgCount = "1";
+    proj.pages[1][2].imgCount = "4";
+    const wasBefore = JSON.parse(JSON.stringify(proj));
+    const hit = api.setImgCount(proj, "p-2", "3");
+    const changed = pathsDiffering(wasBefore, proj);
+    const miss = [api.setImgCount(proj, "p-9", "2"), api.setImgCount(proj, "", "2")];
+    return eqArr([
+      JSON.stringify(hit), proj.pages[1][2].imgCount, proj.pages[1][1].imgCount,
+      changed.join(","), miss.filter((m) => m === null).length,
+    ], [
+      JSON.stringify({ page: 1, index: 2, fields: ["imgCount"] }), "3", "1",
+      "$.pages.1.2.imgCount <\"4\" -> \"3\">", 2,
+    ], "oneLeaf,noop");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -615,7 +632,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 1, "setTitle",
+      true, 2, "setImgCount,setTitle",
     ], "coercion,noop,registry");
   });
 }
