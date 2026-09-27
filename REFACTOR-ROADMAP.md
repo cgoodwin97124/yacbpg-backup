@@ -288,7 +288,7 @@ and there was nothing left to compare — `diff-core.js` keeps its guards); no u
 
 ### 3.4 P2 — a real state layer (read-only first)
 
-**STATUS: steps 1, 2, 2b, 3 and 4 are BUILT (2026.09.26.10 / 2026.09.26.15 / 2026.09.26.16 / 2026.09.26.17 / 2026.09.26.18).** Panels carry ids and
+**STATUS: §3.4 IS COMPLETE — steps 1, 2, 2b, 3, 4 and 5 are BUILT (2026.09.26.10 / 2026.09.26.15 / 2026.09.26.16 / 2026.09.26.17 / 2026.09.26.18 / 2026.09.26.19).** Panels carry ids and
 `src/core/schema.js` exists — `SCHEMA_VERSION`, `PANEL_COUNT_OPTIONS`, `newPanelId`, `defaultChar`, `defaultPanel`,
 `defaultPage`, `defaultProject`, `normalise`, `validate`, plus `normaliseLibrary`/`normaliseLibType` — and
 `validate(normalise(x))` is always clean. `normalise` is the migration seam and is **conservative by rule: it never
@@ -296,16 +296,14 @@ deletes a key it does not understand**, and it normalises `library` only when th
 its library as of 2026.09.26.15** (`settings.library` inside `panelState`; `comicGen.libObjects` is now the
 browser-wide *catalogue* a project copies from — `AI-NOTES.md` §28) — and **the project owns its kept images as of
 2026.09.26.16** (a `kept` array on the project, carried by save / export / import / the JSON editor; nothing writes to
-it until the ⤓ Keep feature ships — `AI-NOTES.md` §29). **Step 2b is complete.** Not yet done: `index.html` still uses
-its own `defaultPageData()` (swapping `resetEverything` onto `defaultProject()` belongs with the store, step 3), the
-store itself (step 3) and the store-vs-`collectPanelState` equality test (step 4).
+it until the ⤓ Keep feature ships — `AI-NOTES.md` §29). **Step 2b is complete.** **Nothing is left in this phase:** the store exists (step 3), the differential that licenses reading it passed (step 4), the save path writes through it and `resetEverything()` builds its fresh state from `defaultProject()` (step 5), and the store-vs-`collectPanelState` equality is now pinned by both the differential and the save path itself (**16 checks**). What remains is the *other* copy of `ensurePages` / `defaultPageData` — `index.html`'s inline pair, which ~30 call sites still use; the module has its own, and a test keeps the two in agreement (the strangler rule: the copy stays until the module has survived a release).
 
 1. ✅ **Panels get ids.** Add an `id` to every panel entry, generated on create/duplicate/import, and
    migrated on load for panels that lack one (today: `normalise()` in `core/schema.js`). Store it in the project. *Nothing else
    changes yet* — the DOM still drives everything.
 2. ✅ **Write `core/schema.js`**: `defaultProject()`, `defaultPage()`, `defaultPanel()`, `normalise(state)`,
-   `validate(state)` (plus `newPanelId`, `defaultChar`, `PANEL_COUNT_OPTIONS`, `SCHEMA_VERSION`). **Still to do
-   here:** the hand-built fresh state inside `resetEverything` becomes `defaultProject()` (with the store step).
+   `validate(state)` (plus `newPanelId`, `defaultChar`, `PANEL_COUNT_OPTIONS`, `SCHEMA_VERSION`). **DONE (2026.09.26.19, with the store
+   step):** the hand-built fresh state inside `resetEverything` is now `defaultProject()` / `defaultPanel()`.
 2b. ✅ **The project owns its library, and its kept images** (author's decisions, 2026-09-26 - `REFACTOR-NOTES.md`
    section 3). **BUILT (2026.09.26.15 / 2026.09.26.16).** `defaultProject()` carries the project's own `library` and
    `kept` arrays; the browser-wide library stays as
@@ -326,9 +324,17 @@ store itself (step 3) and the store-vs-`collectPanelState` equality test (step 4
    the legacy v1 and every-dead-key files, edits surviving a page switch away and back, an unknown stored key, and
    `resetEverything(true)` — reporting the first differing path on failure. **The store is licensed to be read.**
    `AI-NOTES.md` §31, `DEV-NOTES.md` BATCH 2026.09.26.18.
-5. **Switch the save path** to write from the store; keep `restorePanelState()` writing the DOM. Now the
-   DOM is a *rendering* of the store on load and a *proxy for it* on input — the last step of P3 removes
-   the proxy. **Next; queued in `PENDING.md`.**
+5. ✅ **The save path writes from the store (2026.09.26.19).** `savePanelState()` is
+   `savePanelStateShape(storeJsonNow() || collectPanelState())` — the store's project object, through the same writer,
+   with the pre-`.19` expression as the fallback when `src/state/store.js` did not load; `restorePanelState()` still
+   writes the DOM, and the snapshot is re-read from the DOM on every save, so the DOM stays the source of truth for
+   input. `resetEverything()` takes its factory values from `defaultProject()`/`defaultPanel()` (step 2's leftover).
+   The structural call sites (`switchPage`, `addPage`, `deletePage`, `jsonApplyDoc`, the export/import paths) still
+   write a `collectPanelState()` they derive — those are *mutations*, and **P3's named commands are what replace them**.
+   The differential grew to **16 checks**: `SD14`/`SD15` assert the saved bytes are exactly the store's JSON (live project
+   and the 3-page/24-panel fixture) and `SD16` asserts a factory reset matches the schema field for field. The DOM is now
+   a *rendering* of the store on load and a *proxy for it* on input — **the last step of P3 removes the proxy.**
+   `DEV-NOTES.md` BATCH 2026.09.26.19, `AI-NOTES.md` §32.
 
 **Exit criteria:** boot → store → DOM → store → save is byte-identical to the old path for every fixture;
 reload a project and diff the JSON view before/after; zero behaviour change.
