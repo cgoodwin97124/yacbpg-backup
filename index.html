@@ -67,8 +67,10 @@
                    own checks (the saved bytes are exactly the store's JSON; the reset matches
                    the schema) went green in 2026.09.26.19, and the first named command's
                    own check (a keystroke in a Title box is in storage synchronously, byte-for-byte
-                   equal to the store's project object) in 2026.09.26.20:
-                   devtests/state-diff.page.js now runs 17 checks over the fixture corpus, every
+                   equal to the store's project object) in 2026.09.26.20, and the second command's
+                   own check (an Images-count change is in storage synchronously, the pinned
+                   prompt override untouched, slots 1–3 shown) in 2026.09.27.1:
+                   devtests/state-diff.page.js now runs 18 checks over the fixture corpus, every
                    panel field, every panel-count domain and the author's own project. Never edit
                    only one side.
     src/state/commands.js
@@ -78,7 +80,9 @@
                    one field and returns { page, index, fields } so the caller knows what to
                    re-render. index.html owns the dispatch (runPanelCommand) and the DOM
                    adapter (renderCommittedFields), and the grid's delegated input handler
-                   routes its fields there. First command: setTitle. The remaining leaf
+                   routes its fields there. First two commands: setTitle (.20) and setImgCount
+                   (.27.1, via onPanelImgCountChange with the old slots-plus-debounce path as
+                   the fallback when the module or id is missing). The remaining leaf
                    setters follow one per release, then the structural commands. Never edit
                    only one side.
 
@@ -1326,8 +1330,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.23 — 2026-09-26 — ☑ Every 📚 Library item can be selected, so you can copy or delete several at once
-- ☑ Tick the checkbox on any Library row — shift-click a checkbox to take the whole range, or use ☑ Select all under a section heading — and the ⤒, ⤓ and 🗑 buttons on a selected row then act on every selected item: ⤒ copies them all into My catalogue (asking first when one is already there, because that updates that catalogue entry), ⤓ copies them all into this project, and 🗑 deletes them all in one dialog with the same "leave the text as plain text" / "clear the references and the text" choice as a single delete, applied to the whole batch. The selection is never saved: it clears after every action, and Esc clears it.
+## 2026.09.27.1 — 2026-09-27 — 🧭 The second named command: the Images count is saved by the store, and it leaves your prompt override alone
+- Changing a panel's Images count now writes through the store's named command instead of the debounced autosave; slot row re-renders at once, manual prompt overrides untouched, same bytes saved.
 </script>
 
 
@@ -4442,6 +4446,14 @@ color-scheme:light;
       if (f === 'title') {
         const el = document.getElementById('panel-title-' + hit.index);
         if (el && el.value !== panel.title) el.value = panel.title;
+      }
+      if (f === 'imgCount') {
+        const sel = document.getElementById('panel-img-count-' + hit.index);
+        if (sel) {
+          const v = String(panel.imgCount || '');
+          sel.value = [...sel.options].some(o => o.value === v) ? v : imgCountDefaultPref;
+        }
+        updatePanelImgSlots(hit.index);
       }
     }
     return true;
@@ -7993,8 +8005,11 @@ color-scheme:light;
   }
 
   function onPanelImgCountChange(i) {
-    updatePanelImgSlots(i);
-    schedulePanelSave();
+    const sel = document.getElementById('panel-img-count-' + i);
+    if (!sel || !runPanelCommand('setImgCount', panelIdAt(i), [sel.value])) {
+      updatePanelImgSlots(i);
+      schedulePanelSave();
+    }
   }
 
   function onPanelStyleChange(i) {
@@ -10170,6 +10185,7 @@ color-scheme:light;
   window.__storeModule = function () { return coreModules.store; };
   window.__schemaModule = function () { return coreModules.schema; };
   window.__commandsModule = function () { return coreModules.commands; };
+  window.__panelOverrideSet = function (i) { return !!panelPromptOverrides[i]; };
   window.runPanelCommand = runPanelCommand;
   window.renderCommittedFields = renderCommittedFields;
   window.deleteLibraryObject = deleteLibraryObject;
