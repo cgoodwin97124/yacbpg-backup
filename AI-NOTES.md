@@ -1341,6 +1341,36 @@ The user-facing story is `CHANGELOG.md` 2026.09.26.17; the engineering detail (a
   — there is no page-side behaviour to check yet. Park hash `cfa29083` → `a5708568`, which is only the
   `comicGen.githubLastBackup` timestamp written by this session's `ghPush`, **not** the release.
 
+## 31. P2 step 4: the state-layer differential suite (2026.09.26.18)
+
+`REFACTOR-ROADMAP.md` §3.4 step 4 — the test that licenses step 5. **No app code changed**; only the version stamp and the
+pointer comment in `index.html`. The user-facing story is `CHANGELOG.md` 2026.09.26.18; the detail and the harness trap are
+`DEV-NOTES.md` BATCH 2026.09.26.18.
+
+- **The assertion, and where it lives.** `devtests/state-diff.page.js` (run by `devtests/run-state-diff.js`) requires
+  `JSON.stringify(window.__storeJson()) === JSON.stringify(window.collectPanelState())` for every case — the store's
+  project object vs the app's own, character for character. `window.__storeJson()` came from §30 and
+  `window.collectPanelState` was exported in 2026.09.26.17 for this. Failures report the **first differing path**
+  (`$.pages.1.1.action`) via a recursive `firstDiff(a, b, path)` that also reports `<key#i>` when key *names* disagree at
+  a position, because insertion order is part of the contract.
+- **The 13 checks (`SD1`–`SD13`, all green):** the live project; the boot instance vs the pure `serializeProject()` (plus
+  `STORE_VERSION === 2`); the full-page fixture (3 pages / 24 panels); every page with that page on screen; a **non-current**
+  page (its panels can only come from storage — the check that pins the stored-pages half of the serializer); every panel
+  field driven by hand through the DOM, with `eqArr` on the collected model so a check cannot pass vacuously; every
+  project-wide field; all six panel counts; the legacy v1 file; the every-dead-key file; edits surviving a page switch away
+  and back; a stray unknown key (dropped by both, stored copy left unmutated); and `resetEverything(true)`.
+- **Run it the way the other page suites are run** — `execute_js` with `devtests/run-state-diff.js`. It parks the whole map,
+  dumps it to `scratch/p0/parks/state-diff-<stamp>.json`, injects `fixtures/*.json` as `window.__fixtures`, restores,
+  reloads and verifies the hash. It leaves a fixture loaded, so the park/restore is mandatory.
+- **The trap to know about:** the runner's page-side `__hash()` must join the map with a **real newline** to match
+  `park.js`'s `canon()`. A `join("\\\\n")` (one escaping level too many) hashes a different string and reports
+  `byteIdentical: false` on a perfect restore — the fix uses `String.fromCharCode(10)`. General rule: **when an FNV hash
+  mismatches, diff the maps field by field first** (this session's mismatch was only the `githubLastBackup` timestamp the
+  `ghPush` had just written).
+- **Park hash `bb80c43e`** (moved from `a5708568` by this session's `ghPush`), differential **13/13**, everything else
+  unchanged (smoke 88/0/4, generation 18/0, fixtures 18/0, core 30/0, guards 19/0, visual 12/14, 0 perchance errors).
+- **Next: §3.4 step 5** — the save path moves onto the store.
+
 ## DOC LAYOUT (2026.09.23.6)
 
 As of 2026.09.23.6 the internal docs no longer ship inside `index.html`:
