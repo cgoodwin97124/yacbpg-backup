@@ -26,6 +26,7 @@ const GROUPS = {
   G15: "panel selection, copy / cut / paste",
   G16: "panel identity (the id on every panel)",
   G17: "renaming a library character/location and propagating it",
+  G18: "the kept-image hook (the project's own kept array)",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -1229,6 +1230,81 @@ async function run() {
     const obj = libObjs().find((o) => o.id === alpha.id);
     const rowAfter = [...document.querySelectorAll("#libObjects .lib-row-proj")].map((r) => (r.querySelector("input") || {}).value);
     return eqArr([!!res, res && res.libDescChanged, obj && obj.name, obj && obj.desc, rowAfter.includes("RNameDelta")], [true, true, "RNameDelta", "Desc mentions RNameDelta once.", true], "libDesc,name,rendered");
+  });
+
+  await t("G18: 89 the saved project and the export carry the project's kept list", async () => {
+    captureDownloads();
+    exportSettings();
+    await sleep(500);
+    cap.restore();
+    const text = cap.blobs.length ? await cap.blobs[cap.blobs.length - 1].text() : "";
+    let doc = null;
+    try { doc = JSON.parse(text); } catch (e) {}
+    setVal("projectNameInput", getVal("projectNameInput"));
+    await settle();
+    const st = rawState();
+    const live = window.projectKeptArray();
+    const exp = doc && doc.settings ? doc.settings.kept : null;
+    return eqArr([
+      typeof window.projectKeptArray, Array.isArray(live), live.length,
+      Array.isArray(exp), Array.isArray(exp) ? exp.length : -1,
+      Array.isArray(st.kept), Array.isArray(st.kept) ? st.kept.length : -1
+    ], ["function", true, 0, true, 0, true, 0], "type,live,export,saved");
+  });
+
+  await t("G18: 90 a kept entry survives the save and the export/import round trip", async () => {
+    const entry = { id: "k-smoke-1", panel: "p-smoke", slot: 2, image: "data:image/png;base64,AAA", prompt: "a cow at dusk", seed: "17" };
+    window.saveKept([entry]);
+    await settle();
+    const live = window.projectKeptArray();
+    const savedAfter = (rawState().kept || []).length;
+    captureDownloads();
+    exportSettings();
+    await sleep(500);
+    cap.restore();
+    const text = await cap.blobs[cap.blobs.length - 1].text();
+    const doc = JSON.parse(text);
+    const exported = (doc.settings && doc.settings.kept) || [];
+    window.saveKept([]);
+    await settle();
+    const cleared = window.projectKeptArray().length;
+    const input = $("importSettingsInput");
+    const dt = new DataTransfer();
+    dt.items.add(new File([text], "kept.json", { type: "application/json" }));
+    input.files = dt.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(700);
+    if ($("importConfirmOverlay") && !$("importConfirmOverlay").hidden) clickButtonText($("importConfirmOverlay"), "continue");
+    if (dialogOpen()) answer();
+    await sleep(1200);
+    const back = window.projectKeptArray();
+    const savedBack = (rawState().kept || []).length;
+    window.saveKept([]);
+    await settle();
+    return eqArr([
+      live.length, live[0] && live[0].prompt, live[0] && live[0].slot, savedAfter,
+      exported.length, exported[0] && exported[0].seed, cleared,
+      back.length, back[0] && back[0].prompt, savedBack
+    ], [1, "a cow at dusk", 2, 1, 1, "17", 0, 1, "a cow at dusk", 1], "live,saved,export,cleared,imported");
+  });
+
+  await t("G18: 91 the JSON editor shows kept and refuses to change it", async () => {
+    openJsonEditor();
+    await sleep(400);
+    const txt = $("jsonArea").value;
+    const hasKept = /"kept":/.test(txt);
+    const edited = txt.replace(/"kept": \[\]/, '"kept": [{"hand":"edited"}]');
+    $("jsonArea").value = edited;
+    $("jsonArea").dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(250);
+    const dirty = edited !== txt;
+    jsonEditorApply();
+    await sleep(350);
+    const status = $("jsonStatusEl") ? $("jsonStatusEl").textContent : "";
+    const unchanged = window.projectKeptArray().length === 0;
+    closeJsonEditor(true);
+    await sleep(200);
+    return eqArr([hasKept, dirty, /problem/i.test(status), unchanged], [true, true, true, true], "hasKept,edited,refused,unchanged status=" + status.slice(0, 70));
   });
 
   const pass = T.filter((x) => x.ok === true).length;
