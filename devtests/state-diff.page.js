@@ -269,6 +269,61 @@ async function run() {
     return eqArr([c.projectName, Array.isArray(c.library), Array.isArray(c.kept), Object.keys(c.pages).length, c.currentPage], ["", true, true, 1, 1], "resetShape");
   });
 
+  await t("SD14 the autosave writes exactly the store's JSON", async () => {
+    await switchTo(1);
+    setVal("panel-title-1", "written by the store");
+    window.savePanelState();
+    const saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 70) + " | store=" + String(d.b).slice(0, 70));
+    const c = window.collectPanelState();
+    return eqArr([saved.pages[1][1].title, JSON.stringify(saved) === JSON.stringify(c)], ["written by the store", true], "savedTitle,savedMatchesCollect");
+  });
+
+  if (full) {
+    await t("SD15 the same holds for the full-page fixture (3 pages, 24 panels)", async () => {
+      await importFixture(full.text);
+      await settle();
+      await switchTo(1);
+      setVal("projectNameInput", "Save path check");
+      window.savePanelState();
+      const saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+      const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+      if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 70) + " | store=" + String(d.b).slice(0, 70));
+      return eqArr(
+        [saved.projectName, Object.keys(saved.pages).length, Object.keys(saved.pages[1]).filter((k) => /^\d+$/.test(k)).length, JSON.stringify(saved) === JSON.stringify(window.collectPanelState())],
+        ["Save path check", 3, 24, true],
+        "name,pages,panels,match"
+      );
+    });
+  }
+
+  await t("SD16 a factory reset matches the schema's own defaults", async () => {
+    await resetEverything(true);
+    await settle();
+    const m = window.__schemaModule();
+    if (!m || !m.defaultProject || !m.defaultPanel) return no("the schema module did not load");
+    const fresh = m.defaultProject();
+    const c = window.collectPanelState();
+    const bad = [];
+    for (const f of ["projectName", "imageSizeSel", "imageSizeW", "imageSizeH", "guidanceScale", "imgCountDefault", "previewDelay", "previewOn", "globalPos", "globalNeg", "nsfw"]) {
+      if (JSON.stringify(c[f]) !== JSON.stringify(fresh[f])) bad.push(f + "=" + JSON.stringify(c[f]) + " want " + JSON.stringify(fresh[f]));
+    }
+    const fp = fresh.pages[1], cp = c.pages[1];
+    for (const f of ["name", "summary", "panelCountSel", "panelCountCustom", "seed"]) {
+      if (JSON.stringify(cp[f]) !== JSON.stringify(fp[f])) bad.push("page." + f + "=" + JSON.stringify(cp[f]) + " want " + JSON.stringify(fp[f]));
+    }
+    const dp = m.defaultPanel();
+    const panel = cp[1] || {};
+    for (const k of Object.keys(dp)) {
+      if (k === "id" || k === "imgCount") continue;
+      if (JSON.stringify(panel[k]) !== JSON.stringify(dp[k])) bad.push("panel1." + k + "=" + JSON.stringify(panel[k]) + " want " + JSON.stringify(dp[k]));
+    }
+    if (JSON.stringify(panel.imgCount) !== JSON.stringify(dp.imgCount || c.imgCountDefault)) bad.push("panel1.imgCount=" + JSON.stringify(panel.imgCount) + " want " + JSON.stringify(dp.imgCount || c.imgCountDefault));
+    if (bad.length) return no(bad.slice(0, 6).join(" | "));
+    return ok("11 globals, 5 page fields and " + Object.keys(dp).length + " panel fields match defaultProject()/defaultPanel()");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
