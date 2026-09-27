@@ -19,7 +19,9 @@ Reading order for a new session:
 - `tickets/` — the author's change-request tickets (T-01 …) with their answers, statuses and implementation notes.
 - `samples/cow-in-field.zip` — the throwaway sample project used for testing. It may be clobbered at any time.
 - `devtests/` — the regression harness: the park/restore protocol, the smoke / generation / fixtures / core
-  suites and how to run them (+ `devtests/shots/`, the visual baseline). **Read `devtests/README.md` before
+  suites, the module guards for `src/core/` + `src/state/`, the state-layer differential suite (`state-diff`,
+  2026.09.26.18 — the store's project object vs `collectPanelState()`), and how to run them (+ `devtests/shots/`,
+  the visual baseline). **Read `devtests/README.md` before
   running any test** — every suite mutates the live preview and must park and restore the author's storage.
 - `fixtures/` — known project files (full page, legacy v1, every-legacy-key) for the fixture suite.
 - `src/core/` — the app's pure-logic modules (`zip.js`, `jsontext.js`, `keywords.js`, `seeds.js`, `prompt.js`,
@@ -39,8 +41,9 @@ Reading order for a new session:
   `serializeProject(snapshot)` plus `ensurePages` / `defaultPageData` / `pageKey` / `normaliseSnapshot`, loaded by the same
   `coreLoad()` mechanism as the `src/core/` modules (it is in `GH_SRC_FILES`, and `devtests/diff-core.js` discovers
   `src/core/` **and** `src/state/`). `index.html` owns the DOM half, `collectDomSnapshot()`. **Nothing reads the store yet,
-  deliberately** — §3.4 step 4 is the differential test that `store.toJSON()` equals `collectPanelState()` key for key, and
-  step 5 the release that moves the save path onto it (`AI-NOTES.md` §30).
+  deliberately** — §3.4 step 4 was the differential test that `store.toJSON()` equals `collectPanelState()` key for key, and
+  **it went green in 2026.09.26.18** (`devtests/state-diff.page.js`, 13 checks — `AI-NOTES.md` §31); step 5, the release
+  that moves the save path onto the store, is next (`AI-NOTES.md` §30).
 - `FUNCTION-MAP.md` — what the app *does*, capability by capability, written with **no reference to the interface**;
   ends with the 21 invariants any refactor has to keep honouring.
 - `REFACTOR-ROADMAP.md` — the measured state of the code today, why it is tangled, and a six-phase reversible plan
