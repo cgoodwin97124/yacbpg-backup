@@ -324,6 +324,35 @@ async function run() {
     return ok("11 globals, 5 page fields and " + Object.keys(dp).length + " panel fields match defaultProject()/defaultPanel()");
   });
 
+  await t("SD17 a keystroke in a Title box is written by the named command", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setTitle !== "function") return no("the commands module did not load");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const rawBefore = localStorage.getItem("comicGen.panelState");
+    const el = $("panel-title-1");
+    if (!el) return no("no #panel-title-1 to type into");
+    const otherBefore = $("panel-title-2") ? $("panel-title-2").value : null;
+    el.value = "written by the command";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    const rawAfter = localStorage.getItem("comicGen.panelState");
+    const saved = JSON.parse(rawAfter || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const typed = saved.pages[1][1].title;
+    const neighbour = saved.pages[1][2] ? saved.pages[1][2].title : "(none)";
+    const unknownCommand = window.runPanelCommand("noSuchCommand", "p-1", []);
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    const roundTripped = $("panel-title-1") ? $("panel-title-1").value : "(missing card)";
+    return eqArr([
+      rawAfter !== rawBefore, typed, JSON.stringify(saved) === JSON.stringify(c), unknownCommand,
+      roundTripped, neighbour === otherBefore, pages,
+    ], [true, "written by the command", true, false, "written by the command", true, "1,2,3"], "immediate,saved,match,unknown,roundTrip,neighbour");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
