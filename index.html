@@ -31,8 +31,8 @@
                    The regression harness (P0, 2026-09-26): park/restore of the author's whole
                    localStorage map, the smoke / generation / fixtures / core suites, the module
                    guards for src/core and src/state, the state-layer differential suite
-                   (state-diff, 2026.09.26.19 — the store's project object vs collectPanelState(),
-                   and the save path that writes it).
+                   (state-diff, 2026.09.26.20 — the store's project object vs collectPanelState(),
+                   the save path that writes it, and the first named command).
                    READ devtests/README.md BEFORE running anything — every suite mutates the live
                    preview and must park and restore it.
     src/core/*.js  P1/P2's extracted pure logic — zip, jsontext, keywords, seeds, prompt,
@@ -65,9 +65,22 @@
                    accessor. §3.4 step 4 — the differential test that store.toJSON() equals
                    collectPanelState() key for key — went GREEN in 2026.09.26.18, and step 5's
                    own checks (the saved bytes are exactly the store's JSON; the reset matches
-                   the schema) went green in 2026.09.26.19: devtests/state-diff.page.js now runs
-                   16 checks over the fixture corpus, every panel field, every panel-count
-                   domain and the author's own project. Never edit only one side.
+                   the schema) went green in 2026.09.26.19, and the first named command's
+                   own check (a keystroke in a Title box is in storage synchronously, byte-for-byte
+                   equal to the store's project object) in 2026.09.26.20:
+                   devtests/state-diff.page.js now runs 17 checks over the fixture corpus, every
+                   panel field, every panel-count domain and the author's own project. Never edit
+                   only one side.
+    src/state/commands.js
+                   P3 step 1a (2026.09.26.20) — where mutations become NAMED COMMANDS
+                   (REFACTOR-ROADMAP.md §3.5). Pure and DOM-free: a command takes the project
+                   object, finds its panel by **id** (findPanelById, not by position), mutates
+                   one field and returns { page, index, fields } so the caller knows what to
+                   re-render. index.html owns the dispatch (runPanelCommand) and the DOM
+                   adapter (renderCommittedFields), and the grid's delegated input handler
+                   routes its fields there. First command: setTitle. The remaining leaf
+                   setters follow one per release, then the structural commands. Never edit
+                   only one side.
 
   READ (public repo, no token needed):
     fetch("https://raw.githubusercontent.com/cgoodwin97124/yacbpg-backup/main/PENDING.md")
@@ -1297,8 +1310,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.26.19 — 2026-09-26 — 💾 The save path writes through the store (same bytes, one source of truth)
-- 💾 Nothing you can see changes — your project saves exactly the same bytes it always did. What changed is *which* code writes them: the app's autosave now goes through the state-layer module instead of assembling the file itself, so there is one definition of what a project file looks like instead of two. "Reset everything to default" now takes its factory values from that same schema, so a reset cannot drift away from a fresh project. Every suite, including the field-for-field state-layer check, stays green.
+## 2026.09.26.20 — 2026-09-26 — 🧭 The first named command: a panel title is saved by the store, not read back out of the box
+- 🧭 Nothing you can see changes. This release starts turning "the controls are the data" into "the project is the data, and the controls are a view of it" — one field at a time. This one field is a panel's title: typing in a Title box now goes through a named command that writes the project file itself, instead of the app reading the box back a moment later. The bytes saved are identical.
 </script>
 
 
@@ -1308,7 +1321,7 @@ color-scheme:light;
   const CHAR_KEYS = ["none", "hero", "villain", "sidekick", "civilian"];
   const LOC_KEYS = ["none", "city", "lab", "hideout", "rooftop"];
 
-  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null, schema: null, store: null };
+  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null, schema: null, store: null, commands: null };
   const coreLoads = [];
   const coreLoad = (name, path, apply) => {
     coreLoads.push(new Promise((resolve) => {
@@ -1388,6 +1401,10 @@ color-scheme:light;
   coreLoad('store', './src/state/store.js', (m) => {
     if (m.createStore) createProjectStore = m.createStore;
     if (m.serializeProject) serializeProject = m.serializeProject;
+  });
+  let panelCommands = null;
+  coreLoad('commands', './src/state/commands.js', (m) => {
+    if (m.COMMANDS) panelCommands = m.COMMANDS;
   });
   const coreReady = Promise.all(coreLoads).then((failed) => failed.filter(Boolean));
 
@@ -3989,6 +4006,37 @@ color-scheme:light;
     return projectStore ? projectStore.load(snap).toJSON() : serializeProject(snap);
   }
 
+  function runPanelCommand(name, id, args) {
+    const cmd = panelCommands ? panelCommands[name] : null;
+    if (typeof cmd !== 'function' || !id) return false;
+    const project = storeJsonNow();
+    if (!project) return false;
+    const hit = cmd.apply(null, [project, id].concat(args || []));
+    if (!hit) return false;
+    savePanelStateShape(project);
+    renderCommittedFields(project, hit);
+    return true;
+  }
+
+  function renderCommittedFields(project, hit) {
+    if (!hit || hit.page !== currentPage) return false;
+    const page = project.pages[hit.page];
+    const panel = page ? page[hit.index] : null;
+    if (!panel) return false;
+    for (const f of (hit.fields || [])) {
+      if (f === 'title') {
+        const el = document.getElementById('panel-title-' + hit.index);
+        if (el && el.value !== panel.title) el.value = panel.title;
+      }
+    }
+    return true;
+  }
+
+  function panelIdAt(i) {
+    const card = document.getElementById('panel-card-' + i);
+    return card ? String(card.dataset.panelId || '') : '';
+  }
+
   let panelStateRestored = false;
 
   let imgCountDefaultPref = '1';
@@ -4808,8 +4856,8 @@ color-scheme:light;
     updatePasteUI();
     if (!gridHasListeners) {
       gridHasListeners = true;
-      grid.addEventListener('input', e => { handleGridInput(e); schedulePanelSave(); });
-      grid.addEventListener('change', e => { handleGridInput(e); schedulePanelSave(); });
+      grid.addEventListener('input', e => { if (!handleGridInput(e)) schedulePanelSave(); });
+      grid.addEventListener('change', e => { if (!handleGridInput(e)) schedulePanelSave(); });
     }
     if (singleResume) {
       const total = getPanelCount();
@@ -6428,6 +6476,8 @@ color-scheme:light;
 
   function handleGridInput(e) {
     const id = (e.target.id) || "";
+    const ttl = id.match(/^panel-title-(\d+)$/);
+    if (ttl) return runPanelCommand('setTitle', panelIdAt(parseInt(ttl[1], 10)), [e.target.value]);
     const nv = id.match(/^panel-(?:char-select-(\d+)-(\d+)|loc-select-(\d+))$/);
     if (nv && (e.target.value === '__new_char__' || e.target.value === '__new_loc__')) {
       e.target.value = 'none';
@@ -9691,6 +9741,9 @@ color-scheme:light;
   window.__storeJson = storeJsonNow;
   window.__storeModule = function () { return coreModules.store; };
   window.__schemaModule = function () { return coreModules.schema; };
+  window.__commandsModule = function () { return coreModules.commands; };
+  window.runPanelCommand = runPanelCommand;
+  window.renderCommittedFields = renderCommittedFields;
   window.deleteLibraryObject = deleteLibraryObject;
   window.deleteCatalogueObject = deleteCatalogueObject;
   window.applyLibraryDelete = applyLibraryDelete;
@@ -10662,7 +10715,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js', 'src/state/commands.js'];
 
   function extractTemplateSource(html) {
     const key = '"outputTemplate":"';
