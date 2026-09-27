@@ -10,6 +10,21 @@ Keep entries short but complete enough that a fresh session never re-diagnoses.
 
 ---
 
+## 2026-09-27 — Perchance engine "An error occurred" dialog on mouse move (`interactionPointerMoveHandler`) — CLOSED, no longer an issue
+- **Symptom (2026-09-22, seen once):** the perchance error dialog whose only stack line was
+  `interactionPointerMoveHandler@?__generatorLastEditTime=…:34:3414`. Nothing else misbehaved, and the app kept working.
+- **Root cause / finding:** that frame is inside the PLATFORM's own page-bootstrap script — its "human interaction
+  signals" bot-detection helper, installed on every generator page for `pointerdown`/`pointermove` — not our code. The
+  dialog deliberately hides the real exception text for engine-located errors, so the underlying `TypeError` would only
+  ever have appeared in the browser console. Recon (full detail in `PENDING.md`, entry 2026-09-22) confirmed the
+  generator does not call `history.replaceState` (a platform trap that throws), does not dispatch synthetic pointer
+  events, has clean pointer handlers, and loads no third-party scripts.
+- **Fix / outcome:** nothing to fix in the generator. Closed by the author on 2026-09-27 as **no longer an issue** (not
+  seen since 2026-09-22). Platform report `923578bb` stays on file with the platform.
+- **Gotchas:** synthetic events are never `isTrusted`, so an error raised inside the engine's `isTrusted`-gated handler
+  cannot be reproduced from the AI preview — it needs real input in the author's browser. If it ever returns, the
+  console line (Ctrl+Shift+J) is the one thing that pins it; do not re-diagnose from the dialog alone.
+
 ## 2026-09-26 — Importing a project could close or re-open the active menu (`switchMenu` is a toggle) — FIXED 2026.09.26.11
 - **Symptom (cosmetic, windowed layout, after an import or a JSON-editor apply):** a drawer menu that was open
   closes, or one that was closed appears — so the page height jumps by a whole 224 px menu row. Invisible in normal
