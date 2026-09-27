@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 2;
+export const COMMANDS_VERSION = 3;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -44,4 +44,11 @@ export function setImgCount(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["imgCount"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount };
+export function setStyle(project, id, value) {
+  const hit = findPanelById(project, id);
+  if (!hit) return null;
+  hit.panel.style = text(value);
+  return { page: hit.page, index: hit.index, fields: ["style"] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle };
