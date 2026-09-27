@@ -112,7 +112,8 @@ Preference restore happens just before `applyTheme()`: `menuFullscreenPref`, `hd
   imgCountDefault, previewDelay, previewOn, globalPos, globalNeg, nsfw, currentPage, pages:{N: pageData}}`.
   Since 2026.09.26.15 it also carries **`library`** — `[{id, type, name, desc}]`, the PROJECT's own library
   (this whole object is what the app and the docs call `settings`, so its library is `settings.library`) —
-  see §28.
+  see §28 — and since 2026.09.26.16 a **`kept`** array (`settings.kept`), the project's own kept images, empty until
+  the ⤓ Keep feature ships — see §29.
   pageData = `{name, panelCountSel, panelCountCustom, seed, 1..24: panelEntry}`.
   panelEntry = `{chars:[{sel,base,extra}]x3, title, protectSlots:[bool x4], loc, locBase, locExtra, action, seed,
   imgCount, style, promptOverride, extras:[{type, sel, desc}]}` (2026-08-15.1 — `extras` holds arbitrary
@@ -1257,7 +1258,43 @@ The decisions are the author's round-2 answers (`REFACTOR-NOTES.md` §1b / `ques
 - **Interpretation calls.** (a) Catalogue rows are editable in place and get the ⤓/⤒ pair, so the cross-project reuse
   workflow survives. (b) "Leave the text" clears the reference but keeps the text; "clear" empties the text too.
   (c) A new project / Reset keeps the project library unless the delete box is ticked.
-- **Still open in step 2b:** the **`kept`**-images array on the project (scheduled 2026.09.26.16), then step 3, the store.
+- **The other half of step 2b — the project's own kept images — shipped as 2026.09.26.16: see §29.** Then step 3, the store.
+
+## 29. P2 step 2b (second half): the project owns its kept images (2026.09.26.16)
+
+`settings.kept` — a `kept` array inside `comicGen.panelState` — is the project's own list of kept images.
+**Nothing writes to it yet** (it is always `[]`); it is the container the **⤓ Keep** feature (not greenlit) will write
+into, and the home P2-03's decision — *the project file is the only home for kept images* — implies. The engineering detail
+is `DEV-NOTES.md` BATCH 2026.09.26.16.
+
+- **The whole change is a mirror of §28's library.** `src/core/schema.js`: `normaliseKept(arr)` (array-of-objects in,
+  shallow copies out, **unknown keys and field types preserved** — it deliberately invents nothing: no ids, no coercion,
+  because the entry shape is not agreed), `kept: []` on `defaultProject()`, `normalise()` normalising `kept`
+  **only when the key is present**, and a `validate()` check for a non-array `kept` or a non-object entry.
+- **`index.html`:** `projectKept` beside `projectLibrary`; `projectKeptArray()` / `loadKept()` / `saveKept()` /
+  `normaliseKeptArray()` / `initProjectKept()`, all exported on `window`; `collectPanelState()` emits
+  `kept: projectKeptArray()` right after `library`; `buildExportData` picks it up from there (it wraps
+  `normaliseProject(collectPanelState())`), so Export / Save / the `.zip` / the JSON editor all carry it;
+  `applyImportedSettings` takes the file's `settings.kept`; `jsonApplyDoc` takes it and writes it back;
+  `resetEverything` sets `projectKept = []` (a reset clears kept images like it clears panels — unlike the library,
+  which has its own opt-in delete box); `jsonFieldClass` **locks** `settings.kept` like `library`'s outer array.
+- **No seeding.** `initProjectKept()` only reads `readPanelState().kept` — there is nothing for a kept list to be
+  seeded from, so unlike the library's catalogue seed it never writes at boot. The stored state gains `"kept":[]` on
+  the next ordinary save.
+- **The only visible effect:** the 🧩 JSON editor document gains a read-only `"kept": []`. `src/manual.html` untouched
+  (its "only the fields you can edit elsewhere in the app are editable — everything else is shown greyed" paragraph already
+  covers a locked field).
+- **OPEN — the storage question, for the ⤓ Keep round.** A kept image is ~121 KB, so a few dozen is tens of MB; `panelState`
+  is autosaved to `localStorage` on a 250 ms debounce and the origin quota is ~5 MB. The round must decide: keep `kept`
+  out of the ordinary autosave (write only on Save / Export), store the bytes separately (IndexedDB), or hold them in memory
+  until the file is saved. Also undecided: the entry's own fields (the image, its prompt text, its seed, an id?) —
+  `normaliseKept` coerces nothing precisely so that decision stays open. The export-side decisions stand: a compact
+  (no kept images) export button and a warning at about 40 MB.
+- **Tests:** `core.test.js` **26/0** (a `normaliseKept`/`normalise`/`validate` check; the `defaultProject()`
+  key list gained `kept`); smoke group **`G18`** (checks **89–91** — the saved project + the export carry `kept`,
+  a kept entry survives save → export → import → export, and the JSON editor refuses a change to it) → **88 pass / 0 fail /
+  4 manual**; `diff-core.js`'s surface + declaration guards now cover `normaliseKept` (**17/0**). Park hash
+  `5488036e` → `cfa29083` (the new field landing).
 
 ## DOC LAYOUT (2026.09.23.6)
 
