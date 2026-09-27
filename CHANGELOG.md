@@ -1,3 +1,12 @@
+## 2026.09.26.19 — 2026-09-26 — 💾 The save path writes through the store (same bytes, one source of truth)
+
+- **The plain version:** nothing you can see changes, and your project saves exactly the same bytes it always did. What changed is *which* code writes them. Until now the app assembled the project file itself while the new state-layer module could build the same file a second way — two definitions of one thing. The autosave now goes through the module, so there is one definition, and it is the one the rest of this refactor builds on.
+- **Also in this release:** the **🔄 Reset everything to default** button now takes its factory values from the same schema that describes a new project, instead of a hand-written list of values buried in the reset code. Same values, same result — but a reset can no longer drift out of step with what a fresh project looks like, which is exactly the kind of quiet mismatch this refactor exists to remove.
+- **What did not change:** every button, menu, dialog, prompt, image, saved project and shortcut behaves exactly as it did in 2026.09.26.18. No new setting, no changed file format, no visible difference anywhere. A reset still resets the same things to the same values, and your library survives it exactly as before (unless you tick the delete box).
+- **Why it is safe to do this now:** the previous release proved, field for field and character for character, that the module rebuilds your project exactly the way the app does — over every saved-file shape, every panel field, a page that is not on screen, both legacy file shapes and a factory reset. That is what licensed this switch.
+- **Under the hood:** the autosave writes `projectStore.load(collectDomSnapshot()).toJSON()` instead of `collectPanelState()`; `resetEverything()` builds its fresh state from `defaultProject()`/`defaultPanel()`; the state-layer suite gained three checks (the saved bytes are exactly the store's JSON, the same on the three-page/24-panel project, and the reset matching the schema) — **16 checks** now. Two read-only test accessors were added. The engineering detail is in the repo's `DEV-NOTES.md` BATCH 2026.09.26.19.
+- **The numbers:** smoke **88 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, core **30/0**, module guards **19/0**, the state-layer check **16/16**, **0** perchance errors, your saved project restored **byte-for-byte** after every run (park hash `0442faa8`), and a before/after fingerprint showing the reset's saved state is **character-identical** across this change. Screenshots: the desktop and phone **grid** views re-captured **pixel-identical to the baseline**; the two **analysis** views are stale for a harness reason unrelated to this release (see `DEV-NOTES.md`), recorded for a deliberate baseline refresh.
+
 ## 2026.09.26.18 — 2026-09-26 — 🧪 The state layer is proven: the store rebuilds your project exactly as the app does
 
 - **The plain version:** nothing you can see changes, and this release adds no new app code at all. It adds the missing half of the previous one: an automated check that the new state-layer module rebuilds your project **exactly** the way the app already does — the same fields, in the same order, holding the same values — before anything is allowed to start saving through it. That check now passes, on your own project and on every saved-file shape in the test set.
@@ -8,6 +17,8 @@
 
 
 
+## 2026.09.26.17 — 2026-09-26 — 🧱 The state layer gets its store (nothing reads it yet)
+
 - **The plain version:** nothing you can see changes. This is the first piece of the app's new **state layer** — the plumbing that will eventually make saving, undo, and moving panels between pages robust instead of delicate. It is a small module (`src/state/store.js`) that takes a snapshot of what is on the page and rebuilds the project object from it: the very same object the app saves today.
 - **Why it is a release of its own:** the refactor ships one step per release. The next step is the check that the store's project object is **identical, key for key**, to the one the app already produces — and until that check passes, nothing is allowed to read the store. The step after that switches the save path over to it. So this release adds the machinery and deliberately changes no behaviour at all.
 - **What did not change:** every button, menu, dialog, file, prompt, image and saved project behaves exactly as it did in 2026.09.26.16. No new setting, no changed file format, no visible difference anywhere.
@@ -15,6 +26,8 @@
 - **The numbers:** smoke **88 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, core **30/0** (four new store checks), module guards **19/0** (the store is now covered by the surface / manifest / declaration guards), **0** perchance errors, and your saved project restored **byte-for-byte** after every run (park hash `a5708568`). The 14 screenshots are **12/14 pixel-identical**, the two project-JSON views differing by 0.01% of their pixels — the known text-row wobble, with no size change anywhere.
 
 
+
+## 2026.09.26.16 — 2026-09-26 — ⤓ A project keeps its own kept-image list (no UI yet)
 
 - **The plain version:** nothing you can see changes. This is the small structural piece the **⤓ Keep** feature will be built on. A project now has its own **kept-image list**, the same way it just gained its own library: it is saved with the project, it travels in Export / Import and in a project `.zip`, and it is where a future *"keep this image, together with the prompt and seed that made it"* action will write. Nothing fills it yet, so it is always empty for now.
 - **The one trace you can see:** the 🧩 **JSON editor** shows one new field, `"kept": []`, beside the project's other fields. It is **read-only** for now — the editor refuses a change to it and says why, exactly like a panel's `id` — because what one kept entry holds is not decided yet. That decision is the ⤓ Keep question round.
