@@ -1,4 +1,4 @@
-export const LIB_TYPE_PREFIX = { Character: 'char', Location: 'loc', Action: 'act' };
+export const LIB_TYPE_PREFIX = { Character: 'char', Location: 'loc', Action: 'act', 'Panel Description': 'pd' };
 
 export function libIdFor(type, now, rand) {
   return (LIB_TYPE_PREFIX[type] || 'obj') + '-' + now + '-' + rand;
@@ -36,11 +36,18 @@ export function countLibRefs(data, id) {
 
 export function normalizeLibType(o) {
   const t = o && o.type;
-  if (t === 'Character' || t === 'Location' || t === 'Action') return t;
+  if (t === 'Character' || t === 'Location' || t === 'Action' || t === 'Panel Description') return t;
   const id = String((o && o.id) || '');
   if (id.startsWith('loc-')) return 'Location';
   if (id.startsWith('act-')) return 'Action';
+  if (id.startsWith('pd-')) return 'Panel Description';
   return 'Character';
+}
+
+export function panelDescMatch(objs, text) {
+  const t = String(text == null ? '' : text).trim();
+  if (!t) return null;
+  return (objs || []).find(e => e && normalizeLibType(e) === 'Panel Description' && String(e.desc || '').trim() === t) || null;
 }
 
 export function extractLibraryItems(data) {
