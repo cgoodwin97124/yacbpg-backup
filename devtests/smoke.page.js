@@ -29,6 +29,7 @@ const GROUPS = {
   G18: "the kept-image hook (the project's own kept array)",
   G19: "the GitHub backup (the served page read back, the fifteen files)",
   G20: "Panel Descriptions in the library (the shared pool, the picker, the pill)",
+  G21: "library multi-select (batch copy to My catalogue, batch delete)",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -325,7 +326,7 @@ async function run() {
 
   await t("G4: 26 a library edit does not retroactively change a frozen line", async () => {
     const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
-    const row = rows.find((r) => (r.querySelector("input") || {}).value === "P0 Hero");
+    const row = rows.find((r) => (r.querySelector(".lib-name-input") || {}).value === "P0 Hero");
     if (!row) return no("library row not found (" + rows.length + " rows)");
     const desc = row.querySelector("textarea.lib-desc");
     desc.value = "a CHANGED library description";
@@ -512,7 +513,7 @@ async function run() {
     addLibraryEntryByType("Location");
     await sleep(350);
     const place = libObjs().find((o) => o.name === "P0 Place");
-    const rowNames = [...document.querySelectorAll("#libObjects .lib-row-proj input")].map((el) => el.value);
+    const rowNames = [...document.querySelectorAll("#libObjects .lib-row-proj .lib-name-input")].map((el) => el.value);
     return eqArr([!!place, rowNames.includes("P0 Place"), libObjs().length], [true, true, 2], "stored,rendered,count rows=" + JSON.stringify(rowNames));
   });
 
@@ -528,7 +529,7 @@ async function run() {
     const hero = libObjs().find((o) => o.name === "P0 Hero");
     if (!hero) return no("P0 Hero missing from this project's library");
     const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
-    const row = rows.find((r) => (r.querySelector("input") || {}).value === "P0 Hero");
+    const row = rows.find((r) => (r.querySelector(".lib-name-input") || {}).value === "P0 Hero");
     if (!row) return no("library row not found (" + rows.length + " rows)");
     const refs = JSON.stringify(rawState()).split("lib:char:" + hero.id).length - 1;
     const beforeText = getVal("panel-char-base-1-1");
@@ -575,7 +576,7 @@ async function run() {
     if (!settingsLib) return no("settings.library is missing from the export: " + Object.keys(doc.settings || {}).join(","));
     const mirrorSame = JSON.stringify(doc.libObjects) === JSON.stringify(settingsLib);
     const catUntouched = catLog().length === 0;
-    const inDom = [...document.querySelectorAll("#libObjects .lib-row-proj input")].length;
+    const inDom = [...document.querySelectorAll("#libObjects .lib-row-proj .lib-name-input")].length;
     await sleep(450);
     const savedLib = Array.isArray(rawState().library) ? rawState().library : null;
     const savedSame = !!savedLib && JSON.stringify(savedLib) === JSON.stringify(settingsLib);
@@ -750,9 +751,9 @@ async function run() {
 
   await t("G11: 58 an add button writes a library object into a panel", async () => {
     const place = libObjs().find((o) => o.name === "P0 Place");
-    if (!place) return { skip: "no library object left after G8" };
+    if (!place) { closeAnalysis(); return { skip: "no library object left after G8" }; }
     const addBtn = [...$("analysisWrap").querySelectorAll("button.an-add")].find((b) => /P0 Place/i.test(b.title || ""));
-    if (!addBtn) return { skip: "no add button in the matrix (all cells occupied or read-only)" };
+    if (!addBtn) { closeAnalysis(); return { skip: "no add button in the matrix (all cells occupied or read-only)" }; }
     const pg = Number(getVal("analysisPageSel") || 1);
     const panelIdx = Number((addBtn.title.match(/panel (\d+)/) || [])[1]);
     addBtn.click();
@@ -760,7 +761,10 @@ async function run() {
     const saved = (rawState().pages[pg] || {})[panelIdx] || {};
     const domVal = panelIdx <= 24 ? getVal("panel-loc-select-" + panelIdx) : null;
     const good = saved.loc === "lib:loc:" + place.id;
-    return good ? ok("page " + pg + " panel " + panelIdx + " location = the library object (dom " + domVal + ")") : no("saved loc " + saved.loc + ", dom " + domVal);
+    const res = good ? ok("page " + pg + " panel " + panelIdx + " location = the library object (dom " + domVal + ")") : no("saved loc " + saved.loc + ", dom " + domVal);
+    closeAnalysis();
+    await sleep(120);
+    return res;
   });
 
   await t("G12: 59 the focus view opens, navigates and closes", async () => {
@@ -1120,7 +1124,7 @@ async function run() {
     await sleep(200);
     const alpha = libObjs().find((o) => o.name === "RNameAlpha");
     const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
-    const row = rows.find((r) => (r.querySelector("input") || {}).value === "RNameAlpha");
+    const row = rows.find((r) => (r.querySelector(".lib-name-input") || {}).value === "RNameAlpha");
     if (!alpha || !row) return no("no row for RNameAlpha (" + rows.length + " rows)");
     const rb = row.querySelector(".btn-rename-lib");
     if (!rb) return no("no ✎ button on the row");
@@ -1221,7 +1225,7 @@ async function run() {
     const alpha = libObjs().find((o) => o.name === "RNameGamma");
     if (!alpha) return no("entry missing");
     const rows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
-    const row = rows.find((r) => (r.querySelector("input") || {}).value === "RNameGamma");
+    const row = rows.find((r) => (r.querySelector(".lib-name-input") || {}).value === "RNameGamma");
     if (!row) return no("row missing");
     const ta = row.querySelector("textarea.lib-desc");
     ta.value = "Desc mentions RNameGamma once.";
@@ -1230,7 +1234,7 @@ async function run() {
     const res = applyLibraryRename(alpha.id, "RNameDelta");
     await sleep(200);
     const obj = libObjs().find((o) => o.id === alpha.id);
-    const rowAfter = [...document.querySelectorAll("#libObjects .lib-row-proj")].map((r) => (r.querySelector("input") || {}).value);
+    const rowAfter = [...document.querySelectorAll("#libObjects .lib-row-proj")].map((r) => (r.querySelector(".lib-name-input") || {}).value);
     return eqArr([!!res, res && res.libDescChanged, obj && obj.name, obj && obj.desc, rowAfter.includes("RNameDelta")], [true, true, "RNameDelta", "Desc mentions RNameDelta once.", true], "libDesc,name,rendered");
   });
 
@@ -1376,7 +1380,7 @@ async function run() {
   });
 
   await t("G20: 95 editing the library copy never rewrites a panel that already took the text", async () => {
-    const row = [...document.querySelectorAll("#libObjects .lib-row-proj")].find((r) => (r.querySelector("input") || {}).value === "Torn jacket");
+    const row = [...document.querySelectorAll("#libObjects .lib-row-proj")].find((r) => (r.querySelector(".lib-name-input") || {}).value === "Torn jacket");
     if (!row) return no("library row not found");
     const ta = row.querySelector("textarea.lib-desc");
     if (!ta) return no("no desc box");
@@ -1424,7 +1428,12 @@ async function run() {
     const card = $("panel-card-1");
     if (!card) return no("no panel 1");
     const labels = [...card.querySelectorAll(".pl-line-label")].map((e) => e.textContent.trim());
-    const html = document.body.innerHTML;
+    const clone = document.body.cloneNode(true);
+    for (const stripId of ["embeddedVersion", "changelogCtn", "changelogStatusEl", "aboutVersion", "manualBody"]) {
+      const el = clone.querySelector("#" + stripId);
+      if (el) el.remove();
+    }
+    const html = clone.innerHTML;
     return eqArr([
       labels.filter((l) => l === "Panel Description").length,
       labels.filter((l) => /extra description/i.test(l)).length,
@@ -1432,11 +1441,202 @@ async function run() {
     ], [4, 0, false], "renamed,oldGone," + labels.join("/"));
   });
 
+  const libRows = () => [...document.querySelectorAll("#libObjects .lib-row")];
+  const libRowOf = (name, cat) => libRows().find((r) => (r.classList.contains("lib-row-cat") === !!cat) && (r.querySelector(".lib-name-input") || {}).value === name);
+  const tickLib = (row, shift) => { const cb = row.querySelector(".lib-select-cb"); cb.checked = true; cb.onclick({ target: cb, shiftKey: !!shift }); };
+  const untickLib = (row, shift) => { const cb = row.querySelector(".lib-select-cb"); cb.checked = false; cb.onclick({ target: cb, shiftKey: !!shift }); };
+  const libSelCount = () => document.querySelectorAll("#libObjects .lib-row.lib-selected").length;
+
+  await t("G21: 99 every library row has a checkbox and ticking one selects only that row", async () => {
+    window.clearLibSelection();
+    const rows = libRows();
+    const withCb = rows.filter((r) => r.querySelector(".lib-select-cb")).length;
+    const first = rows[0];
+    tickLib(first);
+    const sel = libSelCount();
+    const checked = rows.filter((r) => r.querySelector(".lib-select-cb").checked).length;
+    const relabel = (first.querySelector(".btn-del-lib") || {}).textContent;
+    const hintShown = !$("libSelHint").hidden;
+    const clearShown = [...document.querySelectorAll(".btn-lib-clearsel")].every((b) => !b.hidden);
+    window.clearLibSelection();
+    return eqArr([withCb === rows.length, rows.length > 1, sel, checked, relabel, hintShown, clearShown], [true, true, 1, 1, "🗑", true, true], "allRows,cb,selected,checked,relabel,hint,clear");
+  });
+
+  await t("G21: 100 shift-click selects a range and the chips relabel for the batch", async () => {
+    window.clearLibSelection();
+    const rows = libRows();
+    tickLib(rows[0]);
+    tickLib(rows[rows.length - 1], true);
+    const all = libSelCount();
+    const up = rows[0].querySelector(".btn-copy-up");
+    const del = rows[0].querySelector(".btn-del-lib");
+    const labels = [up && up.textContent, del && del.textContent];
+    untickLib(rows[rows.length - 1], true);
+    const after = libSelCount();
+    window.clearLibSelection();
+    return eqArr([all, labels, after], [rows.length, ["⤒ Copy " + rows.length, "🗑 Delete " + rows.length], 0], "range,labels,rangeUntick");
+  });
+
+  await t("G21: 101 the selection is DOM-only and never reaches the save", async () => {
+    window.clearLibSelection();
+    const before = localStorage.getItem("comicGen.panelState");
+    const keysBefore = Object.keys(localStorage).sort().join(",");
+    tickLib(libRows()[0]);
+    await settle();
+    const after = localStorage.getItem("comicGen.panelState");
+    const keysAfter = Object.keys(localStorage).sort().join(",");
+    const selected = libSelCount();
+    window.clearLibSelection();
+    return eqArr([selected, before === after, keysBefore === keysAfter, /select/i.test(after || "")], [1, true, true, false], "selected,savedIdentical,keysSame,noSelectKey");
+  });
+
+  await t("G21: 102 Select all covers one section only", async () => {
+    window.clearLibSelection();
+    const projRows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
+    const btn = document.querySelector("#libObjects .lib-scope-row .btn-lib-selectall");
+    if (!btn || !projRows.length) return no("no select-all chip");
+    btn.click();
+    const selProj = document.querySelectorAll("#libObjects .lib-row-proj.lib-selected").length;
+    const selCat = document.querySelectorAll("#libObjects .lib-row-cat.lib-selected").length;
+    window.clearLibSelection();
+    return eqArr([selProj, selCat], [projRows.length, 0], "projectOnly,catUntouched");
+  });
+
+  await t("G21: 103 batch ⤒ copies every selected item into My catalogue", async () => {
+    window.__smokePrompts = ["P23 Alpha", "alpha text"];
+    addLibraryEntryByType("Character");
+    window.__smokePrompts = ["P23 Place", "place text"];
+    addLibraryEntryByType("Location");
+    await settle();
+    const alpha = libObjs().find((o) => o.name === "P23 Alpha");
+    const place = libObjs().find((o) => o.name === "P23 Place");
+    if (!alpha || !place) return no("items not created: " + libObjs().map((o) => o.name).join("|").slice(0, 90));
+    const pre = catLog().filter((o) => o.id === alpha.id || o.id === place.id).length;
+    window.clearLibSelection();
+    tickLib(libRowOf("P23 Alpha", false));
+    tickLib(libRowOf("P23 Place", false));
+    const sel = libSelCount();
+    libRowOf("P23 Alpha", false).querySelector(".btn-copy-up").click();
+    await settle();
+    const copied = catLog().filter((o) => o.id === alpha.id || o.id === place.id);
+    const cleared = libSelCount();
+    return eqArr([pre, sel, copied.length, copied.every((o) => o.type && o.name && "desc" in o), cleared, /catalogue/i.test($("statusEl").textContent)], [0, 2, 2, true, 0, true], "pre,sel,copied,shaped,cleared,status");
+  });
+
+  await t("G21: 104 batch ⤒ warns before overwriting a catalogue entry, and Cancel changes nothing", async () => {
+    const alpha = libObjs().find((o) => o.name === "P23 Alpha");
+    if (!alpha) return no("no P23 Alpha");
+    const ta = libRowOf("P23 Alpha", false).querySelector("textarea.lib-desc");
+    ta.value = "alpha text EDITED in the project";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    await settle();
+    window.clearLibSelection();
+    const row = libRowOf("P23 Alpha", false);
+    tickLib(row);
+    row.querySelector(".btn-copy-up").click();
+    await settle();
+    const title = dialogTitle();
+    const btns = dialogButtons();
+    answer("cancel");
+    await settle();
+    const catDesc = (catLog().find((o) => o.id === alpha.id) || {}).desc;
+    return eqArr([/Copy 1 selected item/i.test(title), btns.some((b) => /Copy and update/i.test(b)), catDesc, libSelCount()], [true, true, "alpha text", 1], "dialog,pick,catUnchanged,selectionKept");
+  });
+
+  await t("G21: 105 confirming that dialog updates the catalogue entry", async () => {
+    const alpha = libObjs().find((o) => o.name === "P23 Alpha");
+    if (!alpha) return no("no P23 Alpha");
+    window.clearLibSelection();
+    const row = libRowOf("P23 Alpha", false);
+    tickLib(row);
+    row.querySelector(".btn-copy-up").click();
+    await settle();
+    answer("copy and update");
+    await settle();
+    const catDesc = (catLog().find((o) => o.id === alpha.id) || {}).desc;
+    const catRow = libRowOf("P23 Alpha", true);
+    return eqArr([catDesc, /updated/.test($("statusEl").textContent), libSelCount(), !!catRow], ["alpha text EDITED in the project", true, 0, true], "catDesc,status,cleared,catRow");
+  });
+
+  await t("G21: 106 batch 🗑 deletes every selected item and can keep the panel text", async () => {
+    const alpha = libObjs().find((o) => o.name === "P23 Alpha");
+    const place = libObjs().find((o) => o.name === "P23 Place");
+    if (!alpha || !place) return no("items missing");
+    setVal("panel-char-select-1-1", "lib:char:" + alpha.id);
+    setVal("panel-loc-select-1", "lib:loc:" + place.id);
+    await settle();
+    const seeded = getVal("panel-char-base-1-1");
+    const refs = window.countLibReferences(alpha.id);
+    window.clearLibSelection();
+    tickLib(libRowOf("P23 Alpha", false));
+    tickLib(libRowOf("P23 Place", false));
+    libRowOf("P23 Alpha", false).querySelector(".btn-del-lib").click();
+    await settle();
+    const title = dialogTitle();
+    const btns = dialogButtons();
+    answer("leave the text");
+    await settle();
+    const left = libObjs().filter((o) => o.name === "P23 Alpha" || o.name === "P23 Place").length;
+    const status = $("statusEl").textContent;
+    return eqArr([refs > 0, /Delete 2 selected items/i.test(title), btns.some((b) => /Leave the text/i.test(b)), left, getVal("panel-char-base-1-1") === seeded, getVal("panel-char-select-1-1"), /left as plain text/.test(status), libSelCount()], [true, true, true, 0, true, "none", true, 0], "refs,title,buttons,left,textKept,slotNone,status,sel");
+  });
+
+  await t("G21: 107 the batch delete can clear the panel text too", async () => {
+    window.__smokePrompts = ["P23 Doomed", "doomed text"];
+    addLibraryEntryByType("Character");
+    await settle();
+    const doomed = libObjs().find((o) => o.name === "P23 Doomed");
+    if (!doomed) return no("not created");
+    setVal("panel-char-select-1-2", "lib:char:" + doomed.id);
+    await settle();
+    const seeded = getVal("panel-char-base-1-2");
+    const row = libRowOf("P23 Doomed", false);
+    tickLib(row);
+    row.querySelector(".btn-del-lib").click();
+    await settle();
+    const btns = dialogButtons();
+    answer("clear the references");
+    await settle();
+    const gone = libObjs().filter((o) => o.name === "P23 Doomed").length;
+    return eqArr([seeded, btns.some((b) => /Clear the references/i.test(b)), gone, getVal("panel-char-base-1-2"), getVal("panel-char-select-1-2")], ["doomed text", true, 0, "", "none"], "seeded,clearBtn,gone,textCleared,slotNone");
+  });
+
+  await t("G21: 108 batch ⤓ copies selected catalogue items back into this project", async () => {
+    const alpha = catLog().find((o) => o.name === "P23 Alpha");
+    const place = catLog().find((o) => o.name === "P23 Place");
+    if (!alpha || !place) return no("catalogue entries missing");
+    const rowA = libRowOf("P23 Alpha", true);
+    const rowP = libRowOf("P23 Place", true);
+    if (!rowA || !rowP) return no("no catalogue row");
+    if (rowA.querySelector(".btn-copy-down").disabled || rowP.querySelector(".btn-copy-down").disabled) return no("catalogue row still in this project");
+    window.clearLibSelection();
+    tickLib(rowA);
+    tickLib(rowP);
+    const sel = libSelCount();
+    const label = rowA.querySelector(".btn-copy-down").textContent;
+    rowA.querySelector(".btn-copy-down").click();
+    await settle();
+    const back = libObjs().filter((o) => o.id === alpha.id || o.id === place.id).length;
+    return eqArr([sel, label, back, /Added 2 items/.test($("statusEl").textContent), libSelCount()], [2, "⤓ Copy 2", 2, true, 0], "sel,label,back,status,cleared");
+  });
+
+  await t("G21: 109 Esc clears the library selection while the Library panel is open", async () => {
+    window.clearLibSelection();
+    switchMenu("library");
+    await sleep(120);
+    tickLib(libRows()[0]);
+    const before = libSelCount();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await sleep(120);
+    const after = libSelCount();
+    return eqArr([before, after], [1, 0], "before,after");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   const manual = T.filter((x) => x.ok === null).length;
   try { sessionStorage.removeItem("__smoke_at"); } catch (e) {}
-  return {
+  const report = {
     stamp: ($("embeddedVersion").textContent || "").trim().split("\n")[0],
     pass, fail, manual,
     failures: T.filter((x) => x.ok === false),
@@ -1444,6 +1644,8 @@ async function run() {
     groups: GROUPS,
     checks: T,
   };
+  window.__smokeLast = report;
+  return report;
 }
 
 return await run();
