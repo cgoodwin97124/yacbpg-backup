@@ -2,8 +2,9 @@
 ticket: BUG-01
 title: "The perchance “An error occurred” dialog (your report, 2026-09-22) — the last piece I need"
 kind: bug
-status: answered
+status: closed
 answers: 5/5
+closed: 2026-09-27
 form: yacbpg-round2-2026-09-26
 updated: 2026-09-26T17:09:46.232Z
 ---
@@ -11,7 +12,7 @@ updated: 2026-09-26T17:09:46.232Z
 # BUG-01 — The perchance “An error occurred” dialog (your report, 2026-09-22) — the last piece I need
 
 - **Kind:** bug
-- **Status:** answered (answered — awaiting the implementation go-ahead)
+- **Status:** closed — **no longer an issue** (the author's call, 2026-09-27)
 - **Answers:** 5 of 5
 - **Answered:** 2026-09-26T17:09:46.232Z
 
@@ -46,4 +47,11 @@ updated: 2026-09-26T17:09:46.232Z
 
 ## Implementation
 
-_Pending — filled in when the work is done (branch / PR, released version, changelog entry)._
+**Closed 2026-09-27 as "no longer an issue"** — no generator change, and no changelog entry (nothing shipped).
+
+The author, 2026-09-27, verbatim: *"BUG-01 is the one that the mouse movement was generating, correct? I'm pretty sure you already fixed that one. Let's close it with the status of 'no longer an issue'."*
+
+- **Which report this is:** the engine dialog whose only stack line is `interactionPointerMoveHandler@?__generatorLastEditTime=…:34:3414` — i.e. the pointer-*move* one. (There was no generator-side fix to attribute it to; see below.)
+- **Why "no longer an issue" is the honest label:** the dialog has not been seen since 2026-09-22, nothing in the app misbehaved at any point, and the author's own answers here are "I haven't seen it since… if I see it again I'll let you know" and "Nothing — ignore it as long as the app works".
+- **What the recon found (unchanged, and why nothing was fixed):** the surviving frame is inside the PLATFORM's page-bootstrap script — its `isTrusted`-gated "human interaction signals" bot-detection helper, installed on every generator page for `pointerdown`/`pointermove` — not generator code. The dialog hides the real exception text for engine-located errors, so the underlying `TypeError` was only ever visible in the browser console, and the author never had a console line to send. None of the generator-side suspects existed: no `history.replaceState` call (a platform trap that throws), no synthetic pointer events, clean pointer handlers, and no third-party scripts. Synthetic events are never `isTrusted`, so the error cannot be reproduced from the AI preview — it needs real input in the author's browser.
+- **Kept on file:** platform report `923578bb` (asks the platform to try/catch that handler chain and to include `error.name + ": " + error.message` for engine-located errors). If the dialog ever returns, the console line is still the one thing that would pin it — send it and this ticket reopens.
