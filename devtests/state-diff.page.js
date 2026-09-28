@@ -513,6 +513,36 @@ async function run() {
     ], [true, "424242", true, true, "424242", true, true, true, "1,2,3"], "immediate,seed,sameBool,saved,roundTrip,roundSame,neighbour,pages");
   });
 
+  await t("SD22 a Protect toggle is written by the named command", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setProtect !== "function") return no("the commands module did not load");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const rawBefore = localStorage.getItem("comicGen.panelState");
+    const btn = document.querySelector("#slotbtns-panel-1-1 .btn-img-protect");
+    if (!btn) return no("no protect chip on panel 1 slot 1");
+    btn.disabled = false;
+    const otherBefore = JSON.stringify((JSON.parse(rawBefore || "{}").pages[1] || {})[2] || {});
+    btn.click();
+    const rawAfter = localStorage.getItem("comicGen.panelState");
+    const saved = JSON.parse(rawAfter || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const chipOn = btn.classList.contains("active");
+    const neighbourAfter = JSON.stringify(saved.pages[1][2] || {});
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    const btn2 = document.querySelector("#slotbtns-panel-1-1 .btn-img-protect");
+    const roundOn = !!(btn2 && btn2.classList.contains("active"));
+    return eqArr([
+      rawAfter !== rawBefore, saved.pages[1][1].protectSlots && saved.pages[1][1].protectSlots[0] === true,
+      JSON.stringify(saved) === JSON.stringify(c), chipOn, roundOn,
+      neighbourAfter === otherBefore, pages,
+    ], [true, true, true, true, true, true, "1,2,3"], "immediate,saved,match,chip,roundTrip,neighbour,pages");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
