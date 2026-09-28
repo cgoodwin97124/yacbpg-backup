@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 5;
+export const COMMANDS_VERSION = 6;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -75,4 +75,17 @@ export function setSameSeed(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["sameSeed"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed };
+export function setProtect(project, id, slot, on) {
+  const hit = findPanelById(project, id);
+  if (!hit) return null;
+  const n = Number(slot);
+  if (!Number.isInteger(n) || n < 1 || n > 4) return null;
+  const cur = Array.isArray(hit.panel.protectSlots) ? hit.panel.protectSlots
+    : (hit.panel.protect === true ? [true, true, true, true] : [false, false, false, false]);
+  const next = [!!cur[0], !!cur[1], !!cur[2], !!cur[3]];
+  next[n - 1] = !!on;
+  hit.panel.protectSlots = next;
+  return { page: hit.page, index: hit.index, fields: ["protectSlots"] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect };
