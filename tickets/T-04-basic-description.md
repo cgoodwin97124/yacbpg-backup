@@ -2,7 +2,7 @@
 ticket: T-04
 title: "Panel Library “Library Description” → editable, project-saved “Basic Description”"
 kind: feature
-status: answered
+status: done
 answers: 6/6
 form: yacbpg-tickets-2026-09-25
 updated: 2026-09-28T02:22:55.231Z
@@ -59,4 +59,6 @@ updated: 2026-09-28T02:22:55.231Z
 
 ## Implementation
 
-_Pending — filled in when the work is done (branch / PR, released version, changelog entry)._
+## Implementation
+
+Shipped as **2026.09.27.8** (index.html + src/manual.html + src/core/library-core.js + src/core/schema.js + devtests; docs in CHANGELOG.md / PENDING.md / DEV-NOTES.md). Item 1 (migration): verified correct as-shipped, no code — a pre-Basic project seeds each base from the library text and keeps its extras, so prompts are unchanged. Item 2 (editable Basic Description): already shipped per the 4a–4f answers. Item 3: every user-facing "Panel Description" renamed to "Panel Specific Description" (box, bucket, picker, dialogs, hints, manual); stored type renamed with a permanent old-label alias that upgrades on next load/save (same pd- ids). Verified: core 42/0, smoke 109/0/4, state-diff 25/25, fixtures 18/0, 0 perchance errors, byte-identical restores.
