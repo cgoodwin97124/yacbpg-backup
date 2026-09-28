@@ -1,3 +1,8 @@
+## 2026.09.28.2 — 2026-09-28 — ⇅ Move runs on the new command system (no visible change)
+
+- **The plain version:** nothing changes in how ⇅ Move behaves — pick a position and the panel goes there with everything it carries. Underneath, single-panel moves within a page now run through the same named-command system as the other controls, one more step in the quiet rebuild that keeps every change reliably undoable. A hand-edited prompt now rides along to the new position instead of being wiped.
+- **The numbers:** core **44/0**, smoke **109 pass / 0 fail / 4 manual**, state-diff **27/27**, fixtures **18/0**, generation **18/0 (+1 manual)**; **0** perchance errors; your saved project restored **byte-for-byte** after every run.
+
 ## 2026.09.28.1 — 2026-09-28 — ⧉ Duplicate runs on the new command system (no visible change)
 
 - **The plain version:** nothing changes in how ⧉ Duplicate behaves — the copy still lands right after the original with everything but its images. Underneath, the button now runs through the same named-command system as the title, seed and add-panel controls, one more step in the quiet rebuild that keeps every change reliably undoable. A side benefit: the panels around the copy now keep their saved prompt edits instead of losing them.
