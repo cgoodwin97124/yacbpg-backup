@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 6;
+export const COMMANDS_VERSION = 7;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -88,4 +88,17 @@ export function setProtect(project, id, slot, on) {
   return { page: hit.page, index: hit.index, fields: ["protectSlots"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect };
+export function setPromptOverride(project, id, value) {
+  const hit = findPanelById(project, id);
+  if (!hit) return null;
+  if (value === null || value === undefined) {
+    hit.panel.promptOverride = null;
+  } else if (isObj(value)) {
+    hit.panel.promptOverride = { pos: text(value.pos), neg: text(value.neg) };
+  } else {
+    return null;
+  }
+  return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride };
