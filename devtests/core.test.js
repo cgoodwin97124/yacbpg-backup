@@ -716,6 +716,26 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "oneSlot,noop,legacy");
   });
 
+  await t("commands: setPromptOverride writes the override object, or clears it", () => {
+    const proj = mkProject();
+    proj.pages[1][1].promptOverride = { pos: "a", neg: "n" };
+    proj.pages[1][2].promptOverride = null;
+    const wasBefore = JSON.parse(JSON.stringify(proj));
+    const hit = api.setPromptOverride(proj, "p-1", { pos: "b", neg: "n" });
+    const changed = pathsDiffering(wasBefore, proj);
+    const cleared = api.setPromptOverride(proj, "p-1", null);
+    const miss = [api.setPromptOverride(proj, "p-9", { pos: "x", neg: "" }), api.setPromptOverride(proj, "", null), api.setPromptOverride(proj, "p-1", "junk")];
+    return eqArr([
+      JSON.stringify(hit), changed.join(","),
+      JSON.stringify(proj.pages[1][1].promptOverride), JSON.stringify(cleared && cleared.fields),
+      miss.filter((m) => m === null).length, proj.pages[1][2].promptOverride,
+    ], [
+      JSON.stringify({ page: 1, index: 1, fields: ["promptOverride"] }),
+      "$.pages.1.1.promptOverride.pos <\"a\" -> \"b\">",
+      "null", "[\"promptOverride\"]", 3, null,
+    ], "oneLeaf,clear,noop");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -727,7 +747,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 6, "setImgCount,setPanelSeed,setProtect,setSameSeed,setSize,setStyle,setTitle",
+      true, 7, "setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
