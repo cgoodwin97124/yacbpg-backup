@@ -25,7 +25,7 @@ section. Move entries between sections as their status changes (greenlit → STA
 
 ### 2026-09-28 — REFACTOR: P3 step 2 second op (single-panel `duplicatePanel` command)
 
-- **Status:** ✅ **DONE 2026.09.28.1** — implemented, tested and documented; app files pushed via the button (15 files, repo `index.html` verified at `2026.09.28.1`); docs/harness via Contents API in the same session. **What shipped:** `duplicatePanel` pure command + dispatch on the single-panel non-full-page path (batch + full-page reflow keep old paths); neighbours' prompt overrides ride along (shift, not wipe); canonical meta key order. **Verified:** core **43/0**, guards **21/0**, state-diff **26/26**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores (hash `8d02f0dc`). **Next:** move (one op per release), then delete, then page create/delete; T-01 1c resume-to-end as a small release.
+- **Status:** ✅ **DONE 2026.09.28.1** — implemented, tested and documented; app files pushed via the button (15 files, repo `index.html` verified at `2026.09.28.1`); docs/harness via Contents API in the same session. **What shipped:** `duplicatePanel` pure command + dispatch on the single-panel non-full-page path (batch + full-page reflow keep old paths); neighbours' prompt overrides ride along (shift, not wipe); canonical meta key order. **Verified:** core **43/0**, guards **21/0**, state-diff **26/26**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores (hash `8d02f0dc`). **Next:** delete (one op per release), then page create/delete; T-01 1c resume-to-end as a small release.
 
 ### 2026-09-27 — T-04 items 2+3: the Panel Specific Description rename (old saves self-upgrade)
 
@@ -53,7 +53,7 @@ each section).
 
 ### 2026-09-28 — REFACTOR: P3 step 2 third op (single-panel `movePanel` command)
 
-- **Status:** 🟢 **START NOW 2026-09-28** — author said "Go ahead!" (logged on receipt, before any work, per the 2026-08-13 rule). Recon first per the 2026-09-20 rule; one op per release.
+- **Status:** ✅ **DONE 2026.09.28.2** — implemented, tested and documented; app files (index.html, src/state/commands.js, devtests) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `movePanel` pure command + dispatch in `resequencePanel` (single within-page moves; group + cross-page + new-page keep old paths); prompt maps permuted with their panels (new `reorderPanelMaps`) instead of wiped. **Verified:** core **44/0**, guards **21/0**, state-diff **27/27**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores. **Next:** delete (one op per release), then page create/delete; T-01 1c resume-to-end as a small release.
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
