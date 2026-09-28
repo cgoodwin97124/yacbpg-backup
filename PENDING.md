@@ -51,6 +51,10 @@ each section).
 
 ---
 
+### 2026-09-28 — REFACTOR: P3 step 2 third op (single-panel `movePanel` command)
+
+- **Status:** 🟢 **START NOW 2026-09-28** — author said "Go ahead!" (logged on receipt, before any work, per the 2026-08-13 rule). Recon first per the 2026-09-20 rule; one op per release.
+
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-09-27 — REFACTOR + FEATURE: P3 step 2 first op (`addPanel` command + undo) with T-07 folded in
