@@ -575,6 +575,199 @@ async function run() {
     ], [true, "SD23 pos override", "SD23 neg override", true, true, true, true, "1,2,3"], "immediate,pos,neg,saved,seam,roundTrip,neighbour,pages");
   });
 
+  await t("SD24 a manual Prompt edit survives content edits, while Style and Palette still reset it", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setPromptOverride !== "function") return no("the commands module did not load");
+    if (!window.revertPanelPrompt) return no("no revertPanelPrompt");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const posEl = $("prompt-pos-1"), negEl = $("prompt-neg-1");
+    if (!posEl || !negEl) return no("no prompt editor boxes");
+    if (!$("prompt-revert-1")) return no("no revert chip");
+    posEl.value = "SD24 pos frozen";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    negEl.value = "SD24 neg frozen";
+    negEl.dispatchEvent(new Event("input", { bubbles: true }));
+    if (!window.__panelOverrideSet(1)) return no("override not set after typing");
+    const chipShown = !$("prompt-revert-1").hidden;
+    const act = $("panel-act-1");
+    if (!act) return no("no #panel-act-1");
+    act.value = "SD24 action edit";
+    act.dispatchEvent(new Event("input", { bubbles: true }));
+    const csel = $("panel-char-select-1-1");
+    if (!csel) return no("no char select");
+    const wantChar = [...csel.options].map((o) => o.value).find((v) => v !== csel.value && v !== "__new_char__") || "none";
+    csel.value = wantChar;
+    csel.dispatchEvent(new Event("change", { bubbles: true }));
+    const le = $("panel-loc-extra-1");
+    if (!le) return no("no loc extra box");
+    le.value = "SD24 loc extra edit";
+    le.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(700);
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const kept = saved.pages[1][1].promptOverride || {};
+    const seamKept = window.__panelOverrideSet(1);
+    const neighbourFrozen = JSON.stringify((saved.pages[1][2] || {}).promptOverride || null);
+    const ssel = $("panel-style-1");
+    if (!ssel) return no("no #panel-style-1");
+    ssel.value = ["noir", "manga", "watercolor"].find((v) => v !== ssel.value) || "noir";
+    ssel.dispatchEvent(new Event("change", { bubbles: true }));
+    saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const styleCleared = !saved.pages[1][1].promptOverride && !window.__panelOverrideSet(1);
+    const chipAfterStyle = $("prompt-revert-1") ? $("prompt-revert-1").hidden : "(missing)";
+    posEl.value = "SD24 pos again";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    negEl.value = "SD24 neg again";
+    negEl.dispatchEvent(new Event("input", { bubbles: true }));
+    const psel = $("panel-palette-1");
+    if (!psel) return no("no #panel-palette-1");
+    const palOpts = [...psel.options].map((o) => o.value);
+    psel.value = palOpts.find((v) => v !== psel.value);
+    if (psel.value === undefined) return no("no palette option to change to");
+    psel.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(700);
+    saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const paletteCleared = !saved.pages[1][1].promptOverride && !window.__panelOverrideSet(1);
+    posEl.value = "SD24 pos third";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    negEl.value = "SD24 neg third";
+    negEl.dispatchEvent(new Event("input", { bubbles: true }));
+    if (!window.__panelOverrideSet(1)) return no("override not set before revert");
+    $("prompt-revert-1").click();
+    await sleep(300);
+    saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    if (saved.pages[1][1].promptOverride) return no("revert chip did not clear the saved override");
+    posEl.value = "SD24 temp pos";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    if (!window.__panelOverrideSet(1)) return no("override not set for the empty-positive check");
+    posEl.value = "";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(300);
+    saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    if (saved.pages[1][1].promptOverride) return no("clearing the positive box did not return to automatic");
+    if (window.__panelOverrideSet(1)) return no("seam still set after clearing the positive box");
+    if (!$("prompt-revert-1").hidden) return no("chip still shown after clearing the positive box");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    return eqArr([
+      kept.pos, kept.neg, seamKept, chipShown, styleCleared, chipAfterStyle,
+      paletteCleared, !saved.pages[1][1].promptOverride, !window.__panelOverrideSet(1),
+      $("prompt-revert-1") ? $("prompt-revert-1").hidden : "(missing)",
+      neighbourFrozen === "null", JSON.stringify(saved) === JSON.stringify(c), pages,
+    ], ["SD24 pos frozen", "SD24 neg frozen", true, true, true, true, true, true, true, true, true, true, "1,2,3"], "keptPos,keptNeg,seam,chip,styleReset,chipHidden,paletteReset,revertedNull,seamOff,chipOff,neighbour,saved,pages");
+  });
+
+  await t("SD25 addPanel inserts through the named command and undo restores the page", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.addPanel !== "function") return no("the addPanel command did not load");
+    if (!window.undoStructuralOp) return no("no undoStructuralOp");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    let guard = 0;
+    while (shown() > 4 && guard++ < 30) { window.deletePanel(shown()); await sleep(120); }
+    const pg = 1, n = shown();
+    if (n !== 4) return no("could not trim page 1 to 4 panels, shown=" + n);
+    const undoBtn = $("globalUndoBtn");
+    if (!undoBtn) return no("no undo button");
+    const preIds = [];
+    for (let p = 1; p <= n; p++) { const card = $("panel-card-" + p); preIds.push(card ? String(card.dataset.panelId || "") : ""); }
+    const posEl = $("prompt-pos-2"), negEl = $("prompt-neg-2");
+    if (!posEl || !negEl) return no("no prompt editor boxes on panel 2");
+    posEl.value = "SD25 pos rides along";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    negEl.value = "SD25 neg rides along";
+    negEl.dispatchEvent(new Event("input", { bubbles: true }));
+    const rawPre = localStorage.getItem("comicGen.panelState");
+    window.addPanel(1);
+    await sleep(400);
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const afterIds = [];
+    for (let p = 1; p <= n + 1; p++) { const card = $("panel-card-" + p); afterIds.push(card ? String(card.dataset.panelId || "") : ""); }
+    const countOk = shown() === n + 1 && saved.pages[pg].panelCountSel === "custom" && saved.pages[pg].panelCountCustom === String(n + 1);
+    const shiftedOk = afterIds[2] === preIds[1] && afterIds[0] === preIds[0];
+    const freshOk = !!afterIds[1] && preIds.indexOf(afterIds[1]) === -1;
+    const rode = (saved.pages[pg][3] || {}).promptOverride || {};
+    const undoOn = !$("globalUndoBtn").disabled;
+    const undoLabel = $("globalUndoBtn").textContent;
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("after add, saved differs from store at " + d.path);
+    window.undoStructuralOp();
+    await sleep(400);
+    const rawPost = localStorage.getItem("comicGen.panelState");
+    if (rawPost !== rawPre) {
+      const dd = firstDiff(JSON.parse(rawPre || "{}"), JSON.parse(rawPost || "{}"), "$");
+      return no("undo did not restore bytes" + (dd ? " at " + dd.path + " pre=" + String(dd.a).slice(0, 50) + " post=" + String(dd.b).slice(0, 50) : ""));
+    }
+    const savedPost = JSON.parse(rawPost || "{}");
+    const c = window.collectPanelState();
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    return eqArr([
+      countOk, shiftedOk, freshOk, rode.pos, rode.neg, undoOn,
+      /Undo add panel/.test(undoLabel), JSON.stringify(savedPost) === JSON.stringify(c),
+      shown() === n, pages,
+    ], [true, true, true, "SD25 pos rides along", "SD25 neg rides along", true, true, true, true, "1,2,3"], "count,shift,freshId,overrideRides,undoOn,label,match,shownRestored,pages");
+  });
+
+  await t("SD26 duplicatePanel copies through the named command and undo restores the page", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.duplicatePanel !== "function") return no("the duplicatePanel command did not load");
+    if (!window.undoStructuralOp) return no("no undoStructuralOp");
+    if (typeof window.duplicatePanel !== "function") return no("no window.duplicatePanel");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    let guard = 0;
+    while (shown() > 4 && guard++ < 30) { window.deletePanel(shown()); await sleep(120); }
+    const pg = 1, n = shown();
+    if (n !== 4) return no("could not trim page 1 to 4 panels, shown=" + n);
+    const preIds = [];
+    for (let p = 1; p <= n; p++) { const card = $("panel-card-" + p); preIds.push(card ? String(card.dataset.panelId || "") : ""); }
+    const titleEl = $("panel-title-2");
+    if (!titleEl) return no("no panel-title-2 box");
+    titleEl.value = "SD26 title rides along";
+    titleEl.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(300);
+    const rawPre = localStorage.getItem("comicGen.panelState");
+    const oldTwo = JSON.parse(JSON.stringify((JSON.parse(rawPre || "{}").pages[pg] || {})[2] || {}));
+    window.duplicatePanel(2);
+    await sleep(400);
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const afterIds = [];
+    for (let p = 1; p <= n + 1; p++) { const card = $("panel-card-" + p); afterIds.push(card ? String(card.dataset.panelId || "") : ""); }
+    const countOk = shown() === n + 1 && saved.pages[pg].panelCountSel === "custom" && saved.pages[pg].panelCountCustom === String(n + 1);
+    const shiftOk = afterIds[0] === preIds[0] && afterIds[1] === preIds[1] && afterIds[3] === preIds[2] && afterIds[4] === preIds[3];
+    const freshOk = !!afterIds[2] && preIds.indexOf(afterIds[2]) === -1;
+    const copy = JSON.parse(JSON.stringify(saved.pages[pg][3] || {}));
+    delete copy.id;
+    delete oldTwo.id;
+    const deepOk = JSON.stringify(copy) === JSON.stringify(oldTwo);
+    const statusOk = /Panel 2 duplicated/.test($("statusEl") ? $("statusEl").textContent : "");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("after duplicate, saved differs from store at " + d.path);
+    window.undoStructuralOp();
+    await sleep(400);
+    const rawPost = localStorage.getItem("comicGen.panelState");
+    if (rawPost !== rawPre) {
+      const dd = firstDiff(JSON.parse(rawPre || "{}"), JSON.parse(rawPost || "{}"), "$");
+      return no("undo did not restore bytes" + (dd ? " at " + dd.path + " pre=" + String(dd.a).slice(0, 50) + " post=" + String(dd.b).slice(0, 50) : ""));
+    }
+    const c = window.collectPanelState();
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    return eqArr([
+      countOk, shiftOk, freshOk, deepOk, statusOk,
+      (saved.pages[pg][2] || {}).title, (saved.pages[pg][3] || {}).title,
+      JSON.stringify(JSON.parse(rawPost || "{}")) === JSON.stringify(c),
+      shown() === n, pages,
+    ], [true, true, true, true, true, "SD26 title rides along", "SD26 title rides along", true, true, "1,2,3"], "count,shift,freshId,deepCopy,status,titleKept,titleCopied,match,shownRestored,pages");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
