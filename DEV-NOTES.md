@@ -1,6 +1,13 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.28.2 — 🧭 P3 step 2 third op (`movePanel` command; single within-page moves only)
+
+Released 2026-09-28 (stamp 2026.09.28.2). Continuation of the greenlit P3 step-2 track (per the 2026.09.28.1 entry's Next line: move, one op per release).
+
+- **What shipped.** `movePanel(project, pageNum, total, fromIndex, toIndex)` in `src/state/commands.js` (registry of eleven, `COMMANDS_VERSION` 9→10): validates (including `from===to` no-op refusal), splices the positional order, rebuilds the page in canonical meta order, keeps stale slots past the count exactly like the old path; returns `{page, index: to, fields: []}`. `resequencePanel(from, to)` in `index.html` commits `storeJsonNow()` through it — then the existing `remapPanelSession(order, total)` (positional images follow their panels) plus a new `reorderPanelMaps(order, total)` that permutes `panelPromptOverrides`/`panelPromptHistory` with the panels instead of the old wipe (the manual already promises everything moves with the panel) — falling back to the old path when the module is missing. Group moves, cross-page moves and new-page moves keep their existing paths for later releases. No new seams; undo/dialogs/status untouched (`resequencePanel` never wrote a status line).
+- **The numbers.** core **44/0** (new `movePanel` case: hit/order/count-kept/back-round-trip/9 misses/registry; registry assertions now 11 keys, VERSION 10), guards **21/0**, state-diff **27/27** (new SD27: real `resequencePanel(1,3)`, id order asserted, title moved with panel, count kept, saved==store, undo restores bytes), smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1 manual)**; **0** perchance errors; author's map **byte-identical** after every runner ("Cow in field", token present throughout — no hand parking this release).
+
 ## BATCH 2026.09.28.1 — 🧭 P3 step 2 second op (`duplicatePanel` command; single panels only)
 
 Released 2026-09-28 (stamp 2026.09.28.1). Continuation of the greenlit P3 step-2 track (per the 2026.09.27.7 entry's Next line: duplicate, one op per release).
