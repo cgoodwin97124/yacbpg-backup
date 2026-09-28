@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.28.1 — 2026-09-28 — ⧉ Duplicate is a named command (single panels; batch and full-page reflow keep the old path)
-- The ⧉ Duplicate chip on a panel now runs through the `duplicatePanel` command in src/state/commands.js — a pure copy of the panel's data with a fresh id, committed through the same writer as every other command, with the old positional path as fallback. The copy still carries everything but the images, and the surrounding panels' saved prompt overrides now ride along instead of being wiped. Batch duplicates and the full-page reflow keep their existing paths for a later release.
+## 2026.09.28.2 — 2026-09-28 — ⇅ Move is a named command (single panels within the page; group and cross-page moves keep the old path)
+- The ⇅ Move picker on a panel now runs through the `movePanel` command in src/state/commands.js — a pure reorder with the same ids, committed through the same writer as every other command, with the old path as fallback. Everything still travels with the panel, and a hand-edited prompt now rides along to the new position instead of being wiped. Group moves, moves to other pages and moves to a new page keep their existing paths for later releases.
 </script>
 
 
@@ -5614,6 +5614,26 @@ color-scheme:light;
     if (!(from >= 1 && from <= total && to >= 1 && to <= total) || from === to) return;
     pushStructUndo('move panel');
     clearPanelSelection();
+    const cmd = panelCommands ? panelCommands.movePanel : null;
+    if (typeof cmd === 'function') {
+      const project = storeJsonNow();
+      const hit = project ? cmd(project, currentPage, total, from, to) : null;
+      if (hit) {
+        savePanelStateShape(project);
+        const order = [];
+        for (let p = 1; p <= total; p++) order.push(p);
+        order.splice(from - 1, 1);
+        order.splice(to - 1, 0, from);
+        remapPanelSession(order, total);
+        reorderPanelMaps(order, total);
+        for (let j = 1; j <= 24; j++) {
+          const card = document.getElementById('panel-card-' + j);
+          if (card) card.classList.add('cleared');
+        }
+        buildPanelGrid();
+        return;
+      }
+    }
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const order = [];
@@ -5696,8 +5716,19 @@ color-scheme:light;
     b.title = top ? ('Undo: ' + top.label) : 'Nothing to undo yet — structural changes (add, duplicate, move, delete) can be undone here';
   }
 
-  function shiftPanelMapsForInsert(afterIndex, count) {
-    const shift = (map) => {
+  function reorderPanelMaps(order, total) {
+    const reorder = (map) => {
+      const next = {};
+      for (let p = 1; p <= total; p++) if (map[order[p - 1]] !== undefined) next[p] = map[order[p - 1]];
+      for (const k in map) delete map[k];
+      Object.assign(map, next);
+    };
+    reorder(panelPromptOverrides);
+    reorder(panelPromptHistory);
+    promptHistoryRuns = {};
+  }
+
+  function shiftPanelMapsForInsert(afterIndex, count) {    const shift = (map) => {
       const keys = Object.keys(map).map(Number).filter((n) => Number.isInteger(n) && n >= 1).sort((a, b) => b - a);
       for (const k of keys) {
         if (k > afterIndex) { map[k + count] = map[k]; delete map[k]; }
