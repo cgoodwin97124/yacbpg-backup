@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.27.8 — 2026-09-27 — 📝 Panel Description is now Panel Specific Description, old saves upgrade themselves
-- The box under a character or location — and its 💬 library bucket, picker, dialogs, hints and manual — now says Panel Specific Description, the name you chose for these per-panel phrases. Nothing else changes: saved entries keep working, and any project that still carries the old label upgrades it quietly the next time it loads or saves.
+## 2026.09.28.1 — 2026-09-28 — ⧉ Duplicate is a named command (single panels; batch and full-page reflow keep the old path)
+- The ⧉ Duplicate chip on a panel now runs through the `duplicatePanel` command in src/state/commands.js — a pure copy of the panel's data with a fresh id, committed through the same writer as every other command, with the old positional path as fallback. The copy still carries everything but the images, and the surrounding panels' saved prompt overrides now ride along instead of being wiped. Batch duplicates and the full-page reflow keep their existing paths for a later release.
 </script>
 
 
@@ -6807,6 +6807,26 @@ color-scheme:light;
     }
     if (!(i >= 1 && i <= total)) return;
     pushStructUndo('duplicate panel');
+    const cmd = panelCommands ? panelCommands.duplicatePanel : null;
+    if (typeof cmd === 'function' && typeof newPanelId === 'function') {
+      const beforeIds = {};
+      for (let p = 1; p <= total; p++) beforeIds[p] = panelIdAt(p);
+      const project = storeJsonNow();
+      const hit = project ? cmd(project, currentPage, total, i, newPanelId) : null;
+      if (hit) {
+        savePanelStateShape(project);
+        clearPanelSelection();
+        remapPanelImagesById(project, beforeIds);
+        shiftPanelMapsForInsert(i, 1);
+        for (let j = 1; j <= 24; j++) {
+          const card = document.getElementById('panel-card-' + j);
+          if (card) card.classList.add('cleared');
+        }
+        buildPanelGrid();
+        if (statusEl) statusEl.textContent = 'Panel ' + i + ' duplicated — the copy is now Panel ' + hit.index + ' (it has no images yet).';
+        return;
+      }
+    }
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const order = [];
