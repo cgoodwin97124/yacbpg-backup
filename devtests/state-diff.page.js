@@ -768,6 +768,53 @@ async function run() {
     ], [true, true, true, true, true, "SD26 title rides along", "SD26 title rides along", true, true, "1,2,3"], "count,shift,freshId,deepCopy,status,titleKept,titleCopied,match,shownRestored,pages");
   });
 
+  await t("SD27 resequencePanel moves through the named command and undo restores the page", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.movePanel !== "function") return no("the movePanel command did not load");
+    if (!window.undoStructuralOp) return no("no undoStructuralOp");
+    if (typeof window.resequencePanel !== "function") return no("no window.resequencePanel");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    let guard = 0;
+    while (shown() > 4 && guard++ < 30) { window.deletePanel(shown()); await sleep(120); }
+    const pg = 1, n = shown();
+    if (n !== 4) return no("could not trim page 1 to 4 panels, shown=" + n);
+    const preIds = [];
+    for (let p = 1; p <= n; p++) { const card = $("panel-card-" + p); preIds.push(card ? String(card.dataset.panelId || "") : ""); }
+    const titleEl = $("panel-title-1");
+    if (!titleEl) return no("no panel-title-1 box");
+    titleEl.value = "SD27 title moves along";
+    titleEl.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(300);
+    const rawPre = localStorage.getItem("comicGen.panelState");
+    window.resequencePanel(1, 3);
+    await sleep(400);
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const afterIds = [];
+    for (let p = 1; p <= n; p++) { const card = $("panel-card-" + p); afterIds.push(card ? String(card.dataset.panelId || "") : ""); }
+    const orderOk = afterIds.join(",") === [preIds[1], preIds[2], preIds[0], preIds[3]].join(",");
+    const movedOk = (saved.pages[pg][3] || {}).title === "SD27 title moves along";
+    const countOk = shown() === n && saved.pages[pg].panelCountSel === "4";
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("after move, saved differs from store at " + d.path);
+    window.undoStructuralOp();
+    await sleep(400);
+    const rawPost = localStorage.getItem("comicGen.panelState");
+    if (rawPost !== rawPre) {
+      const dd = firstDiff(JSON.parse(rawPre || "{}"), JSON.parse(rawPost || "{}"), "$");
+      return no("undo did not restore bytes" + (dd ? " at " + dd.path + " pre=" + String(dd.a).slice(0, 50) + " post=" + String(dd.b).slice(0, 50) : ""));
+    }
+    const c = window.collectPanelState();
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    return eqArr([
+      orderOk, movedOk, countOk,
+      JSON.stringify(JSON.parse(rawPost || "{}")) === JSON.stringify(c),
+      shown() === n, pages,
+    ], [true, true, true, true, true, "1,2,3"], "order,titleMoved,countKept,match,shownRestored,pages");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
