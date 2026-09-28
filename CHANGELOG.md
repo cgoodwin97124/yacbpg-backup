@@ -1,3 +1,8 @@
+## 2026.09.28.1 — 2026-09-28 — ⧉ Duplicate runs on the new command system (no visible change)
+
+- **The plain version:** nothing changes in how ⧉ Duplicate behaves — the copy still lands right after the original with everything but its images. Underneath, the button now runs through the same named-command system as the title, seed and add-panel controls, one more step in the quiet rebuild that keeps every change reliably undoable. A side benefit: the panels around the copy now keep their saved prompt edits instead of losing them.
+- **The numbers:** core **43/0**, smoke **109 pass / 0 fail / 4 manual**, state-diff **26/26**, fixtures **18/0**, generation **18/0 (+1 manual)**; **0** perchance errors; your saved project restored **byte-for-byte** after every run.
+
 ## 2026.09.27.8 — 2026-09-27 — 📝 Panel Description is now Panel Specific Description
 
 - **The plain version:** the box under a character or location — and its 💬 library bucket, picker, dialogs, hints and manual — now says **Panel Specific Description**, the name you chose for these per-panel phrases. Nothing else changes: your saved descriptions keep working, and any project that still carries the old label upgrades it quietly the next time it loads or saves.
