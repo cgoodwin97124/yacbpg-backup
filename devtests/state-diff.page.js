@@ -543,6 +543,38 @@ async function run() {
     ], [true, true, true, true, true, true, "1,2,3"], "immediate,saved,match,chip,roundTrip,neighbour,pages");
   });
 
+  await t("SD23 a prompt-override edit is written by the named command", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setPromptOverride !== "function") return no("the commands module did not load");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const rawBefore = localStorage.getItem("comicGen.panelState");
+    const posEl = $("prompt-pos-1"), negEl = $("prompt-neg-1");
+    if (!posEl || !negEl) return no("no prompt editor boxes");
+    const otherBefore = JSON.stringify(((JSON.parse(rawBefore || "{}").pages[1] || {})[2] || {}).promptOverride || null);
+    posEl.value = "SD23 pos override";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    negEl.value = "SD23 neg override";
+    negEl.dispatchEvent(new Event("input", { bubbles: true }));
+    const rawAfter = localStorage.getItem("comicGen.panelState");
+    const saved = JSON.parse(rawAfter || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const got = saved.pages[1][1].promptOverride || {};
+    const seamOn = window.__panelOverrideSet(1);
+    const neighbourAfter = JSON.stringify((saved.pages[1][2] || {}).promptOverride || null);
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    const seamRound = window.__panelOverrideSet(1);
+    return eqArr([
+      rawAfter !== rawBefore, got.pos, got.neg,
+      JSON.stringify(saved) === JSON.stringify(c), seamOn, seamRound,
+      neighbourAfter === otherBefore, pages,
+    ], [true, "SD23 pos override", "SD23 neg override", true, true, true, true, "1,2,3"], "immediate,pos,neg,saved,seam,roundTrip,neighbour,pages");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
