@@ -42,6 +42,11 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-27 — REFACTOR: P3 step 1e — the fifth named command (`setPanelSeed` / `setSameSeed`)
+
+- **Status:** ✅ **DONE 2026.09.27.4** — implemented, tested and documented; the push follows the author's Save. **What shipped:** `setPanelSeed` + `setSameSeed` in `src/state/commands.js` (registry of six, `COMMANDS_VERSION` 5), both branches in `renderCommittedFields`, six writers routed (seed input, Same-Seed checkbox, ✕, ⇤, generation pinning, Analysis setter) with the old path as fallback. **No questions asked:** seeds have no override interaction. **Verified:** state-diff **21/21**, core **39/0**, guards **21/0**, smoke **106/0/4**, gen **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, author's map byte-identical after every runner (`52479000`).
+- **Plan:** mirror the `setSize` release shape — pure command(s) in `src/state/commands.js` + `COMMANDS` registry (`COMMANDS_VERSION` 4→5), route the seed writers through `runPanelCommand` with the old path as fallback, extend `renderCommittedFields`, then checks: SD-test + core DOM-free test + diff-core guards. Release `2026.09.27.4`, one release per step.
+
 ### 2026-09-27 — REFACTOR: P3 step 1d — the fourth named command (`setSize`)
 
 - **Status:** ✅ **DONE 2026.09.27.3** — implemented, tested and documented; pushed 2026-09-27: app 15 files via the button (head `64ba1bcc`) + docs/harness 6 files via Contents API (head `d5c4de01`); drift **0 drift / 67 checked** (`scratch/gh-check/drift-019.json`, 24 not-in-workspace all known repo-only files). **What shipped:** `setSize` in `src/state/commands.js` (first compound command: `{sel, w, h}` → three leaves; registry of four, `COMMANDS_VERSION` 4), three branches in `renderCommittedFields`, `onPanelSizeChange` + a new `panel-size-(w|h)` input branch routed through `runPanelCommand` with the old path as fallback. **No questions asked:** Size has no override interaction anywhere on its path. **Verified:** state-diff **20/20**, core **37/0**, guards **21/0**, smoke **106/0/4**, gen **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, author's map byte-identical after every runner (`5f7b2e1c`).
