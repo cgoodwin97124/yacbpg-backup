@@ -658,6 +658,42 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "threeLeaves,noop,coercion");
   });
 
+  await t("commands: setSameSeed writes exactly one leaf and reports where", () => {
+    const proj = mkProject();
+    proj.pages[1][1].sameSeed = false;
+    proj.pages[1][2].sameSeed = false;
+    const wasBefore = JSON.parse(JSON.stringify(proj));
+    const hit = api.setSameSeed(proj, "p-2", true);
+    const changed = pathsDiffering(wasBefore, proj);
+    const miss = [api.setSameSeed(proj, "p-9", true), api.setSameSeed(proj, "", true)];
+    const falsy = [null, undefined, 0, "", false].map((v) => { api.setSameSeed(proj, "p-1", v); return proj.pages[1][1].sameSeed; });
+    return eqArr([
+      JSON.stringify(hit), proj.pages[1][2].sameSeed,
+      changed.join(","), miss.filter((m) => m === null).length,
+      falsy.filter((v) => v === false).length,
+    ], [
+      JSON.stringify({ page: 1, index: 2, fields: ["sameSeed"] }), true,
+      "$.pages.1.2.sameSeed <false -> true>", 2, 5,
+    ], "oneLeaf,noop,coercion");
+  });
+
+  await t("commands: setPanelSeed writes exactly one leaf and reports where", () => {
+    const proj = mkProject();
+    proj.pages[1][1].seed = "";
+    proj.pages[1][2].seed = "111";
+    const wasBefore = JSON.parse(JSON.stringify(proj));
+    const hit = api.setPanelSeed(proj, "p-2", "424242");
+    const changed = pathsDiffering(wasBefore, proj);
+    const miss = [api.setPanelSeed(proj, "p-9", "1"), api.setPanelSeed(proj, "", "1")];
+    return eqArr([
+      JSON.stringify(hit), proj.pages[1][2].seed, proj.pages[1][1].seed,
+      changed.join(","), miss.filter((m) => m === null).length,
+    ], [
+      JSON.stringify({ page: 1, index: 2, fields: ["seed"] }), "424242", "",
+      "$.pages.1.2.seed <\"111\" -> \"424242\">", 2,
+    ], "oneLeaf,noop");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -669,7 +705,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 4, "setImgCount,setSize,setStyle,setTitle",
+      true, 5, "setImgCount,setPanelSeed,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
