@@ -1330,8 +1330,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.27.5 — 2026-09-27 — 🧭 The sixth named command: a panel image's 🔒 Protect switch is saved by the store
-- Flipping an image's Protect switch now writes through the store's named command instead of the debounced autosave; same bytes saved.
+## 2026.09.27.6 — 2026-09-27 — 🧭 The seventh named command: manual prompt overrides are saved by the store
+- Typing a manual prompt override now writes through the store's named command instead of the debounced autosave; same bytes saved.
 </script>
 
 
@@ -4488,6 +4488,10 @@ color-scheme:light;
         const arr = Array.isArray(panel.protectSlots) ? panel.protectSlots : [];
         for (let k = 1; k <= 4; k++) setSlotProtected(hit.index, k, !!arr[k - 1]);
       }
+      if (f === 'promptOverride') {
+        const editor = document.getElementById('prompt-editor-' + hit.index);
+        if (editor && !editor.hidden && !panel.promptOverride) populatePromptEditor(hit.index);
+      }
     }
     return true;
   }
@@ -6970,8 +6974,9 @@ color-scheme:light;
       const i = parseInt(pm[2], 10);
       const posEl = document.getElementById('prompt-pos-' + i);
       const negEl = document.getElementById('prompt-neg-' + i);
-      panelPromptOverrides[i] = { pos: posEl ? posEl.value : "", neg: negEl ? negEl.value : "" };
-      return;
+      const ov = { pos: posEl ? posEl.value : "", neg: negEl ? negEl.value : "" };
+      panelPromptOverrides[i] = ov;
+      return runPanelCommand('setPromptOverride', panelIdAt(i), [ov]);
     }
     const cs = id.match(/^panel-char-select-(\d+)-(\d+)$/);
     if (cs) {
