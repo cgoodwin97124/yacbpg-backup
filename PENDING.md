@@ -22,6 +22,13 @@ reports `byteIdentical: false` and the write-back path recovers from the file.
 
 🟢 START NOW section; everything awaiting the author's explicit "go ahead" goes into the 🕒 QUEUED
 section. Move entries between sections as their status changes (greenlit → START NOW; implemented →
+
+### 2026-09-27 — T-04 items 2+3: the Panel Specific Description rename (old saves self-upgrade)
+
+- **Status:** ✅ **DONE 2026.09.27.8** — implemented, tested and documented; app files (index.html, src/manual.html, src/core/*, devtests) await the author's Save, then the button push; docs via Contents API in the same session.
+- **Author, 2026-09-28, verbatim:** *"To clarify for T0-04, I only need items 2 (the editable Basic Description that starts as a copy of the default, etc.) and 3 (the existing Panel Description box renamed Panel Specific Description plus saved library). Correct on migration. I have saved, so you can push and then continue!"*
+- **What shipped:** item 1 (migration) verified correct as-shipped, no code; item 2 (editable Basic Description) already shipped, no code; item 3's rename — every user-facing "Panel Description" is now "Panel Specific Description", and the stored library type is renamed with a permanent old-label alias (loads everywhere, upgrades on next load/save, same pd- ids). **Verified:** core **42/0**, smoke **109/0/4**, state-diff **25/25**, fixtures **18/0**, 0 perchance errors, byte-identical restores. **Next (unchanged):** duplicate (one op per release), then move, then delete, then page create/delete; T-01 1c resume-to-end as a small release.
+
 ✅ DONE, with the changelog version + a matching dev-note block in index.html). A future AI helper
 session should READ THIS FILE before planning new work.
 
