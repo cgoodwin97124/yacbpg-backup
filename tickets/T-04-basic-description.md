@@ -2,20 +2,18 @@
 ticket: T-04
 title: "Panel Library “Library Description” → editable, project-saved “Basic Description”"
 kind: feature
-status: done
-released: 2026.09.25.1
+status: answered
 answers: 6/6
 form: yacbpg-tickets-2026-09-25
-updated: 2026-09-25T01:30:19.954Z
-generator: f0vstb2fbe
+updated: 2026-09-28T02:22:55.231Z
 ---
 
 # T-04 — Panel Library “Library Description” → editable, project-saved “Basic Description”
 
 - **Kind:** feature
-- **Status:** done — shipped in **2026.09.25.1** (2026-09-25)
+- **Status:** answered (answered — awaiting the implementation go-ahead)
 - **Answers:** 6 of 6
-- **Answered:** 2026-09-25T01:30:19.954Z
+- **Answered:** 2026-09-28T02:22:55.231Z
 
 ## Original request (verbatim)
 
@@ -26,17 +24,26 @@ generator: f0vstb2fbe
 ### 4a. Merge the two fields, or keep both? Today there is a read-only “Library description” and a separate editable “This panel — extra description”.
 
 - **Answer:** Keep both — add “Basic Description” on top of the existing extra field
-- **Note:** To be clear, in the panel menu I want the name, Basic Description (formerly Library Description, and pulls from that) and keep "This panel -- extra description".
+- **Note:** I'd like to keep both.  My intent is that the Library description is a character's default settings.  This would generally cover their name and basic appearance, not taking things like clothing into account.  I'd like to make it editable on the panel's character menu, in case there's a change I want to make in it for that panel; I might want to try out a different prompt, or possibly a prompt won't turn out the way I expect; I'd want to overwrite the original prompt at least temporarily in that case.  The "This panel - extra description" would be for things like their clothing, injuries they've suffered, and other things that might change from panel to panel, so I don't have to keep changing the Library Description or Basic Description.  
+  
+  And I'm finding that I also want to make a library of "This Panel - Extra Description", so that I could have for instance a library of costume prompts, or poses, or injuries, or similar.  
+  
+  (And I also want to change the name of "This Panel - Extra Description", maybe to something like "Panel Specific Description".  Let's go with that for now.)
+  
+  To summarize: 
+   * I want the character or location to have a basic, default description drawn from the library, that I can modify for the panel if necessarily, but that the Library still maintains as a default.
+   * I want the character or location to have a panel-specific description that might appear in multiple panels, but that I can change, possibly to preset, saved descriptions (such as a costume for a character). 
+  
+  And please double check your understanding of this point with me before proceeding on this step.
 
 ### 4b. For existing projects, how should the old extra descriptions migrate so prompts don’t silently change?
 
-- **Answer:** _(no answer given)_
-- **Note:** See 4a. I want to keep the old extras, because the extras are the panel specific description - I can, for instance, describe what a character is wearing in this panel but have it change for the next one.
+- **Answer:** Set each Basic Description to “library description + extra” — reproduces today’s prompt exactly, and flags those as differing (recommended)
+- **Note:** See my answers to 4a.
 
 ### 4c. If you later edit a library object’s description, what should happen to a Basic Description you have NOT touched?
 
-- **Answer:** It stays frozen at the text it was filled with
-- **Note:** It stays at the text it was filled with.  The user can click the "Refresh from library" button to overwrite it with the saved library text.
+- **Answer:** It follows the new library text — it is still “inherited” (recommended)
 
 ### 4d. Do the built-in characters and locations (Hero, City, …) get the identical editable / override / call-out treatment?
 
@@ -48,15 +55,8 @@ generator: f0vstb2fbe
 
 ### 4f. How should a differing Basic Description be called out visually?
 
-- **Answer:** Badge + coloured border only
+- **Answer:** A small “custom” badge beside the label, a coloured left border on the field, AND a dot on the ▸/▾ toggle row so it is visible while collapsed (recommended)
 
 ## Implementation
 
-T-04 — shipped in **2026.09.25.1** (2026-09-25) — see CHANGELOG.md and DEV-NOTES.md (BATCH 2026.09.25.1).
-
-- The read-only "Library Description" is now the editable **Basic Description** (`.pl-base-field` + `.pl-base-head` with the `edited` badge and the "⟳ Refresh from library" chip); the "This panel — extra description" box is unchanged and still appends after it (answer 4a).
-- State: `chars:[{sel,base,extra}]` plus `loc` / `locBase` / `locExtra` — saved with the project, carried through Export / Import / .zip and shown read-only in the 🧩 JSON editor.
-- Seeding and freeze (4c): the field is filled from the library when a selection is made and never follows later library edits; ⟳ Refresh from library is the only way to pull the current library text back. `migratePanelBaseDescriptions` seeds projects saved by earlier versions — verified to leave the built prompt byte-identical.
-- Comparison (4e): trimmed, exact, case-sensitive. Call-out (4f): the badge and a coloured left bar, nothing else. Built-ins get the identical treatment (4d).
-- ⇤ copy-from-previous-panel copies the Basic Description edited or not; the built prompt uses the edited text in place of the library's.
-- Verified live in both themes: 96 fields / 96 badges / 96 ⟳ chips and zero old `.pl-libdesc`; the badge and border track edits (a whitespace-only difference is NOT flagged, a case change is); ⟳ clears them; ⇤ copies an edited base; the built prompt carries the custom text and not the library text.
+_Pending — filled in when the work is done (branch / PR, released version, changelog entry)._
