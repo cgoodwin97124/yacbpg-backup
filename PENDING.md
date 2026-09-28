@@ -57,6 +57,11 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-28 — REFACTOR: P3 step 2 fourth op (single-panel `deletePanel` command)
+
+- **Status:** 🔨 IN PROGRESS — author said "Go!" 2026-09-28. **Plan:** `deletePanel` pure command + dispatch in `deletePanel()` (single within-page deletes only; the only-panel reset/page-delete and batch/group deletes keep their old paths); survivors' images remapped by id and prompt maps shifted down with them via `reorderPanelMaps`. One op per release → `2026.09.28.3`. **Next:** page create/delete, then T-01 1c resume-to-end.
+
+
 ### 2026-09-27 — REFACTOR + FEATURE: P3 step 2 first op (`addPanel` command + undo) with T-07 folded in
 
 - **Status:** ✅ **DONE 2026.09.27.7** — implemented, tested and documented; app files (index.html, src/manual.html) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `addPanel` dispatch through the named command (non-full-page path, old path as fallback), `shiftPanelMapsForInsert` remap (6c), 5-deep snapshot ↩ Undo (6b, dialogs unchanged), T-07 folded in (freeze + revert chip, only Style/Palette/preset reset). **Fixed along the way:** empty-override shadowing (panels generated “skipped”; 23 ghosts purged, nothing else). **Verified:** state-diff **25/25**, core **42/0**, guards **21/0**, smoke **109/0/4**, gen **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, byte-identical restores (baseline `3d3322df`). **Next:** move (one op per release per 6a), then delete, then page create/delete (6d); T-01 1c resume-to-end as a small release.
