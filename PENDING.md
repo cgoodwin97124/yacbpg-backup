@@ -23,6 +23,10 @@ reports `byteIdentical: false` and the write-back path recovers from the file.
 🟢 START NOW section; everything awaiting the author's explicit "go ahead" goes into the 🕒 QUEUED
 section. Move entries between sections as their status changes (greenlit → START NOW; implemented →
 
+### 2026-09-28 — REFACTOR: P3 step 2 second op (single-panel `duplicatePanel` command)
+
+- **Status:** ✅ **DONE 2026.09.28.1** — implemented, tested and documented; app files (index.html, src/state/commands.js, devtests) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `duplicatePanel` pure command + dispatch on the single-panel non-full-page path (batch + full-page reflow keep old paths); neighbours' prompt overrides ride along (shift, not wipe); canonical meta key order. **Verified:** core **43/0**, guards **21/0**, state-diff **26/26**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores (hash `8d02f0dc`). **Next:** move (one op per release), then delete, then page create/delete; T-01 1c resume-to-end as a small release.
+
 ### 2026-09-27 — T-04 items 2+3: the Panel Specific Description rename (old saves self-upgrade)
 
 - **Status:** ✅ **DONE 2026.09.27.8** — implemented, tested and documented; app files pushed 2026-09-28 via the button (15 files, repo `index.html` verified at `2026.09.27.8`); docs via Contents API in the same session.
@@ -51,7 +55,7 @@ each section).
 
 ### 2026-09-27 — REFACTOR + FEATURE: P3 step 2 first op (`addPanel` command + undo) with T-07 folded in
 
-- **Status:** ✅ **DONE 2026.09.27.7** — implemented, tested and documented; app files (index.html, src/manual.html) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `addPanel` dispatch through the named command (non-full-page path, old path as fallback), `shiftPanelMapsForInsert` remap (6c), 5-deep snapshot ↩ Undo (6b, dialogs unchanged), T-07 folded in (freeze + revert chip, only Style/Palette/preset reset). **Fixed along the way:** empty-override shadowing (panels generated “skipped”; 23 ghosts purged, nothing else). **Verified:** state-diff **25/25**, core **42/0**, guards **21/0**, smoke **109/0/4**, gen **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, byte-identical restores (baseline `3d3322df`). **Next:** duplicate (one op per release per 6a), then move, then delete, then page create/delete (6d); T-01 1c resume-to-end as a small release; T-04 held for the understanding check.
+- **Status:** ✅ **DONE 2026.09.27.7** — implemented, tested and documented; app files (index.html, src/manual.html) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `addPanel` dispatch through the named command (non-full-page path, old path as fallback), `shiftPanelMapsForInsert` remap (6c), 5-deep snapshot ↩ Undo (6b, dialogs unchanged), T-07 folded in (freeze + revert chip, only Style/Palette/preset reset). **Fixed along the way:** empty-override shadowing (panels generated “skipped”; 23 ghosts purged, nothing else). **Verified:** state-diff **25/25**, core **42/0**, guards **21/0**, smoke **109/0/4**, gen **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, byte-identical restores (baseline `3d3322df`). **Next:** move (one op per release per 6a), then delete, then page create/delete (6d); T-01 1c resume-to-end as a small release.
 
 ### 2026-09-27 — REFACTOR: P3 step 1g — the seventh named command (`setPromptOverride`)
 
