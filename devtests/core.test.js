@@ -638,6 +638,26 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "oneLeaf,noop");
   });
 
+  await t("commands: setSize writes exactly three leaves and reports where", () => {
+    const proj = mkProject();
+    proj.pages[1][1].sizeSel = ""; proj.pages[1][1].sizeW = ""; proj.pages[1][1].sizeH = "";
+    proj.pages[1][2].sizeSel = "512x512"; proj.pages[1][2].sizeW = ""; proj.pages[1][2].sizeH = "";
+    const wasBefore = JSON.parse(JSON.stringify(proj));
+    const hit = api.setSize(proj, "p-2", { sel: "custom", w: "800", h: "600" });
+    const changed = pathsDiffering(wasBefore, proj);
+    const miss = [api.setSize(proj, "p-9", { sel: "x" }), api.setSize(proj, "", null)];
+    const coerced = api.setSize(proj, "p-1", null);
+    return eqArr([
+      JSON.stringify(hit), proj.pages[1][2].sizeSel, proj.pages[1][2].sizeW, proj.pages[1][2].sizeH,
+      changed.join(","), miss.filter((m) => m === null).length,
+      proj.pages[1][1].sizeSel, proj.pages[1][1].sizeW, proj.pages[1][1].sizeH, JSON.stringify(coerced && coerced.fields),
+    ], [
+      JSON.stringify({ page: 1, index: 2, fields: ["sizeSel", "sizeW", "sizeH"] }), "custom", "800", "600",
+      "$.pages.1.2.sizeSel <\"512x512\" -> \"custom\">,$.pages.1.2.sizeW <\"\" -> \"800\">,$.pages.1.2.sizeH <\"\" -> \"600\">", 2,
+      "", "", "", "[\"sizeSel\",\"sizeW\",\"sizeH\"]",
+    ], "threeLeaves,noop,coercion");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -649,7 +669,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 3, "setImgCount,setStyle,setTitle",
+      true, 4, "setImgCount,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
