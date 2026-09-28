@@ -818,6 +818,36 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "hit,shift,countRule,deepCopy,freshId,keyOrder,full,miss,registry");
   });
 
+  await t("commands: movePanel reorders one panel in place and refuses bad input", () => {
+    if (typeof api.movePanel !== "function") return no("no movePanel export");
+    const mkPage = (n) => {
+      const p = { name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" };
+      for (let i = 1; i <= n; i++) p[i] = { id: "q-" + i, title: "t" + i };
+      return p;
+    };
+    const proj = { version: 2, pages: { 1: mkPage(4) } };
+    const hit = api.movePanel(proj, 1, 4, 1, 3);
+    const ids = [1, 2, 3, 4].map((i) => proj.pages[1][i] && proj.pages[1][i].id);
+    const titles = [1, 2, 3, 4].map((i) => proj.pages[1][i] && proj.pages[1][i].title);
+    const back = api.movePanel(proj, 1, 4, 3, 1);
+    const backIds = [1, 2, 3, 4].map((i) => proj.pages[1][i] && proj.pages[1][i].id);
+    const miss = [api.movePanel(proj, 9, 4, 1, 3), api.movePanel(proj, 1, 0, 1, 3),
+      api.movePanel(proj, 1, 25, 1, 3), api.movePanel(proj, 1, 4, 0, 3),
+      api.movePanel(proj, 1, 4, 5, 3), api.movePanel(proj, 1, 4, 1, 0),
+      api.movePanel(proj, 1, 4, 1, 5), api.movePanel(proj, 1, 4, 2, 2),
+      api.movePanel(null, 1, 4, 1, 3)];
+    return eqArr([
+      JSON.stringify(hit), ids.join(","), titles.join(","),
+      proj.pages[1].panelCountSel, JSON.stringify(back && back.index),
+      backIds.join(","), miss.filter((m) => m === null).length,
+      api.COMMANDS.movePanel === api.movePanel,
+    ], [
+      JSON.stringify({ page: 1, index: 3, fields: [] }),
+      "q-2,q-3,q-1,q-4", "t2,t3,t1,t4", "4", "1",
+      "q-1,q-2,q-3,q-4", 9, true,
+    ], "hit,order,countKept,backRoundTrip,miss,registry");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -829,7 +859,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 9, "addPanel,duplicatePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
+      true, 10, "addPanel,duplicatePanel,movePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
