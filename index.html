@@ -1330,8 +1330,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.27.2 — 2026-09-27 — 🧭 The third named command: the Style select is saved by the store, and it still clears your prompt override
-- Changing a panel's Style now writes through the store's named command instead of the debounced autosave; the manual prompt override is still cleared, same bytes saved.
+## 2026.09.27.3 — 2026-09-27 — 🧭 The fourth named command: the Size controls are saved by the store, override untouched
+- Changing a panel's Size preset or Custom dimensions now writes through the store's named command instead of the debounced autosave; manual prompt overrides untouched, same bytes saved.
 </script>
 
 
@@ -4459,6 +4459,22 @@ color-scheme:light;
         const sel = document.getElementById('panel-style-' + hit.index);
         if (sel && panel.style && [...sel.options].some(o => o.value === panel.style)) sel.value = panel.style;
       }
+      if (f === 'sizeSel') {
+        const sel = document.getElementById('panel-size-' + hit.index);
+        if (sel && panel.sizeSel && [...sel.options].some(o => o.value === panel.sizeSel)) sel.value = panel.sizeSel;
+        const sc = document.getElementById('panel-size-custom-' + hit.index);
+        if (sc && sel) sc.hidden = sel.value !== 'custom';
+      }
+      if (f === 'sizeW') {
+        const el = document.getElementById('panel-size-w-' + hit.index);
+        const v = panel.sizeW || '';
+        if (el && el.value !== v) el.value = v;
+      }
+      if (f === 'sizeH') {
+        const el = document.getElementById('panel-size-h-' + hit.index);
+        const v = panel.sizeH || '';
+        if (el && el.value !== v) el.value = v;
+      }
     }
     return true;
   }
@@ -6915,6 +6931,8 @@ color-scheme:light;
     const id = (e.target.id) || "";
     const ttl = id.match(/^panel-title-(\d+)$/);
     if (ttl) return runPanelCommand('setTitle', panelIdAt(parseInt(ttl[1], 10)), [e.target.value]);
+    const psz = id.match(/^panel-size-(?:w|h)-(\d+)$/);
+    if (psz) return runPanelCommand('setSize', panelIdAt(parseInt(psz[1], 10)), [readPanelSize(parseInt(psz[1], 10))]);
     const dpk = id.match(/^panel-(char|loc)-extra-pick-(\d+)(?:-(\d+))?$/);
     if (dpk) return pickPanelDescription(dpk[1], parseInt(dpk[2], 10), dpk[3] ? parseInt(dpk[3], 10) : 1);
     const dpb = id.match(/^panel-(char|loc)-extra-(\d+)(?:-(\d+))?$/);
@@ -8029,11 +8047,21 @@ color-scheme:light;
     schedulePanelSave();
   }
 
+  function readPanelSize(i) {
+    return {
+      sel: (document.getElementById('panel-size-' + i) || {}).value || '',
+      w: (document.getElementById('panel-size-w-' + i) || {}).value || '',
+      h: (document.getElementById('panel-size-h-' + i) || {}).value || ''
+    };
+  }
+
   function onPanelSizeChange(i) {
-    const szSel = document.getElementById('panel-size-' + i);
-    const sc = document.getElementById('panel-size-custom-' + i);
-    if (sc && szSel) sc.hidden = szSel.value !== 'custom';
-    schedulePanelSave();
+    if (!runPanelCommand('setSize', panelIdAt(i), [readPanelSize(i)])) {
+      const szSel = document.getElementById('panel-size-' + i);
+      const sc = document.getElementById('panel-size-custom-' + i);
+      if (sc && szSel) sc.hidden = szSel.value !== 'custom';
+      schedulePanelSave();
+    }
   }
 
   function togglePanelAcc(toggleEl) {
