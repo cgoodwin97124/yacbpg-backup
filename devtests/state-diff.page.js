@@ -475,6 +475,44 @@ async function run() {
     ], [true, "custom", "800", "600", true, true, true, true, true, "1,2,3"], "immediate,compound,saved,roundTrip,neighbour,overrideKept,customShown,pages");
   });
 
+  await t("SD21 a Seed edit and a Same-Seed toggle are written by the named commands", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setPanelSeed !== "function" || typeof mod.COMMANDS.setSameSeed !== "function") return no("the commands module did not load");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const rawBefore = localStorage.getItem("comicGen.panelState");
+    const el = $("panel-seed-1");
+    if (!el) return no("no #panel-seed-1 to type into");
+    const cb = $("panel-sameseed-1");
+    if (!cb) return no("no #panel-sameseed-1 to toggle");
+    const otherSeedBefore = $("panel-seed-2") ? $("panel-seed-2").value : null;
+    const otherSameBefore = $("panel-sameseed-2") ? $("panel-sameseed-2").checked : null;
+    el.value = "424242";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    if (saved.pages[1][1].seed !== "424242") return no("seed keystroke not saved, got " + saved.pages[1][1].seed);
+    cb.checked = !cb.checked;
+    const wantSame = cb.checked;
+    cb.dispatchEvent(new Event("change", { bubbles: true }));
+    const rawAfter = localStorage.getItem("comicGen.panelState");
+    saved = JSON.parse(rawAfter || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const neighbourSeed = saved.pages[1][2] ? saved.pages[1][2].seed : "(none)";
+    const neighbourSame = saved.pages[1][2] ? saved.pages[1][2].sameSeed : "(none)";
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    const rSeed = $("panel-seed-1") ? $("panel-seed-1").value : "(missing)";
+    const rSame = $("panel-sameseed-1") ? $("panel-sameseed-1").checked : "(missing)";
+    return eqArr([
+      rawAfter !== rawBefore, saved.pages[1][1].seed, saved.pages[1][1].sameSeed === true || saved.pages[1][1].sameSeed === false,
+      JSON.stringify(saved) === JSON.stringify(c), rSeed, rSame === wantSame,
+      neighbourSeed === otherSeedBefore, neighbourSame === otherSameBefore, pages,
+    ], [true, "424242", true, true, "424242", true, true, true, "1,2,3"], "immediate,seed,sameBool,saved,roundTrip,roundSame,neighbour,pages");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
