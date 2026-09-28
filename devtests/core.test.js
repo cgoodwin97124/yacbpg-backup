@@ -385,23 +385,29 @@ if (api.normalise && api.validate && api.newPanelId) {
     ], [4, "Location,Action,Character,Character", "5", "\"7\"", false, 1, 1, 0], "library");
   });
 
-  await t("panelDescMatch finds only a saved Panel Description whose text matches", () => {
+  await t("panelDescMatch finds only a saved Panel Specific Description whose text matches", () => {
     const objs = [
       { id: "char-1", type: "Character", name: "Bill", desc: "a tall man" },
-      { id: "pd-1", type: "Panel Description", name: "Torn jacket", desc: "wearing a torn jacket" },
-      { id: "pd-2", type: "Panel Description", name: "At night", desc: "lit only by the moon" },
+      { id: "pd-1", type: "Panel Specific Description", name: "Torn jacket", desc: "wearing a torn jacket" },
+      { id: "pd-2", type: "Panel Specific Description", name: "At night", desc: "lit only by the moon" },
+      { id: "pd-0", type: "Panel Description", name: "Old name", desc: "an old-typed entry" },
       { id: "zzz-9", name: "legacy", desc: "wearing a torn jacket" }
     ];
     const hit = api.panelDescMatch(objs, "  wearing a torn jacket  ");
+    const oldHit = api.panelDescMatch(objs, "an old-typed entry");
     return eqArr([
       hit && hit.id, hit && hit.name,
+      oldHit && oldHit.id,
       api.panelDescMatch(objs, "something else"),
       api.panelDescMatch(objs, "   "),
       api.panelDescMatch(objs, null),
       api.panelDescMatch([], "wearing a torn jacket"),
       api.normalizeLibType({ id: "pd-77" }),
-      api.normalizeLibType({ id: "x", type: "Panel Description" })
-    ], ["pd-1", "Torn jacket", null, null, null, null, "Panel Description", "Panel Description"], "match,idPrefix,byType");
+      api.normalizeLibType({ id: "x", type: "Panel Description" }),
+      api.normalizeLibType({ id: "x", type: "Panel Specific Description" }),
+      api.normaliseLibType("Panel Description", "pd-1"),
+      api.normaliseLibType("Panel Specific Description", "pd-1")
+    ], ["pd-1", "Torn jacket", "pd-0", null, null, null, null, "Panel Specific Description", "Panel Specific Description", "Panel Specific Description", "Panel Specific Description", "Panel Specific Description"], "match,oldAlias,idPrefix,byType");
   });
 
   await t("normalise keeps unknown keys and mints the missing ids", () => {
@@ -736,6 +742,82 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "oneLeaf,clear,noop");
   });
 
+  await t("commands: addPanel inserts empty panels after the index and refuses bad input", () => {
+    if (typeof api.addPanel !== "function") return no("no addPanel export");
+    const mkPage = (n) => {
+      const p = { name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" };
+      for (let i = 1; i <= n; i++) p[i] = { id: "q-" + i, title: "t" + i };
+      return p;
+    };
+    let seq = 0;
+    const makeId = () => "new-" + (++seq);
+    const proj = { version: 2, pages: { 1: mkPage(4) } };
+    const hit = api.addPanel(proj, 1, 4, 2, 1, makeId);
+    const ids = [1, 2, 3, 4, 5].map((i) => proj.pages[1][i] && proj.pages[1][i].id);
+    const titles = [1, 2, 3, 4, 5].map((i) => proj.pages[1][i] && proj.pages[1][i].title);
+    const multi = api.addPanel(proj, 1, 5, 1, 2, makeId);
+    const multiIds = [1, 2, 3, 4, 5, 6, 7].map((i) => proj.pages[1][i] && proj.pages[1][i].id);
+    const fullProj = { version: 2, pages: { 1: mkPage(24) } };
+    const fullBefore = JSON.stringify(fullProj);
+    const full = api.addPanel(fullProj, 1, 24, 24, 1, makeId);
+    const miss = [api.addPanel(proj, 9, 5, 1, 1, makeId), api.addPanel(proj, 1, 0, 1, 1, makeId),
+      api.addPanel(proj, 1, 25, 1, 1, makeId), api.addPanel(proj, 1, 7, 0, 1, makeId),
+      api.addPanel(proj, 1, 7, 99, 1, makeId), api.addPanel(proj, 1, 7, 1, 0, makeId),
+      api.addPanel(proj, 1, 7, 1, 1, null), api.addPanel(null, 1, 7, 1, 1, makeId),
+      api.addPanel(proj, 1, 7, 1, 24, makeId), api.addPanel(proj, 1, 7, 1, 1, () => "")];
+    return eqArr([
+      JSON.stringify(hit), ids.join(","), titles.join(","),
+      proj.pages[1].panelCountSel, proj.pages[1].panelCountCustom,
+      JSON.stringify(multi && { i: multi.index, n: multi.newTotal }), multiIds.join(","),
+      full, JSON.stringify(fullProj) === fullBefore,
+      miss.filter((m) => m === null).length, api.COMMANDS.addPanel === api.addPanel,
+    ], [
+      JSON.stringify({ page: 1, index: 3, count: 1, newTotal: 5, fields: [] }),
+      "q-1,q-2,new-1,q-3,q-4", "t1,t2,,t3,t4", "custom", "7",
+      JSON.stringify({ i: 2, n: 7 }), "q-1,new-2,new-3,q-2,new-1,q-3,q-4",
+      null, true, 10, true,
+    ], "hit,shift,countRule,multi,full,miss,registry");
+  });
+
+  await t("commands: duplicatePanel copies one panel with a fresh id and refuses bad input", () => {
+    if (typeof api.duplicatePanel !== "function") return no("no duplicatePanel export");
+    const mkPage = (n) => {
+      const p = { name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" };
+      for (let i = 1; i <= n; i++) p[i] = { id: "q-" + i, title: "t" + i };
+      return p;
+    };
+    let seq = 0;
+    const makeId = () => "new-" + (++seq);
+    const proj = { version: 2, pages: { 1: mkPage(4) } };
+    const before = JSON.parse(JSON.stringify(proj.pages[1][2]));
+    const hit = api.duplicatePanel(proj, 1, 4, 2, makeId);
+    const ids = [1, 2, 3, 4, 5].map((i) => proj.pages[1][i] && proj.pages[1][i].id);
+    const titles = [1, 2, 3, 4, 5].map((i) => proj.pages[1][i] && proj.pages[1][i].title);
+    const copy = JSON.parse(JSON.stringify(proj.pages[1][3]));
+    const copyId = copy.id;
+    delete copy.id;
+    delete before.id;
+    const fullProj = { version: 2, pages: { 1: mkPage(24) } };
+    const fullBefore = JSON.stringify(fullProj);
+    const full = api.duplicatePanel(fullProj, 1, 24, 24, makeId);
+    const miss = [api.duplicatePanel(proj, 9, 5, 1, makeId), api.duplicatePanel(proj, 1, 0, 1, makeId),
+      api.duplicatePanel(proj, 1, 25, 1, makeId), api.duplicatePanel(proj, 1, 5, 0, makeId),
+      api.duplicatePanel(proj, 1, 5, 99, makeId), api.duplicatePanel(proj, 1, 5, 1, null),
+      api.duplicatePanel(null, 1, 5, 1, makeId), api.duplicatePanel(proj, 1, 5, 1, () => ""),
+      api.duplicatePanel({ version: 2, pages: { 1: mkPage(2) } }, 1, 5, 5, makeId)];
+    return eqArr([
+      JSON.stringify(hit), ids.join(","), titles.join(","),
+      proj.pages[1].panelCountSel, proj.pages[1].panelCountCustom,
+      JSON.stringify(copy) === JSON.stringify(before), copyId !== "q-2" && ids.indexOf(copyId) === 2,
+      Object.keys(proj.pages[1]).join(","), full, JSON.stringify(fullProj) === fullBefore,
+      miss.filter((m) => m === null).length, api.COMMANDS.duplicatePanel === api.duplicatePanel,
+    ], [
+      JSON.stringify({ page: 1, index: 3, count: 1, newTotal: 5, fields: [] }),
+      "q-1,q-2,new-1,q-3,q-4", "t1,t2,t2,t3,t4", "custom", "5",
+      true, true, "1,2,3,4,5,name,summary,panelCountSel,panelCountCustom,seed", null, true, 9, true,
+    ], "hit,shift,countRule,deepCopy,freshId,keyOrder,full,miss,registry");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -747,7 +829,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 7, "setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
+      true, 9, "addPanel,duplicatePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
