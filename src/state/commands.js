@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 7;
+export const COMMANDS_VERSION = 8;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,4 +101,50 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel };
+
+function countStateFor(n) {
+  if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
+  return { sel: "custom", custom: String(n) };
+}
+
+export function addPanel(project, pageNum, total, afterIndex, count, makeId) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  const after = Number(afterIndex);
+  const n = Number(count);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  if (!Number.isInteger(after) || after < 1 || after > t) return null;
+  if (!Number.isInteger(n) || n < 1) return null;
+  if (typeof makeId !== "function") return null;
+  if (t + n > 24) return null;
+  const fresh = [];
+  for (let k = 0; k < n; k++) {
+    const id = makeId();
+    if (typeof id !== "string" || !id) return null;
+    fresh.push({ id: id });
+  }
+  const order = [];
+  for (let p = 1; p <= t; p++) order.push(p);
+  for (let k = 0; k < n; k++) order.splice(after + k, 0, 0);
+  const newTotal = t + n;
+  const pc = countStateFor(newTotal);
+  const newPage = {};
+  for (const k of ["name", "summary", "seed"]) newPage[k] = page[k];
+  newPage.panelCountSel = pc.sel;
+  newPage.panelCountCustom = pc.custom;
+  let fi = 0;
+  for (let p = 1; p <= 24; p++) {
+    if (p <= newTotal) {
+      const src = order[p - 1];
+      if (src === 0) newPage[p] = fresh[fi++];
+      else if (src !== undefined && page[src] !== undefined) newPage[p] = JSON.parse(JSON.stringify(page[src]));
+    } else if (page[p] !== undefined) {
+      newPage[p] = page[p];
+    }
+  }
+  project.pages[pageNum] = newPage;
+  return { page: Number(pageNum), index: after + 1, count: n, newTotal: newTotal, fields: [] };
+}
