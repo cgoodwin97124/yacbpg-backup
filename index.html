@@ -1330,8 +1330,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.27.3 — 2026-09-27 — 🧭 The fourth named command: the Size controls are saved by the store, override untouched
-- Changing a panel's Size preset or Custom dimensions now writes through the store's named command instead of the debounced autosave; manual prompt overrides untouched, same bytes saved.
+## 2026.09.27.4 — 2026-09-27 — 🧭 The fifth named commands: the Seed box and the Same-Seed checkbox are saved by the store
+- Typing a panel's seed or flipping Same-Seed now writes through the store's named commands instead of the debounced autosave; same bytes saved.
 </script>
 
 
@@ -3285,7 +3285,7 @@ color-scheme:light;
       const el = document.getElementById('panel-seed-' + i);
       if (el) el.value = val;
       updatePanelSeedPlaceholders();
-      schedulePanelSave();
+      if (!runPanelCommand('setPanelSeed', panelIdAt(i), [val])) schedulePanelSave();
       return;
     }
     const state = collectPanelState();
@@ -4474,6 +4474,15 @@ color-scheme:light;
         const el = document.getElementById('panel-size-h-' + hit.index);
         const v = panel.sizeH || '';
         if (el && el.value !== v) el.value = v;
+      }
+      if (f === 'seed') {
+        const el = document.getElementById('panel-seed-' + hit.index);
+        const v = (panel.seed === undefined || panel.seed === null) ? '' : String(panel.seed);
+        if (el && el.value !== v) el.value = v;
+        updatePanelSeedPlaceholders();
+      }
+      if (f === 'sameSeed') {
+        setPanelSameSeed(hit.index, !!panel.sameSeed);
       }
     }
     return true;
@@ -6933,6 +6942,11 @@ color-scheme:light;
     if (ttl) return runPanelCommand('setTitle', panelIdAt(parseInt(ttl[1], 10)), [e.target.value]);
     const psz = id.match(/^panel-size-(?:w|h)-(\d+)$/);
     if (psz) return runPanelCommand('setSize', panelIdAt(parseInt(psz[1], 10)), [readPanelSize(parseInt(psz[1], 10))]);
+    const psd = id.match(/^panel-seed-(\d+)$/);
+    if (psd) {
+      updatePanelSeedPlaceholders();
+      return runPanelCommand('setPanelSeed', panelIdAt(parseInt(psd[1], 10)), [e.target.value]);
+    }
     const dpk = id.match(/^panel-(char|loc)-extra-pick-(\d+)(?:-(\d+))?$/);
     if (dpk) return pickPanelDescription(dpk[1], parseInt(dpk[2], 10), dpk[3] ? parseInt(dpk[3], 10) : 1);
     const dpb = id.match(/^panel-(char|loc)-extra-(\d+)(?:-(\d+))?$/);
@@ -7510,7 +7524,7 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = panelSameSeedOn(i)
       ? 'Panel ' + i + ': every image will use the same seed.'
       : 'Panel ' + i + ': each image gets its own seed again (seed, seed+1, seed+2…).';
-    schedulePanelSave();
+    if (!runPanelCommand('setSameSeed', panelIdAt(i), [panelSameSeedOn(i)])) schedulePanelSave();
   }
 
   let panelSeedValue, imageSeed;
@@ -7525,7 +7539,7 @@ color-scheme:light;
     if (r.hasSeed) return r.seed;
     const chosen = Math.floor(Math.random() * 1000000000);
     if (el) el.value = String(chosen);
-    schedulePanelSave();
+    if (!runPanelCommand('setPanelSeed', panelIdAt(i), [el ? el.value : ''])) schedulePanelSave();
     updatePanelSeedPlaceholders();
     return chosen;
   }
@@ -7546,7 +7560,7 @@ color-scheme:light;
     if (!el) return;
     el.value = '';
     updatePanelSeedPlaceholders();
-    schedulePanelSave();
+    if (!runPanelCommand('setPanelSeed', panelIdAt(i), [''])) schedulePanelSave();
   }
 
   function previousPanelSeedRaw(i) {
@@ -7572,7 +7586,7 @@ color-scheme:light;
     const n = parseInt(prev, 10);
     el.value = (prev !== '' && !isNaN(n) && n !== -1) ? String(n) : '';
     updatePanelSeedPlaceholders();
-    schedulePanelSave();
+    if (!runPanelCommand('setPanelSeed', panelIdAt(i), [el.value])) schedulePanelSave();
   }
 
   function updatePanelHeaderLabels() {
