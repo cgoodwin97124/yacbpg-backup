@@ -430,6 +430,124 @@ const TICKETS = [
         ]
       }
     ]
+  },
+  {
+    id: "T-06",
+    slug: "T-06-structural-commands",
+    kind: "refactor",
+    title: "P3 step 2 — add / duplicate / move / delete panels as named commands",
+    request: "The leaf phase is done (title, images, style, size, seed, same-seed, protect, prompt override all write through named commands). Next is §3.5 step 2: the structural commands. Recon first, questions in this form (author, 2026-09-27). Recon found: add/duplicate/delete/move all rebuild the page positionally from collectPanelState, then clear the panel selection, remap the image session, WIPE all prompt overrides/history on the page, and rebuild the grid. Delete has Delete-Only vs Delete-&-Refill (pull panels up from following pages); duplicate copies settings but no images; move works within a page and across pages (prepend/append/replace); every destructive dialog says it cannot be undone.",
+    questions: [
+      {
+        id: "6a",
+        text: "Release shape: one structural op per release (add, then duplicate, then move, then delete), each fully tested exactly like the leaf releases?",
+        type: "select",
+        options: [
+          "Yes — one op per release, same proof bar as the leaves (recommended)",
+          "All four structural ops in one bigger release",
+          "A different order or grouping — I'll say what in the notes"
+        ]
+      },
+      {
+        id: "6b",
+        text: "Every destructive dialog says the action cannot be undone. Should step 2 introduce an undo stack for structural ops, or keep the dialogs and defer undo?",
+        type: "select",
+        options: [
+          "Keep the dialogs, no undo in step 2 — undo comes as its own later phase (recommended)",
+          "Build undo for structural ops now, as part of step 2",
+          "Something else — see my notes"
+        ]
+      },
+      {
+        id: "6c",
+        text: "Add / duplicate / move currently discard ALL prompt overrides and prompt history on the page (the maps are wiped, even for untouched panels). Preserve exactly, or remap?",
+        type: "select",
+        options: [
+          "Preserve exactly — wipe, like today (recommended: a refactor must not change behaviour)",
+          "Remap instead — keep the overrides of panels that survive, drop only the deleted ones",
+          "Something else — see my notes"
+        ]
+      },
+      {
+        id: "6d",
+        text: "Scope check: batch (multi-select) delete, Delete-&-Refill from following pages, cross-page move, and move-to-new-page — all in scope as commands, with page create/delete staying as-is for now?",
+        type: "select",
+        options: [
+          "Yes — all panel-level structural ops become commands; page create/delete stays as-is (recommended)",
+          "Panel-level ops but single-panel only first — batch comes later",
+          "Include page create/delete too — see my notes"
+        ]
+      },
+      {
+        id: "6e",
+        text: "Duplicate copies settings but no images (images live in the page session, not the saved project, which is why a pure command can't easily carry them). Keep it that way?",
+        type: "select",
+        options: [
+          "Keep it — the copy arrives with no images, as today (recommended)",
+          "Duplicate the images too — I'll accept the extra complexity this needs",
+          "Something else — see my notes"
+        ]
+      }
+    ]
+  },
+  {
+    id: "T-07",
+    slug: "T-07-persistent-prompt-edits",
+    kind: "feature",
+    title: "Manual Prompt edits persist through other field changes",
+    request: "Author, 2026-09-28: manual edits to a panel's Prompt editor (both positive and negative) should persist through changes to other fields. Today typing there saves a joint {pos, neg} override, but ~12 other paths clear it (any char/loc select, base/extra text, action, style, palette, library pick, panel deletes of those fields, Analysis edits). There is no manual revert UI — editing another field is currently the only way back to the auto-composed prompt. Seed, size, image count and title never clear.",
+    questions: [
+      {
+        id: "7a",
+        text: "Once you hand-edit a panel's Prompt, other fields stop touching it: the pos/neg text stays frozen exactly as you typed it until you change it again or explicitly revert. Agreed?",
+        type: "select",
+        options: [
+          "Yes — freeze the manual text exactly; nothing else rewrites it (recommended)",
+          "Freeze, but keep updating one half (I'll say which in the notes)",
+          "Something else — see my notes"
+        ]
+      },
+      {
+        id: "7b",
+        text: "Pos and neg persist together as one override (editing either box snapshots both — this matches how they are stored today). Or should each box persist independently?",
+        type: "select",
+        options: [
+          "Together as one — editing either box keeps both (recommended)",
+          "Independently — pos and neg each persist on their own",
+          "Something else — see my notes"
+        ]
+      },
+      {
+        id: "7c",
+        text: "Since editing other fields will no longer take you back to the auto-composed prompt, the Prompt editor needs an explicit way back (e.g. a Revert-to-auto chip beside the Prompt button). Add it?",
+        type: "select",
+        options: [
+          "Yes — add a Revert-to-auto chip in the Prompt editor (recommended)",
+          "No — I'll clear it from the project JSON editor when I want auto back",
+          "Something else — see my notes"
+        ]
+      },
+      {
+        id: "7d",
+        text: "Which fields stop clearing? The proposal: ALL content fields stop (characters, location, action, descriptions, style, palette, library picks, Analysis edits). Seed/size/image-count/title already never clear. Any field that should still reset the Prompt?",
+        type: "select",
+        options: [
+          "None — no field outside the Prompt editor clears a manual edit (recommended)",
+          "Style and palette should still reset it (they change the keywords)",
+          "I'll list exceptions in the notes"
+        ]
+      },
+      {
+        id: "7e",
+        text: "Ship shape: one release (behaviour change + revert chip + tests proving an edit survives every other field), or fold it into the next structural-ops release?",
+        type: "select",
+        options: [
+          "Its own release first, then structural ops continue (recommended)",
+          "Fold it into the next structural release (addPanel + undo)",
+          "Something else — see my notes"
+        ]
+      }
+    ]
   }
 ];
 
