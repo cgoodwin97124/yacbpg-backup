@@ -2,20 +2,18 @@
 ticket: T-02
 title: "Document that the “Cow in field” project is a throwaway"
 kind: doc
-status: done
-released: 2026.09.25.1
+status: answered
 answers: 1/1
 form: yacbpg-tickets-2026-09-25
-updated: 2026-09-25T01:30:17.085Z
-generator: f0vstb2fbe
+updated: 2026-09-28T02:22:52.964Z
 ---
 
 # T-02 — Document that the “Cow in field” project is a throwaway
 
 - **Kind:** doc
-- **Status:** done — shipped in **2026.09.25.1** (2026-09-25)
+- **Status:** answered (answered — awaiting the implementation go-ahead)
 - **Answers:** 1 of 1
-- **Answered:** 2026-09-25T01:30:17.085Z
+- **Answered:** 2026-09-28T02:22:52.964Z
 
 ## Original request (verbatim)
 
@@ -25,11 +23,8 @@ generator: f0vstb2fbe
 
 ### 2a. The note is documentation only — no code, nothing shipped. When should it be added?
 
-- **Answer:** Later — together with the go-ahead for the other requests
+- **Answer:** Now — add it to the repo docs immediately (recommended)
 
 ## Implementation
 
-Done 2026-09-25 — docs only, no code and no changelog entry.
-
-- The note now reads: anything loaded under the name "Cow in field" — including a project a session just built there — can be loaded, overwritten or wiped without warning by anyone, including a future AI session; nothing important should ever be parked in it, and it must never be treated as a source of truth for the author's real work.
-- It was added in three places: `AI-NOTES.md` §1 TEST DATA, the STANDING NOTES at the top of `PENDING.md` (beside the test protocol), and the `ISSUES.md` 2026-09-24 post-mortem.
+_Pending — filled in when the work is done (branch / PR, released version, changelog entry)._
