@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 4;
+export const COMMANDS_VERSION = 5;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -61,4 +61,18 @@ export function setSize(project, id, size) {
   return { page: hit.page, index: hit.index, fields: ["sizeSel", "sizeW", "sizeH"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize };
+export function setPanelSeed(project, id, value) {
+  const hit = findPanelById(project, id);
+  if (!hit) return null;
+  hit.panel.seed = text(value);
+  return { page: hit.page, index: hit.index, fields: ["seed"] };
+}
+
+export function setSameSeed(project, id, value) {
+  const hit = findPanelById(project, id);
+  if (!hit) return null;
+  hit.panel.sameSeed = !!value;
+  return { page: hit.page, index: hit.index, fields: ["sameSeed"] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed };
