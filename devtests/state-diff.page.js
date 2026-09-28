@@ -389,6 +389,43 @@ async function run() {
     ], [true, "3", true, "3", true, true, "block,block,block,none", "1,2,3"], "immediate,saved,match,roundTrip,neighbour,overrideKept,slots");
   });
 
+  await t("SD19 a Style change is written by the named command", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setStyle !== "function") return no("the commands module did not load");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const rawBefore = localStorage.getItem("comicGen.panelState");
+    const sel = $("panel-style-1");
+    if (!sel) return no("no #panel-style-1 to change");
+    const otherBefore = $("panel-style-2") ? $("panel-style-2").value : null;
+    if (!window.__panelOverrideSet) return no("no __panelOverrideSet seam");
+    const posEl = $("prompt-pos-1");
+    if (!posEl) return no("no #prompt-pos-1 to override with");
+    posEl.value = "SD19 pinned override";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    const overBefore = window.__panelOverrideSet(1);
+    const want = ["noir", "manga", "watercolor"].find((v) => v !== sel.value) || "noir";
+    sel.value = want;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    const rawAfter = localStorage.getItem("comicGen.panelState");
+    const saved = JSON.parse(rawAfter || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const changed = saved.pages[1][1].style;
+    const neighbour = saved.pages[1][2] ? saved.pages[1][2].style : "(none)";
+    const overAfter = window.__panelOverrideSet(1);
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    const roundTripped = $("panel-style-1") ? $("panel-style-1").value : "(missing card)";
+    return eqArr([
+      rawAfter !== rawBefore, changed, JSON.stringify(saved) === JSON.stringify(c),
+      roundTripped, neighbour === otherBefore, overBefore === true && overAfter === false,
+      !saved.pages[1][1].promptOverride, pages,
+    ], [true, want, true, want, true, true, true, "1,2,3"], "immediate,saved,match,roundTrip,neighbour,overrideCleared,savedOverrideNull,pages");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
