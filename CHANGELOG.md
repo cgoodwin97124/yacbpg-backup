@@ -1,3 +1,8 @@
+## 2026.09.27.8 — 2026-09-27 — 📝 Panel Description is now Panel Specific Description
+
+- **The plain version:** the box under a character or location — and its 💬 library bucket, picker, dialogs, hints and manual — now says **Panel Specific Description**, the name you chose for these per-panel phrases. Nothing else changes: your saved descriptions keep working, and any project that still carries the old label upgrades it quietly the next time it loads or saves.
+- **The numbers:** core **42/0**, smoke **109 pass / 0 fail / 4 manual**, state-diff **25/25**, fixtures **18/0**; **0** perchance errors; your saved project restored **byte-for-byte** after every run.
+
 ## 2026.09.27.7 — 2026-09-27 — 🧭 P3 step 2 begins: ＋ Add Panel is a named command, with undo and prompt history that rides along
 
 - **The plain version:** nothing you can see changes except two small things: every structural change (add, duplicate, move, delete, page add/delete) can now be undone with the ↩ Undo button in the menu (five levels deep), and a hand-edited panel prompt stays exactly as you typed it no matter what else you change — only the art Style, the colour Palette (or the global preset) still reset it, and the ⟳ Revert-to-automatic chip inside the Prompt editor takes you back at any time. ＋ Add Panel itself behaves exactly as before, except your manual prompt edits and prompt histories now move along with their panel instead of being wiped.
