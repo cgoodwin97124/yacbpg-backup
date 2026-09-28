@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 9;
+export const COMMANDS_VERSION = 10;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -179,4 +179,29 @@ export function duplicatePanel(project, pageNum, total, index, makeId) {
   if (newPage[copyPos]) newPage[copyPos].id = copyId;
   project.pages[pageNum] = newPage;
   return { page: Number(pageNum), index: copyPos, count: 1, newTotal: newTotal, fields: [] };
+}
+
+export function movePanel(project, pageNum, total, fromIndex, toIndex) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  const from = Number(fromIndex);
+  const to = Number(toIndex);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  if (!Number.isInteger(from) || from < 1 || from > t) return null;
+  if (!Number.isInteger(to) || to < 1 || to > t) return null;
+  if (from === to) return null;
+  const order = [];
+  for (let p = 1; p <= t; p++) order.push(p);
+  order.splice(from - 1, 1);
+  order.splice(to - 1, 0, from);
+  const newPage = {};
+  for (const k of ["name", "summary", "panelCountSel", "panelCountCustom", "seed"]) newPage[k] = page[k];
+  for (let p = 1; p <= 24; p++) {
+    const src = p <= t ? order[p - 1] : p;
+    if (page[src] !== undefined) newPage[p] = page[src];
+  }
+  project.pages[pageNum] = newPage;
+  return { page: Number(pageNum), index: to, fields: [] };
 }
