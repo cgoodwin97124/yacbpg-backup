@@ -80,10 +80,13 @@
                    one field and returns { page, index, fields } so the caller knows what to
                    re-render. index.html owns the dispatch (runPanelCommand) and the DOM
                    adapter (renderCommittedFields), and the grid's delegated input handler
-                   routes its fields there. First two commands: setTitle (.20) and setImgCount
-                   (.27.1, via onPanelImgCountChange with the old slots-plus-debounce path as
-                   the fallback when the module or id is missing). The remaining leaf
-                   setters follow one per release, then the structural commands. Never edit
+                   routes its fields there. Leaf commands (one per release, .20–.27.6):
+                   setTitle, setImgCount, setStyle, setSize, setPanelSeed, setSameSeed,
+                   setProtect, setPromptOverride. Step 2 (.27.7+): the structural commands,
+                   one op per release starting with addPanel (non-full-page path dispatches
+                   the command with the old positional path as the fallback; overrides and
+                   prompt history shift with their panel; a 5-deep snapshot stack behind
+                   ↩ Undo covers every structural op). Never edit
                    only one side.
 
   READ (public repo, no token needed):
@@ -778,6 +781,7 @@ color-scheme:light;
         <button class="menu-btn menu-action" id="menuGenerateBtn" onclick="generateComicPage()" title="Generate every panel on this page">⚡ Generate All</button>
         <button class="menu-btn menu-action" id="globalPauseBtn" onclick="pauseGenerations()" title="Pause the run — press ⚡ Generate All to continue where you left off" disabled>⏸ Pause</button>
         <button class="menu-btn menu-stop" id="globalStopBtn" onclick="haltGenerations()" title="Cancel the running ⚡ Generate All run" disabled>■ Stop</button>
+        <button class="menu-btn" id="globalUndoBtn" onclick="undoStructuralOp()" title="Nothing to undo yet — structural changes (add, duplicate, move, delete) can be undone here" disabled>↩ Undo</button>
       </div>
 
       <div class="menu-group" id="menuGroup-file" hidden>
@@ -1330,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.27.6 — 2026-09-27 — 🧭 The seventh named command: manual prompt overrides are saved by the store
-- Typing a manual prompt override now writes through the store's named command instead of the debounced autosave; same bytes saved.
+## 2026.09.27.7 — 2026-09-27 — 🧭 P3 step 2 begins: ＋ Add Panel is a named command, with undo and prompt history that rides along
+- Add Panel now writes through the store's named command; overrides and prompt history move with their panel, and a 5-deep ↩ Undo reverses structural ops.
 </script>
 
 
@@ -2057,7 +2061,6 @@ color-scheme:light;
       if (le && panelDesc) le.value = panelDesc.trim();
     }
     updatePanelSummary(i);
-    clearPanelPromptOverride(i);
     refreshAllPanelLineDescs();
     schedulePanelSave();
   }
@@ -3033,7 +3036,6 @@ color-scheme:light;
         : document.getElementById('panel-act-' + i);
       if (el) el.value = val;
       updatePanelSummary(i);
-      clearPanelPromptOverride(i);
       schedulePanelSave();
       return;
     }
@@ -3073,7 +3075,6 @@ color-scheme:light;
         analysisSyncActionField(i, el.value);
       }
       updatePanelSummary(i);
-      clearPanelPromptOverride(i);
       schedulePanelSave();
       return true;
     }
@@ -3332,7 +3333,6 @@ color-scheme:light;
       const el = document.getElementById('panel-act-' + i);
       if (el) el.value = val;
       updatePanelSummary(i);
-      clearPanelPromptOverride(i);
       schedulePanelSave();
     } else {
       const state = collectPanelState();
@@ -3920,7 +3920,6 @@ color-scheme:light;
     box.value = String(entry.desc || '');
     refreshPanelDescBadge(kind, i, s);
     updatePanelSummary(i);
-    clearPanelPromptOverride(i);
     schedulePanelSave();
     return true;
   }
@@ -4720,6 +4719,7 @@ color-scheme:light;
 
   function addPage() {
     stopAllGenerations();
+    pushStructUndo('new page');
     const state = collectPanelState();
     const keys = Object.keys(state.pages).map(Number);
     let n = 1;
@@ -4752,6 +4752,7 @@ color-scheme:light;
     const n = currentPage;
     const label = pageLabel(pages[n], n);
     if (!noConfirm && !confirm('Delete ' + label + '? All of its panel settings (characters, locations, actions, titles, seeds, prompts) will be lost. This cannot be undone.')) return;
+    pushStructUndo('delete page');
     stopAllGenerations();
     const state = collectPanelState();
     delete state.pages[n];
@@ -5021,7 +5022,7 @@ color-scheme:light;
         if (szw) szw.value = p.sizeW || '';
         if (szh) szh.value = p.sizeH || '';
       }
-      if (p.promptOverride) panelPromptOverrides[i] = p.promptOverride;
+      if (!isBlankPromptOverride(p.promptOverride)) panelPromptOverrides[i] = p.promptOverride;
       if (Array.isArray(p.promptHistory) && p.promptHistory.length) panelPromptHistory[i] = p.promptHistory;
       updatePanelImgSlots(i);
     }
@@ -5132,7 +5133,6 @@ color-scheme:light;
     } else {
       return;
     }
-    clearPanelPromptOverride(i);
     updatePanelSummary(i);
     schedulePanelSave();
   }
@@ -5145,7 +5145,6 @@ color-scheme:light;
     if (base) base.value = '';
     if (extra) extra.value = '';
     refreshPanelLineDesc('char', i, s);
-    clearPanelPromptOverride(i);
     updatePanelSummary(i);
     schedulePanelSave();
   }
@@ -5158,7 +5157,6 @@ color-scheme:light;
     if (lb) lb.value = '';
     if (le) le.value = '';
     refreshPanelLineDesc('loc', i);
-    clearPanelPromptOverride(i);
     updatePanelSummary(i);
     schedulePanelSave();
   }
@@ -5166,7 +5164,6 @@ color-scheme:light;
   function deletePanelAct(i) {
     const act = document.getElementById('panel-act-' + i);
     if (act) act.value = '';
-    clearPanelPromptOverride(i);
     updatePanelSummary(i);
     schedulePanelSave();
   }
@@ -5264,7 +5261,10 @@ color-scheme:light;
                 <textarea id="prompt-pos-${i}" rows="3" placeholder="Full positive prompt for this panel (style keywords + characters + location + action)"></textarea>
                 <label>Panel Prompt — Negative:</label>
                 <textarea id="prompt-neg-${i}" rows="2" placeholder="Negative keywords for this panel"></textarea>
-                <p class="lib-hint" style="margin-top:8px;">Editing here overrides this panel's prompt for the generate/reroll buttons. Changing the panel's characters, location, action, or the global keywords resets this back to the values drawn from the presets and the panel interface.</p>
+                <div class="chip-row" style="margin-top:8px;">
+                  <button class="btn-view" id="prompt-revert-${i}" onclick="revertPanelPrompt(${i})" title="Forget this panel's hand-edited prompt and go back to the automatic prompt built from its settings" hidden>⟳ Revert to automatic prompt</button>
+                </div>
+                <p class="lib-hint" style="margin-top:8px;">Editing here overrides this panel's prompt for the generate/reroll buttons, and the override stays frozen until you edit it here again or press ⟳ Revert. Only this panel's Style or Palette — or the global keywords, preset or NSFW flag, which change the same keywords — resets it back to automatic. Clearing the positive box returns it to automatic too.</p>
               </div>
               <div class="panel-acc-stack">
                 <div class="panel-acc" data-collapsed="1">
@@ -5318,6 +5318,8 @@ color-scheme:light;
     updateCopyPrevChipStates();
     updateSelectionUI();
     updatePasteUI();
+    updatePromptRevertChips();
+    updateStructUndoUI();
     if (!gridHasListeners) {
       gridHasListeners = true;
       grid.addEventListener('input', e => { if (!handleGridInput(e)) schedulePanelSave(); });
@@ -5522,6 +5524,7 @@ color-scheme:light;
 
     if (total <= 1 && !confirm('Panel ' + i + ' is the only panel on ' + pageLabel(pages[src], src) + '. Moving it there will DELETE that page. Continue?')) return;
 
+    pushStructUndo('move panel');
     const insertAt = (mode === 'append') ? (tCount + 1) : 1;
     const finalCount = (mode === 'replace') ? tCount : (tCount + 1);
 
@@ -5590,6 +5593,8 @@ color-scheme:light;
   }
 
   function movePanelToNewPage(i) {
+    pushStructUndo('move panel');
+    structUndoHold = true;
     const state = collectPanelState();
     const keys = Object.keys(state.pages).map(Number);
     let n = 1;
@@ -5600,11 +5605,13 @@ color-scheme:light;
     state.pages[n] = page;
     savePanelStateShape(state);
     movePanelToPage(i, n, 'replace');
+    structUndoHold = false;
   }
 
   function resequencePanel(from, to) {
     const total = getPanelCount();
     if (!(from >= 1 && from <= total && to >= 1 && to <= total) || from === to) return;
+    pushStructUndo('move panel');
     clearPanelSelection();
     const state = collectPanelState();
     const page = state.pages[currentPage];
@@ -5641,6 +5648,80 @@ color-scheme:light;
     for (let p = 1; p <= total; p++) {
       const oldPos = order[p - 1];
       if (panelImages[oldPos]) newImages[p] = panelImages[oldPos];
+    }
+    for (const k in panelImages) delete panelImages[k];
+    Object.assign(panelImages, newImages);
+  }
+
+  const STRUCT_UNDO_MAX = 5;
+  let structUndoStack = [];
+  let structUndoHold = false;
+
+  function pushStructUndo(label) {
+    if (structUndoHold) return;
+    try {
+      const sessions = {};
+      for (const k in pageSession) sessions[k] = { images: pageSession[k] ? pageSession[k].images : {} };
+      sessions[currentPage] = { images: panelImages };
+      structUndoStack.push({ label: String(label || 'change'), saved: JSON.stringify(collectPanelState()), sessions: JSON.parse(JSON.stringify(sessions)), page: currentPage });
+      while (structUndoStack.length > STRUCT_UNDO_MAX) structUndoStack.shift();
+    } catch (e) {}
+    updateStructUndoUI();
+  }
+
+  function undoStructuralOp() {
+    const f = structUndoStack.pop();
+    updateStructUndoUI();
+    if (!f) return;
+    const statusEl = document.getElementById('statusEl');
+    stopAllGenerations();
+    try { savePanelStateShape(JSON.parse(f.saved)); } catch (e) { if (statusEl) statusEl.textContent = 'Undo failed — the snapshot would not parse.'; return; }
+    for (const k in pageSession) delete pageSession[k];
+    for (const k in (f.sessions || {})) pageSession[k] = { images: (f.sessions[k] || {}).images || {} };
+    currentPage = f.page;
+    loadCurrentPage();
+    populatePageSel();
+    updateDeletePageBtn();
+    updateStructUndoUI();
+    if (statusEl) statusEl.textContent = 'Undid ' + f.label + '.';
+  }
+
+  function updateStructUndoUI() {
+    const b = document.getElementById('globalUndoBtn');
+    if (!b) return;
+    const top = structUndoStack[structUndoStack.length - 1];
+    b.disabled = !top;
+    b.textContent = top ? ('\u21A9 Undo ' + top.label) : '\u21A9 Undo';
+    b.title = top ? ('Undo: ' + top.label) : 'Nothing to undo yet — structural changes (add, duplicate, move, delete) can be undone here';
+  }
+
+  function shiftPanelMapsForInsert(afterIndex, count) {
+    const shift = (map) => {
+      const keys = Object.keys(map).map(Number).filter((n) => Number.isInteger(n) && n >= 1).sort((a, b) => b - a);
+      for (const k of keys) {
+        if (k > afterIndex) { map[k + count] = map[k]; delete map[k]; }
+      }
+      for (let k = afterIndex + 1; k <= afterIndex + count; k++) delete map[k];
+    };
+    shift(panelPromptOverrides);
+    shift(panelPromptHistory);
+    promptHistoryRuns = {};
+  }
+
+  function remapPanelImagesById(project, beforeIds) {
+    for (const [pending, key] of inFlightGen) {
+      if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
+      panelBusy[key.i] = false;
+    }
+    inFlightGen.clear();
+    const page = (project && project.pages) ? project.pages[currentPage] : null;
+    if (!page) return;
+    const oldById = {};
+    for (const k in (beforeIds || {})) if (panelImages[k]) oldById[beforeIds[k]] = panelImages[k];
+    const newImages = {};
+    for (let p = 1; p <= 24; p++) {
+      const id = page[p] && page[p].id;
+      if (id && oldById[id]) newImages[p] = oldById[id];
     }
     for (const k in panelImages) delete panelImages[k];
     Object.assign(panelImages, newImages);
@@ -6184,6 +6265,7 @@ color-scheme:light;
       if (statusEl) statusEl.textContent = 'Duplication cancelled.';
       return;
     }
+    pushStructUndo('duplicate panels');
     const entries = [];
     for (let p = 1; p <= total; p++) {
       entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
@@ -6214,6 +6296,7 @@ color-scheme:light;
       if (statusEl) statusEl.textContent = 'Adding panels cancelled.';
       return;
     }
+    pushStructUndo(sel.length === 1 ? 'add panel' : 'add panels');
     const entries = [];
     for (let p = 1; p <= total; p++) {
       entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
@@ -6229,6 +6312,7 @@ color-scheme:light;
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(i => i <= total);
     if (!sel.length) return;
+    pushStructUndo(sel.length === 1 ? 'move panel' : 'move panels');
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const imgs = pageImagesOf(currentPage);
@@ -6269,6 +6353,7 @@ color-scheme:light;
     const remaining = [];
     for (let p = 1; p <= total; p++) if (!selSet.has(p)) remaining.push({ panel: JSON.parse(JSON.stringify(pages[src][p] || {})), img: srcImgs[p] ? srcImgs[p] : null });
     if (!remaining.length && !confirm('That is every panel on ' + pageLabel(pages[src], src) + ' — the page will be deleted. Continue?')) return;
+    pushStructUndo(sel.length === 1 ? 'move panel' : 'move panels');
     const tEntries = [];
     if (!replaceTarget) for (let p = 1; p <= tCount; p++) tEntries.push({ panel: JSON.parse(JSON.stringify(pages[targetPage][p] || {})), img: tImgs[p] ? tImgs[p] : null });
     const prepend = targetPage > src;
@@ -6296,6 +6381,8 @@ color-scheme:light;
 
   function batchMoveToNewPage() {
     if (!panelSelection.size) return;
+    pushStructUndo(panelSelection.size === 1 ? 'move panel' : 'move panels');
+    structUndoHold = true;
     const state = collectPanelState();
     const keys = Object.keys(state.pages).map(Number);
     let n = 1;
@@ -6306,6 +6393,7 @@ color-scheme:light;
     state.pages[n] = page;
     savePanelStateShape(state);
     batchMoveToPage(n, true);
+    structUndoHold = false;
   }
 
   function populateGroupReorderSelect(sel) {
@@ -6631,6 +6719,7 @@ color-scheme:light;
       kept.push({ panel: JSON.parse(JSON.stringify(pages[src][p] || {})), img: srcImgs[p] ? srcImgs[p] : null });
     }
     if (!kept.length) return;
+    pushStructUndo(sel.length === 1 ? 'delete panel' : 'delete panels');
     const target = total;
     const plan = [];
     const emptied = [];
@@ -6707,6 +6796,7 @@ color-scheme:light;
         if (statusEl) statusEl.textContent = 'Duplication cancelled — ' + label + ' already has 24 panels (the per-page max).';
         return;
       }
+      pushStructUndo('duplicate panel');
       const copy = JSON.parse(JSON.stringify(page[i]));
       copy.id = newPanelId();
       clearPanelSelection();
@@ -6715,6 +6805,7 @@ color-scheme:light;
       return;
     }
     if (!(i >= 1 && i <= total)) return;
+    pushStructUndo('duplicate panel');
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const order = [];
@@ -6761,10 +6852,32 @@ color-scheme:light;
         if (statusEl) statusEl.textContent = 'Adding cancelled — ' + label + ' already has 24 panels (the per-page max).';
         return;
       }
+      pushStructUndo('add panel');
       clearPanelSelection();
       const res = reflowInsertOnFullPage(i, {}, null);
       if (statusEl) statusEl.textContent = 'Empty Panel ' + res.insertPos + ' added after Panel ' + i + ' on ' + label + '. ' + res.moves + ' panel' + (res.moves === 1 ? '' : 's') + ' reflowed' + (res.createdPage ? ' and Page ' + res.createdPage + ' created.' : '.');
       return;
+    }
+    pushStructUndo('add panel');
+    const cmd = panelCommands ? panelCommands.addPanel : null;
+    if (typeof cmd === 'function' && typeof newPanelId === 'function') {
+      const beforeIds = {};
+      for (let p = 1; p <= total; p++) beforeIds[p] = panelIdAt(p);
+      const project = storeJsonNow();
+      const hit = project ? cmd(project, currentPage, total, i, 1, newPanelId) : null;
+      if (hit) {
+        savePanelStateShape(project);
+        clearPanelSelection();
+        remapPanelImagesById(project, beforeIds);
+        shiftPanelMapsForInsert(i, 1);
+        for (let j = 1; j <= 24; j++) {
+          const card = document.getElementById('panel-card-' + j);
+          if (card) card.classList.add('cleared');
+        }
+        buildPanelGrid();
+        if (statusEl) statusEl.textContent = 'Empty Panel ' + hit.index + ' added after Panel ' + i + ' — later panels moved down and were renumbered.';
+        return;
+      }
     }
     const state = collectPanelState();
     const page = state.pages[currentPage];
@@ -6820,6 +6933,7 @@ color-scheme:light;
       return;
     }
     if (!confirm('Delete Panel ' + i + '? Its settings (characters, location, action, title, seed, prompt) and its generated images will be lost, and later panels will move up and be renumbered. This cannot be undone.')) return;
+    pushStructUndo('delete panel');
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const order = [];
@@ -6915,7 +7029,7 @@ color-scheme:light;
       locDesc: locBaseText || resolveDesc(locKey, locMap),
       locExtra: locExtra,
       action: action,
-      override: panelPromptOverrides[i] || null
+      override: isBlankPromptOverride(panelPromptOverrides[i]) ? null : panelPromptOverrides[i]
     };
   }
 
@@ -6975,7 +7089,13 @@ color-scheme:light;
       const posEl = document.getElementById('prompt-pos-' + i);
       const negEl = document.getElementById('prompt-neg-' + i);
       const ov = { pos: posEl ? posEl.value : "", neg: negEl ? negEl.value : "" };
+      if (!ov.pos.trim()) {
+        delete panelPromptOverrides[i];
+        updatePromptRevertChips();
+        return runPanelCommand('setPromptOverride', panelIdAt(i), [null]);
+      }
       panelPromptOverrides[i] = ov;
+      updatePromptRevertChips();
       return runPanelCommand('setPromptOverride', panelIdAt(i), [ov]);
     }
     const cs = id.match(/^panel-char-select-(\d+)-(\d+)$/);
@@ -6999,12 +7119,10 @@ color-scheme:light;
     const cb = id.match(/^panel-(char|loc)-base-(\d+)(?:-(\d+))?$/);
     if (cb) {
       refreshPanelLineDesc(cb[1], parseInt(cb[2], 10), cb[3] ? parseInt(cb[3], 10) : null);
-      clearPanelPromptOverride(parseInt(cb[2], 10));
       updatePanelSummary(parseInt(cb[2], 10));
       return;
     }
     const cm = id.match(/^panel-(?:char-select|char-base|char-extra|loc-select|loc-base|loc-extra|act|extra-type|extra-sel|extra-desc)-(\d+)/);
-    if (cm) clearPanelPromptOverride(parseInt(cm[1], 10));
     if (cm) updatePanelSummary(parseInt(cm[1], 10));
     if (/^panel-seed-\d+$/.test(id)) updatePanelSeedPlaceholders();
   }
@@ -7030,6 +7148,11 @@ color-scheme:light;
       editor.hidden = true;
       if (btn) btn.classList.remove('active');
     }
+    updatePromptRevertChips();
+  }
+
+  function isBlankPromptOverride(v) {
+    return !v || !((v.pos || '').trim());
   }
 
   function clearPanelPromptOverride(i) {
@@ -7037,6 +7160,25 @@ color-scheme:light;
     delete panelPromptOverrides[i];
     const editor = document.getElementById('prompt-editor-' + i);
     if (editor && !editor.hidden) populatePromptEditor(i);
+    updatePromptRevertChips();
+  }
+
+  function revertPanelPrompt(i) {
+    const statusEl = document.getElementById('statusEl');
+    delete panelPromptOverrides[i];
+    if (!runPanelCommand('setPromptOverride', panelIdAt(i), [null])) {
+      schedulePanelSave();
+      populatePromptEditor(i);
+    }
+    updatePromptRevertChips();
+    if (statusEl) statusEl.textContent = 'Panel ' + i + ' prompt reverted to automatic.';
+  }
+
+  function updatePromptRevertChips() {
+    for (let j = 1; j <= 24; j++) {
+      const b = document.getElementById('prompt-revert-' + j);
+      if (b) b.hidden = !panelPromptOverrides[j];
+    }
   }
 
   function clearAllPromptOverrides() {
@@ -10061,6 +10203,8 @@ color-scheme:light;
   window.duplicatePanel = duplicatePanel;
   window.addPanel = addPanel;
   window.deletePanel = deletePanel;
+  window.undoStructuralOp = undoStructuralOp;
+  window.revertPanelPrompt = revertPanelPrompt;
   window.onPanelSelectClick = onPanelSelectClick;
   window.selectAllPanels = selectAllPanels;
   window.clearPanelSelection = clearPanelSelection;
