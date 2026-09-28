@@ -1330,8 +1330,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.27.4 — 2026-09-27 — 🧭 The fifth named commands: the Seed box and the Same-Seed checkbox are saved by the store
-- Typing a panel's seed or flipping Same-Seed now writes through the store's named commands instead of the debounced autosave; same bytes saved.
+## 2026.09.27.5 — 2026-09-27 — 🧭 The sixth named command: a panel image's 🔒 Protect switch is saved by the store
+- Flipping an image's Protect switch now writes through the store's named command instead of the debounced autosave; same bytes saved.
 </script>
 
 
@@ -4483,6 +4483,10 @@ color-scheme:light;
       }
       if (f === 'sameSeed') {
         setPanelSameSeed(hit.index, !!panel.sameSeed);
+      }
+      if (f === 'protectSlots') {
+        const arr = Array.isArray(panel.protectSlots) ? panel.protectSlots : [];
+        for (let k = 1; k <= 4; k++) setSlotProtected(hit.index, k, !!arr[k - 1]);
       }
     }
     return true;
@@ -7794,8 +7798,9 @@ color-scheme:light;
   }
 
   function toggleSlotProtect(i, k) {
-    setSlotProtected(i, k, !isSlotProtected(i, k));
-    schedulePanelSave();
+    const on = !isSlotProtected(i, k);
+    setSlotProtected(i, k, on);
+    if (!runPanelCommand('setProtect', panelIdAt(i), [k, on])) schedulePanelSave();
   }
 
   function updatePanelAllButtons(i) {
