@@ -426,6 +426,55 @@ async function run() {
     ], [true, want, true, want, true, true, true, "1,2,3"], "immediate,saved,match,roundTrip,neighbour,overrideCleared,savedOverrideNull,pages");
   });
 
+  await t("SD20 a Size change is written by the named command", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.setSize !== "function") return no("the commands module did not load");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const rawBefore = localStorage.getItem("comicGen.panelState");
+    const sel = $("panel-size-1");
+    if (!sel) return no("no #panel-size-1 to change");
+    const wEl = $("panel-size-w-1"), hEl = $("panel-size-h-1");
+    if (!wEl || !hEl) return no("no custom w/h inputs");
+    const otherBefore = $("panel-size-2") ? $("panel-size-2").value : null;
+    if (!window.__panelOverrideSet) return no("no __panelOverrideSet seam");
+    const posEl = $("prompt-pos-1");
+    if (!posEl) return no("no #prompt-pos-1 to override with");
+    posEl.value = "SD20 pinned override";
+    posEl.dispatchEvent(new Event("input", { bubbles: true }));
+    const overBefore = window.__panelOverrideSet(1);
+    const preset = sel.value !== "768x768" ? "768x768" : "512x512";
+    sel.value = preset;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    if (saved.pages[1][1].sizeSel !== preset) return no("preset change not saved, got " + saved.pages[1][1].sizeSel);
+    sel.value = "custom";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    wEl.value = "800";
+    wEl.dispatchEvent(new Event("input", { bubbles: true }));
+    hEl.value = "600";
+    hEl.dispatchEvent(new Event("input", { bubbles: true }));
+    const rawAfter = localStorage.getItem("comicGen.panelState");
+    saved = JSON.parse(rawAfter || "{}");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("the saved bytes differ from the store at " + d.path + " — saved=" + String(d.a).slice(0, 60) + " | store=" + String(d.b).slice(0, 60));
+    const c = window.collectPanelState();
+    const overAfter = window.__panelOverrideSet(1);
+    const customShown = $("panel-size-custom-1") ? !$("panel-size-custom-1").hidden : "?";
+    const neighbour = saved.pages[1][2] ? saved.pages[1][2].sizeSel : "(none)";
+    const pages = pageKeys().join(",");
+    await switchTo(2);
+    await switchTo(1);
+    const rSel = $("panel-size-1") ? $("panel-size-1").value : "(missing)";
+    const rW = $("panel-size-w-1") ? $("panel-size-w-1").value : "(missing)";
+    const rH = $("panel-size-h-1") ? $("panel-size-h-1").value : "(missing)";
+    return eqArr([
+      rawAfter !== rawBefore, saved.pages[1][1].sizeSel, saved.pages[1][1].sizeW, saved.pages[1][1].sizeH,
+      JSON.stringify(saved) === JSON.stringify(c), rSel === "custom" && rW === "800" && rH === "600",
+      neighbour === otherBefore, overBefore === true && overAfter === true, customShown, pages,
+    ], [true, "custom", "800", "600", true, true, true, true, true, "1,2,3"], "immediate,compound,saved,roundTrip,neighbour,overrideKept,customShown,pages");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
