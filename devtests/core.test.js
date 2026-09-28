@@ -694,6 +694,28 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "oneLeaf,noop");
   });
 
+  await t("commands: setProtect writes one slot and reports where", () => {
+    const proj = mkProject();
+    proj.pages[1][1].protectSlots = [false, false, false, false];
+    proj.pages[1][2].protectSlots = [false, false, false, true];
+    proj.pages[2][1].protect = true;
+    const wasBefore = JSON.parse(JSON.stringify(proj));
+    const hit = api.setProtect(proj, "p-2", 1, true);
+    const changed = pathsDiffering(wasBefore, proj);
+    const miss = [api.setProtect(proj, "p-9", 1, true), api.setProtect(proj, "", 1, true),
+      api.setProtect(proj, "p-2", 0, true), api.setProtect(proj, "p-2", 5, true), api.setProtect(proj, "p-2", "x", true)];
+    const legacy = api.setProtect(proj, "p-3", 2, false);
+    return eqArr([
+      JSON.stringify(hit), proj.pages[1][2].protectSlots.join(","),
+      changed.join(","), miss.filter((m) => m === null).length,
+      proj.pages[2][1].protectSlots.join(","), JSON.stringify(legacy && legacy.fields),
+    ], [
+      JSON.stringify({ page: 1, index: 2, fields: ["protectSlots"] }), "true,false,false,true",
+      "$.pages.1.2.protectSlots.0 <false -> true>", 5,
+      "true,false,true,true", "[\"protectSlots\"]",
+    ], "oneSlot,noop,legacy");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -705,7 +727,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 5, "setImgCount,setPanelSeed,setSameSeed,setSize,setStyle,setTitle",
+      true, 6, "setImgCount,setPanelSeed,setProtect,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
