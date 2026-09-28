@@ -42,6 +42,11 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-27 — REFACTOR: P3 step 1g — the seventh named command (`setPromptOverride`)
+
+- **Status:** ✅ **DONE 2026.09.27.6** — implemented, tested and documented; the push follows the author's Save. **What shipped:** `setPromptOverride` in `src/state/commands.js` (`{pos, neg}` or `null`, junk refused; registry of eight, `COMMANDS_VERSION` 7), the minimal render branch (never repaints mid-keystroke), the prompt-editor input branch routed through `runPanelCommand`. Clearers untouched. **No questions asked:** the typing writer is the only direct writer. **Verified:** state-diff **23/23**, core **41/0**, guards **21/0**, smoke **106/0/4**, gen **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, author's map byte-identical after every runner (`aaff7583`).
+- **Plan:** mirror the `setProtect` release shape — pure `setPromptOverride(project, id, value)` in `src/state/commands.js` + `COMMANDS` registry (`COMMANDS_VERSION` 6→7), route the prompt-editor writers through `runPanelCommand` with the old path as fallback, extend `renderCommittedFields`, then checks: SD-test + core DOM-free test + diff-core guards. Release `2026.09.27.6`, one release per step.
+
 ### 2026-09-27 — REFACTOR: P3 step 1f — the sixth named commands (`setProtect` / `setRepresentative`)
 
 - **Status:** ✅ **DONE 2026.09.27.5** — implemented, tested and documented; pushed 2026-09-27: app 15 files via the button (head `2ef64592`) + docs/harness 6 files via Contents API (head `7ea26163`); drift **0 drift / 67 checked** (`scratch/gh-check/drift-019.json`, 24 not-in-workspace all known repo-only files). **What shipped:** `setProtect` in `src/state/commands.js` (one slot of the `protectSlots` array; registry of seven, `COMMANDS_VERSION` 6), the array branch in `renderCommittedFields`, `toggleSlotProtect` routed through `runPanelCommand` with the old path as fallback. **`setRepresentative` struck** — asked and approved: no persisted leaf, promoting it would be a behavior change. **Verified:** state-diff **22/22**, core **40/0**, guards **21/0**, smoke **106/0/4**, gen **18/0** (+1 manual), fixtures **18/0**, 0 perchance errors, author's map byte-identical after every runner (`9f6282a8`).
