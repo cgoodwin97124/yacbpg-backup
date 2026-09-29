@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.1 — 2026-09-29 — 📄 New pages arrive through the named command (no visible change)
-- The ＋ Add Page button now runs through the `addPage` command in src/state/commands.js — a pure append of a bare 4-panel page at the next key, committed through the same writer as every other command, with the old path as fallback. Page delete, renumber and cross-page moves keep their existing paths for later releases.
+## 2026.09.29.2 — 2026-09-29 — 🗑 Page delete runs on the named command (no visible change)
+- Deleting a page now runs through the `deletePage` command in src/state/commands.js — a pure removal that lands on the smallest surviving page, committed through the same writer as every other command, with the old path as fallback. Both confirms and the only-page reset are unchanged; renumber and cross-page moves keep their existing paths.
 </script>
 
 
@@ -4772,6 +4772,22 @@ color-scheme:light;
     if (!noConfirm && !confirm('Delete ' + label + '? All of its panel settings (characters, locations, actions, titles, seeds, prompts) will be lost. This cannot be undone.')) return;
     pushStructUndo('delete page');
     stopAllGenerations();
+    const cmd = panelCommands ? panelCommands.deletePage : null;
+    if (typeof cmd === 'function') {
+      const from = currentPage;
+      const project = storeJsonNow();
+      const hit = project ? cmd(project, from) : null;
+      if (hit) {
+        delete pageSession[hit.deleted];
+        currentPage = hit.page;
+        savePanelStateShape(project);
+        loadCurrentPage();
+        populatePageSel();
+        updateDeletePageBtn();
+        if (statusEl) statusEl.textContent = 'Page ' + hit.deleted + ' deleted.';
+        return;
+      }
+    }
     const state = collectPanelState();
     delete state.pages[n];
     delete pageSession[n];
