@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 13;
+export const COMMANDS_VERSION = 14;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -247,8 +247,7 @@ export function addPage(project) {
   return { page: n, fields: [] };
 }
 
-export function deletePage(project, pageNum) {
-  if (!isObj(project) || !isObj(project.pages)) return null;
+export function deletePage(project, pageNum) {  if (!isObj(project) || !isObj(project.pages)) return null;
   const at = Number(pageNum);
   if (!Number.isInteger(at) || at < 1) return null;
   const keys = [];
@@ -262,4 +261,59 @@ export function deletePage(project, pageNum) {
   const target = keys[0] === at ? keys[1] : keys[0];
   project.currentPage = target;
   return { page: target, deleted: at, fields: [] };
+}
+
+export function movePanelToPage(project, srcPage, total, index, targetPage, tCount, mode) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const src = Number(srcPage);
+  const tgt = Number(targetPage);
+  if (!Number.isInteger(src) || src < 1 || !Number.isInteger(tgt) || tgt < 1) return null;
+  if (tgt === src) return null;
+  const page = project.pages[src];
+  const tp0 = project.pages[tgt];
+  if (!isObj(page) || !isObj(tp0)) return null;
+  const t = Number(total);
+  const at = Number(index);
+  const tc = Number(tCount);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  if (!Number.isInteger(at) || at < 1 || at > t) return null;
+  if (!Number.isInteger(tc) || tc < 0 || tc > 24) return null;
+  if (tc >= 24) return null;
+  if (page[at] === undefined) return null;
+  const m = (mode === "append" || mode === "prepend" || mode === "replace") ? mode : ((tgt > src) ? "prepend" : "append");
+  const moving = JSON.parse(JSON.stringify(page[at]));
+  const movedId = (moving && typeof moving.id === "string") ? moving.id : null;
+  const insertAt = (m === "append") ? (tc + 1) : 1;
+  const finalCount = (m === "replace") ? tc : (tc + 1);
+  const newTotal = t - 1;
+  if (newTotal <= 0) {
+    delete project.pages[src];
+  } else {
+    const order = [];
+    for (let p = 1; p <= t; p++) order.push(p);
+    order.splice(at - 1, 1);
+    const pc = countStateFor(newTotal);
+    const np = {};
+    for (const k of ["name", "summary", "panelCountSel", "panelCountCustom", "seed"]) np[k] = page[k];
+    np.panelCountSel = pc.sel;
+    np.panelCountCustom = pc.custom;
+    for (let p = 1; p <= 24; p++) {
+      const oldPos = p <= newTotal ? order[p - 1] : p;
+      if (page[oldPos] !== undefined) np[p] = page[oldPos];
+    }
+    project.pages[src] = np;
+  }
+  const tpc = countStateFor(finalCount);
+  const tp = {};
+  for (const k of ["name", "summary", "panelCountSel", "panelCountCustom", "seed"]) tp[k] = tp0[k];
+  tp.panelCountSel = tpc.sel;
+  tp.panelCountCustom = tpc.custom;
+  for (let p = 1; p <= 24; p++) {
+    if (p === insertAt) { tp[p] = moving; continue; }
+    const oldPos = (m === "append" || m === "replace") ? p : p - 1;
+    if (oldPos >= 1 && oldPos <= tc && tp0[oldPos] !== undefined) tp[p] = tp0[oldPos];
+  }
+  project.pages[tgt] = tp;
+  project.currentPage = tgt;
+  return { page: tgt, srcPage: src, index: insertAt, movedId: movedId, deletesSrcPage: newTotal <= 0, fields: [] };
 }
