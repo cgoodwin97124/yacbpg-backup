@@ -49,7 +49,7 @@ function grab(name) {
   return lines.slice(i, body + 1).join("\n");
 }
 
-const wanted = ["getEffectiveKeywords", "applyPreset", "ensurePages"];
+const wanted = ["getEffectiveKeywords", "applyPreset", "ensurePages", "computeRunSeq"];
 const code = wanted.map(grab).join("\n\n");
 
 const moduleBlobs = {};
@@ -100,7 +100,7 @@ const sandbox = Object.assign({ window: {}, document: fakeDoc(), localStorage: {
 let api = { modules };
 const missingAtBoot = missing.slice();
 try {
-  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { getEffectiveKeywords, applyPreset, ensurePagesInline: ensurePages }; }");
+  const factory = new Function("sandbox", "with (sandbox) { " + code + "\n; return { getEffectiveKeywords, applyPreset, ensurePagesInline: ensurePages, computeRunSeq }; }");
   api = Object.assign(factory(sandbox), modules);
 } catch (e) {
   T.push({ n: "extraction", ok: false, d: "could not build the sandbox: " + e.message });
@@ -921,6 +921,37 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], [
       JSON.stringify({ page: 1, deleted: 2, fields: [] }), "1,5", 1, "a", true, 7, true,
     ], "hit,survivors,current,untouched,soloKept,miss,registry");
+  });
+
+  await t("run bounds: a paused To-Here or Range resumes to its bound, never the page end", () => {
+    if (typeof api.computeRunSeq !== "function") return no("no computeRunSeq export");
+    const run = (s, l, t, r, e) => {
+      const o = api.computeRunSeq(s, l, t, r, e);
+      return o ? (o.seq.join(",") + "|" + o.endPanel + "|" + o.resumed + "|" + o.isList) : "null";
+    };
+    return eqArr([
+      run(undefined, null, 4, null, null),
+      run(null, [1, 2, 3], 4, null, null),
+      run(undefined, null, 4, 2, 3),
+      run(undefined, null, 4, 3, 4),
+      run(null, [1], 4, 2, 3),
+      run(undefined, null, 4, 4, 2),
+      run(3, null, 4, 2, 2),
+      run(null, [], 4, null, null),
+      run(null, [0, 2, 9], 4, null, null),
+      run(9, null, 4, null, null),
+    ], [
+      "1,2,3,4|4|false|false",
+      "1,2,3|3|false|true",
+      "2,3|3|true|false",
+      "3,4|4|true|false",
+      "1|1|false|true",
+      "4|4|true|false",
+      "3,4|4|false|false",
+      "1,2,3,4|4|false|false",
+      "2|2|false|true",
+      "1,2,3,4|4|false|false",
+    ], "full,toHere,resumeToHere,resumeRange,freshList,staleEnd,startWins,emptyList,filtered,badStart");
   });
 
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
