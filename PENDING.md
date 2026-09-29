@@ -57,6 +57,10 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-29 — HARNESS (greenlit): refresh the stale `*-analysis` visual baselines
+
+- **Status:** 🟢 **START NOW 2026-09-29** — author greenlit this session, verbatim: "Let's go ahead on the baselines then. Ask whatever questions you need, and perform all of the usual pre-implementation tasks. Thank you!" Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon in progress; no baseline rewritten yet.** Relates to the 🕒 QUEUED 2026-09-27 harness entry below; see also `devtests/README.md` trap 7 (re-measured at 2026.09.26.20: the +222 px came from the auto-grow step, ordinary capture matched the baseline size — refresh is cosmetic, not a stale-data fix).
+
 ### 2026-09-29 — T-01 1c: pausing a bounded run resumes to its bound
 
 - **Status:** ✅ **DONE 2026.09.29.3** — implemented, tested and documented; app files (index.html, devtests) await the author's Save, then the button push; docs/harness via Contents API in the same session. Author answer 1c, verbatim: "It should continue to whichever panel Generate To Here was clicked on, or if was a Generate (X) to (Y) it should continue to the final selected panel." **What shipped:** `computeRunSeq()` pure run-bounds helper extracted from `generateComicPage()` (identical logic, now core-tested) — resume clamps to the paused run's own end panel; plus `pushStructUndo()` clears paused resume state (structural edits invalidate positions). Live pause/resume could not be driven fast in-suite (real generation is minutes per panel; `generateSinglePanel` is not reachable from window scope — a stub attempt hung and was stopped, state verified intact); the computation is pinned DOM-free instead. **Verified:** core **48/0**, guards **21/0**, state-diff **30/30**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores. **Next:** author's call — P3 step 2 structural track is complete (add/duplicate/move/delete + page create/delete).
