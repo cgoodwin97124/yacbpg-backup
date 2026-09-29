@@ -34,6 +34,9 @@ Capture details, all of which matter for reproducibility:
   the theme set explicitly, the page scrolled to the top, then a 700 ms settle before the capture. The `grid`
   subject **closes whatever menu is open** (`switchMenu` is a toggle, so "click File" left the menu open or
   closed depending on how the session got there — that was the whole 224 px mystery; see `devtests/README.md`).
+- The `analysis` subject pins the project library first: `saveLibraryObjects(ANALYSIS_LIB)` (the fixture's four
+  items, hard-coded in `make-baseline.js`) runs before `openAnalysis()`, so the three `*-analysis` shots stop
+  depending on whatever library the fixture file carries — a future fixture-library edit no longer stales them.
 
 The PNGs are 900×1331 for the desktop subjects (243×3396 for the phone grid, which is one column tall) — about
 75–125 KB each, ~1.5 MB in total.
