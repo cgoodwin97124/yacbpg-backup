@@ -1,3 +1,8 @@
+## 2026.09.29.6 — 2026-09-29 — ⇄ Reordering a panel group on the page runs on the new command system (no visible change)
+
+- **The plain version:** nothing changes in how reordering selected panels on a page behaves — the position targets, the insert math, the selection restore, and the status message all work exactly as before. Underneath, the block reorder now runs through the named-command system, addressed by panel identity. That completes the whole move family; renumber and reflow come next.
+- **The numbers:** core **51/0**, guards **21/0**, smoke **109 pass / 0 fail / 4 manual**, state-diff **33/33**, fixtures **18/0**, generation **18/0 (+1 manual)**; **0** perchance errors; your saved project restored **byte-for-byte** after every run.
+
 ## 2026.09.29.5 — 2026-09-29 — ⇄ Moving a panel group to another page runs on the new command system (no visible change)
 
 - **The plain version:** nothing changes in how moving selected panels to another page behaves — the page targets, the new-page choice, the full-page refusal, the landing order, and the status message all work exactly as before. Underneath, the group move now runs through the named-command system, addressed by panel identity. Within-page group moves stay on the old path for now.
