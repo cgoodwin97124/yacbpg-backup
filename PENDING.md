@@ -63,7 +63,7 @@ each section).
 
 ### 2026-09-29 — REFACTOR: P3 step 2 sixth op (`deletePage` command)
 
-- **Status:** 🔨 IN PROGRESS — scope approved by the author 2026-09-29 (create-then-delete order; renumber + cross-page moves stay legacy; both delete confirms unchanged). **Plan:** `deletePage(project, pageNum)` pure removal returning the new current (smallest remaining key; single-page reset stays legacy), dispatch in `deletePage()` after the existing confirms with the old path as fallback, plus core + SD30 checks. Release `2026.09.29.2`, one op per release.
+- **Status:** ✅ **DONE 2026.09.29.2** — implemented, tested and documented; app files (index.html, src/state/commands.js, devtests) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `deletePage` pure command + dispatch in `deletePage()` after the existing confirms (removes the key, lands on the smallest survivor, drops its session; single-page reset and both confirms unchanged; renumber + cross-page moves keep old paths). **Verified:** core **47/0**, guards **21/0**, state-diff **30/30**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores. **Next:** T-01 1c resume-to-end as a small release.
 
 
 ### 2026-09-28 — REFACTOR: P3 step 2 fourth op (single-panel `deletePanel` command)
