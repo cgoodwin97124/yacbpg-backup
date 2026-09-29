@@ -863,6 +863,45 @@ async function run() {
     ], [true, true, true, true, true, true, "1,2,3"], "order,titleRodeUp,count,status,match,shownRestored,pages");
   });
 
+  await t("SD29 addPage creates through the named command and undo restores the project", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.addPage !== "function") return no("the addPage command did not load");
+    if (!window.undoStructuralOp) return no("no undoStructuralOp");
+    if (typeof window.addPage !== "function") return no("no window.addPage");
+    if (full) await importFixture(full.text);
+    await switchTo(1);
+    const beforeKeys = pageKeys();
+    const newKey = Math.max.apply(null, beforeKeys) + 1;
+    const rawPre = localStorage.getItem("comicGen.panelState");
+    window.addPage();
+    await sleep(400);
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const keysOk = pageKeys().join(",") === beforeKeys.concat([newKey]).join(",");
+    const curOk = saved.currentPage === newKey;
+    const p4 = saved.pages[newKey] || {};
+    const metaOk = p4.name === "" && p4.summary === "" && p4.panelCountSel === "4" && p4.seed === "";
+    const customOk = typeof p4.panelCountCustom === "string";
+    const panelIds = [1, 2, 3, 4].map((k) => p4[k] && p4[k].id);
+    const panelsOk = panelIds.every((id) => typeof id === "string" && !!id) && new Set(panelIds).size === 4;
+    const shownOk = shown() === 4;
+    const statusOk = new RegExp("Page " + newKey + " added").test($("statusEl") ? $("statusEl").textContent : "");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("after addPage, saved differs from store at " + d.path);
+    window.undoStructuralOp();
+    await sleep(400);
+    const rawPost = localStorage.getItem("comicGen.panelState");
+    if (rawPost !== rawPre) {
+      const dd = firstDiff(JSON.parse(rawPre || "{}"), JSON.parse(rawPost || "{}"), "$");
+      return no("undo did not restore bytes" + (dd ? " at " + dd.path + " pre=" + String(dd.a).slice(0, 50) + " post=" + String(dd.b).slice(0, 50) : ""));
+    }
+    const c = window.collectPanelState();
+    return eqArr([
+      keysOk, curOk, metaOk, customOk, panelsOk, shownOk, statusOk,
+      JSON.stringify(JSON.parse(rawPost || "{}")) === JSON.stringify(c),
+      pageKeys().join(","),
+    ], [true, true, true, true, true, true, true, true, beforeKeys.join(",")], "keys,current,bareMeta,customKept,settledPanels,shown,status,match,keysRestored");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
