@@ -848,6 +848,42 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "hit,order,countKept,backRoundTrip,miss,registry");
   });
 
+  await t("commands: deletePanel removes one panel and refuses bad input", () => {
+    if (typeof api.deletePanel !== "function") return no("no deletePanel export");
+    const mkPage = (n) => {
+      const p = { name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" };
+      for (let i = 1; i <= n; i++) p[i] = { id: "q-" + i, title: "t" + i };
+      return p;
+    };
+    const proj = { version: 2, pages: { 1: mkPage(4) } };
+    const hit = api.deletePanel(proj, 1, 4, 2);
+    const ids = [1, 2, 3].map((i) => proj.pages[1][i] && proj.pages[1][i].id);
+    const titles = [1, 2, 3].map((i) => proj.pages[1][i] && proj.pages[1][i].title);
+    const selAfter = proj.pages[1].panelCountSel + "/" + proj.pages[1].panelCountCustom;
+    const keyOrder = Object.keys(proj.pages[1]).join(",");
+    const last = api.deletePanel(proj, 1, 3, 3);
+    const lastIds = [1, 2].map((i) => proj.pages[1][i] && proj.pages[1][i].id);
+    const solo = { version: 2, pages: { 1: mkPage(1) } };
+    const soloBefore = JSON.stringify(solo);
+    const miss = [api.deletePanel(solo, 1, 1, 1), api.deletePanel(proj, 9, 2, 1),
+      api.deletePanel(proj, 1, 0, 1), api.deletePanel(proj, 1, 25, 1),
+      api.deletePanel(proj, 1, 2, 0), api.deletePanel(proj, 1, 2, 99),
+      api.deletePanel(null, 1, 2, 1),
+      api.deletePanel({ version: 2, pages: { 1: mkPage(2) } }, 1, 5, 5)];
+    return eqArr([
+      JSON.stringify(hit), ids.join(","), titles.join(","), selAfter, keyOrder,
+      JSON.stringify(last && { i: last.index, n: last.newTotal }), lastIds.join(","),
+      proj.pages[1].panelCountSel + "/" + proj.pages[1].panelCountCustom,
+      JSON.stringify(solo) === soloBefore,
+      miss.filter((m) => m === null).length,
+      api.COMMANDS.deletePanel === api.deletePanel,
+    ], [
+      JSON.stringify({ page: 1, index: 2, newTotal: 3, fields: [] }),
+      "q-1,q-3,q-4", "t1,t3,t4", "custom/3", "1,2,3,4,name,summary,panelCountSel,panelCountCustom,seed",
+      JSON.stringify({ i: 2, n: 2 }), "q-1,q-3", "custom/2", true, 8, true,
+    ], "hit,shift,countRule,keyOrder,lastDelete,countRule2,soloKept,miss,registry");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -859,7 +895,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 10, "addPanel,duplicatePanel,movePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
+      true, 11, "addPanel,deletePanel,duplicatePanel,movePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
