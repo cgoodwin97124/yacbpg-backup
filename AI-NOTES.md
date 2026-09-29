@@ -251,3 +251,6 @@ Docs = repo-root files, never src/, never index.html blocks (pointer comment onl
 
 
 ## 35. 2026.09.29.5 moveManyToPage command — group cross-page moves through the registry (COMMANDS_VERSION 15, 16 commands). Dispatch reuses built.imgs/srcBuilt.imgs so image pairing cannot diverge; old path is fallback; batchMoveToNewPage rides via replace. Recon correction stands: no stale-maps quirk exists (loadCurrentPage resets all three maps in both paths). SD32 pins a live 2-panel cross-page move plus byte-identical undo. Next: renumber/reflow old paths, then moveSelectionWithinPage.
+
+
+## 36. 2026.09.29.6 moveMany command — within-page group reorders through the registry (COMMANDS_VERSION 16, 17 commands). Dispatch pairs images from the returned old-position order; cascadePageSequence untouched (shared with duplicate/add/paste; carry always empty on this path). SD33 pins a live 3-block reorder plus byte-identical undo. Move family complete (single, cross single/group, within group). Next: renumberPages + reflow old paths.
