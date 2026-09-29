@@ -1,6 +1,14 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.29.1 — 🧭 P3 step 2 fifth op (`addPage` command; create only)
+
+Released 2026-09-29 (stamp 2026.09.29.1). Continuation of the greenlit P3 step-2 track; scope approved same-day (create-then-delete, one op per release; renumber + cross-page moves stay legacy; delete confirms unchanged).
+
+- **What shipped.** `addPage(project)` in `src/state/commands.js` (registry of thirteen, `COMMANDS_VERSION` 11→12): appends a bare `{name,summary,panelCountSel:"4",panelCountCustom:"",seed:""}` page at max numeric key + 1, sets `project.currentPage`, returns `{page: n, fields: []}`; refuses missing/empty/non-numeric pages. `addPage()` in `index.html` commits `storeJsonNow()` through it — stashing the old session, setting module `currentPage`, saving, then the existing `loadCurrentPage()/populatePageSel()/updateDeletePageBtn()` — falling back to the old `collectPanelState()` path when the module is missing. No confirms on this path (unchanged); no id-minting at creation (new pages carry no panels — ids mint at render/collect, `index.html:4983`/`collectPageData`).
+- **Settle behaviour (same as the old path, pinned in SD29).** The command writes the page bare, but the grid rebuild schedules the usual debounced re-save, which materialises panels 1–4 with fresh ids — a live probe (park → addPage → immediate vs +700 ms read → undo → park-restore, byte-identical) proved the second write. SD29 therefore asserts the settled shape: bare meta fields, four panels with unique ids, `saved==store`, undo restores bytes. Same probe surfaced a pre-existing wart, identical on both paths and out of scope: `loadCurrentPage` only writes the custom-count input `if (page.panelCountCustom)`, so a new page inherits the previous page's stale custom value into the re-save (live project showed `"5"`); SD29 asserts only `typeof custom === "string"`.
+- **The numbers.** core **46/0** (new `addPage` case: gap-key max+1, bare meta, current follows, untouched neighbours, 5 misses, registry; assertions now 13 keys, VERSION 12), guards **21/0**, state-diff **29/29** (new SD29: real `addPage()` click, keys/current/status, settled panels, saved==store, undo restores bytes), smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1 manual)**; **0** perchance errors; author's map **byte-identical** after every runner.
+
 ## BATCH 2026.09.28.3 — 🧭 P3 step 2 fourth op (`deletePanel` command; single within-page deletes only)
 
 Released 2026-09-28 (stamp 2026.09.28.3). Continuation of the greenlit P3 step-2 track (per the 2026.09.28.2 entry's Next line: delete, one op per release).
