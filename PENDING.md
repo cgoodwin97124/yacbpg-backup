@@ -59,7 +59,7 @@ each section).
 
 ### 2026-09-29 — T-01 1c: pausing a bounded run resumes to its bound
 
-- **Status:** 🔨 IN PROGRESS — author answered 1c 2026-09-29, verbatim: "It should continue to whichever panel Generate To Here was clicked on, or if was a Generate (X) to (Y) it should continue to the final selected panel." **Plan:** recon the resume path (`resumePanel`/`runEndPanel`/`generateComicPage`), implement bound-preserving resume, add regression checks. Small release.
+- **Status:** ✅ **DONE 2026.09.29.3** — implemented, tested and documented; app files (index.html, devtests) await the author's Save, then the button push; docs/harness via Contents API in the same session. Author answer 1c, verbatim: "It should continue to whichever panel Generate To Here was clicked on, or if was a Generate (X) to (Y) it should continue to the final selected panel." **What shipped:** `computeRunSeq()` pure run-bounds helper extracted from `generateComicPage()` (identical logic, now core-tested) — resume clamps to the paused run's own end panel; plus `pushStructUndo()` clears paused resume state (structural edits invalidate positions). Live pause/resume could not be driven fast in-suite (real generation is minutes per panel; `generateSinglePanel` is not reachable from window scope — a stub attempt hung and was stopped, state verified intact); the computation is pinned DOM-free instead. **Verified:** core **48/0**, guards **21/0**, state-diff **30/30**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores. **Next:** author's call — P3 step 2 structural track is complete (add/duplicate/move/delete + page create/delete).
 
 
 ### 2026-09-29 — REFACTOR: P3 step 2 fifth op (`addPage` command)
