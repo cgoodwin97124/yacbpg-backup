@@ -18,10 +18,17 @@ const plans = [
   { name: "phone-light", size: [390, 844], theme: "light", subjects: ["grid", "dialog"] },
 ].filter((p) => !ONLY || p.name === ONLY);
 
+const ANALYSIS_LIB = [
+  { id: "fx-ch-1", type: "Character", name: "Fixture Hero", desc: "a sturdy hero in a red cape, weathered face" },
+  { id: "fx-ch-2", type: "Character", name: "Fixture Sidekick", desc: "a small robot with one glowing eye" },
+  { id: "fx-loc-1", type: "Location", name: "Fixture Rooftop", desc: "a rain-slicked city rooftop at night, neon reflections" },
+  { id: "fx-act-1", type: "Action", name: "Fixture Action", desc: "leaping between rooftops" }
+];
+
 const subjects = {
   grid: "closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); const ab = document.querySelector('.menu-btn.active'); if (ab && ab.dataset.menu) switchMenu(ab.dataset.menu); window.scrollTo(0,0);",
   json: "closeSingleView(); closeStoryboard(); closeAnalysis(); openJsonEditor();",
-  analysis: "closeSingleView(); closeStoryboard(); closeJsonEditor(); openAnalysis();",
+  analysis: "closeSingleView(); closeStoryboard(); closeJsonEditor(); saveLibraryObjects(" + JSON.stringify(ANALYSIS_LIB) + "); openAnalysis();",
   dialog: "closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); clearPanelSelection(); for (const i of [1,2,3]) { const cb = document.getElementById('panel-select-' + i); if (cb) { cb.checked = true; cb.dispatchEvent(new Event('click', { bubbles: true })); } } batchDeletePanels();",
   storyboard: "closeSingleView(); closeAnalysis(); closeJsonEditor(); openStoryboard();",
   focus: "closeStoryboard(); closeAnalysis(); closeJsonEditor(); openSingleView(1);",
