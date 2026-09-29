@@ -57,9 +57,13 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
-### 2026-09-29 — REFACTOR: P3 step 2 fifth op (page create/delete commands)
+### 2026-09-29 — REFACTOR: P3 step 2 fifth op (`addPage` command)
 
-- **Status:** 🔨 IN PROGRESS — author said "Let's do it!" 2026-09-29. **Plan:** recon page create/delete paths first, then propose command shape(s) before implementing (one op per release, following the panel-op track: add → duplicate → move → delete). **Next after:** T-01 1c resume-to-end as a small release.
+- **Status:** ✅ **DONE 2026.09.29.1** — implemented, tested and documented; app files (index.html, src/state/commands.js, devtests) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `addPage` pure command + dispatch in `addPage()` (bare 4-panel meta page at max key + 1, current follows; renumber + cross-page moves + page delete keep old paths); new pages carry no panels so no id-minting at creation. **Verified:** core **46/0**, guards **21/0**, state-diff **29/29**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores. **Next:** `deletePage` (IN PROGRESS below), then T-01 1c resume-to-end as a small release.
+
+### 2026-09-29 — REFACTOR: P3 step 2 sixth op (`deletePage` command)
+
+- **Status:** 🔨 IN PROGRESS — scope approved by the author 2026-09-29 (create-then-delete order; renumber + cross-page moves stay legacy; both delete confirms unchanged). **Plan:** `deletePage(project, pageNum)` pure removal returning the new current (smallest remaining key; single-page reset stays legacy), dispatch in `deletePage()` after the existing confirms with the old path as fallback, plus core + SD30 checks. Release `2026.09.29.2`, one op per release.
 
 
 ### 2026-09-28 — REFACTOR: P3 step 2 fourth op (single-panel `deletePanel` command)
