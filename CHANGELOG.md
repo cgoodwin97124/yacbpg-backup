@@ -1,3 +1,8 @@
+## 2026.09.28.3 — 2026-09-28 — 🗑 Delete runs on the new command system (no visible change)
+
+- **The plain version:** nothing changes in how 🗑 Delete behaves — the panel goes away, later panels move up and are renumbered, everything undoable as before. Underneath, single-panel deletes within a page now run through the same named-command system as the other controls, one more step in the quiet rebuild that keeps every change reliably undoable.
+- **The numbers:** core **45/0**, guards **21/0**, smoke **109 pass / 0 fail / 4 manual**, state-diff **28/28**, fixtures **18/0**, generation **18/0 (+1 manual)**; **0** perchance errors; your saved project restored **byte-for-byte** after every run.
+
 ## 2026.09.28.2 — 2026-09-28 — ⇅ Move runs on the new command system (no visible change)
 
 - **The plain version:** nothing changes in how ⇅ Move behaves — pick a position and the panel goes there with everything it carries. Underneath, single-panel moves within a page now run through the same named-command system as the other controls, one more step in the quiet rebuild that keeps every change reliably undoable. A hand-edited prompt now rides along to the new position instead of being wiped.
