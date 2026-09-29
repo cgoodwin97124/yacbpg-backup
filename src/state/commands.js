@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 12;
+export const COMMANDS_VERSION = 13;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -245,4 +245,21 @@ export function addPage(project) {
   project.pages[n] = { name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" };
   project.currentPage = n;
   return { page: n, fields: [] };
+}
+
+export function deletePage(project, pageNum) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const at = Number(pageNum);
+  if (!Number.isInteger(at) || at < 1) return null;
+  const keys = [];
+  for (const k of Object.keys(project.pages)) {
+    const v = Number(k);
+    if (String(v) === k && Number.isInteger(v) && v >= 1) keys.push(v);
+  }
+  keys.sort((a, b) => a - b);
+  if (keys.length <= 1 || keys.indexOf(at) === -1) return null;
+  delete project.pages[at];
+  const target = keys[0] === at ? keys[1] : keys[0];
+  project.currentPage = target;
+  return { page: target, deleted: at, fields: [] };
 }
