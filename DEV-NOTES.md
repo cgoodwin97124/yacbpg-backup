@@ -1,6 +1,14 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.29.3 — ⏸ T-01 1c: pausing a bounded run resumes to its bound
+
+Released 2026-09-29 (stamp 2026.09.29.3). Small release answering ticket T-01 question 1c ("After pausing a To-Here run, Generate All resumes to the end of the page — what should happen?"; author: resume to the To-Here panel / the Range's final panel).
+
+- **What shipped.** `computeRunSeq(startPanel, panelList, totalPanels, resumePanel, runEndPanel)` extracted pure from `generateComicPage()` (byte-identical logic: list filter/sort/end, startPanel-wins, resume-clamp `endPanel=min(runEndPanel,total)`, empty-list full run) and wired back in with `resumePanel=null` parity; plus `pushStructUndo()` now clears `resumePanel`/`runEndPanel` — any structural edit (panel add/duplicate/move/delete, page create/delete/renumber, batch ops) invalidates a paused resume, so the next Generate All starts fresh instead of generating wrong panels. Trace verdict: the direct pause→Generate-All flow already clamped correctly in current code (the ticket predates the To-Here implementation); the live holes were stale resume after structural edits (fixed) and sparse-selection resume going contiguous (out of scope — only To-Here/Range are contiguous by construction; noted, untouched).
+- **Testability note.** A live pause→resume cycle cannot run fast in-suite: real generation is minutes per panel and `generateSinglePanel` is closure-scoped (a window-stub attempt hung a real 3-panel run; stopped via status check, storage diffed to promptHistory/thumb cache churn only, user content intact, leftover `__test_backup_v10` removed). So the bound computation is pinned DOM-free instead — new core case (10 vectors: full, To-Here start, resume-to-bound ×2, fresh-list-wins, stale-end-ignored, startPanel-wins, empty-list, filtered, bad-start) via the existing index.html-extraction mechanism (`wanted` += `computeRunSeq`). No save-path change: commands.js untouched (VERSION stays 13), no SD changes.
+- **The numbers.** core **48/0**, guards **21/0**, state-diff **30/30**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1 manual)**; **0** perchance errors; author's map **byte-identical** after every runner.
+
 ## BATCH 2026.09.29.2 — 🧭 P3 step 2 sixth op (`deletePage` command; current-page delete only)
 
 Released 2026-09-29 (stamp 2026.09.29.2). Second half of the approved page pair (create shipped `.29.1`).
