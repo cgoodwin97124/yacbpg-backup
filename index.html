@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.2 — 2026-09-29 — 🗑 Page delete runs on the named command (no visible change)
-- Deleting a page now runs through the `deletePage` command in src/state/commands.js — a pure removal that lands on the smallest surviving page, committed through the same writer as every other command, with the old path as fallback. Both confirms and the only-page reset are unchanged; renumber and cross-page moves keep their existing paths.
+## 2026.09.29.3 — 2026-09-29 — ⏸ Pausing a bounded run resumes to its bound (no visible change unless you hit the quirk)
+- Pausing a ⚡ Generate To Here or ⚡ Generate range run and pressing ⚡ Generate All now always continues to that run's own final panel instead of risking a run to the end of the page, and structural edits (add, duplicate, move, delete, page ops) clear a paused resume since the panel positions it refers to are gone. The run-length math is now a named, tested helper.
 </script>
 
 
@@ -5713,6 +5713,8 @@ color-scheme:light;
 
   function pushStructUndo(label) {
     if (structUndoHold) return;
+    resumePanel = null;
+    runEndPanel = null;
     try {
       const sessions = {};
       for (const k in pageSession) sessions[k] = { images: pageSession[k] ? pageSession[k].images : {} };
@@ -9327,32 +9329,41 @@ color-scheme:light;
     schedulePanelSave();
   }
 
+  function computeRunSeq(startPanel, panelList, totalPanels, resumePanel, runEndPanel) {
+    const isList = Array.isArray(panelList) && panelList.length > 0;
+    let endPanel = totalPanels;
+    let seq = null;
+    let from = 1;
+    let resumed = false;
+    if (isList) {
+      seq = panelList.filter(i => i >= 1 && i <= totalPanels).sort((a, b) => a - b);
+      if (!seq.length) return null;
+      endPanel = seq[seq.length - 1];
+    } else {
+      if (startPanel && startPanel >= 1 && startPanel <= totalPanels) { from = startPanel; }
+      else if (resumePanel && resumePanel >= 1 && resumePanel <= totalPanels) {
+        from = resumePanel;
+        resumed = true;
+        if (runEndPanel && runEndPanel >= from) endPanel = Math.min(runEndPanel, totalPanels);
+      }
+      seq = [];
+      for (let i = from; i <= endPanel; i++) seq.push(i);
+    }
+    return { seq: seq, from: from, endPanel: endPanel, resumed: resumed, isList: isList };
+  }
+
   async function generateComicPage(startPanel, panelList) {
     if (generateAllRunning) return;
     const statusEl = document.getElementById('statusEl');
     const genBtn = document.querySelector('.btn-generate');
     const pageName = currentPageLabel();
     const totalPanels = getPanelCount();
-    const isList = Array.isArray(panelList) && panelList.length > 0;
-    let seq = null;
-    let endPanel = totalPanels;
-    if (isList) {
-      seq = panelList.filter(i => i >= 1 && i <= totalPanels).sort((a, b) => a - b);
-      if (!seq.length) return;
-      endPanel = seq[seq.length - 1];
-      resumePanel = null;
-    }
-    let from = 1;
-    if (!isList) {
-      if (startPanel && startPanel >= 1 && startPanel <= totalPanels) { from = startPanel; resumePanel = null; }
-      else if (resumePanel && resumePanel >= 1 && resumePanel <= totalPanels) {
-        from = resumePanel;
-        if (runEndPanel && runEndPanel >= from) endPanel = Math.min(runEndPanel, totalPanels);
-        resumePanel = null;
-      }
-      seq = [];
-      for (let i = from; i <= endPanel; i++) seq.push(i);
-    }
+    const run = computeRunSeq(startPanel, panelList, totalPanels, resumePanel, runEndPanel);
+    if (!run) return;
+    resumePanel = null;
+    const seq = run.seq;
+    const isList = run.isList;
+    const endPanel = run.endPanel;
     runEndPanel = endPanel;
     let generated = 0;
     let skipped = 0;
