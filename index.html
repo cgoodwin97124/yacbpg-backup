@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.3 — 2026-09-29 — ⏸ Pausing a bounded run resumes to its bound (no visible change unless you hit the quirk)
-- Pausing a ⚡ Generate To Here or ⚡ Generate range run and pressing ⚡ Generate All now always continues to that run's own final panel instead of risking a run to the end of the page, and structural edits (add, duplicate, move, delete, page ops) clear a paused resume since the panel positions it refers to are gone. The run-length math is now a named, tested helper.
+## 2026.09.29.4 — 2026-09-29 — ⇄ Moving a panel to another page runs on the new command system (no visible change)
+- Moving a single panel to another page (the ⇅ menu's "page" targets and "new page") now runs through the same named-command system as everything else: same confirms, same landing position, same status message. Underneath, the move is addressed by panel identity instead of position — the next step toward group moves and drag-reorder.
 </script>
 
 
@@ -5559,6 +5559,50 @@ color-scheme:light;
     if (total <= 1 && !confirm('Panel ' + i + ' is the only panel on ' + pageLabel(pages[src], src) + '. Moving it there will DELETE that page. Continue?')) return;
 
     pushStructUndo('move panel');
+    const cmdMoveToPage = panelCommands ? panelCommands.movePanelToPage : null;
+    if (typeof cmdMoveToPage === 'function') {
+      const project = storeJsonNow();
+      const effMode = (mode === 'append' || mode === 'prepend' || mode === 'replace') ? mode : ((targetPage > src) ? 'prepend' : 'append');
+      const hit = project ? cmdMoveToPage(project, src, total, i, targetPage, tCount, effMode) : null;
+      if (hit) {
+        pageSession[src] = { images: panelImages };
+        const srcImages = panelImages;
+        const movedImg = srcImages[i] ? JSON.parse(JSON.stringify(srcImages[i])) : null;
+        const tSess = pageSession[targetPage];
+        const tImages = (tSess && tSess.images) ? tSess.images : {};
+        const newTImages = {};
+        for (let p = 1; p <= 24; p++) {
+          if (p === hit.index) { if (movedImg) newTImages[p] = movedImg; continue; }
+          const oldPos = (effMode === 'append' || effMode === 'replace') ? p : (p - 1);
+          if (oldPos >= 1 && oldPos <= tCount && tImages[oldPos]) newTImages[p] = tImages[oldPos];
+        }
+        pageSession[targetPage] = { images: newTImages };
+        if (hit.deletesSrcPage) {
+          delete pageSession[src];
+        } else {
+          const order = [];
+          for (let p = 1; p <= total; p++) order.push(p);
+          order.splice(i - 1, 1);
+          const newSrcImages = {};
+          for (let p = 1; p <= total - 1; p++) {
+            const oldPos = order[p - 1];
+            if (srcImages[oldPos]) newSrcImages[p] = srcImages[oldPos];
+          }
+          pageSession[src] = { images: newSrcImages };
+        }
+        savePanelStateShape(project);
+        currentPage = targetPage;
+        panelImages = pageSession[targetPage].images;
+        panelPromptOverrides = {};
+        panelPromptHistory = {};
+        promptHistoryRuns = {};
+        loadCurrentPage();
+        populatePageSel();
+        updateDeletePageBtn();
+        if (statusEl) statusEl.textContent = 'Panel ' + i + ' moved to ' + pageLabel(project.pages[targetPage], targetPage) + (effMode === 'replace' ? '.' : ' at position ' + hit.index + '.');
+        return;
+      }
+    }
     const insertAt = (mode === 'append') ? (tCount + 1) : 1;
     const finalCount = (mode === 'replace') ? tCount : (tCount + 1);
 
