@@ -902,6 +902,42 @@ async function run() {
     ], [true, true, true, true, true, true, true, true, beforeKeys.join(",")], "keys,current,bareMeta,customKept,settledPanels,shown,status,match,keysRestored");
   });
 
+  await t("SD30 deletePage removes through the named command and undo restores the project", async () => {
+    const mod = window.__commandsModule();
+    if (!mod || !mod.COMMANDS || typeof mod.COMMANDS.deletePage !== "function") return no("the deletePage command did not load");
+    if (!window.undoStructuralOp) return no("no undoStructuralOp");
+    if (typeof window.deletePage !== "function") return no("no window.deletePage");
+    if (full) await importFixture(full.text);
+    await switchTo(2);
+    const beforeKeys = pageKeys();
+    if (beforeKeys.join(",") !== "1,2,3") return no("fixture pages are not 1,2,3: " + beforeKeys.join(","));
+    const rawPre = localStorage.getItem("comicGen.panelState");
+    window.deletePage();
+    await sleep(400);
+    let saved = JSON.parse(localStorage.getItem("comicGen.panelState") || "{}");
+    const keysOk = pageKeys().join(",") === "1,3";
+    const curOk = saved.currentPage === 1;
+    const goneOk = saved.pages[2] === undefined;
+    const statusOk = /Page 2 deleted/.test($("statusEl") ? $("statusEl").textContent : "");
+    const d = firstDiff(saved, JSON.parse(JSON.stringify(window.__storeJson())), "$");
+    if (d) return no("after deletePage, saved differs from store at " + d.path);
+    window.undoStructuralOp();
+    await sleep(400);
+    const rawPost = localStorage.getItem("comicGen.panelState");
+    if (rawPost !== rawPre) {
+      const dd = firstDiff(JSON.parse(rawPre || "{}"), JSON.parse(rawPost || "{}"), "$");
+      return no("undo did not restore bytes" + (dd ? " at " + dd.path + " pre=" + String(dd.a).slice(0, 50) + " post=" + String(dd.b).slice(0, 50) : ""));
+    }
+    const c = window.collectPanelState();
+    await switchTo(2);
+    await switchTo(1);
+    return eqArr([
+      keysOk, curOk, goneOk, statusOk,
+      JSON.stringify(JSON.parse(rawPost || "{}")) === JSON.stringify(c),
+      pageKeys().join(","),
+    ], [true, true, true, true, true, "1,2,3"], "keys,current,gone,status,match,keysRestored");
+  });
+
   const pass = T.filter((x) => x.ok === true).length;
   const fail = T.filter((x) => x.ok === false).length;
   return { pass, fail, failures: T.filter((x) => x.ok === false), checks: T };
