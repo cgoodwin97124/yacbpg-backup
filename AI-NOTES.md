@@ -245,3 +245,6 @@ Two commands (separate controls/events): text→`seed`/["seed"]; !!→boolean `s
 ## DOC LAYOUT (.23.6; updated .27-docs-split)
 
 Docs = repo-root files, never src/, never index.html blocks (pointer comment only): DEV-NOTES (dev log; keeps last 8 BATCHes; older → archive/DEV-NOTES-2026-09-early.md), AI-NOTES (this file), PENDING (queue; DONE history → archive/PENDING-done-2026-09.md), ISSUES, CHANGELOG (newest 19 live; older → archive/CHANGELOG-2026-09-early.md), SESSION-START (read-order), archive/INDEX (map). index.html: compact pointer comment only. ghPush: main.pjs/index.html/forms/core/state — NEVER CHANGELOG (stamp would clobber real file). Repo PUBLIC (read+fork; push owner-only): raw reads token-free: raw.githubusercontent.com/cgoodwin97124/yacbpg-backup/main/<file>. NEVER re-add text/plain blocks; NEVER .md-in-src (save-flow wedge — DEV-NOTES).
+
+
+## 34. 2026.09.29.4 movePanelToPage command — cross-page singles through the registry (COMMANDS_VERSION 14, 15 commands). Dispatch keeps guards/confirms/images/status; old path is fallback. SD31 pins a live cross-page move plus byte-identical undo. Next: group moves, then renumber/reflow old paths. Fixture pages hold 24 stored panels behind smaller counts; moves drop past-count entries (old behaviour, replicated).
