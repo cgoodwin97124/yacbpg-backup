@@ -1,6 +1,13 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.29.2 — 🧭 P3 step 2 sixth op (`deletePage` command; current-page delete only)
+
+Released 2026-09-29 (stamp 2026.09.29.2). Second half of the approved page pair (create shipped `.29.1`).
+
+- **What shipped.** `deletePage(project, pageNum)` in `src/state/commands.js` (registry of fourteen, `COMMANDS_VERSION` 12→13): refuses non-pages/single-page/missing keys, deletes the key, lands `project.currentPage` on the smallest survivor, returns `{page: target, deleted: at, fields: []}`. `deletePage(noConfirm)` in `index.html` commits `storeJsonNow()` through it after the two existing confirms — dropping `pageSession[deleted]`, setting module `currentPage`, saving, then the existing load/select/delete-button path with the same status text — falling back to the old `collectPanelState()` path when the module is missing. Only-page reset, both confirms, renumber and cross-page moves untouched.
+- **The numbers.** core **47/0** (new `deletePage` case: hit/survivors/current/untouched/solo-refusal/7 misses incl. re-delete/registry; assertions now 14 keys, VERSION 13), guards **21/0**, state-diff **30/30** (new SD30: real `deletePage()` on fixture page 2 — confirm stubbed — keys 1,3, current 1, key gone, status, saved==store, undo restores bytes), smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1 manual)**; **0** perchance errors; author's map **byte-identical** after every runner.
+
 ## BATCH 2026.09.29.1 — 🧭 P3 step 2 fifth op (`addPage` command; create only)
 
 Released 2026-09-29 (stamp 2026.09.29.1). Continuation of the greenlit P3 step-2 track; scope approved same-day (create-then-delete, one op per release; renumber + cross-page moves stay legacy; delete confirms unchanged).
