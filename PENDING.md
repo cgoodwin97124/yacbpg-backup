@@ -27,7 +27,7 @@ section. Move entries between sections as their status changes (greenlit → STA
 
 ### 2026-09-29 — REFACTOR: P2 data model — within-page group moves on the named command
 
-- **Status:** ACTIVE START NOW 2026-09-29 — author greenlit this session, verbatim: Go! (following the level-4 recommendation). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon in progress; no code changed yet.** Completes the move family (single, cross-page single/group, now within-page group). Scope: moveSelectionWithinPage through a new moveMany pure command; cascadePageSequence spill stays as-is (to confirm); zero visible change.
+- **Status:** ACTIVE START NOW 2026-09-29 — author greenlit this session, verbatim: Go! (following the level-4 recommendation). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon in progress; no code changed yet.** Completes the move family (single, cross-page single/group, now within-page group). Scope: moveSelectionWithinPage through a new moveMany pure command; cascade spill question dissolved on recon: this path always feeds cascade exactly total (<=24) entries so carry is always empty — no spill behavior exists to preserve; cascade itself stays untouched (shared with batch duplicate/add/paste). No open questions. **Plan:** moveMany(project, pageNum, total, indexes, toPos) pure command (merged rest/sel order, canonical meta rebuild, returns old-position order + insert + movedIds) + dispatch in moveSelectionWithinPage() keeping entries-derived images, selection restore, and status; old path as fallback. One op per release.
 
 ### 2026-09-29 — REFACTOR: P2 data model — group cross-page moves on the named command
 
