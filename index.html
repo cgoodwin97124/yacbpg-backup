@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.28.2 — 2026-09-28 — ⇅ Move is a named command (single panels within the page; group and cross-page moves keep the old path)
-- The ⇅ Move picker on a panel now runs through the `movePanel` command in src/state/commands.js — a pure reorder with the same ids, committed through the same writer as every other command, with the old path as fallback. Everything still travels with the panel, and a hand-edited prompt now rides along to the new position instead of being wiped. Group moves, moves to other pages and moves to a new page keep their existing paths for later releases.
+## 2026.09.28.3 — 2026-09-28 — 🗑 Delete is a named command (single panels within the page; the only-panel reset, page delete and batch deletes keep the old path)
+- The 🗑 Delete chip on a panel now runs through the `deletePanel` command in src/state/commands.js — a pure removal with the same writer as every other command, with the old path as fallback. Survivors keep their images and their prompt maps shift down with them.
 </script>
 
 
@@ -6986,6 +6986,29 @@ color-scheme:light;
     }
     if (!confirm('Delete Panel ' + i + '? Its settings (characters, location, action, title, seed, prompt) and its generated images will be lost, and later panels will move up and be renumbered. This cannot be undone.')) return;
     pushStructUndo('delete panel');
+    const cmd = panelCommands ? panelCommands.deletePanel : null;
+    if (typeof cmd === 'function') {
+      const beforeIds = {};
+      for (let p = 1; p <= total; p++) beforeIds[p] = panelIdAt(p);
+      const project = storeJsonNow();
+      const hit = project ? cmd(project, currentPage, total, i) : null;
+      if (hit) {
+        savePanelStateShape(project);
+        clearPanelSelection();
+        remapPanelImagesById(project, beforeIds);
+        const order = [];
+        for (let p = 1; p <= total; p++) order.push(p);
+        order.splice(i - 1, 1);
+        reorderPanelMaps(order, hit.newTotal);
+        for (let j = 1; j <= 24; j++) {
+          const card = document.getElementById('panel-card-' + j);
+          if (card) card.classList.add('cleared');
+        }
+        buildPanelGrid();
+        if (statusEl) statusEl.textContent = 'Panel ' + i + ' deleted — later panels moved up and were renumbered.';
+        return;
+      }
+    }
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const order = [];
