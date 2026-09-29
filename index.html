@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.4 — 2026-09-29 — ⇄ Moving a panel to another page runs on the new command system (no visible change)
-- Moving a single panel to another page (the ⇅ menu's "page" targets and "new page") now runs through the same named-command system as everything else: same confirms, same landing position, same status message. Underneath, the move is addressed by panel identity instead of position — the next step toward group moves and drag-reorder.
+## 2026.09.29.5 — 2026-09-29 — ⇄ Moving a panel group to another page runs on the new command system (no visible change)
+- Moving a multi-selected group of panels to another page (the ⇅ menu's "page" targets and "new page") now runs through the same named-command system as everything else: same full-page guard, same landing order, same status message. The move is addressed by panel identity instead of position. Within-page group moves stay on the old path for a later release.
 </script>
 
 
@@ -6471,6 +6471,27 @@ color-scheme:light;
     const newTarget = replaceTarget ? moving : (prepend ? moving.concat(tEntries) : tEntries.concat(moving));
     const built = pageObjectFromEntries(pages, targetPage, newTarget);
     const srcBuilt = remaining.length ? pageObjectFromEntries(pages, src, remaining) : null;
+    const cmdMoveMany = panelCommands ? panelCommands.moveManyToPage : null;
+    if (typeof cmdMoveMany === 'function') {
+      const project = storeJsonNow();
+      const hit = project ? cmdMoveMany(project, src, total, sel, targetPage, tCount, !!replaceTarget) : null;
+      if (hit) {
+        currentPage = targetPage;
+        savePanelStateShape(project);
+        if (hit.deletesSrcPage) delete pageSession[src];
+        setPageImagesFor(targetPage, built.imgs);
+        if (srcBuilt) setPageImagesFor(src, srcBuilt.imgs);
+        loadCurrentPage();
+        populatePageSel();
+        updateDeletePageBtn();
+        panelSelection.clear();
+        for (let k = 0; k < sel.length; k++) panelSelection.add(Math.min(hit.index + k, 24));
+        selectionAnchor = Math.min(hit.index + sel.length - 1, 24);
+        updateSelectionUI();
+        if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? '' : 's') + ' to ' + label + '.';
+        return;
+      }
+    }
     pages[targetPage] = built.page;
     if (srcBuilt) pages[src] = srcBuilt.page; else delete pages[src];
     state.currentPage = targetPage;
