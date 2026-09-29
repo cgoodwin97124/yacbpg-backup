@@ -57,6 +57,11 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-29 — T-01 1c: pausing a bounded run resumes to its bound
+
+- **Status:** 🔨 IN PROGRESS — author answered 1c 2026-09-29, verbatim: "It should continue to whichever panel Generate To Here was clicked on, or if was a Generate (X) to (Y) it should continue to the final selected panel." **Plan:** recon the resume path (`resumePanel`/`runEndPanel`/`generateComicPage`), implement bound-preserving resume, add regression checks. Small release.
+
+
 ### 2026-09-29 — REFACTOR: P3 step 2 fifth op (`addPage` command)
 
 - **Status:** ✅ **DONE 2026.09.29.1** — implemented, tested and documented; app files (index.html, src/state/commands.js, devtests) await the author's Save, then the button push; docs/harness via Contents API in the same session. **What shipped:** `addPage` pure command + dispatch in `addPage()` (bare 4-panel meta page at max key + 1, current follows; renumber + cross-page moves + page delete keep old paths); new pages carry no panels so no id-minting at creation. **Verified:** core **46/0**, guards **21/0**, state-diff **29/29**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores. **Next:** `deletePage` (IN PROGRESS below), then T-01 1c resume-to-end as a small release.
