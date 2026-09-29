@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.28.3 — 2026-09-28 — 🗑 Delete is a named command (single panels within the page; the only-panel reset, page delete and batch deletes keep the old path)
-- The 🗑 Delete chip on a panel now runs through the `deletePanel` command in src/state/commands.js — a pure removal with the same writer as every other command, with the old path as fallback. Survivors keep their images and their prompt maps shift down with them.
+## 2026.09.29.1 — 2026-09-29 — 📄 New pages arrive through the named command (no visible change)
+- The ＋ Add Page button now runs through the `addPage` command in src/state/commands.js — a pure append of a bare 4-panel page at the next key, committed through the same writer as every other command, with the old path as fallback. Page delete, renumber and cross-page moves keep their existing paths for later releases.
 </script>
 
 
@@ -4721,6 +4721,23 @@ color-scheme:light;
   function addPage() {
     stopAllGenerations();
     pushStructUndo('new page');
+    const cmd = panelCommands ? panelCommands.addPage : null;
+    if (typeof cmd === 'function') {
+      const from = currentPage;
+      const project = storeJsonNow();
+      const hit = project ? cmd(project) : null;
+      if (hit) {
+        pageSession[from] = { images: panelImages };
+        currentPage = hit.page;
+        savePanelStateShape(project);
+        loadCurrentPage();
+        populatePageSel();
+        updateDeletePageBtn();
+        const statusEl = document.getElementById('statusEl');
+        if (statusEl) statusEl.textContent = 'Page ' + hit.page + ' added (4 empty panels).';
+        return;
+      }
+    }
     const state = collectPanelState();
     const keys = Object.keys(state.pages).map(Number);
     let n = 1;
