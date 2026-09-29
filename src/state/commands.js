@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 11;
+export const COMMANDS_VERSION = 12;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -231,4 +231,18 @@ export function deletePanel(project, pageNum, total, index) {
   }
   project.pages[pageNum] = newPage;
   return { page: Number(pageNum), index: Math.min(at, newTotal), newTotal: newTotal, fields: [] };
+}
+
+export function addPage(project) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  let n = 0;
+  for (const k of Object.keys(project.pages)) {
+    const v = Number(k);
+    if (String(v) === k && Number.isInteger(v) && v >= 1 && v > n) n = v;
+  }
+  if (n < 1) return null;
+  n++;
+  project.pages[n] = { name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" };
+  project.currentPage = n;
+  return { page: n, fields: [] };
 }
