@@ -25,6 +25,10 @@ section. Move entries between sections as their status changes (greenlit → STA
 
 ### 2026-09-28 — REFACTOR: P3 step 2 second op (single-panel `duplicatePanel` command)
 
+### 2026-09-29 — REFACTOR: P2 data model — within-page group moves on the named command
+
+- **Status:** ACTIVE START NOW 2026-09-29 — author greenlit this session, verbatim: Go! (following the level-4 recommendation). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon in progress; no code changed yet.** Completes the move family (single, cross-page single/group, now within-page group). Scope: moveSelectionWithinPage through a new moveMany pure command; cascadePageSequence spill stays as-is (to confirm); zero visible change.
+
 ### 2026-09-29 — REFACTOR: P2 data model — group cross-page moves on the named command
 
 - **Status:** ACTIVE START NOW 2026-09-29 — author greenlit this session, verbatim: (level 4 default set) Excellent. Lets use verbosity level 4 as the default. And go ahead and start! Logged here on receipt, before any work, per the 2026-08-13 rule. **Status:** DONE 2026.09.29.5 — implemented, tested and documented; app files (index.html, src/state/commands.js, devtests) await the author Save, then the button push; docs/harness via Contents API in the same session. Verified: core 50/0, guards 21/0, state-diff 32/32, smoke 109/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, byte-identical restores. Follows 2026.09.29.4 (single cross-page move command). Scope: batchMoveToPage / batchMoveToNewPage through a new moveManyToPage pure command; images stay remap-based; zero visible change. **Recon correction 2026-09-29:** the stale-maps quirk does not exist — loadCurrentPage() resets all three prompt maps on every page load in both paths, so single and batch moves already behave identically; stored per-panel overrides travel inside the deep copy. Author approved proceeding with the pure behavior-preserving command (verbatim: Your recommendation is good). Full-page group targets already refuse-the-block in current code; replicating. moveSelectionWithinPage stays old.
