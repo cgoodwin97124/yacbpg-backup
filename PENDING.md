@@ -57,6 +57,11 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-09-29 — REFACTOR: P3 step 2 fifth op (page create/delete commands)
+
+- **Status:** 🔨 IN PROGRESS — author said "Let's do it!" 2026-09-29. **Plan:** recon page create/delete paths first, then propose command shape(s) before implementing (one op per release, following the panel-op track: add → duplicate → move → delete). **Next after:** T-01 1c resume-to-end as a small release.
+
+
 ### 2026-09-28 — REFACTOR: P3 step 2 fourth op (single-panel `deletePanel` command)
 
 - **Status:** ✅ **DONE 2026.09.28.3** — implemented, tested and documented; app files pushed via the button (15 files, repo `index.html` verified at `2026.09.28.3`); docs/harness via Contents API in the same session. **What shipped:** `deletePanel` pure command + dispatch in `deletePanel()` (single within-page deletes; the only-panel reset/page-delete and batch/group deletes keep old paths); survivors' images remapped by id, prompt maps shifted down via `reorderPanelMaps`; page meta written in canonical order (pays the .28.1 key-order debt). **Verified:** core **45/0**, guards **21/0**, state-diff **28/28**, smoke **109/0/4**, fixtures **18/0**, gen **18/0 (+1m)**, 0 perchance errors, byte-identical restores ("Cow in field"). **Next:** page create/delete (one op per release), then T-01 1c resume-to-end as a small release. **Plan:** `deletePanel` pure command + dispatch in `deletePanel()` (single within-page deletes only; the only-panel reset/page-delete and batch/group deletes keep their old paths); survivors' images remapped by id and prompt maps shifted down with them via `reorderPanelMaps`. One op per release → `2026.09.28.3`. **Next:** page create/delete, then T-01 1c resume-to-end.
