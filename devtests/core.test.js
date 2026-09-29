@@ -903,6 +903,26 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "hit,gapKey,current,bareMeta,untouched,miss,registry");
   });
 
+  await t("commands: deletePage removes the page and lands on the smallest survivor", () => {
+    if (typeof api.deletePage !== "function") return no("no deletePage export");
+    const meta = (name) => ({ name: name, summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" });
+    const proj = { version: 2, currentPage: 5, pages: { 1: meta("a"), 2: meta("b"), 5: meta("c") } };
+    const hit = api.deletePage(proj, 2);
+    const solo = { version: 2, currentPage: 1, pages: { 1: meta("only") } };
+    const soloBefore = JSON.stringify(solo);
+    const miss = [api.deletePage(solo, 1), api.deletePage(proj, 2), api.deletePage(proj, 9),
+      api.deletePage(proj, 0), api.deletePage(null, 1), api.deletePage({ version: 2 }, 1),
+      api.deletePage({ version: 2, currentPage: 1, pages: {} }, 1)];
+    return eqArr([
+      JSON.stringify(hit), Object.keys(proj.pages).join(","), proj.currentPage,
+      proj.pages[1].name, JSON.stringify(solo) === soloBefore,
+      miss.filter((m) => m === null).length,
+      api.COMMANDS.deletePage === api.deletePage,
+    ], [
+      JSON.stringify({ page: 1, deleted: 2, fields: [] }), "1,5", 1, "a", true, 7, true,
+    ], "hit,survivors,current,untouched,soloKept,miss,registry");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -914,7 +934,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 12, "addPage,addPanel,deletePanel,duplicatePanel,movePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
+      true, 13, "addPage,addPanel,deletePage,deletePanel,duplicatePanel,movePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
