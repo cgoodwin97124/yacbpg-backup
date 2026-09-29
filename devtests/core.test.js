@@ -884,6 +884,25 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
     ], "hit,shift,countRule,keyOrder,lastDelete,countRule2,soloKept,miss,registry");
   });
 
+  await t("commands: addPage appends a bare page at max key plus one and refuses bad input", () => {
+    if (typeof api.addPage !== "function") return no("no addPage export");
+    const meta = () => ({ name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" });
+    const proj = { version: 2, currentPage: 1, pages: { 1: Object.assign(meta(), { name: "a" }), 3: meta() } };
+    const hit = api.addPage(proj);
+    const miss = [api.addPage(null), api.addPage({}), api.addPage({ version: 2 }),
+      api.addPage({ version: 2, currentPage: 1, pages: {} }),
+      api.addPage({ version: 2, currentPage: 1, pages: { x: meta() } })];
+    return eqArr([
+      JSON.stringify(hit), Object.keys(proj.pages).join(","), proj.currentPage,
+      JSON.stringify(proj.pages[4]), proj.pages[1].name,
+      miss.filter((m) => m === null).length,
+      api.COMMANDS.addPage === api.addPage,
+    ], [
+      JSON.stringify({ page: 4, fields: [] }), "1,3,4", 4,
+      JSON.stringify(meta()), "a", 5, true,
+    ], "hit,gapKey,current,bareMeta,untouched,miss,registry");
+  });
+
   await t("commands: setTitle coerces, and an unknown id is a no-op", () => {
     const proj = mkProject();
     const values = [null, undefined, 42, true, { a: 1 }, "", "  spaced  "].map((v) => { api.setTitle(proj, "p-1", v); return proj.pages[1][1].title; });
@@ -895,7 +914,7 @@ if (api.setTitle && api.findPanelById && api.COMMANDS) {
       Object.keys(api.COMMANDS).sort().join(","),
     ], [
       "||42|true|[object Object]||  spaced  ", 3, true,
-      true, 11, "addPanel,deletePanel,duplicatePanel,movePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
+      true, 12, "addPage,addPanel,deletePanel,duplicatePanel,movePanel,setImgCount,setPanelSeed,setPromptOverride,setProtect,setSameSeed,setSize,setStyle,setTitle",
     ], "coercion,noop,registry");
   });
 }
