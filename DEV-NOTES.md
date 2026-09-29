@@ -1,6 +1,14 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.28.3 — 🧭 P3 step 2 fourth op (`deletePanel` command; single within-page deletes only)
+
+Released 2026-09-28 (stamp 2026.09.28.3). Continuation of the greenlit P3 step-2 track (per the 2026.09.28.2 entry's Next line: delete, one op per release).
+
+- **What shipped.** `deletePanel(project, pageNum, total, index)` in `src/state/commands.js` (registry of twelve, `COMMANDS_VERSION` 10→11): refuses `t<=1`/junk/missing panel, splices the panel out of the positional order, rebuilds the page and folds the count, returns `{page, index: min(at,newTotal), newTotal, fields: []}`. `deletePanel(i)` in `index.html` commits `storeJsonNow()` through it — `beforeIds` + `remapPanelImagesById` (survivors keep images by id, the deleted panel's dropped) + `reorderPanelMaps(order, newTotal)` (prompt overrides/histories shift down with the survivors) — falling back to the old positional path when the module is missing. The only-panel reset/page-delete and batch/group deletes keep their existing paths for later releases. Dialogs/undo/status text untouched.
+- **Key-order canon (debt paid).** The command writes the page meta as `name,summary,panelCountSel,panelCountCustom,seed` — the .28.1 debt (`deletePanel` writing `seed`-third) is gone, so the written bytes equal the store's JSON immediately with no debounce heal. The core case pins the order (`1,2,3,4,name,summary,panelCountSel,panelCountCustom,seed` — stale slot 4 kept, exactly like the old path).
+- **The numbers.** core **45/0** (new `deletePanel` case: hit/shift/count-rule/key-order/last-delete/solo-refusal/8 misses/registry; registry assertions now 12 keys, VERSION 11), guards **21/0**, state-diff **28/28** (new SD28: real `deletePanel(2)` — confirm stubbed at file top — id order asserted, title rode up, custom/3, status line, saved==store, undo restores bytes), smoke **109/0/4** (G13 confirm-gate green), fixtures **18/0**, gen **18/0 (+1 manual)**; **0** perchance errors; author's map **byte-identical** after every runner ("Cow in field").
+
 ## BATCH 2026.09.28.2 — 🧭 P3 step 2 third op (`movePanel` command; single within-page moves only)
 
 Released 2026-09-28 (stamp 2026.09.28.2). Continuation of the greenlit P3 step-2 track (per the 2026.09.28.1 entry's Next line: move, one op per release).
