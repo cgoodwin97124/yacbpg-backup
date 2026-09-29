@@ -248,3 +248,6 @@ Docs = repo-root files, never src/, never index.html blocks (pointer comment onl
 
 
 ## 34. 2026.09.29.4 movePanelToPage command — cross-page singles through the registry (COMMANDS_VERSION 14, 15 commands). Dispatch keeps guards/confirms/images/status; old path is fallback. SD31 pins a live cross-page move plus byte-identical undo. Next: group moves, then renumber/reflow old paths. Fixture pages hold 24 stored panels behind smaller counts; moves drop past-count entries (old behaviour, replicated).
+
+
+## 35. 2026.09.29.5 moveManyToPage command — group cross-page moves through the registry (COMMANDS_VERSION 15, 16 commands). Dispatch reuses built.imgs/srcBuilt.imgs so image pairing cannot diverge; old path is fallback; batchMoveToNewPage rides via replace. Recon correction stands: no stale-maps quirk exists (loadCurrentPage resets all three maps in both paths). SD32 pins a live 2-panel cross-page move plus byte-identical undo. Next: renumber/reflow old paths, then moveSelectionWithinPage.
