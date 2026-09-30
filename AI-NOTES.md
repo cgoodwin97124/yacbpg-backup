@@ -254,3 +254,5 @@ Docs = repo-root files, never src/, never index.html blocks (pointer comment onl
 
 
 ## 36. 2026.09.29.6 moveMany command — within-page group reorders through the registry (COMMANDS_VERSION 16, 17 commands). Dispatch pairs images from the returned old-position order; cascadePageSequence untouched (shared with duplicate/add/paste; carry always empty on this path). SD33 pins a live 3-block reorder plus byte-identical undo. Move family complete (single, cross single/group, within group). Next: renumberPages + reflow old paths.
+
+## 37. 2026.09.29.7 renumberPages command — page reorders through the registry (COMMANDS_VERSION 17, 18 commands). Pure clamp/splice/rebuild/map plus session remap by reference; dispatch snapshots the live session, swaps it back, keeps the analysisPage remap; old path fallback; no undo (never had one). SD34 pins a live 1-to-3 renumber (order, current, status, store-match). Next: the reflowInsert command (single duplicate/add sites; batch cascade stays old).
