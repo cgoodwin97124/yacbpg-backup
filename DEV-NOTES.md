@@ -1,6 +1,14 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.29.7 — page renumbering on the named command (no visible change)
+
+Released 2026-09-29 (stamp 2026.09.29.7). First of the two renumber/reflow ops (author answers: two releases, renumber first; reflow locked to the single-panel sites; strictly invisible).
+
+- What shipped. renumberPages(project, fromKey, toPos, session) pure command (registry of eighteen, COMMANDS_VERSION 17): clamp plus splice plus 1..N rebuild plus old-to-new map plus newCurrent; remaps the image session by key reference with no image copies; refuses fewer-than-2-pages, unknown keys, junk projects. Dispatch in renumberPageTo() snapshots the live page session first, swaps the remapped session back, keeps save plus currentPage plus analysisPage remap plus DOM reload plus status; old path as fallback. No undo step: renumber never had one, kept as-is.
+- Tests. core plus 1 (forward/back round-trip, session ref-identity, clamp, 4 refusals, null-session, registry) is 52/0; setTitle registry line moved to v17 and 18 names; state-diff SD34 drives a live page-1-to-3 renumber (order, current page, status, store-match, no undo step) for 34/34. Guards 21/0, smoke 109/0/4, fixtures 18/0, gen 18/0 plus 1 manual, 0 perchance errors, byte-identical restores (map aefe577f).
+- Recon carried in: both renumber/reflow paths end in loadCurrentPage (wipes the three prompt maps, index.html:4691-93) so neither op shifts maps; the reflow manual rebuild matches pageObjectFromEntries so no meta-key decision exists. Next: the reflowInsert command.
+
 ## BATCH 2026.09.29.6 — within-page group reorders on the named command (no visible change)
 
 Released 2026-09-29 (stamp 2026.09.29.6). Third release of the P2 data-model track: the multi-select within-page reorder, completing the move family (single 2026.09.28.2, cross-page single .29.4, cross-page group .29.5). No open questions survived recon — the cascade-spill worry dissolved (this path always feeds cascade exactly total entries, so carry is always empty).
