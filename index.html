@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.5 — 2026-09-29 — ⇄ Moving a panel group to another page runs on the new command system (no visible change)
-- Moving a multi-selected group of panels to another page (the ⇅ menu's "page" targets and "new page") now runs through the same named-command system as everything else: same full-page guard, same landing order, same status message. The move is addressed by panel identity instead of position. Within-page group moves stay on the old path for a later release.
+## 2026.09.29.6 — 2026-09-29 — ⇄ Reordering a panel group on the page runs on the new command system (no visible change)
+- Reordering a multi-selected group of panels on the same page (the ⇅ menu's position targets) now runs through the same named-command system as everything else: same insert math, same selection restore, same status message. The block is addressed by panel identity instead of position, completing the move family. The shared cascade writer stays untouched underneath.
 </script>
 
 
@@ -6424,6 +6424,27 @@ color-scheme:light;
     const sel = panelSelectionSorted().filter(i => i <= total);
     if (!sel.length) return;
     pushStructUndo(sel.length === 1 ? 'move panel' : 'move panels');
+    const cmdMoveMany = panelCommands ? panelCommands.moveMany : null;
+    if (typeof cmdMoveMany === 'function') {
+      const project = storeJsonNow();
+      const hit = project ? cmdMoveMany(project, currentPage, total, sel, toPos) : null;
+      if (hit) {
+        const liveImgs = pageImagesOf(currentPage);
+        const newImgs = {};
+        for (let k = 0; k < hit.order.length; k++) if (liveImgs[hit.order[k]]) newImgs[k + 1] = liveImgs[hit.order[k]];
+        savePanelStateShape(project);
+        setPageImagesFor(currentPage, newImgs);
+        loadCurrentPage();
+        populatePageSel();
+        updateDeletePageBtn();
+        panelSelection.clear();
+        for (let k = 0; k < sel.length; k++) panelSelection.add(Math.min(hit.index + k, 24));
+        selectionAnchor = Math.min(hit.index + sel.length - 1, 24);
+        updateSelectionUI();
+        if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? '' : 's') + ' to position ' + hit.index + '.';
+        return;
+      }
+    }
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const imgs = pageImagesOf(currentPage);
