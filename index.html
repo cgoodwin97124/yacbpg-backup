@@ -27,6 +27,8 @@
                    questions; src/refactor-form.html is the fill-in version of them, opened
                    with window.__openRefactorForm() (a dev tool — no menu entry). Its round 2 —
                    the P2 questions — is src/round2-form.html, opened with window.__openRound2Form().
+                   Reference-image hooks (RI-01/RI-02) are src/refimages-form.html, opened with
+                   window.__openRefImagesForm(); questions/REFERENCE-IMAGES.md is the plain-text version.
     devtests/ + fixtures/
                    The regression harness (P0, 2026-09-26): park/restore of the author's whole
                    localStorage map, the smoke / generation / fixtures / core suites, the module
@@ -810,6 +812,7 @@ color-scheme:light;
               <button class="btn-add-lib" style="background:var(--accent);color:var(--ink);" onclick="newProject()" title="Start a fresh project — backs up the current one first (optional), resets to defaults, then lets you name the new project">📄 New Project</button>
             </div>
             <input type="file" id="importSettingsInput" accept=".json,.zip,application/json,application/zip,application/x-zip-compressed,application/octet-stream" onchange="importSettingsFromFile(event)" hidden>
+            <label class="check-label" style="margin-top:6px;"><input type="checkbox" id="includeRefsExport" checked onchange="onIncludeRefsExportChange()"> <span><b>Include reference images in exports</b> — the small visual memos on library items travel in the .json and the .zip. Untick for a lighter file.</span></label>
             <div id="backupStatusEl" class="lib-hint" style="margin-top:6px;">💾 Save… never asks: it silently overwrites the file you chose with Save as… (remembered even after a reload), or downloads to the default name if you haven't chosen one yet. 💾 Save as… lets you choose a new path/filename and confirms before overwriting. "Export Project (.zip)" bundles the settings JSON plus every generated panel image (all pages) into one .zip. Importing a .json restores settings only; importing a project .zip also repopulates the images (they stay in memory until you reload, like all generated images). Importing replaces the current project — if you have one in progress you'll be asked whether to save it first.</div>
           </div>
           <div class="input-group">
@@ -1334,8 +1337,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.9 — 2026-09-29 — ⇅ Group-move labels now say the selection moves as one block (no behavior change)
-- Non-contiguous selections (e.g. panels 2+4) already moved as a single ordered block with gaps closed — verified, no crash and no data loss. The ⇅ Move picker's group now reads "Move N panels on this page (as one block)" and the done message reads "Moved N panels to position P as a block.", matching the existing help text. Single-panel messages are unchanged.
+## 2026.09.29.10 — 2026-09-29 — 🖼 Reference-image hooks: up to 3 visual memos per character/location
+- Characters and Locations can now hold up to 3 small reference images each — thumbnails on the Library row (tap to view or remove), added by upload or by snapshotting a generated panel image. They are a visual memo only and never enter a prompt. Copying an item between project and catalogue asks once per batch whether the images travel; exports carry them unless the new "Include reference images in exports" box (on, by default) is unticked; the JSON editor shows them locked; deleting the item deletes its images.
 </script>
 
 
@@ -1492,7 +1495,7 @@ color-scheme:light;
   }
 
   function projectLibraryArray() {
-    return projectLibrary.map(o => ({ id: o.id, type: o.type, name: o.name, desc: o.desc }));
+    return projectLibrary.map(o => ({ id: o.id, type: o.type, name: o.name, desc: o.desc, refs: refListOf(o).map(r => ({ src: r.src })) }));
   }
 
   function projectKeptArray() {
@@ -1525,6 +1528,217 @@ color-scheme:light;
 
   function saveCatalogue(lib) {
     try { localStorage.setItem(CATALOGUE_KEY, JSON.stringify(lib)); } catch (e) {}
+  }
+
+  function refListOf(o) {
+    if (!o || !Array.isArray(o.refs)) return [];
+    return o.refs.filter(r => r && typeof r.src === 'string' && r.src).slice(0, 3);
+  }
+
+  function findRefObject(id, where) {
+    const lib = where === 'cat' ? loadCatalogue() : loadLibraryObjects();
+    return { lib: lib, obj: lib.find(e => e && e.id === id) };
+  }
+
+  function writeRefsFor(id, refs, where) {
+    if (where === 'cat') saveCatalogue(loadCatalogue().map(x => (x && x.id === id ? Object.assign({}, x, { refs: refs }) : x)));
+    else saveLibraryObjects(loadLibraryObjects().map(x => (x && x.id === id ? Object.assign({}, x, { refs: refs }) : x)));
+    renderLibrary();
+  }
+
+  function refStatusSaved(name, n) {
+    const st = document.getElementById('statusEl');
+    if (st) st.textContent = 'Reference image saved on "' + (name || '(unnamed)') + '" (' + n + ' of 3).';
+  }
+
+  function refThumbFrom(dataUrl) {
+    return buildPromptThumb(dataUrl, 256).then(thumb => thumb || dataUrl);
+  }
+
+  function addRefToObject(id, src, where) {
+    const found = findRefObject(id, where);
+    if (!found.obj) return;
+    const cur = refListOf(found.obj);
+    if (cur.length < 3) {
+      writeRefsFor(id, cur.concat([{ src: src }]), where);
+      refStatusSaved(found.obj.name, cur.length + 1);
+      return;
+    }
+    const thumbs = cur.map((r, k) => '<button onclick="choiceDialogPick(' + k + ')" title="Replace reference ' + (k + 1) + '" style="display:inline-block;text-align:center;margin:0 6px 6px 0;vertical-align:top;background:none;border:none;padding:0;cursor:pointer;"><img src="' + r.src + '" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:2px solid var(--border-7,#666);display:block;" alt="Reference ' + (k + 1) + '"><span style="font-size:0.8rem;">' + (k + 1) + '</span></button>').join('');
+    showChoiceDialog({
+      title: 'Replace a reference image?',
+      paragraphs: ['<b>' + escapeHtml(String(found.obj.name || '(unnamed)')) + '</b> already holds 3 reference images. Tap the one the new image replaces:<div style="margin-top:8px;">' + thumbs + '</div>'],
+      hint: '',
+      buttons: [
+        { label: 'Replace 1', cls: 'choice-plain', value: 0 },
+        { label: 'Replace 2', cls: 'choice-plain', value: 1 },
+        { label: 'Replace 3', cls: 'choice-plain', value: 2 },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    }).then(v => {
+      if (v !== 0 && v !== 1 && v !== 2) return;
+      const next = cur.slice(); next[v] = { src: src };
+      writeRefsFor(id, next, where);
+      refStatusSaved(found.obj.name, 3);
+    });
+  }
+
+  let refUploadTarget = null;
+
+  function refUploadInput() {
+    let el = document.getElementById('refUploadInput');
+    if (!el) {
+      el = document.createElement('input');
+      el.type = 'file'; el.id = 'refUploadInput'; el.accept = 'image/*'; el.hidden = true;
+      el.onchange = () => {
+        const t = refUploadTarget; refUploadTarget = null;
+        const f = el.files && el.files[0];
+        el.value = '';
+        if (!t || !f) return;
+        const fr = new FileReader();
+        fr.onload = () => { if (typeof fr.result === 'string' && fr.result) refThumbFrom(fr.result).then(th => { if (th) addRefToObject(t.id, th, t.where); }); };
+        fr.onerror = () => {};
+        fr.readAsDataURL(f);
+      };
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+
+  function openRefAdd(id, where) {
+    const found = findRefObject(id, where);
+    if (!found.obj) return;
+    showChoiceDialog({
+      title: 'Add a reference image',
+      paragraphs: ['Add a small visual memo to <b>' + escapeHtml(String(found.obj.name || '(unnamed)')) + '</b>. Thumbnails are stored with the item; they are never added to a prompt.'],
+      hint: '',
+      buttons: [
+        { label: 'Upload from this device', cls: 'choice-plain', value: 'upload' },
+        { label: 'From a generated panel image', cls: 'choice-plain', value: 'snapshot' },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    }).then(v => {
+      if (v === 'upload') { refUploadTarget = { id: id, where: where }; refUploadInput().click(); }
+      else if (v === 'snapshot') openRefSnapshot(id, where);
+    });
+  }
+
+  function openRefSnapshot(id, where) {
+    const imgs = pageImagesOf(currentPage);
+    const have = [];
+    for (const k of Object.keys(imgs)) {
+      const slots = imgs[k] || [];
+      for (let s = 0; s < slots.length; s++) if (slots[s]) have.push({ panel: Number(k), slot: s + 1 });
+    }
+    if (!have.length) {
+      const st0 = document.getElementById('statusEl');
+      if (st0) st0.textContent = 'No generated panel images on this page yet — generate first, or upload instead.';
+      openRefAdd(id, where);
+      return;
+    }
+    const dialog = showChoiceDialog({
+      title: 'Snapshot a panel image',
+      paragraphs: ['<div class="range-row"><label for="refSnapPanel">Panel</label><input type="number" id="refSnapPanel" min="1" max="24" step="1" value="' + have[0].panel + '"><label for="refSnapSlot">Image</label><input type="number" id="refSnapSlot" min="1" max="4" step="1" value="' + have[0].slot + '"></div>'],
+      hint: 'Panels with images right now: ' + have.map(h => h.panel + '.' + h.slot).join(', ') + '.',
+      buttons: [
+        { label: 'Snapshot it', cls: 'choice-plain', value: 'go' },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    });
+    dialog.then(async v => {
+      if (v !== 'go') return;
+      const pEl = document.getElementById('refSnapPanel');
+      const sEl = document.getElementById('refSnapSlot');
+      const p = pEl ? parseInt(pEl.value, 10) : NaN;
+      const s = sEl ? parseInt(sEl.value, 10) : NaN;
+      const arr = (pageImagesOf(currentPage)[p]) || [];
+      const src = arr[s - 1];
+      if (typeof src !== 'string' || !src) {
+        const st = document.getElementById('statusEl');
+        if (st) st.textContent = 'No image at panel ' + p + ' image ' + s + ' — nothing snapshotted.';
+        return;
+      }
+      const thumb = await refThumbFrom(src);
+      if (thumb) addRefToObject(id, thumb, where);
+    });
+  }
+
+  function openRefViewer(id, idx, where) {
+    const found = findRefObject(id, where);
+    if (!found.obj) return;
+    const cur = refListOf(found.obj);
+    const r = cur[idx];
+    if (!r) return;
+    showChoiceDialog({
+      title: 'Reference ' + (idx + 1) + ' of ' + cur.length,
+      paragraphs: ['<b>' + escapeHtml(String(found.obj.name || '(unnamed)')) + '</b><div style="margin-top:8px;text-align:center;"><img src="' + r.src + '" style="max-width:100%;max-height:50vh;border-radius:8px;" alt="Reference image"></div>'],
+      hint: Math.round(r.src.length / 1024) + ' KB stored.',
+      buttons: [
+        { label: 'Remove this image', cls: 'choice-danger', value: 'del' },
+        { label: 'Close', cls: 'choice-neutral', value: null }
+      ]
+    }).then(v => {
+      if (v !== 'del') return;
+      const next = cur.slice(); next.splice(idx, 1);
+      writeRefsFor(id, next, where);
+      const st = document.getElementById('statusEl');
+      if (st) st.textContent = 'Reference image removed (' + next.length + ' left).';
+    });
+  }
+
+  function refStripFor(o, where) {
+    if (!o || (o.type !== 'Character' && o.type !== 'Location')) return null;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'flex:1 1 100%;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:2px 0 0 26px;';
+    const refs = refListOf(o);
+    refs.forEach((r, k) => {
+      const im = document.createElement('img');
+      im.src = r.src;
+      im.alt = 'Reference ' + (k + 1);
+      im.title = 'Reference ' + (k + 1) + ' of ' + refs.length + ' — tap to view or remove';
+      im.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:6px;border:2px solid var(--border-7,#666);cursor:pointer;';
+      im.onclick = () => openRefViewer(o.id, k, where);
+      wrap.appendChild(im);
+    });
+    if (refs.length < 3) {
+      const add = document.createElement('button');
+      add.className = 'btn-copy-lib';
+      add.textContent = '+ Ref';
+      add.title = 'Add a reference image (up to 3) — a visual memo, never added to a prompt';
+      add.onclick = () => openRefAdd(o.id, where);
+      wrap.appendChild(add);
+    } else {
+      const full = document.createElement('span');
+      full.style.cssText = 'font-size:0.75rem;color:var(--text-8,#999);';
+      full.textContent = '3 of 3';
+      wrap.appendChild(full);
+    }
+    return wrap;
+  }
+
+  function refAskForCopy(items, proceed) {
+    const withRefs = items.filter(o => refListOf(o).length);
+    if (!withRefs.length) { proceed(true); return; }
+    const n = withRefs.reduce((a, o) => a + refListOf(o).length, 0);
+    showChoiceDialog({
+      title: 'Copy the reference images too?',
+      paragraphs: [renamePlural(withRefs.length, 'item') + ' in this batch ' + (withRefs.length === 1 ? 'holds' : 'hold') + ' ' + n + ' reference image' + (n === 1 ? '' : 's') + ' (' + withRefs.map(o => escapeHtml(String(o.name || '(unnamed)'))).join(', ') + ').'],
+      hint: '',
+      buttons: [
+        { label: 'Include the images', cls: 'choice-plain', value: 'yes' },
+        { label: 'Copy without them', cls: 'choice-neutral', value: 'no' },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    }).then(v => {
+      if (v !== 'yes' && v !== 'no') return;
+      proceed(v === 'yes');
+    });
+  }
+
+  function refEntryFor(o, withRefs) {
+    const e = { id: o.id, type: o.type, name: o.name || '', desc: o.desc || '' };
+    if (withRefs) e.refs = refListOf(o).map(r => ({ src: r.src }));
+    return e;
   }
 
   function initProjectLibrary() {
@@ -1717,7 +1931,8 @@ color-scheme:light;
     const typeLabel = obj.type || 'Character';
     const name = String(obj.name || '').trim() || '(unnamed)';
     const used = countLibReferences(id);
-    const paras = ['This removes <b>' + escapeHtml(name) + '</b> (a saved ' + typeLabel.toLowerCase() + ') from <b>this project</b> only — another project, and a copy in 🗂 My catalogue, are not affected.'];
+    const refCount = refListOf(obj).length;
+    const paras = ['This removes <b>' + escapeHtml(name) + '</b> (a saved ' + typeLabel.toLowerCase() + ') from <b>this project</b> only — another project, and a copy in 🗂 My catalogue, are not affected.' + (refCount ? ' It holds <b>' + refCount + '</b> reference image' + (refCount === 1 ? '' : 's') + ', which ' + (refCount === 1 ? 'goes' : 'go') + ' with it.' : '')];
     if (used) paras.push('<b>' + used + '</b> panel slot' + (used === 1 ? '' : 's') + ' in this project use' + (used === 1 ? 's' : '') + ' it right now. Choose what happens to ' + (used === 1 ? 'that slot' : 'those slots') + ':');
     else paras.push('No panel in this project is using it right now.');
     paras.push('Deleting cannot be undone — only a project backup can bring the entry back.');
@@ -1746,7 +1961,8 @@ color-scheme:light;
     const typeLabel = obj.type || 'Character';
     const name = String(obj.name || '').trim() || '(unnamed)';
     const inProject = loadLibraryObjects().some(o => o.id === id);
-    const paras = ['This removes <b>' + escapeHtml(name) + '</b> from <b>🗂 My catalogue</b> — the reusable set shared by every project in this browser.'];
+    const catRefCount = refListOf(obj).length;
+    const paras = ['This removes <b>' + escapeHtml(name) + '</b> from <b>🗂 My catalogue</b> — the reusable set shared by every project in this browser.' + (catRefCount ? ' It holds <b>' + catRefCount + '</b> reference image' + (catRefCount === 1 ? '' : 's') + ', which ' + (catRefCount === 1 ? 'goes' : 'go') + ' with it.' : '')];
     paras.push(inProject ? 'This project has its own copy, so its panels are unaffected.' : 'No project is using this catalogue entry right now.');
     paras.push('This cannot be undone.');
     showChoiceDialog({
@@ -1771,18 +1987,23 @@ color-scheme:light;
     if (!src) return;
     const cat = loadCatalogue();
     const same = cat.find(e => e.id === id);
-    if (same && same.name === (src.name || '') && same.desc === (src.desc || '')) {
+    const sameRefs = same ? refListOf(same).map(r => r.src).join('|') : null;
+    const srcRefs = refListOf(src).map(r => r.src).join('|');
+    if (same && same.name === (src.name || '') && same.desc === (src.desc || '') && sameRefs === srcRefs) {
       const st0 = document.getElementById('statusEl');
       if (st0) st0.textContent = '\u201c' + (src.name || 'That item') + '\u201d is already in My catalogue.';
       return;
     }
     const entry = { id: src.id, type: src.type, name: src.name || '', desc: src.desc || '' };
-    if (same) Object.assign(same, entry);
-    else cat.push(entry);
-    saveCatalogue(cat);
+    refAskForCopy([src], (withRefs) => {
+      const full = refEntryFor(src, withRefs);
+      if (same) Object.assign(same, full);
+      else cat.push(full);
+      saveCatalogue(cat);
     renderLibrary();
-    const st = document.getElementById('statusEl');
+      const st = document.getElementById('statusEl');
     if (st) st.textContent = (same ? 'Updated' : 'Copied') + ' \u201c' + (src.name || '(unnamed)') + '\u201d in My catalogue.';
+    });
   }
 
   function copyCatalogueItemToProject(id) {
@@ -1795,12 +2016,16 @@ color-scheme:light;
       return;
     }
     const typeLabel = src.type || 'Character';
-    objs.push({ id: src.id, type: typeLabel, name: src.name || '', desc: src.desc || '' });
-    saveLibraryObjects(objs);
-    renderLibrary();
-    updatePanelSelects();
-    const st = document.getElementById('statusEl');
+    refAskForCopy([src], (withRefs) => {
+      const full = refEntryFor(src, withRefs);
+      if (!full.type) full.type = typeLabel;
+      objs.push(full);
+      saveLibraryObjects(objs);
+      renderLibrary();
+      updatePanelSelects();
+      const st = document.getElementById('statusEl');
     if (st) st.textContent = 'Added \u201c' + (src.name || '(unnamed)') + '\u201d to this project\u2019s library.';
+    });
   }
 
   function countLibReferences(id) {
@@ -2199,7 +2424,7 @@ color-scheme:light;
     const items = libSelectedOf('proj');
     if (!items.length) return;
     const already = items.filter(o => loadCatalogue().some(e => e.id === o.id));
-    const doIt = () => {
+    const doIt = (withRefs) => {
       const cat = loadCatalogue();
       let copied = 0, updated = 0;
       for (const o of items) {
@@ -2210,8 +2435,14 @@ color-scheme:light;
             same.desc = o.desc || '';
             updated++;
           }
+          if (withRefs) {
+            const before = refListOf(same).map(r => r.src).join('|');
+            const after = refListOf(o).map(r => r.src).join('|');
+            same.refs = refListOf(o).map(r => ({ src: r.src }));
+            if (before !== after) updated++;
+          }
         } else {
-          cat.push({ id: o.id, type: o.type, name: o.name || '', desc: o.desc || '' });
+          cat.push(refEntryFor(o, withRefs));
           copied++;
         }
       }
@@ -2225,7 +2456,7 @@ color-scheme:light;
         st.textContent = '⤒ My catalogue: ' + bits.join(' — ') + '.';
       }
     };
-    if (!already.length) { doIt(); return; }
+    if (!already.length) { refAskForCopy(items, (withRefs) => doIt(withRefs)); return; }
     const rest = items.length - already.length;
     showChoiceDialog({
       title: '⤒ Copy ' + renamePlural(items.length, 'selected item') + ' to My catalogue?',
@@ -2238,17 +2469,20 @@ color-scheme:light;
         { label: '⤒ Copy and update', cls: 'choice-plain', value: 'go' },
         { label: 'Cancel', cls: 'choice-neutral', value: null }
       ]
-    }).then(v => { if (v === 'go') doIt(); });
+    }).then(v => { if (v === 'go') refAskForCopy(items, (withRefs) => doIt(withRefs)); });
   }
 
   function batchCopyToProject() {
     const items = libSelectedOf('cat');
     if (!items.length) return;
+    refAskForCopy(items, (withRefs) => {
     const objs = loadLibraryObjects();
     let added = 0, skipped = 0;
     for (const o of items) {
       if (objs.some(p => p.id === o.id)) { skipped++; continue; }
-      objs.push({ id: o.id, type: o.type || 'Character', name: o.name || '', desc: o.desc || '' });
+      const entry = { id: o.id, type: o.type || 'Character', name: o.name || '', desc: o.desc || '' };
+      if (withRefs) entry.refs = refListOf(o).map(r => ({ src: r.src }));
+      objs.push(entry);
       added++;
     }
     if (added) saveLibraryObjects(objs);
@@ -2257,6 +2491,7 @@ color-scheme:light;
     updatePanelSelects();
     const st = document.getElementById('statusEl');
     if (st) st.textContent = '⤓ Added ' + renamePlural(added, 'item') + ' to this project\\u2019s library' + (skipped ? ' — ' + skipped + ' ' + (skipped === 1 ? 'was' : 'were') + ' already here.' : '.');
+    });
   }
 
   function applyLibraryDeleteMany(ids, clearText) {
@@ -2381,6 +2616,8 @@ color-scheme:light;
       nameInput.oninput = () => { o.name = nameInput.value; saveCatalogue(loadCatalogue().map(x => (x.id === o.id ? Object.assign({}, x, { name: o.name }) : x))); };
       descInput.oninput = () => { o.desc = descInput.value; saveCatalogue(loadCatalogue().map(x => (x.id === o.id ? Object.assign({}, x, { desc: o.desc }) : x))); };
       row.append(nameInput, descInput, copyBtn, delBtn);
+      const catStrip = refStripFor(o, 'cat');
+      if (catStrip) { row.style.flexWrap = 'wrap'; row.appendChild(catStrip); }
       return row;
     }
     nameInput.oninput = () => { o.name = nameInput.value; saveLibraryObjects(objs); updatePanelSelects(); };
@@ -2397,6 +2634,8 @@ color-scheme:light;
       renameBtn.title = 'Rename this ' + o.type.toLowerCase() + ' everywhere it is used — shows what will change, then applies it';
       renameBtn.onclick = () => openLibraryRename(o.id);
       row.append(nameInput, descInput, renameBtn, copyUpBtn, delBtn);
+      const projStrip = refStripFor(o, 'proj');
+      if (projStrip) { row.style.flexWrap = 'wrap'; row.appendChild(projStrip); }
     } else {
       row.append(nameInput, descInput, copyUpBtn, delBtn);
     }
@@ -2667,10 +2906,18 @@ color-scheme:light;
   const HDR_ALL_KEY = 'comicGen.hdrAllViews';
   const GEN_ALWAYS_KEY = 'comicGen.genAlwaysVisible';
   const BG_GEN_KEY = 'comicGen.bgGenerate';
+  const INCLUDE_REFS_KEY = 'comicGen.includeRefsExport';
   let menuFullscreenPref = false;
   let hdrAllViewsPref = false;
   let genAlwaysVisiblePref = false;
   let bgGeneratePref = true;
+  let includeRefsPref = true;
+
+  function onIncludeRefsExportChange() {
+    const cb = document.getElementById('includeRefsExport');
+    includeRefsPref = cb ? !!cb.checked : true;
+    try { localStorage.setItem(INCLUDE_REFS_KEY, includeRefsPref ? '1' : '0'); } catch (e) {}
+  }
 
   function applyBgGenerate(on) {
     bgGeneratePref = !!on;
@@ -8772,6 +9019,10 @@ color-scheme:light;
         }
       }
     }
+    if (!includeRefsPref) {
+      if (data.settings && Array.isArray(data.settings.library)) for (const o of data.settings.library) if (o && typeof o === 'object') delete o.refs;
+      if (Array.isArray(data.libObjects)) for (const o of data.libObjects) if (o && typeof o === 'object') delete o.refs;
+    }
     return data;
   }
 
@@ -10601,6 +10852,7 @@ color-scheme:light;
   window.__openRefactorForm = function () { return openDevForm('src/refactor-form.html', 'Refactor & UI Planning — answer form'); };
   window.__openQuestionForm = function () { return openDevForm('src/question-form.html', 'Author tickets'); };
   window.__openRound2Form = function () { return openDevForm('src/round2-form.html', 'Refactor round 2 — the state layer (P2)'); };
+  window.__openRefImagesForm = function () { return openDevForm('src/refimages-form.html', 'Reference images — the hooks'); };
   window.closeUserManual = closeUserManual;
   window.deletePanelChar = deletePanelChar;
   window.deletePanelLoc = deletePanelLoc;
@@ -10650,6 +10902,9 @@ color-scheme:light;
   window.updateLibSelectionUI = updateLibSelectionUI;
   window.batchCopyToCatalogue = batchCopyToCatalogue;
   window.batchCopyToProject = batchCopyToProject;
+  window.openRefAdd = openRefAdd;
+  window.openRefViewer = openRefViewer;
+  window.onIncludeRefsExportChange = onIncludeRefsExportChange;
   window.batchDeleteLibrary = batchDeleteLibrary;
   window.applyLibraryDeleteMany = applyLibraryDeleteMany;
   window.libraryImportFiles = libraryImportFiles;
@@ -11617,7 +11872,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js', 'src/state/commands.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/refimages-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js', 'src/state/commands.js'];
 
   function extractTemplateSource(html) {
     const key = '"outputTemplate":"';
@@ -11773,6 +12028,7 @@ color-scheme:light;
     try { menuFullscreenPref = localStorage.getItem(MENU_FS_KEY) !== '0'; } catch (e) {}
     try { hdrAllViewsPref = localStorage.getItem(HDR_ALL_KEY) === '1'; } catch (e) {}
     try { genAlwaysVisiblePref = localStorage.getItem(GEN_ALWAYS_KEY) === '1'; } catch (e) {}
+    try { includeRefsPref = localStorage.getItem(INCLUDE_REFS_KEY) !== '0'; } catch (e) {}
     try { bgGeneratePref = localStorage.getItem(BG_GEN_KEY) !== '0'; } catch (e) {}
     try { keepAwakePref = localStorage.getItem(KEEP_AWAKE_KEY) === '1'; } catch (e) {}
     try { const tm = localStorage.getItem(THEME_MODE_KEY); themeModePref = (tm === 'light' || tm === 'dark' || tm === 'system') ? tm : 'system'; } catch (e) { themeModePref = 'system'; }
@@ -11785,6 +12041,8 @@ color-scheme:light;
       if (cbHdr) cbHdr.checked = hdrAllViewsPref;
       const cbGen = document.getElementById('prefGenAlwaysVisible');
       if (cbGen) cbGen.checked = genAlwaysVisiblePref;
+      const cbRefs = document.getElementById('includeRefsExport');
+      if (cbRefs) cbRefs.checked = includeRefsPref;
       const cbBg = document.getElementById('prefBgGenerate');
       if (cbBg) cbBg.checked = bgGeneratePref;
       const cbAwake = document.getElementById('prefKeepAwake');
