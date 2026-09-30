@@ -1,6 +1,13 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.29.9 — group-move labels say the block (no behavior change)
+
+Released 2026-09-29 (stamp 2026.09.29.9). Label-only follow-up to the recon on non-contiguous multi-selections.
+
+- What shipped. Three string literals in index.html: the group optgroup in populateGroupReorderSelect reads "Move N panels on this page (as one block)"; both moveSelectionWithinPage status lines read "Moved N panels to position P as a block." for multi-selects (singular unchanged). No logic, no state shape, no command changes. Recon result stands: gapped picks already travel as one ordered block (moveMany([2,4]→4) = [1,3,5,2,4] live, COMMANDS_VERSION 18), and every other batch path already handles gaps.
+- Tests. Parked live 2-panel gapped move: optgroup + status read correctly, selection restored as the block; restore().byteIdentical true (hash 248865b6); fresh reload clean (24 cards, stamp .9, no errors). Full suites not re-run (strings only; commands.js untouched).
+
 ## BATCH 2026.09.29.8 — full-page inserts on the named command (no visible change)
 
 Released 2026-09-29 (stamp 2026.09.29.8). Second of the two renumber/reflow ops; the pair is complete.
