@@ -1,3 +1,8 @@
+## 2026.09.29.10 — 2026-09-29 — 🖼 Reference-image hooks: up to 3 visual memos per character/location
+
+- **The plain version:** Characters and Locations can now hold up to 3 small reference images each — thumbnails on the Library row (tap to view or remove), added by upload or by snapshotting one of this page's generated panel images. They are a visual memo only and never enter a prompt. Copying an item between this project and My catalogue asks once per batch whether the images travel with it; exports carry them unless the new "Include reference images in exports" box (ticked by default) is unticked; the JSON editor shows them as locked metadata; deleting the item deletes its images too.
+- **Under the hood:** thumbnails are downscaled to ~256px on the way in, and a fourth arrival opens a tap-the-thumbnail replace picker. Verified: core **54/0**, guards **21/0**, state-diff **35/35**, smoke **109 pass / 0 fail / 4 manual**, fixtures **18/0**, generation **18/0 (+1 manual)**; **0** perchance errors; the author's project restored **byte-for-byte** after every run.
+
 ## 2026.09.29.9 — 2026-09-29 — ⇅ Group-move labels now say the selection moves as one block (no behavior change)
 
 - **The plain version:** when several panels are selected, the ⇅ Move picker now reads "Move N panels on this page (as one block)" and the done message reads "Moved N panels to position P as a block." Nothing about the move itself changed — a gapped pick such as panels 2+4 already travelled as one ordered block with the gaps closed, and single-panel messages read exactly as before.
