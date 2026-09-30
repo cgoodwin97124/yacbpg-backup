@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.6 — 2026-09-29 — ⇄ Reordering a panel group on the page runs on the new command system (no visible change)
-- Reordering a multi-selected group of panels on the same page (the ⇅ menu's position targets) now runs through the same named-command system as everything else: same insert math, same selection restore, same status message. The block is addressed by panel identity instead of position, completing the move family. The shared cascade writer stays untouched underneath.
+## 2026.09.29.7 — 2026-09-29 — ⇄ Page renumbering runs on the new command system (no visible change)
+- Moving a page to another position (the Page menu's renumber picker) now runs through the same named-command system as everything else: same order math, same image-session remap, same status message. Whole pages move intact with their panels, and the other pages are renumbered around it exactly as before.
 </script>
 
 
@@ -4855,6 +4855,28 @@ color-scheme:light;
   }
 
   function renumberPageTo(fromKey, toPos) {
+    const cmdRenumber = panelCommands ? panelCommands.renumberPages : null;
+    if (typeof cmdRenumber === 'function') {
+      const project = storeJsonNow();
+      if (project) {
+        const label = pageLabel(project.pages[fromKey], fromKey);
+        pageSession[currentPage] = { images: panelImages };
+        const hit = cmdRenumber(project, fromKey, toPos, pageSession);
+        if (hit) {
+          for (const k in pageSession) delete pageSession[k];
+          Object.assign(pageSession, hit.session);
+          savePanelStateShape(project);
+          currentPage = hit.newCurrent;
+          if (typeof analysisPage !== 'undefined' && hit.map[analysisPage] !== undefined) analysisPage = hit.map[analysisPage];
+          loadCurrentPage();
+          populatePageSel();
+          updateDeletePageBtn();
+          const statusEl = document.getElementById('statusEl');
+          if (statusEl) statusEl.textContent = label + ' renumbered to Page ' + hit.toPos + ' — the other pages were renumbered around it.';
+          return;
+        }
+      }
+    }
     const state = collectPanelState();
     const pages = state.pages;
     const keys = Object.keys(pages).map(Number).filter(k => !isNaN(k)).sort((a, b) => a - b);
