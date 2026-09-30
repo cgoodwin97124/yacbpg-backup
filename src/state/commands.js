@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 17;
+export const COMMANDS_VERSION = 18;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -445,4 +445,115 @@ export function renumberPages(project, fromKey, toPos, session) {
   project.pages = newPages;
   project.currentPage = map[cur];
   return { map: map, order: order, newCurrent: map[cur], toPos: to, session: newSession, fields: [] };
+}
+
+export function reflowInsert(project, srcPage, total, afterIndex, incomingPanel, incomingImg, images) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const src = Number(srcPage);
+  if (!Number.isInteger(src) || src < 1) return null;
+  const page = project.pages[src];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  const after = Number(afterIndex);
+  if (!Number.isInteger(after) || after < 1) return null;
+  if (!isObj(incomingPanel)) return null;
+  const imgs = isObj(images) ? images : {};
+  const countOf = (pg) => {
+    if (!isObj(pg)) return 0;
+    const sel = String(pg.panelCountSel || "4");
+    if (sel === "custom") {
+      const n = parseInt(pg.panelCountCustom, 10);
+      return isNaN(n) ? 4 : Math.min(24, Math.max(1, n));
+    }
+    const n = parseInt(sel, 10);
+    return isNaN(n) ? 4 : Math.min(24, Math.max(1, n));
+  };
+  const count = countOf(page);
+  if (count < 1 || count > 24) return null;
+  const srcImgs = isObj(imgs[src]) ? imgs[src] : {};
+  const insertPos = Math.min(after + 1, 24);
+  const carryPanel = page[count] !== undefined ? JSON.parse(JSON.stringify(page[count])) : null;
+  const carryImg = srcImgs[count] !== undefined ? JSON.parse(JSON.stringify(srcImgs[count])) : null;
+  const order = [];
+  for (let p = 1; p <= count - 1; p++) order.push(p);
+  order.splice(insertPos - 1, 0, 0);
+  const newPage = {};
+  for (const k of ["name", "summary", "seed"]) newPage[k] = page[k];
+  const newImgs = {};
+  for (let p = 1; p <= 24; p++) {
+    const op = order[p - 1];
+    if (op === 0) {
+      newPage[p] = JSON.parse(JSON.stringify(incomingPanel));
+      if (incomingImg !== null && incomingImg !== undefined) newImgs[p] = JSON.parse(JSON.stringify(incomingImg));
+    } else if (op !== undefined && page[op] !== undefined) {
+      newPage[p] = JSON.parse(JSON.stringify(page[op]));
+      if (srcImgs[op] !== undefined) newImgs[p] = JSON.parse(JSON.stringify(srcImgs[op]));
+    }
+  }
+  const spc = countStateFor(24);
+  newPage.panelCountSel = spc.sel;
+  newPage.panelCountCustom = spc.custom;
+  project.pages[src] = newPage;
+  const outImages = {};
+  outImages[src] = newImgs;
+  const numKeys = [];
+  for (const k of Object.keys(project.pages)) {
+    const v = Number(k);
+    if (String(v) === k && Number.isInteger(v) && v >= 1) numKeys.push(v);
+  }
+  numKeys.sort((a, b) => a - b);
+  let pg = src;
+  let moves = 0;
+  let createdPage = null;
+  let carry = carryPanel;
+  let carryI = carryImg;
+  while (carry) {
+    let next = null;
+    for (const k of numKeys) { if (k > pg) { next = k; break; } }
+    moves++;
+    if (next === null) {
+      const n = numKeys.length ? Math.max.apply(null, numKeys) + 1 : 1;
+      const np = { name: "", summary: "", panelCountSel: "1", panelCountCustom: "", seed: "" };
+      np[1] = carry;
+      project.pages[n] = np;
+      numKeys.push(n);
+      numKeys.sort((a, b) => a - b);
+      const nimgs = {};
+      if (carryI !== null && carryI !== undefined) nimgs[1] = carryI;
+      outImages[n] = nimgs;
+      createdPage = n;
+      break;
+    }
+    const tp0 = project.pages[next];
+    const tCount = countOf(tp0);
+    const tImgs = isObj(imgs[next]) ? imgs[next] : {};
+    const tp = {};
+    for (const k of ["name", "summary", "seed"]) tp[k] = tp0[k];
+    const tNew = {};
+    tp[1] = carry;
+    if (carryI !== null && carryI !== undefined) tNew[1] = carryI;
+    let overflow = null;
+    let overflowImg = null;
+    for (let p = 1; p <= tCount; p++) {
+      const dst = p + 1;
+      if (dst <= 24) {
+        if (tp0[p] !== undefined) tp[dst] = tp0[p];
+        if (tImgs[p] !== undefined) tNew[dst] = tImgs[p];
+      } else {
+        overflow = tp0[p] !== undefined ? JSON.parse(JSON.stringify(tp0[p])) : null;
+        overflowImg = tImgs[p] !== undefined ? JSON.parse(JSON.stringify(tImgs[p])) : null;
+      }
+    }
+    const tpc = countStateFor(Math.min(tCount + 1, 24));
+    tp.panelCountSel = tpc.sel;
+    tp.panelCountCustom = tpc.custom;
+    project.pages[next] = tp;
+    outImages[next] = tNew;
+    carry = overflow;
+    carryI = overflowImg;
+    pg = next;
+  }
+  project.currentPage = src;
+  return { page: src, insertPos: insertPos, moves: moves, createdPage: createdPage, images: outImages, fields: [] };
 }
