@@ -1,3 +1,8 @@
+## 2026.09.29.8 — 2026-09-29 — ⇄ Full-page inserts run on the new command system (no visible change)
+
+- **The plain version:** nothing changes when you duplicate or add a panel on a page that already holds 24 panels — the overflow still reflows onto the following pages, a new page is still created when needed, and the confirms and status messages read exactly as before. Underneath, the insert now runs through the named-command system, completing the renumber/reflow pair.
+- **The numbers:** core **53/0**, guards **21/0**, smoke **109 pass / 0 fail / 4 manual**, state-diff **35/35**, fixtures **18/0**, generation **18/0 (+1 manual)**; **0** perchance errors; your saved project restored **byte-for-byte** after every run.
+
 ## 2026.09.29.7 — 2026-09-29 — ⇄ Page renumbering runs on the new command system (no visible change)
 
 - **The plain version:** nothing changes in how moving a page to another position behaves — the renumber picker, the surrounding pages shifting around it, and the status message all work exactly as before. Underneath, the page reorder now runs through the named-command system. Panel reflow on full pages comes next.
