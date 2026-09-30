@@ -1,6 +1,13 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.29.8 — full-page inserts on the named command (no visible change)
+
+Released 2026-09-29 (stamp 2026.09.29.8). Second of the two renumber/reflow ops; the pair is complete.
+
+- What shipped. reflowInsert(project, srcPage, total, afterIndex, incomingPanel, incomingImg, images) pure command (registry of nineteen, COMMANDS_VERSION 18): source rebuild at 24 with the 0-sentinel insert, carry cascade across following pages, new-page creation via the default shape; counts read with the same declared-count logic as analysisPanelCount; images travel as a page-keyed map and come back remapped with no copies shared. Dispatch in reflowInsertOnFullPage() stops generations, builds the image map from the live session, writes back only touched pages, keeps save plus reload plus the moves/createdPage/insertPos return for the callers status lines; old path as fallback. Both single-panel call sites (duplicate, add) ride it; the batch cascadePageSequence stays untouched.
+- Tests. core plus 1 (carry to a roomy page, cascade creating page 3, image routing, 6 refusals, registry) is 53/0; setTitle registry line moved to v18 and 19 names; state-diff SD35 drives a live duplicate on the 24-panel fixture page (order plus fresh copy id, carry landing on page 2, kept panels, status, store-match, byte-identical undo) for 35/35. Guards 21/0, smoke 109/0/4, fixtures 18/0, gen 18/0 plus 1 manual, 0 perchance errors, byte-identical restores (map f2e9e67f).
+
 ## BATCH 2026.09.29.7 — page renumbering on the named command (no visible change)
 
 Released 2026-09-29 (stamp 2026.09.29.7). First of the two renumber/reflow ops (author answers: two releases, renumber first; reflow locked to the single-panel sites; strictly invisible).
