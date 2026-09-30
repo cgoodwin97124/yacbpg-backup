@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.7 — 2026-09-29 — ⇄ Page renumbering runs on the new command system (no visible change)
-- Moving a page to another position (the Page menu's renumber picker) now runs through the same named-command system as everything else: same order math, same image-session remap, same status message. Whole pages move intact with their panels, and the other pages are renumbered around it exactly as before.
+## 2026.09.29.8 — 2026-09-29 — ⇄ Full-page inserts run on the new command system (no visible change)
+- Duplicating or adding a panel on a page that already holds 24 panels reflows the overflow onto the following pages exactly as before — same cascade, same new-page creation, same confirms and status messages. The insert now runs through the same named-command system as everything else, completing the renumber/reflow pair.
 </script>
 
 
@@ -5902,6 +5902,26 @@ color-scheme:light;
   }
 
   function reflowInsertOnFullPage(i, incomingPanel, incomingImg) {
+    const cmdReflow = panelCommands ? panelCommands.reflowInsert : null;
+    if (typeof cmdReflow === 'function') {
+      const project = storeJsonNow();
+      if (project && project.pages) {
+        stopAllGenerations();
+        const total = analysisPanelCount(project.pages[currentPage]);
+        const images = {};
+        for (const k of Object.keys(project.pages)) images[k] = pageImagesOf(Number(k));
+        const hit = cmdReflow(project, currentPage, total, i, incomingPanel, incomingImg, images);
+        if (hit) {
+          for (const k of Object.keys(hit.images)) setPageImagesFor(Number(k), hit.images[k]);
+          savePanelStateShape(project);
+          currentPage = project.currentPage;
+          loadCurrentPage();
+          populatePageSel();
+          updateDeletePageBtn();
+          return { moves: hit.moves, createdPage: hit.createdPage, insertPos: hit.insertPos };
+        }
+      }
+    }
     stopAllGenerations();
     const state = collectPanelState();
     const pages = state.pages;
