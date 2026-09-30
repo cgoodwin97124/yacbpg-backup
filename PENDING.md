@@ -609,7 +609,7 @@ each section).
 
 ### 2026-09-30 — LABELS: group-move wording says the selection moves as one block
 
-- **Status:** ✅ **DONE 2026.09.29.9** — implemented, verified live, documented; app files (index.html) await the author Save, then the button push; docs via Contents API in the same session.
+- **Status:** ✅ **DONE 2026.09.29.9** — implemented, verified live, documented; app files (index.html) pushed via the button (15 files, repo `index.html` verified at `2026.09.29.9` with "(as one block)"); docs via Contents API in the same session.
 - **Request (author, verbatim):** "Go ahead and implement it!" — following the recon recommendation, with prior answers: (1) label fixes ride the next release, (2) both labels in the same release, (3) fix now since it is strings-only, (4) nothing else pending.
 - **Recon (2026-09-30):** non-contiguous picks (e.g. panels 2+4) already move as one ordered block with gaps closed — `moveMany([2,4]→4)` gives `[1,3,5,2,4]` live on `COMMANDS_VERSION 18`; every other batch path (Generate exact list, Clear/Clear-images/Delete loops, Duplicate after-each-original, cross-page sorted order) already handles gaps. The block semantic was already documented in help + two `⇅ Move` titles; only the picker optgroup ("Move N panels on this page") and the done message ("Moved N panels to position P.") were silent about it.
 - **What shipped:** three string literals in `index.html` — optgroup label gains "(as one block)", both `moveSelectionWithinPage` status lines gain "as a block." for multi-selects (singular unchanged). No logic, no state, no commands.
