@@ -1,3 +1,8 @@
+## 2026.09.29.9 — 2026-09-29 — ⇅ Group-move labels now say the selection moves as one block (no behavior change)
+
+- **The plain version:** when several panels are selected, the ⇅ Move picker now reads "Move N panels on this page (as one block)" and the done message reads "Moved N panels to position P as a block." Nothing about the move itself changed — a gapped pick such as panels 2+4 already travelled as one ordered block with the gaps closed, and single-panel messages read exactly as before.
+- **Under the hood:** three string literals in `index.html` only (the group optgroup label in `populateGroupReorderSelect`, the command-path and old-path status lines in `moveSelectionWithinPage`). No logic, no state shape, no command changes. Verified live with a parked 2-panel gapped move (label + status read correctly) and a byte-identical restore (hash `248865b6`).
+
 ## 2026.09.29.8 — 2026-09-29 — ⇄ Full-page inserts run on the new command system (no visible change)
 
 - **The plain version:** nothing changes when you duplicate or add a panel on a page that already holds 24 panels — the overflow still reflows onto the following pages, a new page is still created when needed, and the confirms and status messages read exactly as before. Underneath, the insert now runs through the named-command system, completing the renumber/reflow pair.
