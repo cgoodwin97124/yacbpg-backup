@@ -1,6 +1,13 @@
 > Archive: batches older than 2026.09.26.15 live verbatim in `archive/DEV-NOTES-2026-09-early.md`. This file keeps the last 8 batches (newest first).
 
 
+## BATCH 2026.09.29.10 — reference-image hooks (3 visual memos per character/location)
+
+Released 2026-09-29 (stamp 2026.09.29.10). The RI-01/RI-02 hooks round: schema refs plus Library thumbnails plus copy/export/JSON/delete behavior, one ship.
+
+- What shipped. normaliseRefs (src/core/schema.js, cap 3, {src} only) + normaliseLibrary carrying refs; projectLibraryArray round-trips them; refStripFor (+ Ref chip, viewer with remove) on Character/Location rows in both sections; openRefAdd (upload via FileReader + buildPromptThumb 256, or snapshot a panel image by panel/slot numbers); addRefToObject (direct write under 3, tap-the-thumbnail replace picker at 3); refAskForCopy once per batch on all four copy paths; includeRefsExport toggle (default on, wins; buildExportData + zip respect it); JSON editor locks refs (type/name/desc stay editable); both delete confirms name the image count. Polish: single-copy identical check compares refs too; batch update counts a refs change.
+- Tests. core 54/0, guards 21/0, state-diff 35/35, smoke 109/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, byte-identical restores (b8f67ee8). Live parked check: a 2-ref scratch item saved, asked on copy, arrived with 2 refs, delete named the images, Cancel kept it, project + catalogue restored.
+
 ## BATCH 2026.09.29.9 — group-move labels say the block (no behavior change)
 
 Released 2026-09-29 (stamp 2026.09.29.9). Label-only follow-up to the recon on non-contiguous multi-selections.
