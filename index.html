@@ -1334,8 +1334,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.8 — 2026-09-29 — ⇄ Full-page inserts run on the new command system (no visible change)
-- Duplicating or adding a panel on a page that already holds 24 panels reflows the overflow onto the following pages exactly as before — same cascade, same new-page creation, same confirms and status messages. The insert now runs through the same named-command system as everything else, completing the renumber/reflow pair.
+## 2026.09.29.9 — 2026-09-29 — ⇅ Group-move labels now say the selection moves as one block (no behavior change)
+- Non-contiguous selections (e.g. panels 2+4) already moved as a single ordered block with gaps closed — verified, no crash and no data loss. The ⇅ Move picker's group now reads "Move N panels on this page (as one block)" and the done message reads "Moved N panels to position P as a block.", matching the existing help text. Single-panel messages are unchanged.
 </script>
 
 
@@ -6483,7 +6483,7 @@ color-scheme:light;
         for (let k = 0; k < sel.length; k++) panelSelection.add(Math.min(hit.index + k, 24));
         selectionAnchor = Math.min(hit.index + sel.length - 1, 24);
         updateSelectionUI();
-        if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? '' : 's') + ' to position ' + hit.index + '.';
+        if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? ' to position ' + hit.index + '.' : 's to position ' + hit.index + ' as a block.');
         return;
       }
     }
@@ -6502,7 +6502,7 @@ color-scheme:light;
     for (let k = 0; k < sel.length; k++) panelSelection.add(Math.min(insert + k, 24));
     selectionAnchor = Math.min(insert + sel.length - 1, 24);
     updateSelectionUI();
-    if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? '' : 's') + ' to position ' + insert + '.';
+    if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? ' to position ' + insert + '.' : 's to position ' + insert + ' as a block.');
   }
 
   function batchMoveToPage(targetPage, replaceTarget) {
@@ -6598,7 +6598,7 @@ color-scheme:light;
     const keys = Object.keys(pages).map(Number).filter(k => !isNaN(k)).sort((a, b) => a - b);
     sel.innerHTML = '';
     const g1 = document.createElement('optgroup');
-    g1.label = 'Move ' + groupSize + ' panels on this page';
+    g1.label = 'Move ' + groupSize + ' panels on this page (as one block)';
     for (let p = 1; p <= total; p++) {
       const opt = document.createElement('option');
       opt.value = String(p);
