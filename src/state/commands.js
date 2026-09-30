@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 16;
+export const COMMANDS_VERSION = 17;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -415,4 +415,34 @@ export function moveMany(project, pageNum, total, indexes, toPos) {
   }
   project.pages[pageNum] = newPage;
   return { page: Number(pageNum), index: insert, count: sel.length, movedIds: movedIds, order: order, fields: [] };
+}
+
+export function renumberPages(project, fromKey, toPos, session) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const keys = [];
+  for (const k of Object.keys(project.pages)) {
+    const v = Number(k);
+    if (String(v) === k && Number.isInteger(v) && v >= 1) keys.push(v);
+  }
+  keys.sort((a, b) => a - b);
+  if (keys.length < 2) return null;
+  const from = Number(fromKey);
+  if (!Number.isInteger(from) || keys.indexOf(from) === -1) return null;
+  const to = Math.max(1, Math.min(keys.length, parseInt(toPos, 10) || 1));
+  const order = keys.filter((k) => k !== from);
+  order.splice(to - 1, 0, from);
+  const map = {};
+  const newPages = {};
+  order.forEach((oldKey, idx) => { newPages[idx + 1] = project.pages[oldKey]; map[oldKey] = idx + 1; });
+  const sess = isObj(session) ? session : {};
+  const newSession = {};
+  for (const pg of Object.keys(sess)) {
+    const nk = map[parseInt(pg, 10)];
+    if (nk !== undefined) newSession[nk] = sess[pg];
+  }
+  const cur = Number(project.currentPage);
+  if (!Number.isInteger(cur) || map[cur] === undefined) return null;
+  project.pages = newPages;
+  project.currentPage = map[cur];
+  return { map: map, order: order, newCurrent: map[cur], toPos: to, session: newSession, fields: [] };
 }
