@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 15;
+export const COMMANDS_VERSION = 16;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -376,4 +376,43 @@ export function moveManyToPage(project, srcPage, total, indexes, targetPage, tCo
   }
   project.currentPage = tgt;
   return { page: tgt, srcPage: src, index: insertPos, count: sel.length, movedIds: movedIds, deletesSrcPage: deletesSrcPage, fields: [] };
+}
+
+export function moveMany(project, pageNum, total, indexes, toPos) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  if (!Array.isArray(indexes) || !indexes.length) return null;
+  const sel = [];
+  for (const v of indexes) {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > t) return null;
+    if (sel.indexOf(n) === -1) sel.push(n);
+  }
+  sel.sort((a, b) => a - b);
+  for (const n of sel) if (page[n] === undefined) return null;
+  const selSet = {};
+  for (const n of sel) selSet[n] = true;
+  const rest = [];
+  for (let p = 1; p <= t; p++) if (!selSet[p]) rest.push(p);
+  const to = Number(toPos);
+  if (!Number.isInteger(to)) return null;
+  const insert = Math.min(Math.max(1, to), rest.length + 1);
+  const order = rest.slice(0, insert - 1).concat(sel).concat(rest.slice(insert - 1));
+  const movedIds = sel.map((n) => {
+    const m = page[n];
+    return (m && typeof m.id === "string") ? m.id : null;
+  });
+  const pc = countStateFor(t);
+  const newPage = {};
+  for (const k of ["name", "summary", "panelCountSel", "panelCountCustom", "seed"]) newPage[k] = page[k];
+  newPage.panelCountSel = pc.sel;
+  newPage.panelCountCustom = pc.custom;
+  for (let p = 1; p <= t; p++) {
+    if (page[order[p - 1]] !== undefined) newPage[p] = JSON.parse(JSON.stringify(page[order[p - 1]]));
+  }
+  project.pages[pageNum] = newPage;
+  return { page: Number(pageNum), index: insert, count: sel.length, movedIds: movedIds, order: order, fields: [] };
 }
