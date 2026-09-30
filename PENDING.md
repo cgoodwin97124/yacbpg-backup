@@ -23,6 +23,12 @@ reports `byteIdentical: false` and the write-back path recovers from the file.
 🟢 START NOW section; everything awaiting the author's explicit "go ahead" goes into the 🕒 QUEUED
 section. Move entries between sections as their status changes (greenlit → START NOW; implemented →
 
+### 2026-09-29 — ORDERING: renumber/reflow next, then Generate (x) to (y), then reference-image hooks
+
+- **Status:** ACTIVE START NOW 2026-09-29 — author approved the level-4 recommendation (verbatim: Yes please!) and authorized the renumber/reflow RECON. Implementation is NOT greenlit — it waits for the recon question round per the 2026-09-20 directive. Logged here on receipt, before any work, per the 2026-08-13 rule.
+- **Agreed order:** (1) renumber/reflow old paths as the next command op, one op per release; (2) the greenlit Generate (x) to (y) range button after that; (3) reference-image hooks last, opening with its own question round.
+- **Recon:** pending — findings and questions are appended to this entry before anything is implemented.
+
 ### 2026-09-28 — REFACTOR: P3 step 2 second op (single-panel `duplicatePanel` command)
 
 ### 2026-09-29 — REFACTOR: P2 data model — within-page group moves on the named command
@@ -450,6 +456,18 @@ each section).
   above). No code changed for this request, so no version bump.
 
 ## 🕒 QUEUED — persistent pending items, awaiting the author's "go ahead" (newest first, DO NOT start)
+
+### 2026-09-29 — STANDING DIRECTIVE: chat verbosity scale with level 4 as the default
+
+- **Status:** ACTIVE (author-mandated 2026-09-29, in force until the author says otherwise). Docs-only — no changelog entry.
+- **Directive (author, verbatim):** Yes please! Also lets make sure we have verbosity level 4, and the definitions, encoded as a user directive. Thank you!
+- **Scale (reconstructed — the original wording is lost to compaction; L4 matches the surviving handoff note of what changed, why, numbers, docs; the author may correct any rung):**
+- L1 — one-liners: the bare result only, no rationale.
+- L2 — the result plus one line of what changed, no numbers.
+- L3 — what changed plus why, still no verification detail.
+- L4 (default) — what changed, why, verification numbers, docs impact. Every release report and every recommendation uses this shape.
+- L5 — full drill-down: L4 plus recon detail, alternatives considered, and file-and-line references. Only on request.
+- Chat replies stay at L4 unless the author names another level.
 
 ### 2026-09-27 — HARNESS (queued): refresh the two stale `*-analysis` visual baselines
 
