@@ -23,7 +23,18 @@ export function normaliseLibrary(arr) {
     const id = asString(o.id, "").trim();
     if (!id || seen.has(id)) continue;
     seen.add(id);
-    out.push({ id: id, type: normaliseLibType(o.type, id), name: asString(o.name, ""), desc: asString(o.desc, "") });
+    out.push({ id: id, type: normaliseLibType(o.type, id), name: asString(o.name, ""), desc: asString(o.desc, ""), refs: normaliseRefs(o.refs) });
+  }
+  return out;
+}
+
+export function normaliseRefs(refs) {
+  if (!Array.isArray(refs)) return [];
+  const out = [];
+  for (const r of refs) {
+    if (!isObj(r) || typeof r.src !== "string" || !r.src) continue;
+    out.push({ src: r.src });
+    if (out.length >= 3) break;
   }
   return out;
 }
