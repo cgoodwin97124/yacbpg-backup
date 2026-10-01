@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.30.2 — 2026-09-30 — 🧱 Batch duplicate (+paste) as named commands; paste is now undoable
-- Multi-duplicate and paste build their panel lists through pure commands; paste snapshots ↩ Undo like every other structural op. Also fixed: the custom panel-count box could keep stale text and poison undo snapshots.
+## 2026.10.01.1 — 2026-10-01 — 🧱 Batch add as a named command
+- Multi-add builds its panel list through a pure addEntries command; confirms and status lines unchanged.
 </script>
 
 
@@ -6757,10 +6757,21 @@ color-scheme:light;
       return;
     }
     pushStructUndo(sel.length === 1 ? 'add panel' : 'add panels');
+    const cmdAdd = panelCommands ? panelCommands.addEntries : null;
+    const addProject = (typeof cmdAdd === 'function') ? storeJsonNow() : null;
+    const addPanels = addProject ? cmdAdd(addProject, currentPage, total, lastSel, sel.length) : null;
     const entries = [];
-    for (let p = 1; p <= total; p++) {
-      entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
-      if (p === lastSel) for (let k = 0; k < sel.length; k++) entries.push({ panel: {}, img: null });
+    if (addPanels) {
+      let j = 0;
+      for (let p = 1; p <= total; p++) {
+        entries.push({ panel: addPanels[j++], img: imgs[p] ? imgs[p] : null });
+        if (p === lastSel) for (let k = 0; k < sel.length; k++) entries.push({ panel: addPanels[j++], img: null });
+      }
+    } else {
+      for (let p = 1; p <= total; p++) {
+        entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
+        if (p === lastSel) for (let k = 0; k < sel.length; k++) entries.push({ panel: {}, img: null });
+      }
     }
     const res = cascadePageSequence(currentPage, entries);
     clearPanelSelection();
@@ -10888,7 +10899,8 @@ color-scheme:light;
     reflowInsert: { sig: '(srcPage, total, afterIndex, incomingPanel, incomingImg)', images: true, desc: 'Insert one panel into a full page; the overflow cascades onto following pages.' },
     cascadeEntries: { sig: '(srcPage, entries)', images: true, desc: 'Rewrite a page from an entries list [{ panel, img }] and spill the overflow onto following pages. The shared engine behind duplicate, add and paste.' },
     duplicateEntries: { sig: '(pageNum, total, [indexes])', makeId: true, desc: 'Build the batch-duplicate panel list: originals interleaved with fresh-id imageless copies. Returns panels only; dispatch pairs the images.' },
-    pasteEntries: { sig: '(pageNum, total, atIndex, [copies])', makeId: true, desc: 'Build the paste panel list: clipboard copies with fresh ids inserted at a position. Returns panels only; dispatch pairs the images.' }
+    pasteEntries: { sig: '(pageNum, total, atIndex, [copies])', makeId: true, desc: 'Build the paste panel list: clipboard copies with fresh ids inserted at a position. Returns panels only; dispatch pairs the images.' },
+    addEntries: { sig: '(pageNum, total, lastSel, count)', desc: 'Build the batch-add panel list: originals plus count empty panels after the last selected. Returns panels only; dispatch pairs the images.' }
   };
 
   function manualCommandSay(text, bad) {
