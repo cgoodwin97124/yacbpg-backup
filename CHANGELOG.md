@@ -1,3 +1,8 @@
+## 2026.10.01.2 — 2026-10-01 — batch delete refill as a named command
+
+- Nothing visible changes. Delete-and-refill plans its takes through a pure planRefill command instead of two inline loops (the dialog preview and the apply step share it), old loops as fallback; dialogs and status lines byte-identical.
+- Verified: core 59/0, guards 21/0, state-diff 38/38, smoke 109/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner. The batch track is complete: cascade, duplicate(+paste), add, delete.
+
 ## 2026.10.01.1 — 2026-10-01 — batch add as a named command
 
 - Nothing visible changes. Multi-panel add builds its panel list through a pure addEntries command instead of an inline loop, old loop as fallback; confirms and status lines byte-identical, spill unchanged through commanded cascadeEntries.
