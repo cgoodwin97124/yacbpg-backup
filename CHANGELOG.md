@@ -1,3 +1,8 @@
+## 2026.10.01.3 — 2026-10-01 — generate (x) to (y): pick an inclusive panel range to generate
+
+- **The plain version:** a new range picker button in the Panel menu and the multi-select menu. It opens a small dialog with From/To boxes that start out as the selected span (or panel 1 through the clicked panel), validates as you type, and renders exactly that inclusive range in order through the same engine as the other generate buttons. Protected images inside the range are kept; pausing a range run resumes to its end, never the page end.
+- **Verified live:** dialog defaults, out-of-order validation lockout, selection-span default, and a real 2-panel range run (tally 0 generated / 2 skipped / 0 failed on already-rendered panels — exactly the range, nothing else). Full suites: core **59/0**, guards **21/0**, state-diff **38/38**, smoke **109/0/4**, fixtures **18/0**, gen **18/0** (+1 manual), 0 perchance errors, author map byte-identical after every runner. No code changed for this release — the feature was already built and pushed unreleased; this ships it.
+
 ## 2026.10.01.2 — 2026-10-01 — batch delete refill as a named command
 
 - Nothing visible changes. Delete-and-refill plans its takes through a pure planRefill command instead of two inline loops (the dialog preview and the apply step share it), old loops as fallback; dialogs and status lines byte-identical.
