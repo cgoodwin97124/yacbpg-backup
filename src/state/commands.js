@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 19;
+export const COMMANDS_VERSION = 20;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -556,6 +556,66 @@ export function reflowInsert(project, srcPage, total, afterIndex, incomingPanel,
   }
   project.currentPage = src;
   return { page: src, insertPos: insertPos, moves: moves, createdPage: createdPage, images: outImages, fields: [] };
+}
+
+export function duplicateEntries(project, pageNum, total, indexes, makeId) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  if (!Array.isArray(indexes) || !indexes.length) return null;
+  const sel = [];
+  for (const v of indexes) {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > t) return null;
+    if (sel.indexOf(n) === -1) sel.push(n);
+  }
+  sel.sort((a, b) => a - b);
+  if (typeof makeId !== "function") return null;
+  for (const n of sel) if (page[n] === undefined) return null;
+  const selSet = {};
+  for (const n of sel) selSet[n] = true;
+  const out = [];
+  for (let p = 1; p <= t; p++) {
+    out.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+    if (selSet[p]) {
+      const copy = JSON.parse(JSON.stringify(page[p]));
+      const id = makeId();
+      if (typeof id !== "string" || !id) return null;
+      copy.id = id;
+      out.push(copy);
+    }
+  }
+  return out;
+}
+
+export function pasteEntries(project, pageNum, total, atIndex, copies, makeId) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  const at = Number(atIndex);
+  if (!Number.isInteger(at) || at < 1 || at > t) return null;
+  if (!Array.isArray(copies) || !copies.length) return null;
+  for (const c of copies) if (!isObj(c)) return null;
+  if (typeof makeId !== "function") return null;
+  if (page[at] === undefined) return null;
+  const out = [];
+  for (let p = 1; p <= t; p++) {
+    if (p === at) {
+      for (const c of copies) {
+        const fresh = JSON.parse(JSON.stringify(c));
+        const id = makeId();
+        if (typeof id !== "string" || !id) return null;
+        fresh.id = id;
+        out.push(fresh);
+      }
+    }
+    out.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+  }
+  return out;
 }
 
 export function cascadeEntries(project, srcPage, entries, images) {
