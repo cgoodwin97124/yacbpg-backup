@@ -5016,7 +5016,7 @@ color-scheme:light;
     }
     const n = currentPage;
     const label = pageLabel(pages[n], n);
-    if (!noConfirm && !confirm('Delete ' + label + '? All of its panel settings (characters, locations, actions, titles, seeds, prompts) will be lost. This cannot be undone.')) return;
+    if (!noConfirm && !confirm('Delete ' + label + '? All of its panel settings (characters, locations, actions, titles, seeds, prompts) will be lost. You can undo this with ↩ Undo.')) return;
     pushStructUndo('delete page');
     stopAllGenerations();
     const cmd = panelCommands ? panelCommands.deletePage : null;
@@ -6598,6 +6598,25 @@ color-scheme:light;
   }
 
   function cascadePageSequence(srcPage, entries) {
+    const cmdCascade = panelCommands ? panelCommands.cascadeEntries : null;
+    if (typeof cmdCascade === 'function') {
+      const project = storeJsonNow();
+      if (project && project.pages) {
+        stopAllGenerations();
+        const images = {};
+        for (const k of Object.keys(project.pages)) images[k] = pageImagesOf(Number(k));
+        const hit = cmdCascade(project, srcPage, entries, images);
+        if (hit) {
+          for (const k of Object.keys(hit.images)) setPageImagesFor(Number(k), hit.images[k]);
+          savePanelStateShape(project);
+          currentPage = project.currentPage;
+          loadCurrentPage();
+          populatePageSel();
+          updateDeletePageBtn();
+          return { createdPage: hit.createdPage, moves: hit.moves };
+        }
+      }
+    }
     stopAllGenerations();
     const state = collectPanelState();
     const pages = state.pages;
@@ -7091,7 +7110,7 @@ color-scheme:light;
       }
       showChoiceDialog({
         title: '🗑 Delete the ' + sel.length + ' panels of ' + label + '?',
-        paragraphs: ['Every panel on <b>' + label + '</b> is selected, so the page itself will be <b>deleted</b> and the other pages renumbered. It cannot be undone.'],
+        paragraphs: ['Every panel on <b>' + label + '</b> is selected, so the page itself will be <b>deleted</b> and the other pages renumbered. You can undo this with ↩ Undo.'],
         hint: '' ,
         buttons: [
           { label: '🗑 Delete Page ' + label, cls: 'choice-danger', value: 'page' },
@@ -7134,7 +7153,7 @@ color-scheme:light;
     btns.push({ label: 'Cancel', cls: 'choice-neutral', value: null });
     showChoiceDialog({
       title: '🗑 Delete ' + sel.length + ' panels?',
-      paragraphs: ['Deletes panel <b>' + sel.join(', ') + '</b> from <b>' + label + '</b> — their settings (characters, location, action, title, seed, prompt) and their generated images are lost. This cannot be undone.' + (canRefill ? ' <b>Delete &amp; Refill</b> then pulls panels up from the following page' + (empties.length > 1 ? 's' : '') + ' so ' + label + ' keeps its ' + total + ' panels.' : '')],
+      paragraphs: ['Deletes panel <b>' + sel.join(', ') + '</b> from <b>' + label + '</b> — their settings (characters, location, action, title, seed, prompt) and their generated images are lost. You can undo this with ↩ Undo.' + (canRefill ? ' <b>Delete &amp; Refill</b> then pulls panels up from the following page' + (empties.length > 1 ? 's' : '') + ' so ' + label + ' keeps its ' + total + ' panels.' : '')],
       hint: empties.length ? ('Refilling will empty ' + empties.map(k => pageLabel(pages[k], k)).join(', ') + ' — ' + (empties.length === 1 ? 'that page' : 'those pages') + ' will be deleted too, after a confirmation.') : '',
       buttons: btns
     }).then(v => {
@@ -7394,7 +7413,7 @@ color-scheme:light;
       deletePage(true);
       return;
     }
-    if (!confirm('Delete Panel ' + i + '? Its settings (characters, location, action, title, seed, prompt) and its generated images will be lost, and later panels will move up and be renumbered. This cannot be undone.')) return;
+    if (!confirm('Delete Panel ' + i + '? Its settings (characters, location, action, title, seed, prompt) and its generated images will be lost, and later panels will move up and be renumbered. You can undo this with ↩ Undo.')) return;
     pushStructUndo('delete panel');
     const cmd = panelCommands ? panelCommands.deletePanel : null;
     if (typeof cmd === 'function') {
@@ -10853,6 +10872,7 @@ color-scheme:light;
   window.__openQuestionForm = function () { return openDevForm('src/question-form.html', 'Author tickets'); };
   window.__openRound2Form = function () { return openDevForm('src/round2-form.html', 'Refactor round 2 — the state layer (P2)'); };
   window.__openRefImagesForm = function () { return openDevForm('src/refimages-form.html', 'Reference images — the hooks'); };
+  window.__openBatchForm = function () { return openDevForm('src/batch-form.html', 'Batch structural commands — the questions'); };
   window.closeUserManual = closeUserManual;
   window.deletePanelChar = deletePanelChar;
   window.deletePanelLoc = deletePanelLoc;
@@ -11872,7 +11892,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/refimages-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js', 'src/state/commands.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/refimages-form.html', 'src/batch-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js', 'src/state/commands.js'];
 
   function extractTemplateSource(html) {
     const key = '"outputTemplate":"';
