@@ -1,3 +1,8 @@
+## 2026.10.01.1 — 2026-10-01 — batch add as a named command
+
+- Nothing visible changes. Multi-panel add builds its panel list through a pure addEntries command instead of an inline loop, old loop as fallback; confirms and status lines byte-identical, spill unchanged through commanded cascadeEntries.
+- Verified: core 58/0, guards 21/0, state-diff 37/37, smoke 109/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner. Next: batch delete + pure refill planner.
+
 ## 2026.09.30.2 — 2026-09-30 — 🧱 Batch duplicate (+paste) as named commands; paste is now undoable
 
 - **The plain version:** nothing you can see changes, except one fix. Multi-panel duplicate and paste now build their panel lists through named pure commands (`duplicateEntries`, `pasteEntries`) instead of inline loops, with the old loops kept as fallback. Paste is folded into the duplicate release per the approved batch order, and paste finally snapshots ↩ Undo — it was the only structural op you could not take back.
