@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 20;
+export const COMMANDS_VERSION = 21;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -614,6 +614,25 @@ export function pasteEntries(project, pageNum, total, atIndex, copies, makeId) {
       }
     }
     out.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+  }
+  return out;
+}
+
+export function addEntries(project, pageNum, total, lastSel, count) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  const last = Number(lastSel);
+  if (!Number.isInteger(last) || last < 1 || last > t) return null;
+  const n = Number(count);
+  if (!Number.isInteger(n) || n < 1) return null;
+  if (page[last] === undefined) return null;
+  const out = [];
+  for (let p = 1; p <= t; p++) {
+    out.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+    if (p === last) for (let k = 0; k < n; k++) out.push({});
   }
   return out;
 }
