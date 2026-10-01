@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 21;
+export const COMMANDS_VERSION = 22;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -635,6 +635,48 @@ export function addEntries(project, pageNum, total, lastSel, count) {
     if (p === last) for (let k = 0; k < n; k++) out.push({});
   }
   return out;
+}
+
+export function planRefill(project, srcPage, keptLen, target) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const src = Number(srcPage);
+  if (!Number.isInteger(src) || src < 1) return null;
+  if (!isObj(project.pages[src])) return null;
+  const kept = Number(keptLen);
+  if (!Number.isInteger(kept) || kept < 0) return null;
+  const tgt = Number(target);
+  if (!Number.isInteger(tgt) || tgt < 1 || tgt > 24) return null;
+  const countOf = (pg) => {
+    if (!isObj(pg)) return 0;
+    const sel = String(pg.panelCountSel || "4");
+    if (sel === "custom") {
+      const n = parseInt(pg.panelCountCustom, 10);
+      return isNaN(n) ? 4 : Math.min(24, Math.max(1, n));
+    }
+    const n = parseInt(sel, 10);
+    return isNaN(n) ? 4 : Math.min(24, Math.max(1, n));
+  };
+  const keys = [];
+  for (const k of Object.keys(project.pages)) {
+    const v = Number(k);
+    if (String(v) === k && Number.isInteger(v) && v >= 1) keys.push(v);
+  }
+  keys.sort((a, b) => a - b);
+  const plan = [];
+  const emptied = [];
+  let left = tgt - kept;
+  if (left > 0) {
+    for (const k of keys) {
+      if (k <= src || left <= 0) continue;
+      const c = countOf(project.pages[k]);
+      const take = Math.min(left, c);
+      if (take <= 0) continue;
+      plan.push({ page: k, take: take });
+      left -= take;
+      if (c - take === 0) emptied.push(k);
+    }
+  }
+  return { plan: plan, emptied: emptied, fields: [] };
 }
 
 export function cascadeEntries(project, srcPage, entries, images) {
