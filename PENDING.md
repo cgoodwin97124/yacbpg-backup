@@ -1,3 +1,8 @@
+### 2026-10-01 — P3 step 2 batch track: delete + pure refill planner
+
+- **Status:** ACTIVE START NOW 2026-10-01 — last op in the approved batch order (cascade, duplicate(+paste), add DONE, now delete); parent greenlight 2026-10-01 verbatim "Let's do it!", one op per release. Logged here on receipt, before any work, per the 2026-08-13 rule.
+- **Scope per answer B-02 2b:** pure refill planner (inputs: pages, src, kept; outputs: the take-plan plus emptied-pages list); all dialogs, native confirms, undo, session writes and status stay dispatch-side. Recon of batchDeletePanels + performBatchDelete first.
+
 ### 2026-10-01 — P3 step 2 batch track: add entry-builder command
 
 - **Status:** DONE 2026.10.01.1 — implemented, tested and documented; app files await the author Save, then the button push; docs via Contents API in the same session. Verified: core 58/0, guards 21/0, state-diff 37/37, smoke 109/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, byte-identical restores. Shipped: pure addEntries + dispatch in batchAddPanels with old loop as fallback; COMMANDS_VERSION 20 to 21. Next: batch delete + pure refill planner. — next op in the approved batch order (cascade, duplicate(+paste) DONE 2026.09.30.2, now add, then delete + refill planner); parent greenlight 2026-10-01 verbatim "Let\u2019s do it!", one op per release. Logged here on receipt, before any work, per the 2026-08-13 rule.
