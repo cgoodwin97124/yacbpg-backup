@@ -1330,6 +1330,24 @@ color-scheme:light;
     <p class="ic-hint" style="margin:10px 0 0;">⬆ Backups are run by the AI assistant — just say "back it up to GitHub" in the chat and I'll push using the saved token. No push button ships with the generator, so visitors can't trigger commits.</p>
   </div>
 </div>
+<div id="cmdConsoleOverlay" class="password-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:10001;overflow:auto;padding:12px;box-sizing:border-box;" hidden>
+  <div class="password-box" style="max-width:760px;width:100%;">
+    <h3>⌨ Command console <span style="font-weight:normal;font-size:0.8rem;">(dev tool — no menu entry; reopen with <code>__openCommandConsole()</code>)</span></h3>
+    <p class="lib-hint" style="margin:0 0 10px;">Runs one named state command against the live project. Every mutating run snapshots <b>↩ Undo</b> first and stops running generations; images travel with their panel ids. A refused command changes nothing.</p>
+    <label>Command:</label>
+    <select id="cmdConsoleSel" style="width:100%;box-sizing:border-box;"></select>
+    <label>Arguments (a JSON array — e.g. <code>["$page", "$total", 2]</code>):</label>
+    <textarea id="cmdConsoleArgs" rows="3" spellcheck="false" placeholder='["$page", "$total", 2]' style="width:100%;box-sizing:border-box;font-family:monospace;"></textarea>
+    <p class="ic-hint" style="margin:6px 0 12px;">Placeholders: <code>"$page"</code> is the current page, <code>"$total"</code> is its panel count. <code>makeId</code>, <code>session</code> and <code>images</code> parameters are supplied automatically where needed — see the reference.</p>
+    <div class="pw-btns">
+      <button class="btn-dl" onclick="runCommandConsole()">▶ Run</button>
+      <button class="btn-clear" onclick="closeCommandConsole()">Close</button>
+    </div>
+    <div id="cmdConsoleOut" class="pw-err" style="min-height:1.2em;margin:8px 0;white-space:pre-wrap;word-break:break-word;"></div>
+    <h4 style="margin:12px 0 6px;color:var(--accent);">Command reference</h4>
+    <div id="cmdConsoleRef" style="max-height:40vh;overflow:auto;font-size:0.82rem;"></div>
+  </div>
+</div>
 <!-- The project's long-form docs and the full changelog live in the GitHub repo — see the pointer
      comment at the very top of this file. Help / About fetches CHANGELOG.md from the repo the
      first time the About section is opened. Only this tiny stamp stays embedded: it renders
@@ -1337,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.09.29.10 — 2026-09-29 — 🖼 Reference-image hooks: up to 3 visual memos per character/location
-- Characters and Locations can now hold up to 3 small reference images each — thumbnails on the Library row (tap to view or remove), added by upload or by snapshotting a generated panel image. They are a visual memo only and never enter a prompt. Copying an item between project and catalogue asks once per batch whether the images travel; exports carry them unless the new "Include reference images in exports" box (on, by default) is unticked; the JSON editor shows them locked; deleting the item deletes its images.
+## 2026.09.30.1 — 2026-09-30 — ⌨ Manual command console with a built-in command reference
+- Dev-only drawer (`__openCommandConsole()`): run any named state command with an undo snapshot and id-based images, plus the full command reference. Structural delete confirms now point at ↩ Undo.
 </script>
 
 
@@ -10823,6 +10841,159 @@ color-scheme:light;
   window.confirmSetPassword = confirmSetPassword;
   window.confirmEnterPassword = confirmEnterPassword;
   window.openUserManual = openUserManual;
+
+  const MANUAL_CMD_REF = {
+    findPanelById: { sig: '(id)', ro: true, desc: 'Read-only lookup. Returns { page, index } for a stable panel id. Changes nothing.' },
+    setTitle: { sig: '(id, value)', desc: 'Set a panel title by panel id.' },
+    setImgCount: { sig: '(id, value)', desc: 'Set the image-count selector by panel id.' },
+    setStyle: { sig: '(id, value)', desc: 'Set the art-style selector by panel id.' },
+    setSize: { sig: '(id, { sel, w, h })', desc: 'Set the image-size selector by panel id.' },
+    setPanelSeed: { sig: '(id, value)', desc: 'Set the panel seed by panel id.' },
+    setSameSeed: { sig: '(id, true/false)', desc: 'Set the same-seed flag by panel id.' },
+    setProtect: { sig: '(id, slot 1-4, true/false)', desc: 'Protect or unprotect one image slot by panel id.' },
+    setPromptOverride: { sig: '(id, { pos, neg } | null)', desc: 'Set or clear the pinned prompt override by panel id.' },
+    addPanel: { sig: '(pageNum, total, afterIndex, count)', makeId: true, desc: 'Insert empty panels after a position. Fails when the page would top 24.' },
+    duplicatePanel: { sig: '(pageNum, total, index)', makeId: true, desc: 'Copy one panel directly after itself. The copy arrives with no images.' },
+    movePanel: { sig: '(pageNum, total, fromIndex, toIndex)', desc: 'Move one panel within its page.' },
+    deletePanel: { sig: '(pageNum, total, index)', desc: 'Delete one panel; later panels move up. Refuses the last panel of a page.' },
+    addPage: { sig: '()', desc: 'Append an empty 4-panel page; the current page follows it.' },
+    deletePage: { sig: '(pageNum)', desc: 'Delete a whole page and land on the smallest survivor. Refuses the only page.' },
+    movePanelToPage: { sig: '(srcPage, total, index, targetPage, tCount, mode)', desc: 'Move one panel across pages. Mode is prepend, append or replace; a full target refuses.' },
+    moveManyToPage: { sig: '(srcPage, total, [indexes], targetPage, tCount, replaceTarget)', desc: 'Move a block of panels across pages as one unit.' },
+    moveMany: { sig: '(pageNum, total, [indexes], toPos)', desc: 'Move a block of panels within a page as one unit.' },
+    renumberPages: { sig: '(fromKey, toPos)', session: true, desc: 'Move a page to a new position; the other pages renumber around it.' },
+    reflowInsert: { sig: '(srcPage, total, afterIndex, incomingPanel, incomingImg)', images: true, desc: 'Insert one panel into a full page; the overflow cascades onto following pages.' },
+    cascadeEntries: { sig: '(srcPage, entries)', images: true, desc: 'Rewrite a page from an entries list [{ panel, img }] and spill the overflow onto following pages. The shared engine behind duplicate, add and paste.' }
+  };
+
+  function manualCommandSay(text, bad) {
+    const out = document.getElementById('cmdConsoleOut');
+    if (out) { out.textContent = text || ''; out.style.color = bad ? '' : 'var(--green-text)'; }
+    const st = document.getElementById('statusEl');
+    if (st && text) st.textContent = String(text).slice(0, 220);
+  }
+
+  function manualCommandImageMap(project) {
+    const map = {};
+    for (const k of Object.keys(project.pages || {})) {
+      const pg = Number(k);
+      const page = project.pages[k];
+      const imgs = pageImagesOf(pg);
+      for (let p = 1; p <= 24; p++) {
+        const id = page[p] && page[p].id;
+        if (typeof id === 'string' && id && imgs[p] !== undefined) map[id] = imgs[p];
+      }
+    }
+    return map;
+  }
+
+  function manualCommandTable() {
+    const t = {};
+    const cmds = panelCommands || {};
+    for (const n of Object.keys(cmds)) if (typeof cmds[n] === 'function') t[n] = cmds[n];
+    const mod = coreModules.commands || {};
+    for (const n of Object.keys(mod)) if (typeof mod[n] === 'function' && !t[n]) t[n] = mod[n];
+    return t;
+  }
+
+  function runManualCommand(name, args) {
+    const cmd = manualCommandTable()[name] || null;
+    if (typeof cmd !== 'function') { manualCommandSay('Unknown command "' + name + '" — the commands module did not load or has no such export.', true); return null; }
+    const meta = MANUAL_CMD_REF[name] || {};
+    const project = storeJsonNow();
+    if (!project || !project.pages) { manualCommandSay('Could not read the live project.', true); return null; }
+    let list = Array.isArray(args) ? args.slice() : null;
+    if (!list) { manualCommandSay('Arguments must be a JSON array.', true); return null; }
+    list = list.map(a => a === '$page' ? currentPage : (a === '$total' ? getPanelCount() : a));
+    if (meta.makeId && !list.some(a => typeof a === 'function') && typeof newPanelId === 'function') list.push(newPanelId);
+    if (meta.session) { pageSession[currentPage] = { images: panelImages }; list.push(pageSession); }
+    if (meta.images) { const m = {}; for (const k of Object.keys(project.pages)) m[k] = pageImagesOf(Number(k)); list.push(m); }
+    let hit = null;
+    try { hit = cmd.apply(null, [JSON.parse(JSON.stringify(project))].concat(list)); } catch (e) { hit = null; }
+    if (!hit) { manualCommandSay('Command refused — bad arguments or a rule blocked it. Nothing changed.', true); return null; }
+    if (meta.ro) { manualCommandSay(JSON.stringify(hit)); return hit; }
+    const idMap = manualCommandImageMap(project);
+    pushStructUndo('manual ' + name);
+    stopAllGenerations();
+    let hit2 = null;
+    try { hit2 = cmd.apply(null, [project].concat(list)); } catch (e) { hit2 = null; }
+    if (!hit2) { structUndoStack.pop(); updateStructUndoUI(); manualCommandSay('Command refused on the live project. Nothing changed.', true); return null; }
+    savePanelStateShape(project);
+    if (hit2.session) {
+      for (const k in pageSession) delete pageSession[k];
+      Object.assign(pageSession, hit2.session);
+    } else {
+      if (hit2.images) {
+        for (const k of Object.keys(hit2.images)) setPageImagesFor(Number(k), hit2.images[k] || {});
+      } else {
+        for (const k of Object.keys(project.pages)) {
+          const pg = Number(k);
+          const page = project.pages[k];
+          const nim = {};
+          for (let p = 1; p <= 24; p++) {
+            const id = page[p] && page[p].id;
+            if (typeof id === 'string' && id && idMap[id] !== undefined) nim[p] = idMap[id];
+          }
+          setPageImagesFor(pg, nim);
+        }
+      }
+      for (const k of Object.keys(pageSession)) if (!project.pages[k]) delete pageSession[k];
+    }
+    if (Number.isInteger(project.currentPage)) currentPage = project.currentPage;
+    loadCurrentPage();
+    populatePageSel();
+    updateDeletePageBtn();
+    manualCommandSay(name + ' ok: ' + JSON.stringify(hit2));
+    return hit2;
+  }
+
+  function openCommandConsole() {
+    const ov = document.getElementById('cmdConsoleOverlay');
+    const sel = document.getElementById('cmdConsoleSel');
+    const ref = document.getElementById('cmdConsoleRef');
+    if (!ov || !sel || !ref) return false;
+    const cmds = manualCommandTable();
+    const names = Object.keys(cmds).sort();
+    sel.innerHTML = '';
+    for (const n of names) {
+      const o = document.createElement('option');
+      o.value = n;
+      o.textContent = n;
+      sel.appendChild(o);
+    }
+    let html = '<table style="width:100%;border-collapse:collapse;">';
+    for (const n of names) {
+      const m = MANUAL_CMD_REF[n] || {};
+      const auto = [];
+      if (m.ro) auto.push('read-only');
+      if (m.makeId) auto.push('makeId auto-supplied');
+      if (m.session) auto.push('session auto-supplied');
+      if (m.images) auto.push('images auto-supplied');
+      html += '<tr style="border-top:1px solid var(--border-3);"><td style="padding:4px 6px;font-family:monospace;white-space:nowrap;vertical-align:top;color:var(--accent);">' + n + (m.sig || '') + '</td><td style="padding:4px 6px;vertical-align:top;">' + (m.desc || 'No reference entry yet.') + (auto.length ? ' <i>(' + auto.join('; ') + ')</i>' : '') + '</td></tr>';
+    }
+    ref.innerHTML = html + '</table>';
+    ov.hidden = false;
+    return true;
+  }
+
+  function closeCommandConsole() {
+    const ov = document.getElementById('cmdConsoleOverlay');
+    if (ov) ov.hidden = true;
+  }
+
+  function runCommandConsole() {
+    const sel = document.getElementById('cmdConsoleSel');
+    const ta = document.getElementById('cmdConsoleArgs');
+    if (!sel) return null;
+    let args = [];
+    try { args = JSON.parse((ta && ta.value.trim()) || '[]'); } catch (e) { manualCommandSay('Arguments are not valid JSON: ' + e.message, true); return null; }
+    return runManualCommand(sel.value, args);
+  }
+
+  window.__openCommandConsole = openCommandConsole;
+  window.closeCommandConsole = closeCommandConsole;
+  window.runCommandConsole = runCommandConsole;
+  window.runManualCommand = runManualCommand;
 
   async function openDevForm(file, title) {
     const id = 'devFormOverlay';
