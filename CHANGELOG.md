@@ -1,3 +1,10 @@
+## 2026.09.30.1 — 2026-09-30 — ⌨ Manual command console with a built-in command reference
+
+- **The plain version:** a new dev tool for the author (no menu entry — open it from the browser console with `__openCommandConsole()`). Pick any named state command, type its arguments as a JSON array, and run it against the live project. The drawer also carries the full command reference: every command, its arguments, and which parameters are filled in automatically.
+- **Safe by construction.** Each run first rehearses the command on a throwaway copy — a refused command changes nothing, not even the undo stack. A real run snapshots ↩ Undo first, stops running generations, and re-attaches images to their panel ids, so pictures follow their panels across moves, deletes and refills. `runManualCommand(name, args)` exposes the same runner to the browser console directly.
+- **Small wording cleanups (batch 1c).** The structural delete confirms no longer claim the action "cannot be undone" — they point at ↩ Undo instead. Reset, library and clear wordings stay as-is: those genuinely cannot be undone.
+- Batch answers recorded in `questions/BATCH-COMMANDS.md`: cascade-first order, paste folds into the duplicate release, pure planners with UI dispatch-side, move fallback untouched.
+
 ## 2026.09.29.10 — 2026-09-29 — 🖼 Reference-image hooks: up to 3 visual memos per character/location
 
 - **The plain version:** Characters and Locations can now hold up to 3 small reference images each — thumbnails on the Library row (tap to view or remove), added by upload or by snapshotting one of this page's generated panel images. They are a visual memo only and never enter a prompt. Copying an item between this project and My catalogue asks once per batch whether the images travel with it; exports carry them unless the new "Include reference images in exports" box (ticked by default) is unticked; the JSON editor shows them as locked metadata; deleting the item deletes its images too.
