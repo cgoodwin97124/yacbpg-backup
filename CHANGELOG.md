@@ -1,3 +1,10 @@
+## 2026.09.30.2 — 2026-09-30 — 🧱 Batch duplicate (+paste) as named commands; paste is now undoable
+
+- **The plain version:** nothing you can see changes, except one fix. Multi-panel duplicate and paste now build their panel lists through named pure commands (`duplicateEntries`, `pasteEntries`) instead of inline loops, with the old loops kept as fallback. Paste is folded into the duplicate release per the approved batch order, and paste finally snapshots ↩ Undo — it was the only structural op you could not take back.
+- **A real bug fix along the way.** The custom panel-count box was only ever filled in, never cleared: after a custom→preset change it kept showing the old number, and that stale text leaked into undo snapshots (an undo could restore the panels but bring back the wrong count metadata). The page load now always writes the stored value, stale text included. Found because the new SD36 differential check refused to go green — first on the old code too, which is how we knew it was not the release.
+- **Harness catch-up.** SD36 also expected a 6-panel result to be filed as custom/6, but 6 is a preset count — the expectation now follows the same rule the app uses. The backup check still counted sixteen files after `src/batch-form.html` joined the manifest; it counts seventeen now.
+- **The numbers:** core **57/0** (two new command checks), guards **21/0**, state-diff **36/36**, smoke **109/0/4**, fixtures **18/0**, generation **18/0** (+1 manual), **0** perchance errors, author project parked and restored **byte-identical** after every suite. Next in the approved order: add, then delete with the refill planner.
+
 ## 2026.09.30.1 — 2026-09-30 — ⌨ Manual command console with a built-in command reference
 
 - **The plain version:** a new dev tool for the author (no menu entry — open it from the browser console with `__openCommandConsole()`). Pick any named state command, type its arguments as a JSON array, and run it against the live project. The drawer also carries the full command reference: every command, its arguments, and which parameters are filled in automatically.
