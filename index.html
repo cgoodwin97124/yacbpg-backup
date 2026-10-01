@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.01.1 — 2026-10-01 — 🧱 Batch add as a named command
-- Multi-add builds its panel list through a pure addEntries command; confirms and status lines unchanged.
+## 2026.10.01.2 — 2026-10-01 — 🧱 Batch delete refill as a named command
+- Delete-and-refill plans its takes through a pure planRefill command; dialogs and status lines unchanged.
 </script>
 
 
@@ -7184,14 +7184,20 @@ color-scheme:light;
     const need = canRefill ? (total - remaining) : 0;
     const empties = [];
     if (canRefill && need > 0) {
-      let left = need;
-      for (const k of keys) {
-        if (k <= src || left <= 0) continue;
-        const c = analysisPanelCount(pages[k]);
-        const take = Math.min(left, c);
-        if (take <= 0) continue;
-        left -= take;
-        if (c - take === 0) empties.push(k);
+      const cmdPlan = panelCommands ? panelCommands.planRefill : null;
+      const planHit = (typeof cmdPlan === 'function') ? cmdPlan(state, src, remaining, total) : null;
+      if (planHit) {
+        for (const k of planHit.emptied) empties.push(k);
+      } else {
+        let left = need;
+        for (const k of keys) {
+          if (k <= src || left <= 0) continue;
+          const c = analysisPanelCount(pages[k]);
+          const take = Math.min(left, c);
+          if (take <= 0) continue;
+          left -= take;
+          if (c - take === 0) empties.push(k);
+        }
       }
     }
     const btns = [];
@@ -7237,16 +7243,23 @@ color-scheme:light;
     const plan = [];
     const emptied = [];
     if (refill) {
-      let left = target - kept.length;
-      const keys = sortedPageKeys(pages);
-      for (const k of keys) {
-        if (k <= src || left <= 0) continue;
-        const c = analysisPanelCount(pages[k]);
-        const take = Math.min(left, c);
-        if (take <= 0) continue;
-        plan.push({ page: k, take: take });
-        left -= take;
-        if (c - take === 0) emptied.push(k);
+      const cmdPlan = panelCommands ? panelCommands.planRefill : null;
+      const planHit = (typeof cmdPlan === 'function') ? cmdPlan(state, src, kept.length, target) : null;
+      if (planHit) {
+        for (const s of planHit.plan) plan.push({ page: s.page, take: s.take });
+        for (const k of planHit.emptied) emptied.push(k);
+      } else {
+        let left = target - kept.length;
+        const keys = sortedPageKeys(pages);
+        for (const k of keys) {
+          if (k <= src || left <= 0) continue;
+          const c = analysisPanelCount(pages[k]);
+          const take = Math.min(left, c);
+          if (take <= 0) continue;
+          plan.push({ page: k, take: take });
+          left -= take;
+          if (c - take === 0) emptied.push(k);
+        }
       }
       if (emptied.length && !confirm('Refilling will use every panel on ' + emptied.map(k => pageLabel(pages[k], k)).join(', ') + ', so ' + (emptied.length === 1 ? 'that page' : 'those pages') + ' will be deleted. Continue?')) return;
     }
@@ -10900,7 +10913,8 @@ color-scheme:light;
     cascadeEntries: { sig: '(srcPage, entries)', images: true, desc: 'Rewrite a page from an entries list [{ panel, img }] and spill the overflow onto following pages. The shared engine behind duplicate, add and paste.' },
     duplicateEntries: { sig: '(pageNum, total, [indexes])', makeId: true, desc: 'Build the batch-duplicate panel list: originals interleaved with fresh-id imageless copies. Returns panels only; dispatch pairs the images.' },
     pasteEntries: { sig: '(pageNum, total, atIndex, [copies])', makeId: true, desc: 'Build the paste panel list: clipboard copies with fresh ids inserted at a position. Returns panels only; dispatch pairs the images.' },
-    addEntries: { sig: '(pageNum, total, lastSel, count)', desc: 'Build the batch-add panel list: originals plus count empty panels after the last selected. Returns panels only; dispatch pairs the images.' }
+    addEntries: { sig: '(pageNum, total, lastSel, count)', desc: 'Build the batch-add panel list: originals plus count empty panels after the last selected. Returns panels only; dispatch pairs the images.' },
+    planRefill: { sig: '(srcPage, keptLen, target)', desc: 'Plan a batch-delete refill: which following pages give how many panels, and which get emptied. Dispatch applies the takes.' }
   };
 
   function manualCommandSay(text, bad) {
