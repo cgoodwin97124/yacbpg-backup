@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 18;
+export const COMMANDS_VERSION = 19;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -101,7 +101,7 @@ export function setPromptOverride(project, id, value) {
   return { page: hit.page, index: hit.index, fields: ["promptOverride"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -556,4 +556,96 @@ export function reflowInsert(project, srcPage, total, afterIndex, incomingPanel,
   }
   project.currentPage = src;
   return { page: src, insertPos: insertPos, moves: moves, createdPage: createdPage, images: outImages, fields: [] };
+}
+
+export function cascadeEntries(project, srcPage, entries, images) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const src = Number(srcPage);
+  if (!Number.isInteger(src) || src < 1) return null;
+  const pages = project.pages;
+  if (!isObj(pages[src])) return null;
+  if (!Array.isArray(entries)) return null;
+  const imgs = isObj(images) ? images : {};
+  const countOf = (pg) => {
+    if (!isObj(pg)) return 0;
+    const sel = String(pg.panelCountSel || "4");
+    if (sel === "custom") {
+      const n = parseInt(pg.panelCountCustom, 10);
+      return isNaN(n) ? 4 : Math.min(24, Math.max(1, n));
+    }
+    const n = parseInt(sel, 10);
+    return isNaN(n) ? 4 : Math.min(24, Math.max(1, n));
+  };
+  const keys = [];
+  for (const k of Object.keys(pages)) {
+    const v = Number(k);
+    if (String(v) === k && Number.isInteger(v) && v >= 1) keys.push(v);
+  }
+  keys.sort((a, b) => a - b);
+  const build = (pg, list) => {
+    const keep = list.slice(0, 24);
+    const np = {};
+    for (const k of ["name", "summary", "seed"]) np[k] = pages[pg][k];
+    const nimgs = {};
+    for (let p = 1; p <= keep.length; p++) {
+      np[p] = JSON.parse(JSON.stringify(keep[p - 1].panel || {}));
+      if (keep[p - 1].img !== null && keep[p - 1].img !== undefined) nimgs[p] = JSON.parse(JSON.stringify(keep[p - 1].img));
+    }
+    const pc = countStateFor(keep.length || 1);
+    np.panelCountSel = pc.sel;
+    np.panelCountCustom = pc.custom;
+    return { page: np, imgs: nimgs };
+  };
+  const list = entries.map((e) => ({
+    panel: isObj(e && e.panel) ? JSON.parse(JSON.stringify(e.panel)) : {},
+    img: (e && e.img !== null && e.img !== undefined) ? JSON.parse(JSON.stringify(e.img)) : null
+  }));
+  let carry = list.slice(24);
+  const first = build(src, list);
+  pages[src] = first.page;
+  const outImages = {};
+  outImages[src] = first.imgs;
+  let pg = src;
+  let moves = 0;
+  let createdPage = null;
+  while (carry.length) {
+    let next = null;
+    for (const k of keys) { if (k > pg) { next = k; break; } }
+    moves++;
+    if (next === null) {
+      const n = keys.length ? Math.max.apply(null, keys) + 1 : 1;
+      const np = { name: "", summary: "", panelCountSel: "4", panelCountCustom: "", seed: "" };
+      const pc = countStateFor(carry.length);
+      np.panelCountSel = pc.sel;
+      np.panelCountCustom = pc.custom;
+      const nimgs = {};
+      for (let p = 1; p <= carry.length; p++) {
+        np[p] = carry[p - 1].panel;
+        if (carry[p - 1].img !== null && carry[p - 1].img !== undefined) nimgs[p] = carry[p - 1].img;
+      }
+      pages[n] = np;
+      keys.push(n);
+      keys.sort((a, b) => a - b);
+      outImages[n] = nimgs;
+      createdPage = n;
+      carry = [];
+      break;
+    }
+    const tImgs = isObj(imgs[next]) ? imgs[next] : {};
+    const tCount = countOf(pages[next]);
+    const all = carry.slice();
+    for (let p = 1; p <= tCount; p++) {
+      all.push({
+        panel: pages[next][p] !== undefined ? JSON.parse(JSON.stringify(pages[next][p])) : {},
+        img: tImgs[p] !== undefined ? JSON.parse(JSON.stringify(tImgs[p])) : null
+      });
+    }
+    carry = all.slice(24);
+    const built = build(next, all);
+    pages[next] = built.page;
+    outImages[next] = built.imgs;
+    pg = next;
+  }
+  project.currentPage = src;
+  return { createdPage: createdPage, moves: moves, images: outImages, fields: [] };
 }
