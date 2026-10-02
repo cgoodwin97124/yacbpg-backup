@@ -1,6 +1,7 @@
 ### 2026-10-01 — RECON + QUESTIONS: P3 step-1 remaining leaf setters (setChar/setLoc/setAction/setCharBase)
 
-- **Status:** 🟢 **START NOW 2026-10-01** — author greenlit the recon + question round, verbatim: "Yes please!" (following the L5 recommendation to finish the 4 remaining step-1 setters one-per-release). Logged here on receipt, before any work, per the 2026-08-13 rule. Recon first per the 2026-09-20 directive; implementation waits for the author's answers.
+- **Status:** ✅ **DONE 2026.10.02.1** — setAction implemented, verified in the live preview and pushed.
+- **Shipped:** pure setAction + dispatch in handleGridInput (panel-act-N) + renderCommittedFields 'action' case + core test; COMMANDS_VERSION 22 to 23. Suites core 60/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, restores byte-identical. Next: setLoc.
 
 ### 2026-10-01 — FEATURE: reference-image hooks RI-01/RI-02 (implementation)
 
