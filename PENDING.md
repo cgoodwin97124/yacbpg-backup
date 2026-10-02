@@ -2,7 +2,9 @@
 
 - **Status:** 🟢 **START NOW 2026-10-02** — author greenlit (verbatim: "Go for it!"). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked.**
 - **Recon:** each panel holds chars[3] of {sel, base, extra} (schema.js: chars always length 3). handleGridInput `cs` branch (panel-char-select-i-s, i=panel, s=slot 1-3): refreshPanelLineBase + extra-clear on none + refreshPanelLineDesc, then FALLS THROUGH to the debounced save (no command, no batch-mode early-return — unlike the loc branch; batch fan-out already lives inside refreshPanelLineBase, which delegates to batchRefreshPanelLineBases when multi-selected).
-- **Questions:** (1) scope = select-change writes sel+base (+extra-clear on none) through the command, base/extra typing stays old until their own releases? (2) batch/multi-select behavior stays exactly as today (command only on the single-panel path)?
+- **Author answers 2026-10-02:** yes to both — (1) select-change scope with base/extra typing deferred, (2) batch untouched, command on the single-panel path only.
+- **Status:** ✅ **DONE 2026.10.02.3** — setChar implemented, verified in the live preview and pushed.
+- **Shipped:** pure setChar(project, id, slot, sel, base) + dispatch in handleGridInput (panel-char-select-N-S, batch falls back to the old three-liner) + renderCommittedFields charSel/charBase/charExtra cases + core test; COMMANDS_VERSION 24 to 25. Suites core 62/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, restores byte-identical. Next: base-textarea setters.
 
 ### 2026-10-02 — RECON + QUESTIONS: P3 step-1 setLoc (second leaf setter)
 
