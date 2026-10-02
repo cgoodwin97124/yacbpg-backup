@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.02.4 — 2026-10-02 — ✏ setCharBase: the character base line becomes a named command
-- Typing in a panel's Character base box writes through the setCharBase command (synchronous save, render-back); zero visible change.
+## 2026.10.02.5 — 2026-10-02 — 📍 setLocBase: the location base line becomes a named command
+- Typing in a panel's Location base box writes through the setLocBase command (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -7742,6 +7742,10 @@ color-scheme:light;
       if (cb[1] === 'char' && bs !== null) {
         viaCmd = true;
         okb = runPanelCommand('setCharBase', panelIdAt(bi), [bs, e.target.value]);
+      }
+      if (cb[1] === 'loc') {
+        viaCmd = true;
+        okb = runPanelCommand('setLocBase', panelIdAt(bi), [e.target.value]);
       }
       refreshPanelLineDesc(cb[1], bi, bs);
       updatePanelSummary(bi);
