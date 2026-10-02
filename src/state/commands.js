@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 25;
+export const COMMANDS_VERSION = 26;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -137,7 +137,19 @@ export function setChar(project, id, slot, sel, base) {
   return { page: hit.page, index: hit.index, slot: n, fields: fields };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setLoc: setLoc, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
+export function setCharBase(project, id, slot, base) {
+  const hit = findPanelById(project, id);
+  if (!hit) return null;
+  const n = Number(slot);
+  if (!Number.isInteger(n) || n < 1 || n > 3) return null;
+  if (!Array.isArray(hit.panel.chars)) hit.panel.chars = [];
+  while (hit.panel.chars.length < 3) hit.panel.chars.push({ sel: "none", base: "", extra: "" });
+  if (!isObj(hit.panel.chars[n - 1])) hit.panel.chars[n - 1] = { sel: "none", base: "", extra: "" };
+  hit.panel.chars[n - 1].base = text(base);
+  return { page: hit.page, index: hit.index, slot: n, fields: ["charBase"] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setLoc: setLoc, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
