@@ -1,3 +1,7 @@
+### 2026-10-01 — RECON + QUESTIONS: P3 step-1 remaining leaf setters (setChar/setLoc/setAction/setCharBase)
+
+- **Status:** 🟢 **START NOW 2026-10-01** — author greenlit the recon + question round, verbatim: "Yes please!" (following the L5 recommendation to finish the 4 remaining step-1 setters one-per-release). Logged here on receipt, before any work, per the 2026-08-13 rule. Recon first per the 2026-09-20 directive; implementation waits for the author's answers.
+
 ### 2026-10-01 — FEATURE: reference-image hooks RI-01/RI-02 (implementation)
 
 - **Status:** ✅ **DONE 2026.10.01.4** — implemented, verified in the live preview and pushed.
