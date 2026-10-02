@@ -1,3 +1,8 @@
+## 2026.10.02.1 — 2026-10-02 — setAction: the action line becomes a named command (P3 step 1)
+
+- **The plain version:** nothing visible changes. Typing in a panel's Action box now writes through a pure setAction(project, id, value) command (one leaf, reported as { page, index, fields: ["action"] }) instead of relying on the debounced save alone; the write is synchronous and the field renders back from the store, exactly like setTitle. COMMANDS_VERSION 22 to 23. First of the 4 remaining step-1 leaf setters (setLoc, setChar, base-textarea setters next, one per release); batch-refresh, extra-box, PD-pick and __new__ paths untouched.
+- **Verified live:** typing in panel-act-1 lands in the save synchronously (probe "G23 ACTION PROBE" present before any debounce). Suites: core 60/0 (new setAction one-leaf + registry check), guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.01.4 — 2026-10-01 — reference images for Characters & Locations (RI-01/RI-02)
 
 - **The plain version:** every Character and Location can now hold up to 3 reference-image thumbnails (256px visual memos — never added to a prompt). The Library row shows thumbnails with a + Ref button; tapping one opens a viewer with Remove/Close. Adding offers Upload from this device or From a generated panel image; when 3 are held, the new one asks which it replaces. Copying an item asks whether the images travel (each time); exports carry them unless the export toggle is unticked (default ON); the JSON editor shows them as a locked line and Apply preserves them; deleting the entry deletes its images (the confirm says so).
