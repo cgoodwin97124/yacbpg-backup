@@ -1,3 +1,9 @@
+### 2026-10-02 — RECON + QUESTIONS: P3 step-1 setChar (third leaf setter)
+
+- **Status:** 🟢 **START NOW 2026-10-02** — author greenlit (verbatim: "Go for it!"). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked.**
+- **Recon:** each panel holds chars[3] of {sel, base, extra} (schema.js: chars always length 3). handleGridInput `cs` branch (panel-char-select-i-s, i=panel, s=slot 1-3): refreshPanelLineBase + extra-clear on none + refreshPanelLineDesc, then FALLS THROUGH to the debounced save (no command, no batch-mode early-return — unlike the loc branch; batch fan-out already lives inside refreshPanelLineBase, which delegates to batchRefreshPanelLineBases when multi-selected).
+- **Questions:** (1) scope = select-change writes sel+base (+extra-clear on none) through the command, base/extra typing stays old until their own releases? (2) batch/multi-select behavior stays exactly as today (command only on the single-panel path)?
+
 ### 2026-10-02 — RECON + QUESTIONS: P3 step-1 setLoc (second leaf setter)
 
 - **Status:** ✅ **DONE 2026.10.02.2** — setLoc implemented, verified in the live preview and pushed.
