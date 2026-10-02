@@ -1,3 +1,8 @@
+## 2026.10.02.5 — 2026-10-02 — setLocBase: the location base line becomes a named command (P3 step 1)
+
+- **The plain version:** nothing visible changes. Typing in a panel's Location base box now writes through a pure setLocBase(project, id, base) command (reported as { page, index, fields: ["locBase"] }) on every keystroke instead of relying on the debounced save alone; the write is synchronous and the box renders back from the store, completing the base pair with setCharBase. COMMANDS_VERSION 26 to 27. Two of the four textarea setters done (setCharExtra, setLocExtra next, one per release).
+- **Verified live:** typing in panel-loc-base-2 lands in the save synchronously (probe before any debounce: locBase written, loc untouched). Suites: core 64/0 (new setLocBase leaf / isolation / noop / registry check), guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.02.4 — 2026-10-02 — setCharBase: the character base line becomes a named command (P3 step 1)
 
 - **The plain version:** nothing visible changes. Typing in a panel's Character base box now writes through a pure setCharBase(project, id, slot, base) command (one slot's base, reported as { page, index, slot, fields: ["charBase"] }) on every keystroke instead of relying on the debounced save alone; the write is synchronous and the box renders back from the store, exactly like the title box. COMMANDS_VERSION 25 to 26. First of the four textarea setters (setLocBase, setCharExtra, setLocExtra next, one per release); the location base box stays old for now.
