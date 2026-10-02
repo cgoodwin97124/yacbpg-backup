@@ -1,3 +1,8 @@
+## 2026.10.02.6 — 2026-10-02 — setCharExtra: the character extra line becomes a named command (P3 step 1)
+
+- **The plain version:** nothing visible changes. Typing in a panel's Character extra box now writes through a pure setCharExtra(project, id, slot, extra) command (one slot's extra, reported as { page, index, slot, fields: ["charExtra"] }) on every keystroke instead of relying on the debounced save alone; the write is synchronous and the box renders back from the store. COMMANDS_VERSION 27 to 28. Three of the four textarea setters done (setLocExtra next, one per release); the badge, summary and lazy-save fall-through are untouched.
+- **Verified live:** typing in panel-char-extra-2-1 lands in the save synchronously (probe before any debounce: slot extra written, sibling slots untouched). Suites: core 65/0 (new setCharExtra leaf / isolation / noop / registry check), guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.02.5 — 2026-10-02 — setLocBase: the location base line becomes a named command (P3 step 1)
 
 - **The plain version:** nothing visible changes. Typing in a panel's Location base box now writes through a pure setLocBase(project, id, base) command (reported as { page, index, fields: ["locBase"] }) on every keystroke instead of relying on the debounced save alone; the write is synchronous and the box renders back from the store, completing the base pair with setCharBase. COMMANDS_VERSION 26 to 27. Two of the four textarea setters done (setCharExtra, setLocExtra next, one per release).
