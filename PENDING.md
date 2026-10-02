@@ -1,11 +1,12 @@
 ### 2026-10-02 — RECON + QUESTIONS: P3 step-1 setLoc (second leaf setter)
 
-- **Status:** 🟢 **START NOW 2026-10-02** — parent greenlight 2026-10-01 covers the approved order (setAction DONE 2026.10.02.1, now setLoc). Logged here on receipt, before any work, per the 2026-08-13 rule. Scope per answers: select-change writes sel+base (+extra-clear on none) through the command; batch-refresh path stays old.
+- **Status:** ✅ **DONE 2026.10.02.2** — setLoc implemented, verified in the live preview and pushed.
+- **Shipped:** pure setLoc + dispatch in handleGridInput (panel-loc-select-N) + renderCommittedFields loc/locBase/locExtra cases + core test; COMMANDS_VERSION 23 to 24. Suites core 61/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, restores byte-identical. Scope per answers stood: select-change writes sel+base (+extra-clear on none) through the command; batch-refresh path stays old. Next: setChar.
 
 ### 2026-10-01 — RECON + QUESTIONS: P3 step-1 remaining leaf setters (setChar/setLoc/setAction/setCharBase)
 
 - **Status:** ✅ **DONE 2026.10.02.1** — setAction implemented, verified in the live preview and pushed.
-- **Shipped:** pure setAction + dispatch in handleGridInput (panel-act-N) + renderCommittedFields 'action' case + core test; COMMANDS_VERSION 22 to 23. Suites core 60/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, restores byte-identical. Next: setLoc.
+- **Shipped:** pure setAction + dispatch in handleGridInput (panel-act-N) + renderCommittedFields 'action' case + core test; COMMANDS_VERSION 22 to 23. Suites core 60/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, restores byte-identical. Next: setChar (setLoc DONE 2026.10.02.2).
 
 ### 2026-10-01 — FEATURE: reference-image hooks RI-01/RI-02 (implementation)
 
