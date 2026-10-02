@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.01.4 — 2026-10-01 — 📎 Reference images for Characters & Locations
-- Up to 3 thumbnail memos per Character/Location: row thumbnails, viewer, upload or panel snapshot, per-copy ask, export toggle, locked JSON line.
+## 2026.10.02.1 — 2026-10-02 — ✏ setAction: the action line becomes a named command
+- Typing in a panel's Action box writes through the setAction command (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -4749,6 +4749,10 @@ color-scheme:light;
       if (f === 'sameSeed') {
         setPanelSameSeed(hit.index, !!panel.sameSeed);
       }
+      if (f === 'action') {
+        const el = document.getElementById('panel-act-' + hit.index);
+        if (el && el.value !== panel.action) el.value = panel.action;
+      }
       if (f === 'protectSlots') {
         const arr = Array.isArray(panel.protectSlots) ? panel.protectSlots : [];
         for (let k = 1; k <= 4; k++) setSlotProtected(hit.index, k, !!arr[k - 1]);
@@ -7690,6 +7694,11 @@ color-scheme:light;
       refreshPanelLineDesc(cb[1], parseInt(cb[2], 10), cb[3] ? parseInt(cb[3], 10) : null);
       updatePanelSummary(parseInt(cb[2], 10));
       return;
+    }
+    const ac = id.match(/^panel-act-(\d+)$/);
+    if (ac) {
+      updatePanelSummary(parseInt(ac[1], 10));
+      return runPanelCommand('setAction', panelIdAt(parseInt(ac[1], 10)), [e.target.value]);
     }
     const cm = id.match(/^panel-(?:char-select|char-base|char-extra|loc-select|loc-base|loc-extra|act|extra-type|extra-sel|extra-desc)-(\d+)/);
     if (cm) updatePanelSummary(parseInt(cm[1], 10));
