@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.02.2 — 2026-10-02 — 📍 setLoc: the location line becomes a named command
-- Changing a panel's Location dropdown writes through the setLoc command (synchronous save, render-back); zero visible change.
+## 2026.10.02.3 — 2026-10-02 — 🦸 setChar: the character line becomes a named command
+- Changing a panel's Character dropdown writes through the setChar command (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -4753,6 +4753,18 @@ color-scheme:light;
         const el = document.getElementById('panel-act-' + hit.index);
         if (el && el.value !== panel.action) el.value = panel.action;
       }
+      if (f === 'charSel') {
+        const sel = document.getElementById('panel-char-select-' + hit.index + '-' + hit.slot);
+        if (sel && [...sel.options].some(o => o.value === panel.chars[hit.slot - 1].sel)) sel.value = panel.chars[hit.slot - 1].sel;
+      }
+      if (f === 'charBase') {
+        const el = document.getElementById('panel-char-base-' + hit.index + '-' + hit.slot);
+        if (el && el.value !== panel.chars[hit.slot - 1].base) el.value = panel.chars[hit.slot - 1].base;
+      }
+      if (f === 'charExtra') {
+        const el = document.getElementById('panel-char-extra-' + hit.index + '-' + hit.slot);
+        if (el && el.value !== panel.chars[hit.slot - 1].extra) el.value = panel.chars[hit.slot - 1].extra;
+      }
       if (f === 'loc') {
         const sel = document.getElementById('panel-loc-select-' + hit.index);
         if (sel && [...sel.options].some(o => o.value === panel.loc)) sel.value = panel.loc;
@@ -7685,12 +7697,23 @@ color-scheme:light;
     }
     const cs = id.match(/^panel-char-select-(\d+)-(\d+)$/);
     if (cs) {
-      refreshPanelLineBase('char', parseInt(cs[1], 10), parseInt(cs[2], 10));
-      if (e.target.value === 'none') {
-        const extra = document.getElementById('panel-char-extra-' + cs[1] + '-' + cs[2]);
-        if (extra && extra.value) extra.value = "";
+      const ci = parseInt(cs[1], 10), cslot = parseInt(cs[2], 10);
+      updatePanelSummary(ci);
+      if (panelBatchMode(ci)) {
+        refreshPanelLineBase('char', ci, cslot);
+        if (e.target.value === 'none') {
+          const extra = document.getElementById('panel-char-extra-' + ci + '-' + cslot);
+          if (extra && extra.value) extra.value = "";
+        }
+        refreshPanelLineDesc('char', ci, cslot);
+        return;
       }
-      refreshPanelLineDesc('char', parseInt(cs[1], 10), parseInt(cs[2], 10));
+      const cbaseEl = document.getElementById('panel-char-base-' + ci + '-' + cslot);
+      if (cbaseEl) delete cbaseEl.dataset.needSeed;
+      const okc = runPanelCommand('setChar', panelIdAt(ci), [cslot, e.target.value, plLineDescText('char', e.target.value)]);
+      refreshPanelLineDesc('char', ci, cslot);
+      if (!okc) schedulePanelSave();
+      return;
     }
     const ll = id.match(/^panel-loc-select-(\d+)$/);
     if (ll) {
