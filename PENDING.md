@@ -2,7 +2,9 @@
 
 - **Status:** 🟢 **START NOW 2026-10-02** — author greenlit (verbatim: "Do it!"). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked.**
 - **Recon:** four textarea fields still ride the debounced save only. `cb` branch (panel-char-base-i-s, panel-loc-base-i): refreshPanelLineDesc + updatePanelSummary, then falls through to schedulePanelSave — refreshPanelLineDesc only toggles the differs badge/tooltip, never writes state. `dpb` branch (panel-char-extra-i-s, panel-loc-extra-i): refreshPanelDescBadge only, same fall-through. Everything else typed or picked (title, action, selects, seed, size, style, imgCount, sameSeed, protect, promptOverride) already dispatches commands. Panel Extras rows (extra-type/sel/desc) and the PD pickers are bigger features, out of step-1 scope.
-- **Questions:** (1) split = four tiny commands (setCharBase, setLocBase, setCharExtra, setLocExtra), one per release, base pair first? (2) per-keystroke synchronous command like setTitle/setAction, render-back from the store?
+- **Author answers 2026-10-02:** yes to both — four tiny commands one per release, base pair first; per-keystroke synchronous with render-back.
+- **Status:** ✅ **DONE 2026.10.02.4 (1 of 4)** — setCharBase implemented, verified in the live preview and pushed.
+- **Shipped:** pure setCharBase(project, id, slot, base) + dispatch in handleGridInput (panel-char-base-N-S; loc base keeps the old path) + existing charBase render-back case + core test; COMMANDS_VERSION 25 to 26. Suites core 63/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, restores byte-identical. Next: setLocBase.
 
 ### 2026-10-02 — RECON + QUESTIONS: P3 step-1 setChar (third leaf setter)
 
