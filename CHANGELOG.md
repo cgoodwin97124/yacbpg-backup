@@ -1,3 +1,9 @@
+## 2026.10.01.4 — 2026-10-01 — reference images for Characters & Locations (RI-01/RI-02)
+
+- **The plain version:** every Character and Location can now hold up to 3 reference-image thumbnails (256px visual memos — never added to a prompt). The Library row shows thumbnails with a + Ref button; tapping one opens a viewer with Remove/Close. Adding offers Upload from this device or From a generated panel image; when 3 are held, the new one asks which it replaces. Copying an item asks whether the images travel (each time); exports carry them unless the export toggle is unticked (default ON); the JSON editor shows them as a locked line and Apply preserves them; deleting the entry deletes its images (the confirm says so).
+- **Verified live:** strip render, viewer open/close, copy ask + Cancel (catalogue untouched), delete note + Cancel (entry kept), + Ref dialog, snapshot empty-state, JSON locked line, rename-via-Apply keeping both refs, export toggle default-ON. 256px downscale on both add paths, 4th-arrival picker and export-off strip verified by code read.
+- **Suites:** core 59/0, guards 21/0, state-diff 38/38, smoke 114/0/4 (118 checks, incl. the new 5-check G23 refs group), fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner. One-line test seam (window.renderLibrary export); no behavior change.
+
 ## 2026.10.01.3 — 2026-10-01 — generate (x) to (y): pick an inclusive panel range to generate
 
 - **The plain version:** a new range picker button in the Panel menu and the multi-select menu. It opens a small dialog with From/To boxes that start out as the selected span (or panel 1 through the clicked panel), validates as you type, and renders exactly that inclusive range in order through the same engine as the other generate buttons. Protected images inside the range are kept; pausing a range run resumes to its end, never the page end.
