@@ -1,3 +1,9 @@
+### 2026-10-02 — RECON + QUESTIONS: P3 step-1 base/extra textarea setters (last leaf setters)
+
+- **Status:** 🟢 **START NOW 2026-10-02** — author greenlit (verbatim: "Do it!"). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked.**
+- **Recon:** four textarea fields still ride the debounced save only. `cb` branch (panel-char-base-i-s, panel-loc-base-i): refreshPanelLineDesc + updatePanelSummary, then falls through to schedulePanelSave — refreshPanelLineDesc only toggles the differs badge/tooltip, never writes state. `dpb` branch (panel-char-extra-i-s, panel-loc-extra-i): refreshPanelDescBadge only, same fall-through. Everything else typed or picked (title, action, selects, seed, size, style, imgCount, sameSeed, protect, promptOverride) already dispatches commands. Panel Extras rows (extra-type/sel/desc) and the PD pickers are bigger features, out of step-1 scope.
+- **Questions:** (1) split = four tiny commands (setCharBase, setLocBase, setCharExtra, setLocExtra), one per release, base pair first? (2) per-keystroke synchronous command like setTitle/setAction, render-back from the store?
+
 ### 2026-10-02 — RECON + QUESTIONS: P3 step-1 setChar (third leaf setter)
 
 - **Status:** 🟢 **START NOW 2026-10-02** — author greenlit (verbatim: "Go for it!"). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked.**
