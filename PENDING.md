@@ -1,3 +1,7 @@
+### 2026-10-02 — RECON + QUESTIONS: P3 step-1 setLoc (second leaf setter)
+
+- **Status:** 🟢 **START NOW 2026-10-02** — parent greenlight 2026-10-01 covers the approved order (setAction DONE 2026.10.02.1, now setLoc). Logged here on receipt, before any work, per the 2026-08-13 rule. Scope per answers: select-change writes sel+base (+extra-clear on none) through the command; batch-refresh path stays old.
+
 ### 2026-10-01 — RECON + QUESTIONS: P3 step-1 remaining leaf setters (setChar/setLoc/setAction/setCharBase)
 
 - **Status:** ✅ **DONE 2026.10.02.1** — setAction implemented, verified in the live preview and pushed.
