@@ -1,3 +1,8 @@
+## 2026.10.02.4 — 2026-10-02 — setCharBase: the character base line becomes a named command (P3 step 1)
+
+- **The plain version:** nothing visible changes. Typing in a panel's Character base box now writes through a pure setCharBase(project, id, slot, base) command (one slot's base, reported as { page, index, slot, fields: ["charBase"] }) on every keystroke instead of relying on the debounced save alone; the write is synchronous and the box renders back from the store, exactly like the title box. COMMANDS_VERSION 25 to 26. First of the four textarea setters (setLocBase, setCharExtra, setLocExtra next, one per release); the location base box stays old for now.
+- **Verified live:** typing in panel-char-base-2-1 lands in the save synchronously (probe before any debounce: slot base written, sel and sibling slots untouched, differs badge still toggles). Suites: core 63/0 (new setCharBase leaf / isolation / noop / registry check), guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.02.3 — 2026-10-02 — setChar: the character line becomes a named command (P3 step 1)
 
 - **The plain version:** nothing visible changes. Changing a panel's Character dropdown now writes through a pure setChar(project, id, slot, sel, base) command (one slot of chars[3], selection + base text, plus clearing the extra line on none, reported as { page, index, slot, fields }) instead of relying on the debounced save alone; the write is synchronous and the line renders back from the store, exactly like setLoc. COMMANDS_VERSION 24 to 25. Third of the 4 remaining step-1 leaf setters (base-textarea setters next, one per release); the batch/multi-select path is untouched.
