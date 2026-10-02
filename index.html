@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.01.3 — 2026-10-01 — ⚡ Generate (x) to (y): pick an inclusive panel range
-- A range picker in the Panel menu and the selection menu renders exactly the panels chosen, in order.
+## 2026.10.01.4 — 2026-10-01 — 📎 Reference images for Characters & Locations
+- Up to 3 thumbnail memos per Character/Location: row thumbnails, viewer, upload or panel snapshot, per-copy ask, export toggle, locked JSON line.
 </script>
 
 
@@ -11113,6 +11113,7 @@ color-scheme:light;
   window.applyLibraryRename = applyLibraryRename;
   window.loadLibraryObjects = loadLibraryObjects;
   window.saveLibraryObjects = saveLibraryObjects;
+  window.renderLibrary = renderLibrary;
   window.loadCatalogue = loadCatalogue;
   window.saveCatalogue = saveCatalogue;
   window.initProjectLibrary = initProjectLibrary;
@@ -11200,9 +11201,25 @@ color-scheme:light;
   }
 
   // ---------- document ----------
+  function jsonRefsMetaLine(refs) {
+    const list = Array.isArray(refs) ? refs.filter(r => r && typeof r.src === 'string' && r.src) : [];
+    if (!list.length) return null;
+    const sizes = list.map(r => Math.max(1, Math.round(r.src.length / 1024)) + ' KB');
+    return '🔒 ' + list.length + ' reference image' + (list.length === 1 ? '' : 's') + ' (' + sizes.join(' + ') + ') — managed in the 📚 Library, never editable here';
+  }
+  function jsonScrubRefs(arr) {
+    if (!Array.isArray(arr)) return;
+    for (const o of arr) {
+      if (!o || typeof o !== 'object' || !Array.isArray(o.refs) || !o.refs.length) continue;
+      const line = jsonRefsMetaLine(o.refs);
+      if (line !== null) o.refs = line;
+    }
+  }
   function jsonBuildDoc() {
     const d = buildExportData(true);
     delete d.exportedAt;
+    jsonScrubRefs(d.settings && d.settings.library);
+    jsonScrubRefs(d.libObjects);
     return d;
   }
   function jsonDocText(doc) { return JSON.stringify(doc, null, 2); }
@@ -11771,7 +11788,9 @@ color-scheme:light;
     settings.version = 2;
     settings.currentPage = currentPage;
     const lib = Array.isArray(settings.library) ? settings.library : (Array.isArray(doc.libObjects) ? doc.libObjects : null);
-    if (lib) projectLibrary = normaliseLibArray(lib);
+    const liveRefs = {};
+    for (const o of projectLibrary) { const r = refListOf(o); if (r.length) liveRefs[o.id] = r.map(x => ({ src: x.src })); }
+    if (lib) projectLibrary = normaliseLibArray(lib).map(o => (liveRefs[o.id] && liveRefs[o.id].length ? Object.assign({}, o, { refs: liveRefs[o.id] }) : o));
     settings.library = projectLibraryArray();
     projectKept = normaliseKeptArray(settings.kept);
     settings.kept = projectKeptArray();
