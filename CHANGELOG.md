@@ -1,3 +1,8 @@
+## 2026.10.02.2 — 2026-10-02 — setLoc: the location line becomes a named command (P3 step 1)
+
+- **The plain version:** nothing visible changes. Changing a panel's Location dropdown now writes through a pure setLoc(project, id, sel, base) command (selection + base text, plus clearing the extra line on none, reported as { page, index, fields }) instead of relying on the debounced save alone; the write is synchronous and the line renders back from the store, exactly like setAction. COMMANDS_VERSION 23 to 24. Second of the 4 remaining step-1 leaf setters (setChar and the base-textarea setters next, one per release); the batch-refresh path is untouched.
+- **Verified live:** flipping panel 2's dropdown none → city → none lands in the save synchronously (probe before any debounce: loc + locBase written, neighbour untouched, extra cleared on none). Suites: core 61/0 (new setLoc sel+base / extra-clear / noop / registry check), guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.02.1 — 2026-10-02 — setAction: the action line becomes a named command (P3 step 1)
 
 - **The plain version:** nothing visible changes. Typing in a panel's Action box now writes through a pure setAction(project, id, value) command (one leaf, reported as { page, index, fields: ["action"] }) instead of relying on the debounced save alone; the write is synchronous and the field renders back from the store, exactly like setTitle. COMMANDS_VERSION 22 to 23. First of the 4 remaining step-1 leaf setters (setLoc, setChar, base-textarea setters next, one per release); batch-refresh, extra-box, PD-pick and __new__ paths untouched.
