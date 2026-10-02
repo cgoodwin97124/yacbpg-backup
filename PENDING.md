@@ -1,6 +1,7 @@
 ### 2026-10-01 — FEATURE: reference-image hooks RI-01/RI-02 (implementation)
 
-- **Status:** ACTIVE START NOW 2026-10-01 — author greenlit implementation, verbatim: "Do it!" Logged here on receipt, before any work, per the 2026-08-13 rule. One ship. Scope per answered questions (tickets RI-01 + RI-02): schema refs on Character/Location, Library-row thumbnails + viewer, upload + snapshot-panel-image add, 4th-arrival replace picker, per-batch copy ask, export toggle default ON winning over compact, JSON locked-metadata, delete-with-object.
+- **Status:** ✅ **DONE 2026.10.01.4** — implemented, verified in the live preview and pushed.
+- **Shipped:** strip/viewer/copy-ask/delete-note/add-dialog/snapshot-empty-state/JSON-lock/apply-keeps live; 256px reduce, 4th-arrival picker, export-off strip by code read. Suites core 59/0, guards 21/0, state-diff 38/38, smoke 114/0/4 (new G23), fixtures 18/0, gen 18/0 (+1m), 0 perchance errors, restores byte-identical. One-line seam: window.renderLibrary export.
 
 ### 2026-10-01 — P3 step 2 batch track: delete + pure refill planner
 
