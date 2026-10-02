@@ -4753,6 +4753,18 @@ color-scheme:light;
         const el = document.getElementById('panel-act-' + hit.index);
         if (el && el.value !== panel.action) el.value = panel.action;
       }
+      if (f === 'loc') {
+        const sel = document.getElementById('panel-loc-select-' + hit.index);
+        if (sel && [...sel.options].some(o => o.value === panel.loc)) sel.value = panel.loc;
+      }
+      if (f === 'locBase') {
+        const el = document.getElementById('panel-loc-base-' + hit.index);
+        if (el && el.value !== panel.locBase) el.value = panel.locBase;
+      }
+      if (f === 'locExtra') {
+        const el = document.getElementById('panel-loc-extra-' + hit.index);
+        if (el && el.value !== panel.locExtra) el.value = panel.locExtra;
+      }
       if (f === 'protectSlots') {
         const arr = Array.isArray(panel.protectSlots) ? panel.protectSlots : [];
         for (let k = 1; k <= 4; k++) setSlotProtected(hit.index, k, !!arr[k - 1]);
@@ -7682,12 +7694,23 @@ color-scheme:light;
     }
     const ll = id.match(/^panel-loc-select-(\d+)$/);
     if (ll) {
-      refreshPanelLineBase('loc', parseInt(ll[1], 10));
-      if (e.target.value === 'none') {
-        const le = document.getElementById('panel-loc-extra-' + ll[1]);
-        if (le && le.value) le.value = "";
+      const li = parseInt(ll[1], 10);
+      updatePanelSummary(li);
+      if (panelBatchMode(li)) {
+        refreshPanelLineBase('loc', li);
+        if (e.target.value === 'none') {
+          const le = document.getElementById('panel-loc-extra-' + li);
+          if (le && le.value) le.value = "";
+        }
+        refreshPanelLineDesc('loc', li);
+        return;
       }
-      refreshPanelLineDesc('loc', parseInt(ll[1], 10));
+      const baseEl = document.getElementById('panel-loc-base-' + li);
+      if (baseEl) delete baseEl.dataset.needSeed;
+      const okl = runPanelCommand('setLoc', panelIdAt(li), [e.target.value, plLineDescText('loc', e.target.value)]);
+      refreshPanelLineDesc('loc', li);
+      if (!okl) schedulePanelSave();
+      return;
     }
     const cb = id.match(/^panel-(char|loc)-base-(\d+)(?:-(\d+))?$/);
     if (cb) {
