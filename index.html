@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.11 — 2026-10-03 — 🗑 Last DOM reads become store reads; legacy fallbacks deleted
-- countLibReferences, apply/openLibraryRename, applyLibraryDeleteMany: collectPanelState to storeJsonNow. Zero behavior change.
+## 2026.10.03.12 — 2026-10-03 — 🏷 Last DOM reader goes test-only; production refs pinned at zero
+- collectPanelState renamed testCollectPanelState (definition + window export); state-diff callers follow; core.test.js pins zero production refs. Zero behavior change.
 </script>
 
 
@@ -4656,7 +4656,7 @@ color-scheme:light;
     return page;
   }
 
-  function collectPanelState() {
+  function testCollectPanelState() {
     const raw = readPanelState();
     const pages = ensurePages(raw);
     pages[currentPage] = collectPageData();
@@ -10967,7 +10967,7 @@ color-scheme:light;
   window.projectKeptArray = projectKeptArray;
   window.initProjectStore = initProjectStore;
   window.collectDomSnapshot = collectDomSnapshot;
-  window.collectPanelState = collectPanelState;
+  window.testCollectPanelState = testCollectPanelState;
   window.savePanelState = savePanelState;
   window.__storeJson = storeJsonNow;
   window.__storeModule = function () { return coreModules.store; };
