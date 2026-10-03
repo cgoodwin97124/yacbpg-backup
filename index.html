@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.3 — 2026-10-03 — ⇤ Copy-from-prev writes through the line commands
-- The ⇤ buttons copy through setChar/setLoc/setAction + extras (synchronous save, render-back); zero visible change.
+## 2026.10.03.4 — 2026-10-03 — ⟳ Refresh-from-library writes through the base commands
+- The ⟳ buttons refill through setCharBase/setLocBase (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -4048,6 +4048,18 @@ color-scheme:light;
     }
   }
 
+  function refreshPanelLineFromLibrary(kind, i, s) {
+    if (panelBatchMode(i) && panelSelection.size > 1) { refreshPanelLineBase(kind, i, s); return; }
+    const ids = panelLineIds(kind, i, s);
+    const sel = document.getElementById(ids.sel);
+    const baseEl = document.getElementById(ids.base);
+    const text = plLineDescText(kind, sel ? sel.value : 'none');
+    const ok = runPanelCommand(kind === 'char' ? 'setCharBase' : 'setLocBase', panelIdAt(i), kind === 'char' ? [s, text] : [text]);
+    if (!ok) { refreshPanelLineBase(kind, i, s); return; }
+    if (baseEl) delete baseEl.dataset.needSeed;
+    refreshPanelLineDesc(kind, i, s);
+  }
+
   function refreshPanelLineBase(kind, i, s) {
     if (panelBatchMode(i) && panelSelection.size > 1) { batchRefreshPanelLineBases(null); return; }
     const ids = panelLineIds(kind, i, s);
@@ -4247,7 +4259,7 @@ color-scheme:light;
           <div class="pl-base-head">
             <span class="pl-line-label">Basic Description</span>
             <span class="pl-base-badge" id="panel-char-basediff-${i}-${s}">edited</span>
-            <button type="button" class="pl-base-refresh" id="panel-char-baseref-${i}-${s}" onclick="refreshPanelLineBase('char',${i},${s})" title="Replace this with the text currently saved in your library for the selected character">⟳ Refresh from library</button>
+            <button type="button" class="pl-base-refresh" id="panel-char-baseref-${i}-${s}" onclick="refreshPanelLineFromLibrary('char',${i},${s})" title="Replace this with the text currently saved in your library for the selected character">⟳ Refresh from library</button>
           </div>
           <textarea class="po-desc" id="panel-char-base-${i}-${s}" rows="2" placeholder="Filled from the character's library description when you pick one. Edit it to use your own wording in this panel."></textarea>
         </div>
@@ -4279,7 +4291,7 @@ color-scheme:light;
           <div class="pl-base-head">
             <span class="pl-line-label">Basic Description</span>
             <span class="pl-base-badge" id="panel-loc-basediff-${i}">edited</span>
-            <button type="button" class="pl-base-refresh" id="panel-loc-baseref-${i}" onclick="refreshPanelLineBase('loc',${i})" title="Replace this with the text currently saved in your library for the selected location">⟳ Refresh from library</button>
+            <button type="button" class="pl-base-refresh" id="panel-loc-baseref-${i}" onclick="refreshPanelLineFromLibrary('loc',${i})" title="Replace this with the text currently saved in your library for the selected location">⟳ Refresh from library</button>
           </div>
           <textarea class="po-desc" id="panel-loc-base-${i}" rows="2" placeholder="Filled from the location's library description when you pick one. Edit it to use your own wording in this panel."></textarea>
         </div>
@@ -11212,6 +11224,7 @@ color-scheme:light;
   window.deletePanelAct = deletePanelAct;
   window.copyFromPrevPanel = copyFromPrevPanel;
   window.refreshPanelLineBase = refreshPanelLineBase;
+  window.refreshPanelLineFromLibrary = refreshPanelLineFromLibrary;
   window.pickPanelDescription = pickPanelDescription;
   window.savePanelDescription = savePanelDescription;
   window.refreshPanelDescBadge = refreshPanelDescBadge;
