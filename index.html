@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.02.6 — 2026-10-02 — 🦸 setCharExtra: the character extra line becomes a named command
-- Typing in a panel's Character extra box writes through the setCharExtra command (synchronous save, render-back); zero visible change.
+## 2026.10.02.7 — 2026-10-02 — 📍 setLocExtra: the location extra line becomes a named command
+- Typing in a panel's Location extra box writes through the setLocExtra command (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -7672,6 +7672,7 @@ color-scheme:light;
     if (dpb) {
       const ei = parseInt(dpb[2], 10), es = dpb[3] ? parseInt(dpb[3], 10) : 1;
       if (dpb[1] === 'char' && !runPanelCommand('setCharExtra', panelIdAt(ei), [es, e.target.value])) schedulePanelSave();
+      if (dpb[1] === 'loc' && !runPanelCommand('setLocExtra', panelIdAt(ei), [e.target.value])) schedulePanelSave();
       refreshPanelDescBadge(dpb[1], ei, es);
     }
     const nv = id.match(/^panel-(?:char-select-(\d+)-(\d+)|loc-select-(\d+))$/);
