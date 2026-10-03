@@ -176,6 +176,11 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-10-03 — REFACTOR P3 step 3 tail: generateMany command RECON (+ (x)-(y) range button riding on it)
+- **Status:** ACTIVE START NOW 2026-10-03 — author greenlit the recon, verbatim: Yes please! Logged here on receipt, before any work, per the 2026-08-13 rule. Implementation is NOT greenlit — it waits for the recon question round per the 2026-09-20 directive.
+- **Scope:** recon only — map the current generate paths (single / Generate All / selection / To-Here+Range run bounds) and propose the generateMany pure command shape. The (x)-(y) range button rides on it as the next feature release.
+
+
 ### 2026-10-03 — REFACTOR P3 step 4 R4: rename collectPanelState to testCollectPanelState + pinning check (.12)
 - **Status:** ✅ **DONE 2026.10.03.12** — implemented, tested and documented; app files (index.html, devtests) await the author Save, then the button push; docs via Contents API in the same session.
 - **What shipped:** the last DOM-read helper renamed testCollectPanelState (definition + window export, index.html:4659/:10970); 31 state-diff call sites follow; core.test.js gains a pinning check (strips comments + text/plain blocks, removes the test name, asserts zero bare refs; def + export exactly once). collectPageData/collectDomSnapshot stay. Zero behavior change.
