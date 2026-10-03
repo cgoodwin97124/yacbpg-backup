@@ -1,3 +1,8 @@
+## 2026.10.03.14 — 2026-10-03 — 📊 Analysis text edits go through commands (non-current pages)
+
+- **The plain version:** editing another page's text from the Analysis matrix now saves through the same named-command path as every other edit, instead of its own one-off code. The app does exactly what it did.
+- analysisSetDesc/AddItem/SetPanelAction non-current branches route by panel id (existing setCharExtra/setLocExtra/setAction/setLoc + new setCharSel micro for the whole-slot character replace); old positional paths as fallback. Zero behavior change.
+
 ## 2026.10.03.13 — 2026-10-03 — 📝 Prompt-history filing becomes a named command
 
 - **The plain version:** every generate already files the exact prompt and seed used into that panel's history — now that filing goes through the same named-command path as every other edit, instead of its own one-off code. The app does exactly what it did.
