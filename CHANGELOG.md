@@ -1,3 +1,7 @@
+## 2026.10.03.16 — 2026-10-03 — P4 wave 1: image reads go through src/state/images.js
+- New module src/state/images.js (IMAGES_VERSION 1): createImageStore() facade over the session maps (current + per-page sessions), wave-1 read surface pageImages/get/has/hasAny/count/getPanel/allPages/hasAnywhere. All image reads (grid display, lazy-observer rehydrate, hover preview, counts, open/save, copy-dialog labels, storyboard, clipboard snapshot, export collect, analysis, hasActiveProject) route through it; legacy map code stays as the module-failed fallback. Writes, remaps, clipboard, undo, export/import untouched (waves 2-5).
+- Suites: core 76/0 (4 new images checks), diff-core 23/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0/1, 0 perchanceErrors, byte-identical restores. Smoke G19:92 updated to the 18-file manifest; one G6:37 flake (seed-clear save) failed once then passed on re-run and in an isolated parked probe - seed path untouched by this release.
+
 ## 2026.10.03.15 — 2026-10-03 — 📊 Analysis chips go through commands (non-current pages)
 
 - **The plain version:** changing another page's style, size, seed or palette from the Analysis matrix now saves through the same named-command path as every other edit. The app does exactly what it did.
