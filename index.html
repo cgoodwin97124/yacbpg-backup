@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.2 — 2026-10-03 — ✕ Line-clears write through the line commands
-- The ✕ buttons clear through setChar/setLoc/setAction (synchronous save, render-back); zero visible change.
+## 2026.10.03.3 — 2026-10-03 — ⇤ Copy-from-prev writes through the line commands
+- The ⇤ buttons copy through setChar/setLoc/setAction + extras (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -5463,6 +5463,26 @@ color-scheme:light;
       return;
     }
     const v = src.value;
+    const pid = panelIdAt(i);
+    if (pid && (kind === 'char' || kind === 'loc')) {
+      const selEl = document.getElementById(kind === 'char' ? ('panel-char-select-' + i + '-' + s) : ('panel-loc-select-' + i));
+      const selToWrite = (selEl && [...selEl.options].some(o => o.value === v.sel)) ? v.sel : (selEl ? selEl.value : 'none');
+      const baseToWrite = v.base || plLineDescText(kind, v.sel);
+      const lineArgs = kind === 'char' ? [s, selToWrite, baseToWrite] : [selToWrite, baseToWrite];
+      const extraArgs = kind === 'char' ? [s, v.extra] : [v.extra];
+      if (runPanelCommand(kind === 'char' ? 'setChar' : 'setLoc', pid, lineArgs)
+        && runPanelCommand(kind === 'char' ? 'setCharExtra' : 'setLocExtra', pid, extraArgs)) {
+        refreshPanelLineDesc(kind, i, kind === 'char' ? s : undefined);
+        updatePanelSummary(i);
+        return;
+      }
+    }
+    if (pid && kind === 'act') {
+      if (runPanelCommand('setAction', pid, [v.text])) {
+        updatePanelSummary(i);
+        return;
+      }
+    }
     if (kind === 'char') {
       const sel = document.getElementById('panel-char-select-' + i + '-' + s);
       const base = document.getElementById('panel-char-base-' + i + '-' + s);
