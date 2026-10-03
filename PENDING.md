@@ -1,3 +1,4 @@
+- **Status:** DONE 2026.10.03.8 - 14 confirms converted, verified live and pushed. Q1+Q2 complete = batch odds and ends complete. Next: P3 step 4 recon (delete the collectPanelState read path).
 - 2026.10.03.7 locked: author Saved (stamp .7 live), re-pushed 17 files post-save. Code and repo in lockstep.
 - **Status:** START NOW 2026-10-03 Q2 (14 native confirms to showChoiceDialog). Author approved (suggested order, one release).
 - **Status:** DONE 2026.10.03.7 - clearMany implemented, verified live and pushed. Registry COMMANDS_VERSION 31. Q2 (14 native confirms) is next, then P3 step 4 recon.
