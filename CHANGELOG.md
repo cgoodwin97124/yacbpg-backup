@@ -1,3 +1,8 @@
+## 2026.10.03.13 — 2026-10-03 — 📝 Prompt-history filing becomes a named command
+
+- **The plain version:** every generate already files the exact prompt and seed used into that panel's history — now that filing goes through the same named-command path as every other edit, instead of its own one-off code. The app does exactly what it did.
+- appendPromptHistory pure command (dedup + unshift + cap, byte-identical semantics incl. the raw-vs-filtered seed comparison) + dispatch in addPromptHistoryEntry with the old path as fallback; thumbs/prune stay session-side. Zero behavior change.
+
 ## 2026.10.03.12 — 2026-10-03 — 🏷 Last DOM reader goes test-only; production refs pinned at zero
 
 - **The plain version:** the old page-scraping reader is now named as what it is — a test-only helper — and an automated check fails the suite if production code ever references it again. The app does exactly what it did.
