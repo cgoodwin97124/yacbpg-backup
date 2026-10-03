@@ -177,8 +177,9 @@ each section).
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
 ### 2026-10-03 — REFACTOR P3 step 4 R4: rename collectPanelState to testCollectPanelState + pinning check (.12)
-- **Status:** ACTIVE START NOW 2026-10-03 — author greenlit, verbatim: Go ahead! Logged here on receipt, before any work, per the 2026-08-13 rule.
-- **Scope:** rename the last DOM-read helper (definition index.html:4659 + window export :10970) to testCollectPanelState; update devtests callers (state-diff.page.js); add core.test.js pinning check asserting zero production collectPanelState refs. collectPageData/collectDomSnapshot stay. Zero behavior change; one op, one release.
+- **Status:** ✅ **DONE 2026.10.03.12** — implemented, tested and documented; app files (index.html, devtests) await the author Save, then the button push; docs via Contents API in the same session.
+- **What shipped:** the last DOM-read helper renamed testCollectPanelState (definition + window export, index.html:4659/:10970); 31 state-diff call sites follow; core.test.js gains a pinning check (strips comments + text/plain blocks, removes the test name, asserts zero bare refs; def + export exactly once). collectPageData/collectDomSnapshot stay. Zero behavior change.
+- **Verified:** core 69/0 (68 + pin), state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0/1, diff-core 21/0, 0 perchanceErrors, byte-identical restores. Stamp #embeddedVersion 2026.10.03.12 matches CHANGELOG first entry. P3 step 4 COMPLETE.
 
 
 ### 2026-10-01 — REFACTOR: P3 step 2 batch ops (batchDuplicate / batchAdd / batchDelete + cascadePageSequence as named commands)
