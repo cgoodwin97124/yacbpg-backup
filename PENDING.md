@@ -1,6 +1,11 @@
 - 2026.10.03.11 DONE: R3 shipped (34 production collectPanelState sites to storeJsonNow; ~14 legacy fallback tails/elses deleted; renderAnalysis/promptHistoryThumbKeys swapped). Suites: state-diff 38/0, smoke 114/0/4, fixtures 18/0, gen 18/0/1 (one stale-DOM false alarm, green on fresh page; run-gen.js now reloads before parking), diff-core 21/0, multi-page undo chain 0 parsed diffs, 0 perchanceErrors. Saved build pushed post-Save. Cow in field intact (park f2369488 throughout). Next: R4 final (pinning grep-check + rename to testCollectPanelState, ship .12).
 - 2026.10.03 R3 START NOW: 34 production collectPanelState sites (10 analysis + 23 structural + promptHistoryThumbKeys) to storeJsonNow + else-fallback deletions, ship .11. Comment lines 36/68 excluded (not code).
 
+### 2026-10-03 - P3 step 5 R2: Analysis chips group + setPalette/setPageSeed micros (.15)
+- **Status:** ACTIVE START NOW 2026-10-03 - part of the approved split; author said re-push and continue after R1 save. Logged here on receipt, before any work, per the 2026-08-13 rule.
+- **Scope:** analysisSetPanelStyle/Size/Seed + analysisGlobalSeedChanged non-current branches by panel/page id (existing setStyle/setSize/setPanelSeed + new setPalette + setPageSeed micros); current-page + library-desc untouched; invisible; old paths as fallback.
+
+
 ### 2026-10-03 - P3 step 5 R1: Analysis text-group non-current branches through commands + setCharSel micro (.14)
 - **Status:** ACTIVE START NOW 2026-10-03 - author answered Q1 split-into-two, Q2 add, Q3 good, Q4 good, verbatim Go. Logged here on receipt, before any work, per the 2026-08-13 rule.
 - **Scope:** R1 = analysisSetDesc + analysisAddItem + analysisSetPanelAction non-current branches by panel id (existing setCharExtra/setLocExtra/setAction/setLoc + one new setCharSel micro for AddItem-char whole-slot replace); current-page + library-desc untouched; invisible; old positional paths as fallback. R2 = chips group + setPalette/setPageSeed next.
