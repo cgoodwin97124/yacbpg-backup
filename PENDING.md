@@ -1,3 +1,8 @@
+### 2026-10-03 — RECON + QUESTIONS: batch odds and ends (clipboard, dialog rule, leftover batch ops)
+
+- **Status:** 🟡 **START NOW 2026-10-03** — author greenlight (verbatim: "Let's finish the batch odds and ends first.  Recon and questions, if there are any."). Logged here on receipt, before any work, per the 2026-08-13 rule.
+- Recon below; no code changes until author answers.
+
 ### 2026-10-03 — RECON + QUESTIONS: batch refresh-from-library on the commands
 
 - **Status:** 🟢 **START NOW 2026-10-03** — author greenlit (verbatim: "Let's do the batch-refresh now. Recon and questions first."). Logged here on receipt, before any work, per the 2026-08-13 rule. **Author answers 2026-10-03:** yes to all three — per-line dispatch, probe the real batch path, seed/migrate stays old. Implemented below.
