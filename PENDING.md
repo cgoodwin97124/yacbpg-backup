@@ -4,6 +4,9 @@
 ### 2026-10-03 - P4 images.js service RECON
 - **Status:** ACTIVE START NOW 2026-10-03 - author greenlit the recon, verbatim: Yes please. Logged here on receipt, before any work, per the 2026-08-13 rule. Implementation NOT greenlit - waits for the recon question round per the 2026-09-20 directive.
 - **Scope:** recon only - map the image layer (panelImages/pageSession, slot flags, protect, copy/cover, lazy hydration, observer, clipboard) and propose the id-keyed service shape. Clipboard rewrite rides along.
+- **Recon (2026-10-03):** image state is session-only, position-keyed: pageSession{pg->images} + panelImages{pos->[dataUrls]} + inFlightGen + panelBusy + clipboard {panels,images,cut}. Protect flags already split clean (project via setProtect, DOM mirrors). Remaps: remapPanelSession positional still called at :6022 (movePanel dispatch); rest use remapPanelImagesById. Touch surface ~40 fns: show/has/clear panel+slot, copy-to-panel dests, representative swap (positional), lazy observer (parses card ids), export collectAllPageImages, import repopulate, thumbs/prune, preview hover, undo session snapshots, paste threading.
+- **Proposed shape:** src/state/images.js createImageStore() keyed by panel id (get/set/clearId/clearSlot/remapByIds/snapshot/restore); index.html keeps DOM half (observer/buttons/preview) + position-to-id adapters. Migration in waves: reads, writes, remaps, clipboard/undo - one release each.
+- **Questions:** (1) id-keyed store + adapters, observer stays - good? (2) waves one-release-each - good, or bigger slices? (3) protect flags stay commands, untouched - good? (4) export/import image round-trip in images.js now or transfer.js later?
 
 
 ### 2026-10-03 - T-01 1c resume-to-end RECON (opened + closed, no release)
