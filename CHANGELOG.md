@@ -1,3 +1,8 @@
+## 2026.10.03.15 — 2026-10-03 — 📊 Analysis chips go through commands (non-current pages)
+
+- **The plain version:** changing another page's style, size, seed or palette from the Analysis matrix now saves through the same named-command path as every other edit. The app does exactly what it did.
+- analysisSetPanelStyle/Size/Seed + page seed route by id (existing setStyle/setSize/setPanelSeed + new setPalette/setPageSeed micros); old positional paths as fallback. Zero behavior change.
+
 ## 2026.10.03.14 — 2026-10-03 — 📊 Analysis text edits go through commands (non-current pages)
 
 - **The plain version:** editing another page's text from the Analysis matrix now saves through the same named-command path as every other edit, instead of its own one-off code. The app does exactly what it did.
