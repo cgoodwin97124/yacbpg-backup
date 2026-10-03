@@ -4,6 +4,7 @@
 ### 2026-10-03 - P3 step 5 R1: Analysis text-group non-current branches through commands + setCharSel micro (.14)
 - **Status:** ACTIVE START NOW 2026-10-03 - author answered Q1 split-into-two, Q2 add, Q3 good, Q4 good, verbatim Go. Logged here on receipt, before any work, per the 2026-08-13 rule.
 - **Scope:** R1 = analysisSetDesc + analysisAddItem + analysisSetPanelAction non-current branches by panel id (existing setCharExtra/setLocExtra/setAction/setLoc + one new setCharSel micro for AddItem-char whole-slot replace); current-page + library-desc untouched; invisible; old positional paths as fallback. R2 = chips group + setPalette/setPageSeed next.
+- **Status:** ✅ **DONE 2026.10.03.14** - text group routed by panel id + setCharSel micro (registry v33). Verified: core 71/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0/1, diff-core 21/0, live A/B byte-identical on all three reroutes, 0 perchanceErrors, byte-identical restores. Stamp matches CHANGELOG first entry. App files await author Save, then button push. R2 (chips + setPalette/setPageSeed) next.
 
 
 ### 2026-10-03 - REFACTOR P3 step 5: Analysis re-point RECON findings + questions (supersedes any earlier scope-only note)
