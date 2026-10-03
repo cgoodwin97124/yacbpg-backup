@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 31;
+export const COMMANDS_VERSION = 32;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -201,7 +201,21 @@ export function clearMany(project, pageNum, total, indexes) {
   return { page: Number(pageNum), indexes: idx, fields: ["charSel", "charBase", "charExtra", "loc", "locBase", "locExtra", "action"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
+export function appendPromptHistory(project, id, run, max) {
+  const hit = findPanelById(project, id);
+  if (!hit || !isObj(run) || !Array.isArray(run.seeds) || !run.seeds.length) return null;
+  const list = Array.isArray(hit.panel.promptHistory) ? hit.panel.promptHistory : (hit.panel.promptHistory = []);
+  const entry = { pos: run.pos, neg: run.neg || "", seeds: run.seeds.slice(), at: run.at };
+  const same = JSON.stringify({ pos: entry.pos, neg: entry.neg, seeds: entry.seeds });
+  const key = (e) => JSON.stringify({ pos: e.pos, neg: e.neg, seeds: (e && Array.isArray(e.seeds)) ? e.seeds.filter((s) => s && typeof s.seed === "number") : [] });
+  for (let k = list.length - 1; k >= 0; k--) if (key(list[k]) === same) list.splice(k, 1);
+  list.unshift(entry);
+  const cap = (typeof max === "number" && max >= 0) ? Math.floor(max) : 5;
+  if (list.length > cap) list.length = cap;
+  return { page: hit.page, index: hit.index, fields: ["promptHistory"] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, appendPromptHistory: appendPromptHistory, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
