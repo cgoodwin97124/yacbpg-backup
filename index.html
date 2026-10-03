@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.12 — 2026-10-03 — 🏷 Last DOM reader goes test-only; production refs pinned at zero
-- collectPanelState renamed testCollectPanelState (definition + window export); state-diff callers follow; core.test.js pins zero production refs. Zero behavior change.
+## 2026.10.03.13 — 2026-10-03 — 📝 Prompt-history filing becomes a named command
+- appendPromptHistory pure command + dispatch in addPromptHistoryEntry (thumbs/prune stay session-side). Zero behavior change.
 </script>
 
 
@@ -7820,6 +7820,22 @@ color-scheme:light;
 
   function addPromptHistoryEntry(i, run) {
     if (!run || !Array.isArray(run.seeds) || !run.seeds.length) return;
+    const histId = (typeof panelIdAt === 'function') ? panelIdAt(i) : null;
+    const histCmd = panelCommands ? panelCommands.appendPromptHistory : null;
+    if (histCmd && histId) {
+      const histProject = storeJsonNow();
+      if (histProject) {
+        const histHit = histCmd(histProject, histId, { pos: run.pos, neg: run.neg || '', seeds: run.seeds.slice(), at: Date.now() }, PROMPT_HISTORY_MAX);
+        if (histHit) {
+          savePanelStateShape(histProject);
+          panelPromptHistory[i] = ((histProject.pages[histHit.page] || {})[histHit.index] || {}).promptHistory || [];
+          renderPromptHistory(i);
+          attachPromptHistoryThumb(i, panelPromptHistory[i][0], run);
+          prunePromptThumbs();
+          return;
+        }
+      }
+    }
     const list = panelPromptHistory[i] || (panelPromptHistory[i] = []);
     const entry = { pos: run.pos, neg: run.neg || '', seeds: run.seeds.slice(), at: Date.now() };
     const same = JSON.stringify({ pos: entry.pos, neg: entry.neg, seeds: entry.seeds });
