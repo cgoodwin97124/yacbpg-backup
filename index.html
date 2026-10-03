@@ -1355,7 +1355,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.10 — 2026-10-03 — 📚 Library reads come from the store
+## 2026.10.03.11 — 2026-10-03 — 🗑 Last DOM reads become store reads; legacy fallbacks deleted
 - countLibReferences, apply/openLibraryRename, applyLibraryDeleteMany: collectPanelState to storeJsonNow. Zero behavior change.
 </script>
 
@@ -3305,7 +3305,7 @@ color-scheme:light;
       schedulePanelSave();
       return;
     }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
     if (kind === 'char') {
@@ -3344,7 +3344,7 @@ color-scheme:light;
       schedulePanelSave();
       return true;
     }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return false;
     if (item.type === 'Character') {
@@ -3491,7 +3491,7 @@ color-scheme:light;
       updatePanelSeedPlaceholders();
       schedulePanelSave();
     } else {
-      const state = collectPanelState();
+      const state = storeJsonNow();
       const pg = state.pages[analysisPage];
       if (pg) { pg.seed = v; savePanelStateShape(state); }
     }
@@ -3505,7 +3505,7 @@ color-scheme:light;
       onPanelStyleChange(i);
       return;
     }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
     p.style = val || '';
@@ -3519,7 +3519,7 @@ color-scheme:light;
       onPanelPaletteChange(i);
       return;
     }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
     p.palette = val || '';
@@ -3537,7 +3537,7 @@ color-scheme:light;
       onPanelSizeChange(i);
       return;
     }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
     p.sizeSel = selVal || '';
@@ -3555,7 +3555,7 @@ color-scheme:light;
       if (!runPanelCommand('setPanelSeed', panelIdAt(i), [val])) schedulePanelSave();
       return;
     }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
     p.seed = val;
@@ -3601,7 +3601,7 @@ color-scheme:light;
       updatePanelSummary(i);
       schedulePanelSave();
     } else {
-      const state = collectPanelState();
+      const state = storeJsonNow();
       const p = state.pages[pg] && state.pages[pg][i];
       if (!p) return;
       p.action = val;
@@ -3613,8 +3613,7 @@ color-scheme:light;
   function analysisRefreshActionCells(pg, i, val) {
     const wrap = document.getElementById('analysisWrap');
     if (!wrap) return;
-    const state = collectPanelState();
-    const pageData = state.pages[pg] || {};
+    const pageData = ((storeJsonNow() || {}).pages || {})[pg] || {};
     if (pageData[i]) pageData[i].action = val;
     const lib = loadLibraryObjects();
     const byId = {};
@@ -3885,8 +3884,7 @@ color-scheme:light;
     let keys = Object.keys(pages).map(Number).filter(k => !isNaN(k)).sort((a, b) => a - b);
     if (!keys.length) keys = [1];
     if (!keys.includes(analysisPage)) analysisPage = keys[0];
-    const state = collectPanelState();
-    const pageData = state.pages[analysisPage] || pages[analysisPage] || {};
+    const pageData = pages[analysisPage] || {};
     const total = analysisPanelCount(pageData);
     const images = analysisPageImages(analysisPage);
     const lib = loadLibraryObjects();
@@ -5057,23 +5055,8 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    const keys = Object.keys(state.pages).map(Number);
-    let n = 1;
-    for (const k of keys) n = Math.max(n, k);
-    n++;
-    const page = defaultPageData(n);
-    page.panelCountSel = '4';
-    state.pages[n] = page;
-    pageSession[currentPage] = { images: panelImages };
-    state.currentPage = n;
-    savePanelStateShape(state);
-    currentPage = n;
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
     const statusEl = document.getElementById('statusEl');
-    if (statusEl) statusEl.textContent = 'Page ' + n + ' added (4 empty panels).';
+    if (statusEl) statusEl.textContent = 'Page could not be added — please reload and try again.';
   }
 
   async function deletePage(noConfirm) {
@@ -5127,17 +5110,7 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    delete state.pages[n];
-    delete pageSession[n];
-    const target = Object.keys(state.pages).map(Number).sort((a, b) => a - b)[0];
-    state.currentPage = target;
-    savePanelStateShape(state);
-    currentPage = target;
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
-    if (statusEl) statusEl.textContent = 'Page ' + n + ' deleted.';
+    if (statusEl) statusEl.textContent = 'Page could not be deleted — please reload and try again.';
   }
 
   function onPageNameInput() {
@@ -5216,36 +5189,8 @@ color-scheme:light;
         }
       }
     }
-    const state = collectPanelState();
-    const pages = state.pages;
-    const keys = Object.keys(pages).map(Number).filter(k => !isNaN(k)).sort((a, b) => a - b);
-    if (keys.length < 2 || keys.indexOf(fromKey) === -1) return;
-    toPos = Math.max(1, Math.min(keys.length, parseInt(toPos, 10) || 1));
-    const label = pageLabel(pages[fromKey], fromKey);
-    const order = keys.filter(k => k !== fromKey);
-    order.splice(toPos - 1, 0, fromKey);
-    const map = {};
-    const newPages = {};
-    order.forEach((oldKey, idx) => { newPages[idx + 1] = pages[oldKey]; map[oldKey] = idx + 1; });
-    pageSession[currentPage] = { images: panelImages };
-    const newSession = {};
-    for (const [pg, sess] of Object.entries(pageSession)) {
-      const nk = map[parseInt(pg, 10)];
-      if (nk !== undefined) newSession[nk] = sess;
-    }
-    for (const k in pageSession) delete pageSession[k];
-    Object.assign(pageSession, newSession);
-    const newCurrent = map[currentPage];
-    state.pages = newPages;
-    state.currentPage = newCurrent;
-    savePanelStateShape(state);
-    currentPage = newCurrent;
-    if (typeof analysisPage !== 'undefined' && map[analysisPage] !== undefined) analysisPage = map[analysisPage];
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
     const statusEl = document.getElementById('statusEl');
-    if (statusEl) statusEl.textContent = label + ' renumbered to Page ' + toPos + ' — the other pages were renumbered around it.';
+    if (statusEl) statusEl.textContent = 'Page could not be renumbered — please reload and try again.';
   }
 
   function projectSlug() {
@@ -5934,7 +5879,7 @@ color-scheme:light;
   async function movePanelToPage(i, targetPage, mode) {
     const statusEl = document.getElementById('statusEl');
     stopAllGenerations();
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const src = currentPage;
     const total = getPanelCount();
     if (!(i >= 1 && i <= total)) return;
@@ -5949,7 +5894,6 @@ color-scheme:light;
     if (!mode) mode = (targetPage > src) ? 'prepend' : 'append';
     const moving = pages[src] && pages[src][i];
     if (!moving) return;
-    const movingCopy = JSON.parse(JSON.stringify(moving));
 
     if (total <= 1) {
       const v = await showChoiceDialog({
@@ -6008,77 +5952,13 @@ color-scheme:light;
         return;
       }
     }
-    const insertAt = (mode === 'append') ? (tCount + 1) : 1;
-    const finalCount = (mode === 'replace') ? tCount : (tCount + 1);
-
-    pageSession[src] = { images: panelImages };
-    const srcImages = panelImages;
-    const movedImg = srcImages[i] ? JSON.parse(JSON.stringify(srcImages[i])) : null;
-    const tSess = pageSession[targetPage];
-    const tImages = (tSess && tSess.images) ? tSess.images : {};
-    const newTImages = {};
-    for (let p = 1; p <= 24; p++) {
-      if (p === insertAt) { if (movedImg) newTImages[p] = movedImg; continue; }
-      const oldPos = (mode === 'append' || mode === 'replace') ? p : (p - 1);
-      if (oldPos >= 1 && oldPos <= tCount && tImages[oldPos]) newTImages[p] = tImages[oldPos];
-    }
-    pageSession[targetPage] = { images: newTImages };
-
-    const newTotal = total - 1;
-    if (newTotal <= 0) {
-      delete pages[src];
-      delete pageSession[src];
-    } else {
-      const order = [];
-      for (let p = 1; p <= total; p++) order.push(p);
-      order.splice(i - 1, 1);
-      const pc = panelCountStateFor(newTotal);
-      const np = {};
-      for (const k of ['name', 'summary', 'seed']) np[k] = pages[src][k];
-      np.panelCountSel = pc.sel;
-      np.panelCountCustom = pc.custom;
-      for (let p = 1; p <= 24; p++) {
-        const oldPos = p <= newTotal ? order[p - 1] : p;
-        if (pages[src][oldPos] !== undefined) np[p] = pages[src][oldPos];
-      }
-      pages[src] = np;
-      const newSrcImages = {};
-      for (let p = 1; p <= newTotal; p++) {
-        const oldPos = order[p - 1];
-        if (srcImages[oldPos]) newSrcImages[p] = srcImages[oldPos];
-      }
-      pageSession[src] = { images: newSrcImages };
-    }
-
-    const tpc = panelCountStateFor(finalCount);
-    const tp = {};
-    for (const k of ['name', 'summary', 'seed']) tp[k] = pages[targetPage][k];
-    tp.panelCountSel = tpc.sel;
-    tp.panelCountCustom = tpc.custom;
-    for (let p = 1; p <= 24; p++) {
-      if (p === insertAt) { tp[p] = movingCopy; continue; }
-      const oldPos = (mode === 'append' || mode === 'replace') ? p : (p - 1);
-      if (oldPos >= 1 && oldPos <= tCount && pages[targetPage][oldPos] !== undefined) tp[p] = pages[targetPage][oldPos];
-    }
-    pages[targetPage] = tp;
-
-    state.currentPage = targetPage;
-    savePanelStateShape(state);
-    currentPage = targetPage;
-    panelImages = pageSession[targetPage].images;
-    panelPromptOverrides = {};
-    panelPromptHistory = {};
-    promptHistoryRuns = {};
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
-    if (statusEl) statusEl.textContent = 'Panel ' + i + ' moved to ' + pageLabel(pages[targetPage], targetPage) + (mode === 'replace' ? '.' : ' at position ' + insertAt + '.');
+    if (statusEl) statusEl.textContent = 'Panel ' + i + ' could not be moved — please reload and try again.';
   }
 
   function movePanelToNewPage(i) {
     pushStructUndo('move panel');
     structUndoHold = true;
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const keys = Object.keys(state.pages).map(Number);
     let n = 1;
     for (const k of keys) n = Math.max(n, k);
@@ -6116,29 +5996,6 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    const page = state.pages[currentPage];
-    const order = [];
-    for (let p = 1; p <= total; p++) order.push(p);
-    order.splice(from - 1, 1);
-    order.splice(to - 1, 0, from);
-    const newPage = {};
-    for (const k of ['name', 'summary', 'panelCountSel', 'panelCountCustom', 'seed']) newPage[k] = page[k];
-    for (let p = 1; p <= 24; p++) {
-      const oldPos = p <= total ? order[p - 1] : p;
-      if (page[oldPos] !== undefined) newPage[p] = page[oldPos];
-    }
-    state.pages[currentPage] = newPage;
-    savePanelStateShape(state);
-    remapPanelSession(order, total);
-    panelPromptOverrides = {};
-    panelPromptHistory = {};
-    promptHistoryRuns = {};
-    for (let j = 1; j <= 24; j++) {
-      const card = document.getElementById('panel-card-' + j);
-      if (card) card.classList.add('cleared');
-    }
-    buildPanelGrid();
   }
 
   function remapPanelSession(order, total) {
@@ -6305,91 +6162,7 @@ color-scheme:light;
         }
       }
     }
-    stopAllGenerations();
-    const state = collectPanelState();
-    const pages = state.pages;
-    const src = currentPage;
-    const count = analysisPanelCount(pages[src]);
-    const insertPos = Math.min(i + 1, 24);
-    const srcImages = pageImagesOf(src);
-    let carryPanel = pages[src][count] ? JSON.parse(JSON.stringify(pages[src][count])) : null;
-    let carryImg = srcImages[count] ? JSON.parse(JSON.stringify(srcImages[count])) : null;
-    const order = [];
-    for (let p = 1; p <= count - 1; p++) order.push(p);
-    order.splice(insertPos - 1, 0, 0);
-    const newPage = {};
-    for (const k of ['name', 'summary', 'seed']) newPage[k] = pages[src][k];
-    const newImgs = {};
-    for (let p = 1; p <= 24; p++) {
-      const op = order[p - 1];
-      if (op === 0) {
-        newPage[p] = incomingPanel;
-        if (incomingImg) newImgs[p] = incomingImg;
-      } else if (op !== undefined && pages[src][op] !== undefined) {
-        newPage[p] = pages[src][op];
-        if (srcImages[op]) newImgs[p] = srcImages[op];
-      }
-    }
-    const spc = panelCountStateFor(24);
-    newPage.panelCountSel = spc.sel;
-    newPage.panelCountCustom = spc.custom;
-    pages[src] = newPage;
-    setPageImagesFor(src, newImgs);
-    let pg = src;
-    let moves = 0;
-    let createdPage = null;
-    while (carryPanel) {
-      const keys = sortedPageKeys(pages);
-      let next = null;
-      for (const k of keys) { if (k > pg) { next = k; break; } }
-      moves++;
-      if (next === null) {
-        const n = keys.length ? Math.max.apply(null, keys) + 1 : 1;
-        const page = defaultPageData(n);
-        page.panelCountSel = '1';
-        page[1] = carryPanel;
-        pages[n] = page;
-        const imgs = {};
-        if (carryImg) imgs[1] = carryImg;
-        setPageImagesFor(n, imgs);
-        createdPage = n;
-        break;
-      }
-      const tCount = analysisPanelCount(pages[next]);
-      const tImgs = pageImagesOf(next);
-      const tp = {};
-      for (const k of ['name', 'summary', 'seed']) tp[k] = pages[next][k];
-      const tImgsNew = {};
-      tp[1] = carryPanel;
-      if (carryImg) tImgsNew[1] = carryImg;
-      let overflow = null;
-      let overflowImg = null;
-      for (let p = 1; p <= tCount; p++) {
-        const dst = p + 1;
-        if (dst <= 24) {
-          if (pages[next][p] !== undefined) tp[dst] = pages[next][p];
-          if (tImgs[p]) tImgsNew[dst] = tImgs[p];
-        } else {
-          overflow = pages[next][p] ? JSON.parse(JSON.stringify(pages[next][p])) : null;
-          overflowImg = tImgs[p] ? JSON.parse(JSON.stringify(tImgs[p])) : null;
-        }
-      }
-      const tpc = panelCountStateFor(Math.min(tCount + 1, 24));
-      tp.panelCountSel = tpc.sel;
-      tp.panelCountCustom = tpc.custom;
-      pages[next] = tp;
-      setPageImagesFor(next, tImgsNew);
-      carryPanel = overflow;
-      carryImg = overflowImg;
-      pg = next;
-    }
-    state.currentPage = src;
-    savePanelStateShape(state);
-    currentPage = src;
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
-    return { moves: moves, createdPage: createdPage, insertPos: insertPos };
+    return null;
   }
 
   let panelSelection = new Set();
@@ -6657,20 +6430,6 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    const page = state.pages[currentPage];
-    const fresh = defaultPageData(currentPage);
-    for (const k of ['name', 'summary', 'seed']) fresh[k] = page[k];
-    fresh.panelCountSel = '1';
-    fresh.panelCountCustom = '';
-    fresh[1] = {};
-    state.pages[currentPage] = fresh;
-    state.currentPage = currentPage;
-    savePanelStateShape(state);
-    setPageImagesFor(currentPage, {});
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
   }
 
   async function panelPasteAction(i) {
@@ -6679,7 +6438,7 @@ color-scheme:light;
     if (!n) return;
     const total = getPanelCount();
     if (!(i >= 1 && i <= total)) return;
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const page = state.pages[currentPage];
     const imgs = pageImagesOf(currentPage);
     const label = pageLabel(page, currentPage);
@@ -6711,16 +6470,10 @@ color-scheme:light;
         entries.push({ panel: pastePanels[j++], img: imgs[p] ? imgs[p] : null });
       }
     } else {
-      for (let p = 1; p <= total; p++) {
-        if (p === i) for (const e of panelClipboard) {
-          const copy = JSON.parse(JSON.stringify(e.panel));
-          copy.id = newPanelId();
-          entries.push({ panel: copy, img: e.img ? JSON.parse(JSON.stringify(e.img)) : null });
-        }
-        entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
-      }
+      if (statusEl) statusEl.textContent = 'Panels could not be pasted — please reload and try again.';
+      return;
     }
-    const res = cascadePageSequence(currentPage, entries);
+    const res = cascadePageSequence(currentPage, entries) || { moves: 0, createdPage: null };
     if (wasCut) { panelClipboard = null; panelClipboardCut = false; }
     updatePasteUI();
     if (statusEl) {
@@ -6734,7 +6487,7 @@ color-scheme:light;
   }
 
   function batchReflowPlan(extra) {
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const pages = state.pages;
     let carry = analysisPanelCount(pages[currentPage]) + extra - 24;
     if (carry <= 0) return { needed: false, willCreate: false, pages: 0 };
@@ -6789,55 +6542,7 @@ color-scheme:light;
         }
       }
     }
-    stopAllGenerations();
-    const state = collectPanelState();
-    const pages = state.pages;
-    let carry = entries.slice(24);
-    const first = pageObjectFromEntries(pages, srcPage, entries);
-    pages[srcPage] = first.page;
-    let pg = srcPage;
-    let createdPage = null;
-    let moves = 0;
-    while (carry.length) {
-      const keys = sortedPageKeys(pages);
-      let next = null;
-      for (const k of keys) { if (k > pg) { next = k; break; } }
-      moves++;
-      if (next === null) {
-        const n = keys.length ? Math.max.apply(null, keys) + 1 : 1;
-        const page = defaultPageData(n);
-        const pc = panelCountStateFor(carry.length);
-        page.panelCountSel = pc.sel;
-        page.panelCountCustom = pc.custom;
-        const imgs = {};
-        for (let p = 1; p <= carry.length; p++) {
-          page[p] = carry[p - 1].panel;
-          if (carry[p - 1].img) imgs[p] = carry[p - 1].img;
-        }
-        pages[n] = page;
-        setPageImagesFor(n, imgs);
-        createdPage = n;
-        carry = [];
-        break;
-      }
-      const tCount = analysisPanelCount(pages[next]);
-      const tImgs = pageImagesOf(next);
-      const all = carry.slice();
-      for (let p = 1; p <= tCount; p++) all.push({ panel: pages[next][p], img: tImgs[p] || null });
-      carry = all.slice(24);
-      const built = pageObjectFromEntries(pages, next, all);
-      pages[next] = built.page;
-      setPageImagesFor(next, built.imgs);
-      pg = next;
-    }
-    state.currentPage = srcPage;
-    savePanelStateShape(state);
-    currentPage = srcPage;
-    setPageImagesFor(srcPage, first.imgs);
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
-    return { createdPage: createdPage, moves: moves };
+    return null;
   }
 
   async function batchDuplicatePanels() {
@@ -6846,7 +6551,7 @@ color-scheme:light;
     const sel = panelSelectionSorted().filter(i => i <= total);
     if (!sel.length) return;
     if (sel.length === 1) { duplicatePanel(sel[0]); return; }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const page = state.pages[currentPage];
     const imgs = pageImagesOf(currentPage);
     const selSet = new Set(sel);
@@ -6878,16 +6583,10 @@ color-scheme:light;
         if (selSet.has(p)) entries.push({ panel: dupPanels[j++], img: null });
       }
     } else {
-      for (let p = 1; p <= total; p++) {
-        entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
-        if (selSet.has(p)) {
-          const dup = JSON.parse(JSON.stringify(page[p] || {}));
-          dup.id = newPanelId();
-          entries.push({ panel: dup, img: null });
-        }
-      }
+      if (statusEl) statusEl.textContent = 'Panels could not be duplicated — please reload and try again.';
+      return;
     }
-    const res = cascadePageSequence(currentPage, entries);
+    const res = cascadePageSequence(currentPage, entries) || { moves: 0, createdPage: null };
     clearPanelSelection();
     if (statusEl) statusEl.textContent = 'Duplicated ' + sel.length + ' panels — each copy sits right after its original (the copies have no images).' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '');
   }
@@ -6898,7 +6597,7 @@ color-scheme:light;
     const sel = panelSelectionSorted().filter(i => i <= total);
     if (!sel.length) return;
     if (sel.length === 1) { addPanel(sel[0]); return; }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const page = state.pages[currentPage];
     const imgs = pageImagesOf(currentPage);
     const lastSel = sel[sel.length - 1];
@@ -6930,12 +6629,10 @@ color-scheme:light;
         if (p === lastSel) for (let k = 0; k < sel.length; k++) entries.push({ panel: addPanels[j++], img: null });
       }
     } else {
-      for (let p = 1; p <= total; p++) {
-        entries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: imgs[p] ? imgs[p] : null });
-        if (p === lastSel) for (let k = 0; k < sel.length; k++) entries.push({ panel: {}, img: null });
-      }
+      if (statusEl) statusEl.textContent = 'Panels could not be added — please reload and try again.';
+      return;
     }
-    const res = cascadePageSequence(currentPage, entries);
+    const res = cascadePageSequence(currentPage, entries) || { moves: 0, createdPage: null };
     clearPanelSelection();
     if (statusEl) statusEl.textContent = 'Added ' + sel.length + ' empty panels after Panel ' + lastSel + '.' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '');
   }
@@ -6967,22 +6664,7 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    const page = state.pages[currentPage];
-    const imgs = pageImagesOf(currentPage);
-    const selSet = new Set(sel);
-    const rest = [];
-    for (let p = 1; p <= total; p++) if (!selSet.has(p)) rest.push(p);
-    const insert = Math.min(Math.max(1, toPos), rest.length + 1);
-    const order = rest.slice(0, insert - 1).concat(sel).concat(rest.slice(insert - 1));
-    const entries = [];
-    for (const src of order) entries.push({ panel: JSON.parse(JSON.stringify(page[src] || {})), img: imgs[src] ? imgs[src] : null });
-    cascadePageSequence(currentPage, entries);
-    panelSelection.clear();
-    for (let k = 0; k < sel.length; k++) panelSelection.add(Math.min(insert + k, 24));
-    selectionAnchor = Math.min(insert + sel.length - 1, 24);
-    updateSelectionUI();
-    if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? ' to position ' + insert + '.' : 's to position ' + insert + ' as a block.');
+    if (statusEl) statusEl.textContent = 'Panels could not be moved — please reload and try again.';
   }
 
   async function batchMoveToPage(targetPage, replaceTarget) {
@@ -6990,7 +6672,7 @@ color-scheme:light;
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(i => i <= total);
     if (!sel.length) return;
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const pages = state.pages;
     const src = currentPage;
     if (targetPage === src || pages[targetPage] === undefined) return;
@@ -7045,30 +6727,14 @@ color-scheme:light;
         return;
       }
     }
-    pages[targetPage] = built.page;
-    if (srcBuilt) pages[src] = srcBuilt.page; else delete pages[src];
-    state.currentPage = targetPage;
-    savePanelStateShape(state);
-    currentPage = targetPage;
-    if (!srcBuilt) delete pageSession[src];
-    setPageImagesFor(targetPage, built.imgs);
-    if (srcBuilt) setPageImagesFor(src, srcBuilt.imgs);
-    loadCurrentPage();
-    populatePageSel();
-    updateDeletePageBtn();
-    const insertPos = (prepend || replaceTarget) ? 1 : tCount + 1;
-    panelSelection.clear();
-    for (let k = 0; k < sel.length; k++) panelSelection.add(Math.min(insertPos + k, 24));
-    selectionAnchor = Math.min(insertPos + sel.length - 1, 24);
-    updateSelectionUI();
-    if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? '' : 's') + ' to ' + label + '.';
+    if (statusEl) statusEl.textContent = 'Panels could not be moved — please reload and try again.';
   }
 
   function batchMoveToNewPage() {
     if (!panelSelection.size) return;
     pushStructUndo(panelSelection.size === 1 ? 'move panel' : 'move panels');
     structUndoHold = true;
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const keys = Object.keys(state.pages).map(Number);
     let n = 1;
     for (const k of keys) n = Math.max(n, k);
@@ -7315,7 +6981,7 @@ color-scheme:light;
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(idx => idx <= total);
     if (sel.length < 2) { if (sel.length === 1) deletePanel(sel[0]); return; }
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const pages = state.pages;
     const src = currentPage;
     const label = pageLabel(pages[src], src);
@@ -7368,16 +7034,6 @@ color-scheme:light;
       const planHit = (typeof cmdPlan === 'function') ? cmdPlan(state, src, remaining, total) : null;
       if (planHit) {
         for (const k of planHit.emptied) empties.push(k);
-      } else {
-        let left = need;
-        for (const k of keys) {
-          if (k <= src || left <= 0) continue;
-          const c = analysisPanelCount(pages[k]);
-          const take = Math.min(left, c);
-          if (take <= 0) continue;
-          left -= take;
-          if (c - take === 0) empties.push(k);
-        }
       }
     }
     const btns = [];
@@ -7406,7 +7062,7 @@ color-scheme:light;
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(idx => idx <= total);
     if (!sel.length) return;
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const pages = state.pages;
     const src = currentPage;
     const label = pageLabel(pages[src], src);
@@ -7428,18 +7084,6 @@ color-scheme:light;
       if (planHit) {
         for (const s of planHit.plan) plan.push({ page: s.page, take: s.take });
         for (const k of planHit.emptied) emptied.push(k);
-      } else {
-        let left = target - kept.length;
-        const keys = sortedPageKeys(pages);
-        for (const k of keys) {
-          if (k <= src || left <= 0) continue;
-          const c = analysisPanelCount(pages[k]);
-          const take = Math.min(left, c);
-          if (take <= 0) continue;
-          plan.push({ page: k, take: take });
-          left -= take;
-          if (c - take === 0) emptied.push(k);
-        }
       }
       if (emptied.length) {
         const v = await showChoiceDialog({
@@ -7502,7 +7146,7 @@ color-scheme:light;
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     if (total >= 24) {
-      const state = collectPanelState();
+      const state = storeJsonNow();
       const page = state.pages[currentPage];
       if (!page || page[i] === undefined) return;
       const label = pageLabel(page, currentPage);
@@ -7525,6 +7169,7 @@ color-scheme:light;
       copy.id = newPanelId();
       clearPanelSelection();
       const res = reflowInsertOnFullPage(i, copy, null);
+      if (!res) { if (statusEl) statusEl.textContent = 'Panel could not be duplicated — please reload and try again.'; return; }
       if (statusEl) statusEl.textContent = 'Panel ' + i + ' duplicated — the copy is now Panel ' + res.insertPos + ' on ' + label + '. ' + res.moves + ' panel' + (res.moves === 1 ? '' : 's') + ' reflowed' + (res.createdPage ? ' and Page ' + res.createdPage + ' created.' : '.');
       return;
     }
@@ -7550,36 +7195,7 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    const page = state.pages[currentPage];
-    const order = [];
-    for (let p = 1; p <= 24; p++) order.push(p);
-    order.splice(i, 0, i);
-    const copyPos = i + 1;
-    const newTotal = total + 1;
-    const pc = panelCountStateFor(newTotal);
-    const newPage = {};
-    for (const k of ['name', 'summary', 'seed']) newPage[k] = page[k];
-    newPage.panelCountSel = pc.sel;
-    newPage.panelCountCustom = pc.custom;
-    for (let p = 1; p <= 24; p++) {
-      const src = order[p - 1];
-      if (page[src] !== undefined) newPage[p] = JSON.parse(JSON.stringify(page[src]));
-    }
-    if (newPage[copyPos]) newPage[copyPos].id = newPanelId();
-    state.pages[currentPage] = newPage;
-    savePanelStateShape(state);
-    clearPanelSelection();
-    remapPanelSessionForDuplicate(order, copyPos);
-    panelPromptOverrides = {};
-    panelPromptHistory = {};
-    promptHistoryRuns = {};
-    for (let j = 1; j <= 24; j++) {
-      const card = document.getElementById('panel-card-' + j);
-      if (card) card.classList.add('cleared');
-    }
-    buildPanelGrid();
-    if (statusEl) statusEl.textContent = 'Panel ' + i + ' duplicated — the copy is now Panel ' + copyPos + ' (it has no images yet).';
+    if (statusEl) statusEl.textContent = 'Panel ' + i + ' could not be duplicated — please reload and try again.';
   }
 
   async function addPanel(i) {
@@ -7587,7 +7203,7 @@ color-scheme:light;
     const total = getPanelCount();
     if (!(i >= 1 && i <= total)) return;
     if (total >= 24) {
-      const state = collectPanelState();
+      const state = storeJsonNow();
       const page = state.pages[currentPage];
       const label = pageLabel(page, currentPage);
       const plan = planReflow(state.pages, currentPage);
@@ -7607,6 +7223,7 @@ color-scheme:light;
       pushStructUndo('add panel');
       clearPanelSelection();
       const res = reflowInsertOnFullPage(i, {}, null);
+      if (!res) { if (statusEl) statusEl.textContent = 'Panel could not be added — please reload and try again.'; return; }
       if (statusEl) statusEl.textContent = 'Empty Panel ' + res.insertPos + ' added after Panel ' + i + ' on ' + label + '. ' + res.moves + ' panel' + (res.moves === 1 ? '' : 's') + ' reflowed' + (res.createdPage ? ' and Page ' + res.createdPage + ' created.' : '.');
       return;
     }
@@ -7631,39 +7248,7 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    const page = state.pages[currentPage];
-    const order = [];
-    for (let p = 1; p <= 24; p++) order.push(p);
-    order.splice(i, 0, 0);
-    const insertPos = i + 1;
-    const newTotal = total + 1;
-    const pc = panelCountStateFor(newTotal);
-    const newPage = {};
-    for (const k of ['name', 'summary', 'seed']) newPage[k] = page[k];
-    newPage.panelCountSel = pc.sel;
-    newPage.panelCountCustom = pc.custom;
-    for (let p = 1; p <= 24; p++) {
-      const src = order[p - 1];
-      if (src === 0) {
-        newPage[p] = {};
-      } else if (page[src] !== undefined) {
-        newPage[p] = JSON.parse(JSON.stringify(page[src]));
-      }
-    }
-    state.pages[currentPage] = newPage;
-    savePanelStateShape(state);
-    clearPanelSelection();
-    remapPanelSessionForDuplicate(order, insertPos);
-    panelPromptOverrides = {};
-    panelPromptHistory = {};
-    promptHistoryRuns = {};
-    for (let j = 1; j <= 24; j++) {
-      const card = document.getElementById('panel-card-' + j);
-      if (card) card.classList.add('cleared');
-    }
-    buildPanelGrid();
-    if (statusEl) statusEl.textContent = 'Empty Panel ' + insertPos + ' added after Panel ' + i + ' — later panels moved down and were renumbered.';
+    if (statusEl) statusEl.textContent = 'Empty Panel could not be added after Panel ' + i + ' — please reload and try again.';
   }
 
   async function deletePanel(i) {
@@ -7735,34 +7320,7 @@ color-scheme:light;
         return;
       }
     }
-    const state = collectPanelState();
-    const page = state.pages[currentPage];
-    const order = [];
-    for (let p = 1; p <= total; p++) order.push(p);
-    order.splice(i - 1, 1);
-    const newTotal = total - 1;
-    const pc = panelCountStateFor(newTotal);
-    const newPage = {};
-    for (const k of ['name', 'summary', 'seed']) newPage[k] = page[k];
-    newPage.panelCountSel = pc.sel;
-    newPage.panelCountCustom = pc.custom;
-    for (let p = 1; p <= 24; p++) {
-      const oldPos = p <= newTotal ? order[p - 1] : p;
-      if (page[oldPos] !== undefined) newPage[p] = page[oldPos];
-    }
-    state.pages[currentPage] = newPage;
-    savePanelStateShape(state);
-    clearPanelSelection();
-    remapPanelSession(order, newTotal);
-    panelPromptOverrides = {};
-    panelPromptHistory = {};
-    promptHistoryRuns = {};
-    for (let j = 1; j <= 24; j++) {
-      const card = document.getElementById('panel-card-' + j);
-      if (card) card.classList.add('cleared');
-    }
-    buildPanelGrid();
-    if (statusEl) statusEl.textContent = 'Panel ' + i + ' deleted — later panels moved up and were renumbered.';
+    if (statusEl) statusEl.textContent = 'Panel ' + i + ' could not be deleted — please reload and try again.';
   }
 
   function remapPanelSessionForDuplicate(order, copyPos) {
@@ -8085,7 +7643,7 @@ color-scheme:light;
         }
       }
     };
-    try { scanPages((collectPanelState() || {}).pages); } catch (e) {}
+    try { scanPages((storeJsonNow() || {}).pages); } catch (e) {}
     return out;
   }
 
