@@ -1,6 +1,11 @@
 - 2026.10.03.11 DONE: R3 shipped (34 production collectPanelState sites to storeJsonNow; ~14 legacy fallback tails/elses deleted; renderAnalysis/promptHistoryThumbKeys swapped). Suites: state-diff 38/0, smoke 114/0/4, fixtures 18/0, gen 18/0/1 (one stale-DOM false alarm, green on fresh page; run-gen.js now reloads before parking), diff-core 21/0, multi-page undo chain 0 parsed diffs, 0 perchanceErrors. Saved build pushed post-Save. Cow in field intact (park f2369488 throughout). Next: R4 final (pinning grep-check + rename to testCollectPanelState, ship .12).
 - 2026.10.03 R3 START NOW: 34 production collectPanelState sites (10 analysis + 23 structural + promptHistoryThumbKeys) to storeJsonNow + else-fallback deletions, ship .11. Comment lines 36/68 excluded (not code).
 
+### 2026-10-03 - REFACTOR P3 step 5: Analysis matrix re-point RECON
+- **Status:** ACTIVE START NOW 2026-10-03 - author greenlit the recon, verbatim: Yes please. Logged here on receipt, before any work, per the 2026-08-13 rule. Implementation is NOT greenlit - it waits for the recon question round per the 2026-09-20 directive.
+- **Scope:** recon only - map every Analysis read/write path (renderAnalysis, cell fill/edit, library columns, kind dispatch) and propose which go through storeJsonNow/commands. The 890-line view collapses here.
+
+
 ### 2026-10-03 - REFACTOR P3 step-3 tail: generateMany RECON (author greenlit recon: Yes please!)
 - Scope: recon only; implementation waits for the question round per the 2026-09-20 directive.
 - Recon: seven generate paths, all through generateComicPage/generateSinglePanel - All (:783/:1119), selection list (:6833), From-Here (:6843), To-Here 1..i list (:6846-60), Range list (:6922), prompt-history runOverride (:7871), resume via computeRunSeq (already pure, extracted, core-tested). The (x)-(y) range button ALREADY SHIPPED as 2026.10.01.3 - that queued item is done.
