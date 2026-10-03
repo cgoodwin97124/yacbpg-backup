@@ -1,3 +1,7 @@
+### 2026-10-03 — RECON + QUESTIONS: batch refresh-from-library on the commands
+
+- **Status:** 🟢 **START NOW 2026-10-03** — author greenlit (verbatim: "Let's do the batch-refresh now. Recon and questions first."). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first — implementation waits for the question round.**
+
 ### 2026-10-03 — RECON + QUESTIONS: finish command coverage (Panel Extras rows + PD pickers)
 
 - **Status:** 🟢 **START NOW 2026-10-03** — author greenlit (verbatim: "Let's look at finishing command coverage. Go ahead and recon those and send me questions."). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked — implementation waits for the question round.**
