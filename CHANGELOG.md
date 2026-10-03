@@ -1,3 +1,8 @@
+## 2026.10.03.4 — 2026-10-03 — refresh-from-library writes through the base commands (command coverage 4 of 4, COMPLETE)
+
+- **The plain version:** nothing visible changes. The refresh-from-library buttons beside each Basic Description now refill through the existing setCharBase / setLocBase commands (one synchronous save, with render-back) instead of a DOM write plus the debounced save, with the old path as fallback; the multi-select batch refresh is untouched. No new commands (COMMANDS_VERSION stays 28). Command coverage is COMPLETE: every panel-content mutation — typing, picks, clears, copies, refreshes, structural ops — now writes through the named-command registry.
+- **Verified live:** clearing both base boxes then clicking both refresh buttons refills from the library synchronously (box + stored base match, correct selections). Suites: core 66/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.03.3 — 2026-10-03 — copy-from-prev writes through the line commands (command coverage 3 of 4)
 
 - **The plain version:** nothing visible changes. The copy-from-previous-panel buttons now write through the existing line commands (setChar + setCharExtra, setLoc + setLocExtra, setAction — one synchronous save each, with render-back) instead of DOM writes plus the debounced save, with the old path as fallback. Missing-option and no-earlier-panel behavior is preserved byte-for-byte. No new commands (COMMANDS_VERSION stays 28). Three of the four line-mutation ops done (refresh-from-library next, last one).
