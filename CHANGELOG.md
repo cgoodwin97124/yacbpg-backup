@@ -1,3 +1,10 @@
+## 2026.10.03.11 — 2026-10-03 — 🗑 Last DOM reads become store reads; legacy fallbacks deleted
+
+- **The plain version:** every remaining panel and page edit now reads its starting state from the store instead of re-reading the page, and the old pre-command code paths (which could only run if the new code failed to load) are deleted — the app does exactly what it did, through one path instead of two.
+- **Why it matters:** step 4 of the refactor is nearly done: production writes no longer need the DOM-scraping reader at all — it stays on only as the test reference the suites compare against. One release remains: renaming it so no production code can call it.
+- **Proven, not assumed:** differential **38/0**, module guard **21/0**, smoke **114 pass / 0 fail / 4 manual**, generation **18/0** (+1 manual), fixtures **18/0**, a three-op multi-page chain (add page, add panel, move across pages) undone back to byte-identical bytes, **0** perchance errors, and your saved project restored **byte-for-byte** after every run (park hash `f2369488`).
+- **Harness fix:** the generation suite used to run on whatever the previous suite left on screen, which failed one tally check for that reason alone — it now reloads the preview first, like the smoke suite does.
+
 ## 2026.10.03.10 - 2026-10-03 - library reads come from the store
 - Step-4 release 2: countLibReferences, apply/openLibraryRename, applyLibraryDeleteMany swapped from collectPanelState to storeJsonNow. Zero behavior change. Suites core 68/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0, restores byte-identical.
 
