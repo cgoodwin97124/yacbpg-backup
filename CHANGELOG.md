@@ -1,3 +1,6 @@
+## 2026.10.03.10 - 2026-10-03 - library reads come from the store
+- Step-4 release 2: countLibReferences, apply/openLibraryRename, applyLibraryDeleteMany swapped from collectPanelState to storeJsonNow. Zero behavior change. Suites core 68/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0, restores byte-identical.
+
 ## 2026.10.03.9 - 2026-10-03 - infrastructure reads come from the store
 - Step-4 release 1: switchPage, pushStructUndo, savePanelState, prompt-history saves, export, clipboard copy swapped from collectPanelState to storeJsonNow (null-guarded where null would corrupt). Zero behavior change. Suites core 68/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0, restores byte-identical. No manual probe - every swapped path is suite-pinned (SD undo bytes, G9 export round-trip, G15 clipboard, SD11 page switch).
 
