@@ -1,3 +1,6 @@
+## 2026.10.03.7 - 2026-10-03 - panel clear writes through clearMany
+- New pure command clearMany(project, pageNum, total, indexes) (COMMANDS_VERSION 31): blanks chars/loc/action in place, keeps id/title/seed/style/etc. clearPanelImage dispatches it with the old DOM-write path as fallback; batch clear loops the commanded single. clearPanelImages (images-only) untouched until P4 - images live outside the store. Zero visible change. Suites core 68/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0, restores byte-identical. Live probe: single clear keeps title + clears content (store==collect), batch clears 4 (store==collect==saved), restore byte-identical.
+
 ## 2026.10.03.6 - 2026-10-03 - cut-all empties the page through resetPageToBlank
 - New pure command resetPageToBlank (COMMANDS_VERSION 30): keeps name/summary/seed, lands one blank panel with a fresh id. emptyPageAfterCut dispatches it with the old path as fallback. Zero visible change. Suites core 67/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0, restores byte-identical.
 
