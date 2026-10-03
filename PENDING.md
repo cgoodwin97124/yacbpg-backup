@@ -1,6 +1,11 @@
 - 2026.10.03.11 DONE: R3 shipped (34 production collectPanelState sites to storeJsonNow; ~14 legacy fallback tails/elses deleted; renderAnalysis/promptHistoryThumbKeys swapped). Suites: state-diff 38/0, smoke 114/0/4, fixtures 18/0, gen 18/0/1 (one stale-DOM false alarm, green on fresh page; run-gen.js now reloads before parking), diff-core 21/0, multi-page undo chain 0 parsed diffs, 0 perchanceErrors. Saved build pushed post-Save. Cow in field intact (park f2369488 throughout). Next: R4 final (pinning grep-check + rename to testCollectPanelState, ship .12).
 - 2026.10.03 R3 START NOW: 34 production collectPanelState sites (10 analysis + 23 structural + promptHistoryThumbKeys) to storeJsonNow + else-fallback deletions, ship .11. Comment lines 36/68 excluded (not code).
 
+### 2026-10-03 - P4 images.js service RECON
+- **Status:** ACTIVE START NOW 2026-10-03 - author greenlit the recon, verbatim: Yes please. Logged here on receipt, before any work, per the 2026-08-13 rule. Implementation NOT greenlit - waits for the recon question round per the 2026-09-20 directive.
+- **Scope:** recon only - map the image layer (panelImages/pageSession, slot flags, protect, copy/cover, lazy hydration, observer, clipboard) and propose the id-keyed service shape. Clipboard rewrite rides along.
+
+
 ### 2026-10-03 - T-01 1c resume-to-end RECON (opened + closed, no release)
 - **Status:** CLOSED 2026-10-03 - author asked for T-01 1c first (verbatim: T-01 1c first, please and thank you). Recon found it already shipped as 2026.09.29.3 (computeRunSeq clamp + DOM-free core pin, still green in core 72/0). The lingering "Next: T-01 1c" pointers are stale breadcrumbs. No work needed, no release.
 
