@@ -1,3 +1,7 @@
+### 2026-10-03 — RECON + QUESTIONS: finish command coverage (Panel Extras rows + PD pickers)
+
+- **Status:** 🟢 **START NOW 2026-10-03** — author greenlit (verbatim: "Let's look at finishing command coverage. Go ahead and recon those and send me questions."). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked — implementation waits for the question round.**
+
 ### 2026-10-02 — RECON + QUESTIONS: P3 step-1 base/extra textarea setters (last leaf setters)
 
 - **Status:** 🟢 **START NOW 2026-10-02** — author greenlit (verbatim: "Do it!"). Logged here on receipt, before any work, per the 2026-08-13 rule. **Recon first, as the author asked.**
