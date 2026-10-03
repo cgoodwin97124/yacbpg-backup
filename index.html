@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.4 — 2026-10-03 — ⟳ Refresh-from-library writes through the base commands
-- The ⟳ buttons refill through setCharBase/setLocBase (synchronous save, render-back); zero visible change.
+## 2026.10.03.5 — 2026-10-03 — ⟳ Batch refresh writes through the base commands
+- Multi-select refresh fills through setCharBase/setLocBase (synchronous save); zero visible change.
 </script>
 
 
@@ -4080,7 +4080,13 @@ color-scheme:light;
     if (!v || v === 'none') return 'none';
     const text = plLineDescText(kind, v);
     if (!String(text || '').trim()) return 'skipped';
-    baseEl.value = text;
+    const ok = runPanelCommand(kind === 'char' ? 'setCharBase' : 'setLocBase', panelIdAt(i), kind === 'char' ? [s, text] : [text]);
+    if (!ok) {
+      baseEl.value = text;
+      delete baseEl.dataset.needSeed;
+      refreshPanelLineDesc(kind, i, s);
+      return 'done';
+    }
     delete baseEl.dataset.needSeed;
     refreshPanelLineDesc(kind, i, s);
     return 'done';
