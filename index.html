@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.7 — 2026-10-03 — 🗑 Panel clear writes through clearMany
-- New pure command (COMMANDS_VERSION 31); batch clear loops the commanded single. Zero visible change.
+## 2026.10.03.8 — 2026-10-03 — 🗨 All batch confirmations use the choice dialog
+- 14 native confirms converted to showChoiceDialog (one rule, 'go' proceeds); hosts now async. User-visible dialog restyle, zero behavior change.
 </script>
 
 
@@ -5074,19 +5074,39 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = 'Page ' + n + ' added (4 empty panels).';
   }
 
-  function deletePage(noConfirm) {
+  async function deletePage(noConfirm) {
     const pages = ensurePages(readPanelState());
     const keys = Object.keys(pages).map(Number).sort((a, b) => a - b);
     const statusEl = document.getElementById('statusEl');
     if (keys.length <= 1) {
-      if (!noConfirm && !confirm('Deleting the only page will reset the ENTIRE project to defaults (like Edit > Reset to Defaults) — all panels, keywords, presets, seed, image size, and the NSFW flag. This cannot be undone. Continue?')) return;
+      if (!noConfirm) {
+        const v = await showChoiceDialog({
+          title: '🗑 Delete the only page?',
+          paragraphs: ['Deleting the only page will reset the <b>ENTIRE project to defaults</b> (like Edit > Reset to Defaults) — all panels, keywords, presets, seed, image size, and the NSFW flag. This cannot be undone.'],
+          buttons: [
+            { label: '🗑 Reset Everything', cls: 'choice-danger', value: 'go' },
+            { label: 'Cancel', cls: 'choice-neutral', value: null }
+          ]
+        });
+        if (v !== 'go') return;
+      }
       resetEverything(true);
       if (statusEl) statusEl.textContent = 'The only page was deleted — project reset to defaults.';
       return;
     }
     const n = currentPage;
     const label = pageLabel(pages[n], n);
-    if (!noConfirm && !confirm('Delete ' + label + '? All of its panel settings (characters, locations, actions, titles, seeds, prompts) will be lost. You can undo this with ↩ Undo.')) return;
+    if (!noConfirm) {
+      const v = await showChoiceDialog({
+        title: '🗑 Delete ' + label + '?',
+        paragraphs: ['All of its panel settings (characters, locations, actions, titles, seeds, prompts) will be lost. You can undo this with ↩ Undo.'],
+        buttons: [
+          { label: '🗑 Delete ' + label, cls: 'choice-danger', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') return;
+    }
     pushStructUndo('delete page');
     stopAllGenerations();
     const cmd = panelCommands ? panelCommands.deletePage : null;
@@ -5909,7 +5929,7 @@ color-scheme:light;
     resequencePanel(i, to);
   }
 
-  function movePanelToPage(i, targetPage, mode) {
+  async function movePanelToPage(i, targetPage, mode) {
     const statusEl = document.getElementById('statusEl');
     stopAllGenerations();
     const state = collectPanelState();
@@ -5929,7 +5949,17 @@ color-scheme:light;
     if (!moving) return;
     const movingCopy = JSON.parse(JSON.stringify(moving));
 
-    if (total <= 1 && !confirm('Panel ' + i + ' is the only panel on ' + pageLabel(pages[src], src) + '. Moving it there will DELETE that page. Continue?')) return;
+    if (total <= 1) {
+      const v = await showChoiceDialog({
+        title: 'Move Panel ' + i + '?',
+        paragraphs: ['Panel ' + i + ' is the only panel on <b>' + pageLabel(pages[src], src) + '</b>. Moving it there will <b>DELETE that page</b>.'],
+        buttons: [
+          { label: 'Move & Delete Page', cls: 'choice-danger', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') return;
+    }
 
     pushStructUndo('move panel');
     const cmdMoveToPage = panelCommands ? panelCommands.movePanelToPage : null;
@@ -6640,7 +6670,7 @@ color-scheme:light;
     updateDeletePageBtn();
   }
 
-  function panelPasteAction(i) {
+  async function panelPasteAction(i) {
     const statusEl = document.getElementById('statusEl');
     const n = clipboardCount();
     if (!n) return;
@@ -6651,9 +6681,19 @@ color-scheme:light;
     const imgs = pageImagesOf(currentPage);
     const label = pageLabel(page, currentPage);
     const plan = batchReflowPlan(n);
-    if (plan.needed && !confirm(label + ' is full (' + total + ' panels). Pasting ' + n + ' panel' + (n === 1 ? '' : 's') + ' before Panel ' + i + ' will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '. Continue?')) {
-      if (statusEl) statusEl.textContent = 'Paste cancelled.';
-      return;
+    if (plan.needed) {
+      const v = await showChoiceDialog({
+        title: '📋 ' + label + ' is full?',
+        paragraphs: [label + ' is full (' + total + ' panels). Pasting ' + n + ' panel' + (n === 1 ? '' : 's') + ' before Panel ' + i + ' will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '.'],
+        buttons: [
+          { label: '📋 Paste Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
+        if (statusEl) statusEl.textContent = 'Paste cancelled.';
+        return;
+      }
     }
     const wasCut = panelClipboardCut;
     pushStructUndo('paste panels');
@@ -6797,7 +6837,7 @@ color-scheme:light;
     return { createdPage: createdPage, moves: moves };
   }
 
-  function batchDuplicatePanels() {
+  async function batchDuplicatePanels() {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(i => i <= total);
@@ -6809,9 +6849,19 @@ color-scheme:light;
     const selSet = new Set(sel);
     const plan = batchReflowPlan(sel.length);
     const label = pageLabel(page, currentPage);
-    if (plan.needed && !confirm(label + ' is full (' + total + ' panels). Duplicating ' + sel.length + ' panels will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '. Continue?')) {
-      if (statusEl) statusEl.textContent = 'Duplication cancelled.';
-      return;
+    if (plan.needed) {
+      const v = await showChoiceDialog({
+        title: '⧉ ' + label + ' is full?',
+        paragraphs: [label + ' is full (' + total + ' panels). Duplicating ' + sel.length + ' panels will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '.'],
+        buttons: [
+          { label: '⧉ Duplicate Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
+        if (statusEl) statusEl.textContent = 'Duplication cancelled.';
+        return;
+      }
     }
     pushStructUndo('duplicate panels');
     const cmdDup = panelCommands ? panelCommands.duplicateEntries : null;
@@ -6839,7 +6889,7 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = 'Duplicated ' + sel.length + ' panels — each copy sits right after its original (the copies have no images).' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '');
   }
 
-  function batchAddPanels() {
+  async function batchAddPanels() {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(i => i <= total);
@@ -6851,9 +6901,19 @@ color-scheme:light;
     const lastSel = sel[sel.length - 1];
     const plan = batchReflowPlan(sel.length);
     const label = pageLabel(page, currentPage);
-    if (plan.needed && !confirm('Creating ' + sel.length + ' new panels on ' + label + ' will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '. Continue?')) {
-      if (statusEl) statusEl.textContent = 'Adding panels cancelled.';
-      return;
+    if (plan.needed) {
+      const v = await showChoiceDialog({
+        title: '＋ ' + label + ' is full?',
+        paragraphs: ['Creating ' + sel.length + ' new panels on ' + label + ' will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '.'],
+        buttons: [
+          { label: '＋ Add Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
+        if (statusEl) statusEl.textContent = 'Adding panels cancelled.';
+        return;
+      }
     }
     pushStructUndo(sel.length === 1 ? 'add panel' : 'add panels');
     const cmdAdd = panelCommands ? panelCommands.addEntries : null;
@@ -6922,7 +6982,7 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = 'Moved ' + sel.length + ' panel' + (sel.length === 1 ? ' to position ' + insert + '.' : 's to position ' + insert + ' as a block.');
   }
 
-  function batchMoveToPage(targetPage, replaceTarget) {
+  async function batchMoveToPage(targetPage, replaceTarget) {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(i => i <= total);
@@ -6943,7 +7003,17 @@ color-scheme:light;
     const moving = sel.map(i => ({ panel: JSON.parse(JSON.stringify(pages[src][i] || {})), img: srcImgs[i] ? srcImgs[i] : null }));
     const remaining = [];
     for (let p = 1; p <= total; p++) if (!selSet.has(p)) remaining.push({ panel: JSON.parse(JSON.stringify(pages[src][p] || {})), img: srcImgs[p] ? srcImgs[p] : null });
-    if (!remaining.length && !confirm('That is every panel on ' + pageLabel(pages[src], src) + ' — the page will be deleted. Continue?')) return;
+    if (!remaining.length) {
+      const v = await showChoiceDialog({
+        title: 'Move every panel?',
+        paragraphs: ['That is every panel on <b>' + pageLabel(pages[src], src) + '</b> — the page will be <b>deleted</b>.'],
+        buttons: [
+          { label: 'Move & Delete Page', cls: 'choice-danger', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') return;
+    }
     pushStructUndo(sel.length === 1 ? 'move panel' : 'move panels');
     const tEntries = [];
     if (!replaceTarget) for (let p = 1; p <= tCount; p++) tEntries.push({ panel: JSON.parse(JSON.stringify(pages[targetPage][p] || {})), img: tImgs[p] ? tImgs[p] : null });
@@ -7238,7 +7308,7 @@ color-scheme:light;
     batchDeletePanels(opts);
   }
 
-  function batchDeletePanels(opts) {
+  async function batchDeletePanels(opts) {
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(idx => idx <= total);
     if (sel.length < 2) { if (sel.length === 1) deletePanel(sel[0]); return; }
@@ -7252,7 +7322,15 @@ color-scheme:light;
     if (!remaining) {
       const keys = sortedPageKeys(pages);
       if (keys.length <= 1) {
-        if (!confirm('That is every panel on the only page. Deleting them will reset the ENTIRE project to defaults (like Edit > Reset to Defaults) — all panels, keywords, presets, seed, image size, and the NSFW flag. This cannot be undone. Continue?')) return;
+        const v = await showChoiceDialog({
+          title: '🗑 Delete everything?',
+          paragraphs: ['That is every panel on the only page. Deleting them will reset the <b>ENTIRE project to defaults</b> (like Edit > Reset to Defaults) — all panels, keywords, presets, seed, image size, and the NSFW flag. This cannot be undone.'],
+          buttons: [
+            { label: '🗑 Reset Everything', cls: 'choice-danger', value: 'go' },
+            { label: 'Cancel', cls: 'choice-neutral', value: null }
+          ]
+        });
+        if (v !== 'go') return;
         clearPanelSelection();
         resetEverything(true);
         const st0 = document.getElementById('statusEl');
@@ -7320,7 +7398,7 @@ color-scheme:light;
     });
   }
 
-  function performBatchDelete(refill) {
+  async function performBatchDelete(refill) {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(idx => idx <= total);
@@ -7360,7 +7438,17 @@ color-scheme:light;
           if (c - take === 0) emptied.push(k);
         }
       }
-      if (emptied.length && !confirm('Refilling will use every panel on ' + emptied.map(k => pageLabel(pages[k], k)).join(', ') + ', so ' + (emptied.length === 1 ? 'that page' : 'those pages') + ' will be deleted. Continue?')) return;
+      if (emptied.length) {
+        const v = await showChoiceDialog({
+          title: '🗑 Refill empties a page?',
+          paragraphs: ['Refilling will use every panel on <b>' + emptied.map(k => pageLabel(pages[k], k)).join(', ') + '</b>, so ' + (emptied.length === 1 ? 'that page' : 'those pages') + ' will be <b>deleted</b>.'],
+          buttons: [
+            { label: '🗑 Delete & Refill', cls: 'choice-danger', value: 'go' },
+            { label: 'Cancel', cls: 'choice-neutral', value: null }
+          ]
+        });
+        if (v !== 'go') return;
+      }
     }
     const updates = [];
     for (const step of plan) {
@@ -7407,7 +7495,7 @@ color-scheme:light;
     libEscClear();
   });
 
-  function duplicatePanel(i) {
+  async function duplicatePanel(i) {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     if (total >= 24) {
@@ -7417,7 +7505,15 @@ color-scheme:light;
       const label = pageLabel(page, currentPage);
       const plan = planReflow(state.pages, currentPage);
       const movesTxt = plan.moves + ' panel' + (plan.moves === 1 ? '' : 's');
-      if (!confirm(label + ' is full (the 24-panel maximum). Duplicating Panel ' + i + ' will ' + (plan.willCreate ? 'create a new page and ' : '') + 'reflow ' + movesTxt + ' onto the following page' + (plan.moves === 1 ? '' : 's') + '. Continue?')) {
+      const v = await showChoiceDialog({
+        title: '⧉ ' + label + ' is full?',
+        paragraphs: [label + ' is full (the 24-panel maximum). Duplicating Panel ' + i + ' will ' + (plan.willCreate ? 'create a new page and ' : '') + 'reflow ' + movesTxt + ' onto the following page' + (plan.moves === 1 ? '' : 's') + '.'],
+        buttons: [
+          { label: '⧉ Duplicate Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
         if (statusEl) statusEl.textContent = 'Duplication cancelled — ' + label + ' already has 24 panels (the per-page max).';
         return;
       }
@@ -7483,7 +7579,7 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = 'Panel ' + i + ' duplicated — the copy is now Panel ' + copyPos + ' (it has no images yet).';
   }
 
-  function addPanel(i) {
+  async function addPanel(i) {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     if (!(i >= 1 && i <= total)) return;
@@ -7493,7 +7589,15 @@ color-scheme:light;
       const label = pageLabel(page, currentPage);
       const plan = planReflow(state.pages, currentPage);
       const movesTxt = plan.moves + ' panel' + (plan.moves === 1 ? '' : 's');
-      if (!confirm(label + ' is full (the 24-panel maximum). Adding a panel after Panel ' + i + ' will ' + (plan.willCreate ? 'create a new page and ' : '') + 'reflow ' + movesTxt + ' onto the following page' + (plan.moves === 1 ? '' : 's') + '. Continue?')) {
+      const v = await showChoiceDialog({
+        title: '＋ ' + label + ' is full?',
+        paragraphs: [label + ' is full (the 24-panel maximum). Adding a panel after Panel ' + i + ' will ' + (plan.willCreate ? 'create a new page and ' : '') + 'reflow ' + movesTxt + ' onto the following page' + (plan.moves === 1 ? '' : 's') + '.'],
+        buttons: [
+          { label: '＋ Add Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
         if (statusEl) statusEl.textContent = 'Adding cancelled — ' + label + ' already has 24 panels (the per-page max).';
         return;
       }
@@ -7559,7 +7663,7 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = 'Empty Panel ' + insertPos + ' added after Panel ' + i + ' — later panels moved down and were renumbered.';
   }
 
-  function deletePanel(i) {
+  async function deletePanel(i) {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
     if (!(i >= 1 && i <= total)) return;
@@ -7567,17 +7671,43 @@ color-scheme:light;
       const pages = ensurePages(readPanelState());
       const keys = Object.keys(pages).map(Number).sort((a, b) => a - b);
       if (keys.length <= 1) {
-        if (!confirm('Deleting the only panel on the only page will reset the ENTIRE project to defaults (like Edit > Reset to Defaults) — all panels, keywords, presets, seed, image size, and the NSFW flag. This cannot be undone. Continue?')) return;
+        const v = await showChoiceDialog({
+          title: '🗑 Delete the only panel?',
+          paragraphs: ['Deleting the only panel on the only page will reset the <b>ENTIRE project to defaults</b> (like Edit > Reset to Defaults) — all panels, keywords, presets, seed, image size, and the NSFW flag. This cannot be undone.'],
+          buttons: [
+            { label: '🗑 Reset Everything', cls: 'choice-danger', value: 'go' },
+            { label: 'Cancel', cls: 'choice-neutral', value: null }
+          ]
+        });
+        if (v !== 'go') return;
         resetEverything(true);
         if (statusEl) statusEl.textContent = 'The only page was deleted — project reset to defaults.';
         return;
       }
       const label = pageLabel(pages[currentPage], currentPage);
-      if (!confirm('Deleting the only panel on this page will also DELETE the page (' + label + '). Continue?')) return;
+      const v = await showChoiceDialog({
+        title: '🗑 Delete the only panel?',
+        paragraphs: ['Deleting the only panel on this page will also <b>DELETE the page</b> (' + label + ').'],
+        buttons: [
+          { label: '🗑 Delete Panel & Page', cls: 'choice-danger', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') return;
       deletePage(true);
       return;
     }
-    if (!confirm('Delete Panel ' + i + '? Its settings (characters, location, action, title, seed, prompt) and its generated images will be lost, and later panels will move up and be renumbered. You can undo this with ↩ Undo.')) return;
+    {
+      const v = await showChoiceDialog({
+        title: '🗑 Delete Panel ' + i + '?',
+        paragraphs: ['Its settings (characters, location, action, title, seed, prompt) and its generated images will be lost, and later panels will move up and be renumbered. You can undo this with ↩ Undo.'],
+        buttons: [
+          { label: '🗑 Delete Panel ' + i, cls: 'choice-danger', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') return;
+    }
     pushStructUndo('delete panel');
     const cmd = panelCommands ? panelCommands.deletePanel : null;
     if (typeof cmd === 'function') {
