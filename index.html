@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.02.7 — 2026-10-02 — 📍 setLocExtra: the location extra line becomes a named command
-- Typing in a panel's Location extra box writes through the setLocExtra command (synchronous save, render-back); zero visible change.
+## 2026.10.03.1 — 2026-10-03 — 💬 PD pickers write through the extra commands
+- Picking a saved description fills the extra box through setCharExtra/setLocExtra (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -4183,7 +4183,13 @@ color-scheme:light;
     if (!ref) return false;
     const entry = loadLibraryObjects().find(e => e.id === ref.split(':')[2]);
     if (!entry) return false;
-    box.value = String(entry.desc || '');
+    const text = String(entry.desc || '');
+    if (runPanelCommand(kind === 'char' ? 'setCharExtra' : 'setLocExtra', panelIdAt(i), kind === 'char' ? [s, text] : [text])) {
+      refreshPanelDescBadge(kind, i, s);
+      updatePanelSummary(i);
+      return true;
+    }
+    box.value = text;
     refreshPanelDescBadge(kind, i, s);
     updatePanelSummary(i);
     schedulePanelSave();
@@ -7762,7 +7768,7 @@ color-scheme:light;
       updatePanelSummary(parseInt(ac[1], 10));
       return runPanelCommand('setAction', panelIdAt(parseInt(ac[1], 10)), [e.target.value]);
     }
-    const cm = id.match(/^panel-(?:char-select|char-base|char-extra|loc-select|loc-base|loc-extra|act|extra-type|extra-sel|extra-desc)-(\d+)/);
+    const cm = id.match(/^panel-(?:char-select|char-base|char-extra|loc-select|loc-base|loc-extra|act)-(\d+)/);
     if (cm) updatePanelSummary(parseInt(cm[1], 10));
     if (/^panel-seed-\d+$/.test(id)) updatePanelSeedPlaceholders();
   }
