@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 33;
+export const COMMANDS_VERSION = 34;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -212,6 +212,21 @@ export function setCharSel(project, id, slot, sel) {
   return { page: hit.page, index: hit.index, slot: n, fields: ["charSel", "charExtra"] };
 }
 
+export function setPalette(project, id, value) {
+  const hit = findPanelById(project, id);
+  if (!hit) return null;
+  hit.panel.palette = text(value);
+  return { page: hit.page, index: hit.index, fields: ["palette"] };
+}
+
+export function setPageSeed(project, pageNum, value) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  page.seed = String(value == null ? "" : value).trim();
+  return { page: Number(pageNum), fields: ["seed"] };
+}
+
 export function appendPromptHistory(project, id, run, max) {
   const hit = findPanelById(project, id);
   if (!hit || !isObj(run) || !Array.isArray(run.seeds) || !run.seeds.length) return null;
@@ -226,7 +241,7 @@ export function appendPromptHistory(project, id, run, max) {
   return { page: hit.page, index: hit.index, fields: ["promptHistory"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setCharSel: setCharSel, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, appendPromptHistory: appendPromptHistory, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setCharSel: setCharSel, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, setPageSeed: setPageSeed, setPalette: setPalette, appendPromptHistory: appendPromptHistory, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
