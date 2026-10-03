@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.1 — 2026-10-03 — 💬 PD pickers write through the extra commands
-- Picking a saved description fills the extra box through setCharExtra/setLocExtra (synchronous save, render-back); zero visible change.
+## 2026.10.03.2 — 2026-10-03 — ✕ Line-clears write through the line commands
+- The ✕ buttons clear through setChar/setLoc/setAction (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -5493,6 +5493,11 @@ color-scheme:light;
   }
 
   function deletePanelChar(i, s) {
+    if (runPanelCommand('setChar', panelIdAt(i), [s, 'none', ''])) {
+      refreshPanelLineDesc('char', i, s);
+      updatePanelSummary(i);
+      return;
+    }
     const sel = document.getElementById('panel-char-select-' + i + '-' + s);
     const base = document.getElementById('panel-char-base-' + i + '-' + s);
     const extra = document.getElementById('panel-char-extra-' + i + '-' + s);
@@ -5505,6 +5510,11 @@ color-scheme:light;
   }
 
   function deletePanelLoc(i) {
+    if (runPanelCommand('setLoc', panelIdAt(i), ['none', ''])) {
+      refreshPanelLineDesc('loc', i);
+      updatePanelSummary(i);
+      return;
+    }
     const ls = document.getElementById('panel-loc-select-' + i);
     const lb = document.getElementById('panel-loc-base-' + i);
     const le = document.getElementById('panel-loc-extra-' + i);
@@ -5517,6 +5527,10 @@ color-scheme:light;
   }
 
   function deletePanelAct(i) {
+    if (runPanelCommand('setAction', panelIdAt(i), [''])) {
+      updatePanelSummary(i);
+      return;
+    }
     const act = document.getElementById('panel-act-' + i);
     if (act) act.value = '';
     updatePanelSummary(i);
