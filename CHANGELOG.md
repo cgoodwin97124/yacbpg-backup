@@ -1,3 +1,9 @@
+## 2026.10.03.12 — 2026-10-03 — 🏷 Last DOM reader goes test-only; production refs pinned at zero
+
+- **The plain version:** the old page-scraping reader is now named as what it is — a test-only helper — and an automated check fails the suite if production code ever references it again. The app does exactly what it did.
+- **Why it matters:** step 4 of the refactor is complete: no production path reads panel state from the DOM; the suites compare the store against the renamed test helper, and the pin keeps it that way.
+- collectPanelState renamed testCollectPanelState (definition + window export); state-diff callers follow; core.test.js pins zero production refs. Zero behavior change.
+
 ## 2026.10.03.11 — 2026-10-03 — 🗑 Last DOM reads become store reads; legacy fallbacks deleted
 
 - **The plain version:** every remaining panel and page edit now reads its starting state from the store instead of re-reading the page, and the old pre-command code paths (which could only run if the new code failed to load) are deleted — the app does exactly what it did, through one path instead of two.
