@@ -1,3 +1,4 @@
+- 2026.10.03.10 locked: author Saved, stamp .10 live, Cow in field intact, re-pushed 17 files post-save. Lockstep. Remaining production collectPanelState sites: 34 (10 analysis + 22 structural + promptHistoryThumbKeys + savePanelStateShape long tail to verify).
 - **Status:** DONE 2026.10.03.10 - library swaps implemented, verified by suites (G17/G21/G8), pushed. Next: step-4 release 3 (analysis writers + structural ancillary reads + else-fallback deletion).
 - **Status:** START NOW step-4 release 2 (library reads). Author greenlight (verbatim: "Go!").
 - 2026.10.03.9 locked: author Saved, stamp .9 live, Cow in field intact, re-pushed 17 files post-save. Lockstep.
