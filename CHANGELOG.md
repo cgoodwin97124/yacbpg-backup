@@ -1,3 +1,8 @@
+## 2026.10.03.5 — 2026-10-03 — batch refresh writes through the base commands (command coverage: every content path)
+
+- **The plain version:** nothing visible changes. The multi-select batch refresh now fills each line through the existing setCharBase / setLocBase commands (one synchronous save per line, with render-back) instead of DOM writes plus one trailing debounced save; tri-state counting, the status summary and the trailing save are untouched, with the old path as fallback. No new commands (COMMANDS_VERSION stays 28). Every panel-content path — typing, picks, clears, copies, single and batch refreshes, structural and batch ops — now writes through the registry; only load/seed/migration callers keep the old helper.
+- **Verified live:** batch-refreshing 2 selected panels lands in the save synchronously (3 lines refilled, the `none` line uncounted, status summary correct). Suites: core 66/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.03.4 — 2026-10-03 — refresh-from-library writes through the base commands (command coverage 4 of 4, COMPLETE)
 
 - **The plain version:** nothing visible changes. The refresh-from-library buttons beside each Basic Description now refill through the existing setCharBase / setLocBase commands (one synchronous save, with render-back) instead of a DOM write plus the debounced save, with the old path as fallback; the multi-select batch refresh is untouched. No new commands (COMMANDS_VERSION stays 28). Command coverage is COMPLETE: every panel-content mutation — typing, picks, clears, copies, refreshes, structural ops — now writes through the named-command registry.
