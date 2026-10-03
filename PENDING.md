@@ -1,3 +1,5 @@
+- 2026.10.03.7 locked: author Saved (stamp .7 live), re-pushed 17 files post-save. Code and repo in lockstep.
+- **Status:** START NOW 2026-10-03 Q2 (14 native confirms to showChoiceDialog). Author approved (suggested order, one release).
 - **Status:** DONE 2026.10.03.7 - clearMany implemented, verified live and pushed. Registry COMMANDS_VERSION 31. Q2 (14 native confirms) is next, then P3 step 4 recon.
 - **Status:** START NOW 2026-10-03 clearMany (Q1a). Author approved suggested order (verbatim: "Your suggested order is fine. Go!"): Q1a = command the settings half now, Q2 = convert all 14 confirms, one release each, then P3 step 4 recon. Scope note: clearPanelImages (images-only) is PURELY an image-store op (images live outside the store) so it stays hand-rolled until P4; this release commands content-blanking only.
 - 2026.10.03.6 locked: author Saved (stamp .6 live), re-pushed 17 files post-save. Live map verified = author Cow-in-field project (only githubLastBackup differs from workspace park). Shipped code and repo in lockstep.
