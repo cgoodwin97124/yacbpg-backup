@@ -1,3 +1,8 @@
+## 2026.10.03.2 — 2026-10-03 — X line-clears write through the line commands (command coverage 2 of 4)
+
+- **The plain version:** nothing visible changes. The X buttons on character, location and action lines now clear through the existing setChar / setLoc / setAction commands (a single synchronous save each, with render-back) instead of DOM writes plus the debounced save, with the old path as fallback. No new commands (COMMANDS_VERSION stays 28). Two of the four line-mutation ops done (copy-from-prev, refresh next, one per release).
+- **Verified live:** seeding panel 2 with content then clearing all three lines lands in the save synchronously (probe before any debounce: sel/base/extra, loc trio and action all reset, DOM and storage agree). Suites: core 66/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.03.1 — 2026-10-03 — PD pickers write through the extra commands (command coverage 1 of 4)
 
 - **The plain version:** nothing visible changes. Picking a saved Panel Specific Description from a panel's pick dropdown now fills the extra box through the existing setCharExtra / setLocExtra commands instead of a DOM write plus the debounced save; the write is synchronous and the box renders back from the store, with the old path as fallback. No new commands (COMMANDS_VERSION stays 28). Also drops the dead `extra-type|extra-sel|extra-desc` alternative from the grid input matcher — those rows no longer exist as a live surface (`panel.extras` is migration-only). First of the four line-mutation ops (X clears, copy-from-prev, refresh next, one per release).
