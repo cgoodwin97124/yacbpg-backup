@@ -1,3 +1,6 @@
+## 2026.10.03.6 - 2026-10-03 - cut-all empties the page through resetPageToBlank
+- New pure command resetPageToBlank (COMMANDS_VERSION 30): keeps name/summary/seed, lands one blank panel with a fresh id. emptyPageAfterCut dispatches it with the old path as fallback. Zero visible change. Suites core 67/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0, restores byte-identical.
+
 ## 2026.10.03.5 — 2026-10-03 — batch refresh writes through the base commands (command coverage: every content path)
 
 - **The plain version:** nothing visible changes. The multi-select batch refresh now fills each line through the existing setCharBase / setLocBase commands (one synchronous save per line, with render-back) instead of DOM writes plus one trailing debounced save; tri-state counting, the status summary and the trailing save are untouched, with the old path as fallback. No new commands (COMMANDS_VERSION stays 28). Every panel-content path — typing, picks, clears, copies, single and batch refreshes, structural and batch ops — now writes through the registry; only load/seed/migration callers keep the old helper.
