@@ -1,3 +1,8 @@
+## 2026.10.03.3 — 2026-10-03 — copy-from-prev writes through the line commands (command coverage 3 of 4)
+
+- **The plain version:** nothing visible changes. The copy-from-previous-panel buttons now write through the existing line commands (setChar + setCharExtra, setLoc + setLocExtra, setAction — one synchronous save each, with render-back) instead of DOM writes plus the debounced save, with the old path as fallback. Missing-option and no-earlier-panel behavior is preserved byte-for-byte. No new commands (COMMANDS_VERSION stays 28). Three of the four line-mutation ops done (refresh-from-library next, last one).
+- **Verified live:** seeding panel 1 then copying its character line and action to panel 2 lands in the save synchronously (sel + base + extra and action match the source); copying on panel 1 writes nothing and keeps the status note. Suites: core 66/0, guards 21/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0 (+1 manual), 0 perchance errors, author map byte-identical after every runner.
+
 ## 2026.10.03.2 — 2026-10-03 — X line-clears write through the line commands (command coverage 2 of 4)
 
 - **The plain version:** nothing visible changes. The X buttons on character, location and action lines now clear through the existing setChar / setLoc / setAction commands (a single synchronous save each, with render-back) instead of DOM writes plus the debounced save, with the old path as fallback. No new commands (COMMANDS_VERSION stays 28). Two of the four line-mutation ops done (copy-from-prev, refresh next, one per release).
