@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.5 — 2026-10-03 — ⟳ Batch refresh writes through the base commands
-- Multi-select refresh fills through setCharBase/setLocBase (synchronous save); zero visible change.
+## 2026.10.03.6 — 2026-10-03 — ✂ Cut-all empties the page through resetPageToBlank
+- New pure command (COMMANDS_VERSION 30); old DOM-write path kept as fallback. Zero visible change.
 </script>
 
 
@@ -6611,6 +6611,19 @@ color-scheme:light;
 
   function emptyPageAfterCut() {
     stopAllGenerations();
+    const cmd = panelCommands ? panelCommands.resetPageToBlank : null;
+    if (typeof cmd === 'function') {
+      const project = storeJsonNow();
+      const hit = project ? cmd(project, currentPage, newPanelId) : null;
+      if (hit) {
+        savePanelStateShape(project);
+        setPageImagesFor(currentPage, {});
+        loadCurrentPage();
+        populatePageSel();
+        updateDeletePageBtn();
+        return;
+      }
+    }
     const state = collectPanelState();
     const page = state.pages[currentPage];
     const fresh = defaultPageData(currentPage);
