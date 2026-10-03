@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.9 — 2026-10-03 — 🔌 Infrastructure reads come from the store
-- switchPage, pushStructUndo, savePanelState, prompt-history saves, export, clipboard copy: collectPanelState to storeJsonNow. Zero behavior change.
+## 2026.10.03.10 — 2026-10-03 — 📚 Library reads come from the store
+- countLibReferences, apply/openLibraryRename, applyLibraryDeleteMany: collectPanelState to storeJsonNow. Zero behavior change.
 </script>
 
 
@@ -2047,7 +2047,7 @@ color-scheme:light;
   }
 
   function countLibReferences(id) {
-    try { return countLibRefs(collectPanelState(), id); } catch (e) { return 0; }
+    try { return countLibRefs(storeJsonNow(), id); } catch (e) { return 0; }
   }
 
   function escapeRegExpLiteral(s) {
@@ -2176,7 +2176,7 @@ color-scheme:light;
     obj.desc = replaceWholeWordName(obj.desc, from, to);
     obj.name = to;
     saveLibraryObjects(objs);
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const stats = sweepRenameAcrossPages(state, slug, id, from, to, true);
     savePanelStateShape(state);
     syncRenameFieldsToDom(state.pages[state.currentPage], slug, id);
@@ -2199,7 +2199,7 @@ color-scheme:light;
     if (!slug) return;
     const from = String(obj.name || '').trim();
     const typeWord = typeLabel.toLowerCase();
-    const state = collectPanelState();
+    const state = storeJsonNow();
     const libDescCount = countWholeWordName(obj.desc, from);
     const dialog = showChoiceDialog({
       title: '✎ Rename this saved ' + typeWord,
@@ -2516,7 +2516,7 @@ color-scheme:light;
     const objs = loadLibraryObjects();
     const targets = ids.map(id => objs.find(o => o.id === id)).filter(Boolean);
     if (!targets.length) return { count: 0, panels: 0, cleared: !!clearText, items: [] };
-    const state = collectPanelState();
+    const state = storeJsonNow();
     let panels = 0, swept = false;
     for (const t of targets) {
       const slug = libraryRenameSlug(t.type || 'Character');
