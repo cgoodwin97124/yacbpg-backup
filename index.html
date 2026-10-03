@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.14 — 2026-10-03 — 📊 Analysis text edits go through commands (non-current pages)
-- analysisSetDesc/AddItem/SetPanelAction route by panel id (setCharExtra/setLocExtra/setAction/setLoc + new setCharSel); old paths as fallback. Zero behavior change.
+## 2026.10.03.15 — 2026-10-03 — 📊 Analysis chips go through commands (non-current pages)
+- analysisSetPanelStyle/Size/Seed + page seed route by id (existing setStyle/setSize/setPanelSeed + new setPalette/setPageSeed); old paths as fallback. Zero behavior change.
 </script>
 
 
@@ -3522,7 +3522,9 @@ color-scheme:light;
     } else {
       const state = storeJsonNow();
       const pg = state.pages[analysisPage];
-      if (pg) { pg.seed = v; savePanelStateShape(state); }
+      if (!pg) { renderAnalysis(); return; }
+      if (!(panelCommands && panelCommands.setPageSeed && panelCommands.setPageSeed(state, analysisPage, v))) pg.seed = v;
+      savePanelStateShape(state);
     }
     renderAnalysis();
   }
@@ -3537,7 +3539,7 @@ color-scheme:light;
     const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
-    p.style = val || '';
+    if (!(p.id && panelCommands && panelCommands.setStyle(state, p.id, val || ''))) p.style = val || '';
     savePanelStateShape(state);
   }
 
@@ -3551,7 +3553,7 @@ color-scheme:light;
     const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
-    p.palette = val || '';
+    if (!(p.id && panelCommands && panelCommands.setPalette(state, p.id, val || ''))) p.palette = val || '';
     savePanelStateShape(state);
   }
 
@@ -3569,9 +3571,11 @@ color-scheme:light;
     const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
-    p.sizeSel = selVal || '';
-    p.sizeW = w || '';
-    p.sizeH = h || '';
+    if (!(p.id && panelCommands && panelCommands.setSize(state, p.id, { sel: selVal || '', w: w || '', h: h || '' }))) {
+      p.sizeSel = selVal || '';
+      p.sizeW = w || '';
+      p.sizeH = h || '';
+    }
     savePanelStateShape(state);
   }
 
@@ -3587,7 +3591,7 @@ color-scheme:light;
     const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
-    p.seed = val;
+    if (!(p.id && panelCommands && panelCommands.setPanelSeed(state, p.id, val))) p.seed = val;
     savePanelStateShape(state);
   }
 
