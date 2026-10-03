@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.8 — 2026-10-03 — 🗨 All batch confirmations use the choice dialog
-- 14 native confirms converted to showChoiceDialog (one rule, 'go' proceeds); hosts now async. User-visible dialog restyle, zero behavior change.
+## 2026.10.03.9 — 2026-10-03 — 🔌 Infrastructure reads come from the store
+- switchPage, pushStructUndo, savePanelState, prompt-history saves, export, clipboard copy: collectPanelState to storeJsonNow. Zero behavior change.
 </script>
 
 
@@ -4828,7 +4828,8 @@ color-scheme:light;
 
   function savePanelState() {
     if (!panelStateRestored) return;
-    savePanelStateShape(storeJsonNow() || collectPanelState());
+    const snap = storeJsonNow();
+    if (snap) savePanelStateShape(snap);
   }
 
   let panelSaveTimer = null;
@@ -5019,7 +5020,8 @@ color-scheme:light;
     const pages = ensurePages(readPanelState());
     if (isNaN(n) || pages[n] === undefined || n === currentPage) return;
     stopAllGenerations();
-    const state = collectPanelState();
+    const state = storeJsonNow();
+    if (!state) return;
     pageSession[currentPage] = { images: panelImages };
     currentPage = n;
     state.currentPage = n;
@@ -6166,7 +6168,7 @@ color-scheme:light;
       const sessions = {};
       for (const k in pageSession) sessions[k] = { images: pageSession[k] ? pageSession[k].images : {} };
       sessions[currentPage] = { images: panelImages };
-      structUndoStack.push({ label: String(label || 'change'), saved: JSON.stringify(collectPanelState()), sessions: JSON.parse(JSON.stringify(sessions)), page: currentPage });
+      structUndoStack.push({ label: String(label || 'change'), saved: JSON.stringify(storeJsonNow()), sessions: JSON.parse(JSON.stringify(sessions)), page: currentPage });
       while (structUndoStack.length > STRUCT_UNDO_MAX) structUndoStack.shift();
     } catch (e) {}
     updateStructUndoUI();
@@ -6547,7 +6549,8 @@ color-scheme:light;
     const total = getPanelCount();
     const sel = panelSelectionSorted().filter(i => i <= total);
     if (!sel.length) return null;
-    const state = collectPanelState();
+    const state = storeJsonNow();
+    if (!state) return null;
     const page = state.pages[currentPage];
     const imgs = pageImagesOf(currentPage);
     const entries = [];
@@ -8187,7 +8190,7 @@ color-scheme:light;
         keys.splice(victim, 1);
       }
       savePromptThumbStore(store);
-      savePanelStateShape(collectPanelState());
+      savePanelStateShape(storeJsonNow());
       renderPromptHistory(i);
     });
   }
@@ -8267,7 +8270,7 @@ color-scheme:light;
     }
     list.unshift(entry);
     if (list.length > PROMPT_HISTORY_MAX) list.length = PROMPT_HISTORY_MAX;
-    savePanelStateShape(collectPanelState());
+    savePanelStateShape(storeJsonNow());
     renderPromptHistory(i);
     attachPromptHistoryThumb(i, entry, run);
     prunePromptThumbs();
@@ -9353,7 +9356,7 @@ color-scheme:light;
     const data = {
       version: 2,
       exportedAt: new Date().toISOString(),
-      settings: normaliseProject(collectPanelState()),
+      settings: normaliseProject(storeJsonNow()),
       preset: (() => { try { return JSON.parse(localStorage.getItem('comicGen.preset')); } catch (e) { return null; } })(),
       libObjects: projectLibraryArray(),
       layoutMode: document.body.classList.contains('side-mode') ? 'side' : 'top',
