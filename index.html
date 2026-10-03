@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.02.5 — 2026-10-02 — 📍 setLocBase: the location base line becomes a named command
-- Typing in a panel's Location base box writes through the setLocBase command (synchronous save, render-back); zero visible change.
+## 2026.10.02.6 — 2026-10-02 — 🦸 setCharExtra: the character extra line becomes a named command
+- Typing in a panel's Character extra box writes through the setCharExtra command (synchronous save, render-back); zero visible change.
 </script>
 
 
@@ -7669,7 +7669,11 @@ color-scheme:light;
     const dpk = id.match(/^panel-(char|loc)-extra-pick-(\d+)(?:-(\d+))?$/);
     if (dpk) return pickPanelDescription(dpk[1], parseInt(dpk[2], 10), dpk[3] ? parseInt(dpk[3], 10) : 1);
     const dpb = id.match(/^panel-(char|loc)-extra-(\d+)(?:-(\d+))?$/);
-    if (dpb) refreshPanelDescBadge(dpb[1], parseInt(dpb[2], 10), dpb[3] ? parseInt(dpb[3], 10) : 1);
+    if (dpb) {
+      const ei = parseInt(dpb[2], 10), es = dpb[3] ? parseInt(dpb[3], 10) : 1;
+      if (dpb[1] === 'char' && !runPanelCommand('setCharExtra', panelIdAt(ei), [es, e.target.value])) schedulePanelSave();
+      refreshPanelDescBadge(dpb[1], ei, es);
+    }
     const nv = id.match(/^panel-(?:char-select-(\d+)-(\d+)|loc-select-(\d+))$/);
     if (nv && (e.target.value === '__new_char__' || e.target.value === '__new_loc__')) {
       e.target.value = 'none';
