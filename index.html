@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.13 — 2026-10-03 — 📝 Prompt-history filing becomes a named command
-- appendPromptHistory pure command + dispatch in addPromptHistoryEntry (thumbs/prune stay session-side). Zero behavior change.
+## 2026.10.03.14 — 2026-10-03 — 📊 Analysis text edits go through commands (non-current pages)
+- analysisSetDesc/AddItem/SetPanelAction route by panel id (setCharExtra/setLocExtra/setAction/setLoc + new setCharSel); old paths as fallback. Zero behavior change.
 </script>
 
 
@@ -3308,14 +3308,22 @@ color-scheme:light;
     const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return;
-    if (kind === 'char') {
-      if (!Array.isArray(p.chars)) p.chars = [];
-      if (!p.chars[s - 1]) p.chars[s - 1] = { sel: 'none', extra: '' };
-      p.chars[s - 1].extra = val;
-    } else if (kind === 'loc') {
-      p.locExtra = val;
-    } else {
-      p.action = val;
+    let descDone = false;
+    if (p.id && panelCommands) {
+      if (kind === 'char') descDone = !!panelCommands.setCharExtra(state, p.id, s, val);
+      else if (kind === 'loc') descDone = !!panelCommands.setLocExtra(state, p.id, val);
+      else descDone = !!panelCommands.setAction(state, p.id, val);
+    }
+    if (!descDone) {
+      if (kind === 'char') {
+        if (!Array.isArray(p.chars)) p.chars = [];
+        if (!p.chars[s - 1]) p.chars[s - 1] = { sel: 'none', extra: '' };
+        p.chars[s - 1].extra = val;
+      } else if (kind === 'loc') {
+        p.locExtra = val;
+      } else {
+        p.action = val;
+      }
     }
     savePanelStateShape(state);
   }
@@ -3347,22 +3355,43 @@ color-scheme:light;
     const state = storeJsonNow();
     const p = state.pages[pg] && state.pages[pg][i];
     if (!p) return false;
-    if (item.type === 'Character') {
-      if (!Array.isArray(p.chars)) p.chars = [];
-      let slot = -1;
-      for (let s = 1; s <= 3; s++) {
-        const c = p.chars[s - 1];
-        if (!c || !c.sel || c.sel === 'none') { slot = s; break; }
+    let addDone = false;
+    if (p.id && panelCommands) {
+      if (item.type === 'Character') {
+        let addSlot = -1;
+        for (let s = 1; s <= 3; s++) {
+          const c = (p.chars || [])[s - 1];
+          if (!c || !c.sel || c.sel === 'none') { addSlot = s; break; }
+        }
+        if (addSlot > 0) addDone = !!panelCommands.setCharSel(state, p.id, addSlot, libRefValue('char', item.id));
+        else return false;
+      } else if (item.type === 'Location') {
+        if (p.loc && p.loc !== 'none') return false;
+        addDone = !!panelCommands.setLoc(state, p.id, libRefValue('loc', item.id), (p.locBase == null ? '' : p.locBase));
+      } else {
+        if (String(p.action || '').trim()) return false;
+        addDone = !!panelCommands.setAction(state, p.id, item.desc || '');
+        if (addDone && pg === analysisPage) analysisSyncActionField(i, item.desc || '');
       }
-      if (slot < 0) return false;
-      p.chars[slot - 1] = { sel: libRefValue('char', item.id), extra: '' };
-    } else if (item.type === 'Location') {
-      if (p.loc && p.loc !== 'none') return false;
-      p.loc = libRefValue('loc', item.id);
-    } else {
-      if (String(p.action || '').trim()) return false;
-      p.action = item.desc || '';
-      if (pg === analysisPage) analysisSyncActionField(i, p.action);
+    }
+    if (!addDone) {
+      if (item.type === 'Character') {
+        if (!Array.isArray(p.chars)) p.chars = [];
+        let slot = -1;
+        for (let s = 1; s <= 3; s++) {
+          const c = p.chars[s - 1];
+          if (!c || !c.sel || c.sel === 'none') { slot = s; break; }
+        }
+        if (slot < 0) return false;
+        p.chars[slot - 1] = { sel: libRefValue('char', item.id), extra: '' };
+      } else if (item.type === 'Location') {
+        if (p.loc && p.loc !== 'none') return false;
+        p.loc = libRefValue('loc', item.id);
+      } else {
+        if (String(p.action || '').trim()) return false;
+        p.action = item.desc || '';
+        if (pg === analysisPage) analysisSyncActionField(i, p.action);
+      }
     }
     savePanelStateShape(state);
     return true;
@@ -3604,7 +3633,7 @@ color-scheme:light;
       const state = storeJsonNow();
       const p = state.pages[pg] && state.pages[pg][i];
       if (!p) return;
-      p.action = val;
+      if (!(p.id && panelCommands && panelCommands.setAction(state, p.id, val))) p.action = val;
       savePanelStateShape(state);
     }
     if (analysisHasActionItems) analysisRefreshActionCells(pg, i, val);
