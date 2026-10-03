@@ -1,6 +1,11 @@
 - 2026.10.03.11 DONE: R3 shipped (34 production collectPanelState sites to storeJsonNow; ~14 legacy fallback tails/elses deleted; renderAnalysis/promptHistoryThumbKeys swapped). Suites: state-diff 38/0, smoke 114/0/4, fixtures 18/0, gen 18/0/1 (one stale-DOM false alarm, green on fresh page; run-gen.js now reloads before parking), diff-core 21/0, multi-page undo chain 0 parsed diffs, 0 perchanceErrors. Saved build pushed post-Save. Cow in field intact (park f2369488 throughout). Next: R4 final (pinning grep-check + rename to testCollectPanelState, ship .12).
 - 2026.10.03 R3 START NOW: 34 production collectPanelState sites (10 analysis + 23 structural + promptHistoryThumbKeys) to storeJsonNow + else-fallback deletions, ship .11. Comment lines 36/68 excluded (not code).
 
+### 2026-10-03 - T-01 1c resume-to-end RECON
+- **Status:** ACTIVE START NOW 2026-10-03 - author greenlit, verbatim: T-01 1c first, please and thank you. Logged here on receipt, before any work, per the 2026-08-13 rule. Implementation NOT greenlit - waits for the recon question round per the 2026-09-20 directive.
+- **Scope:** recon only - pin down the 1c spec from the T-01 entries and map the current resume path.
+
+
 ### 2026-10-03 - P3 step 5 R2: Analysis chips group + setPalette/setPageSeed micros (.15)
 - **Status:** ACTIVE START NOW 2026-10-03 - part of the approved split; author said re-push and continue after R1 save. Logged here on receipt, before any work, per the 2026-08-13 rule.
 - **Scope:** analysisSetPanelStyle/Size/Seed + analysisGlobalSeedChanged non-current branches by panel/page id (existing setStyle/setSize/setPanelSeed + new setPalette + setPageSeed micros); current-page + library-desc untouched; invisible; old paths as fallback.
