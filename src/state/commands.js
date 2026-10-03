@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 29;
+export const COMMANDS_VERSION = 30;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -175,7 +175,7 @@ export function setLocExtra(project, id, extra) {
   return { page: hit.page, index: hit.index, fields: ["locExtra"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
@@ -335,6 +335,22 @@ export function deletePage(project, pageNum) {  if (!isObj(project) || !isObj(pr
   const target = keys[0] === at ? keys[1] : keys[0];
   project.currentPage = target;
   return { page: target, deleted: at, fields: [] };
+}
+
+export function resetPageToBlank(project, pageNum, makeId) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  if (typeof makeId !== "function") return null;
+  const id = makeId();
+  if (typeof id !== "string" || !id) return null;
+  const newPage = {};
+  for (const k of ["name", "summary", "seed"]) newPage[k] = page[k];
+  newPage.panelCountSel = "1";
+  newPage.panelCountCustom = "";
+  newPage[1] = { id: id };
+  project.pages[pageNum] = newPage;
+  return { page: Number(pageNum), index: 1, newTotal: 1, fields: [] };
 }
 
 export function movePanelToPage(project, srcPage, total, index, targetPage, tCount, mode) {
