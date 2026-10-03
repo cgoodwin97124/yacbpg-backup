@@ -176,6 +176,11 @@ each section).
 
 ## 🟢 START NOW — author explicitly said "go ahead" (implement immediately)
 
+### 2026-10-03 — REFACTOR P3 step 4 R4: rename collectPanelState to testCollectPanelState + pinning check (.12)
+- **Status:** ACTIVE START NOW 2026-10-03 — author greenlit, verbatim: Go ahead! Logged here on receipt, before any work, per the 2026-08-13 rule.
+- **Scope:** rename the last DOM-read helper (definition index.html:4659 + window export :10970) to testCollectPanelState; update devtests callers (state-diff.page.js); add core.test.js pinning check asserting zero production collectPanelState refs. collectPageData/collectDomSnapshot stay. Zero behavior change; one op, one release.
+
+
 ### 2026-10-01 — REFACTOR: P3 step 2 batch ops (batchDuplicate / batchAdd / batchDelete + cascadePageSequence as named commands)
 
 - **Status:** 🟢 **START NOW 2026-10-01** — author greenlit this session, verbatim: "Let's do it!" (following the L4 recommendation that the batch paths are the next step). Logged here on receipt, before any work, per the 2026-08-13 rule.
