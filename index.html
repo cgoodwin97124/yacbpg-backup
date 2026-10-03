@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.6 — 2026-10-03 — ✂ Cut-all empties the page through resetPageToBlank
-- New pure command (COMMANDS_VERSION 30); old DOM-write path kept as fallback. Zero visible change.
+## 2026.10.03.7 — 2026-10-03 — 🗑 Panel clear writes through clearMany
+- New pure command (COMMANDS_VERSION 31); batch clear loops the commanded single. Zero visible change.
 </script>
 
 
@@ -9849,6 +9849,31 @@ color-scheme:light;
     }
     for (const p of stopList) inFlightGen.delete(p);
     syncStopButton();
+    const clearCmd = panelCommands ? panelCommands.clearMany : null;
+    const clearProject = (typeof clearCmd === 'function') ? storeJsonNow() : null;
+    const clearHit = clearProject ? clearCmd(clearProject, currentPage, getPanelCount(), [i]) : null;
+    if (clearHit) {
+      savePanelStateShape(clearProject);
+      for (let s = 1; s <= 3; s++) renderCommittedFields(clearProject, { page: clearHit.page, index: i, slot: s, fields: ["charSel", "charBase", "charExtra"] });
+      renderCommittedFields(clearProject, { page: clearHit.page, index: i, fields: ["loc", "locBase", "locExtra", "action"] });
+    } else {
+      for (let s = 1; s <= 3; s++) {
+        const sel = document.getElementById('panel-char-select-' + i + '-' + s);
+        const base = document.getElementById('panel-char-base-' + i + '-' + s);
+        const extra = document.getElementById('panel-char-extra-' + i + '-' + s);
+        if (sel) sel.value = 'none';
+        if (base) base.value = '';
+        if (extra) extra.value = '';
+      }
+      const ls = document.getElementById('panel-loc-select-' + i);
+      const lb = document.getElementById('panel-loc-base-' + i);
+      const le = document.getElementById('panel-loc-extra-' + i);
+      const act = document.getElementById('panel-act-' + i);
+      if (ls) ls.value = 'none';
+      if (lb) lb.value = '';
+      if (le) le.value = '';
+      if (act) act.value = '';
+    }
     panelImages[i] = [];
     for (let k = 1; k <= 4; k++) {
       const box = document.getElementById('imgbox-panel-' + i + '-' + k);
@@ -9858,22 +9883,6 @@ color-scheme:light;
       setSlotProtected(i, k, false);
       setPanelImageButtons(i, k, false);
     }
-    for (let s = 1; s <= 3; s++) {
-      const sel = document.getElementById('panel-char-select-' + i + '-' + s);
-      const base = document.getElementById('panel-char-base-' + i + '-' + s);
-      const extra = document.getElementById('panel-char-extra-' + i + '-' + s);
-      if (sel) sel.value = 'none';
-      if (base) base.value = '';
-      if (extra) extra.value = '';
-    }
-    const ls = document.getElementById('panel-loc-select-' + i);
-    const lb = document.getElementById('panel-loc-base-' + i);
-    const le = document.getElementById('panel-loc-extra-' + i);
-    const act = document.getElementById('panel-act-' + i);
-    if (ls) ls.value = 'none';
-    if (lb) lb.value = '';
-    if (le) le.value = '';
-    if (act) act.value = '';
     delete panelPromptHistory[i];
     renderPromptHistory(i);
     prunePromptThumbs();
