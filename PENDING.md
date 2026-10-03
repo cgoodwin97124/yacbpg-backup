@@ -1,3 +1,4 @@
+- 2026.10.03.10 locked: author Saved, stamp .10 live, Cow in field intact (1p/0), re-pushed post-save. Lockstep. R3 greenlit (Go): 34 production sites (10 analysis + 23 structural + promptHistoryThumbKeys) + else-fallback deletions, ship .11.
 - 2026.10.03.10 locked: author Saved, stamp .10 live, Cow in field intact, re-pushed 17 files post-save. Lockstep. Remaining production collectPanelState sites: 34 (10 analysis + 22 structural + promptHistoryThumbKeys + savePanelStateShape long tail to verify).
 - **Status:** DONE 2026.10.03.10 - library swaps implemented, verified by suites (G17/G21/G8), pushed. Next: step-4 release 3 (analysis writers + structural ancillary reads + else-fallback deletion).
 - **Status:** START NOW step-4 release 2 (library reads). Author greenlight (verbatim: "Go!").
