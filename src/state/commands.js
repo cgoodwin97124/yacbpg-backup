@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 30;
+export const COMMANDS_VERSION = 31;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -175,7 +175,33 @@ export function setLocExtra(project, id, extra) {
   return { page: hit.page, index: hit.index, fields: ["locExtra"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
+export function clearMany(project, pageNum, total, indexes) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  if (!Array.isArray(indexes) || !indexes.length) return null;
+  const idx = [];
+  for (const v of indexes) {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > t) return null;
+    if (page[n] === undefined) return null;
+    idx.push(n);
+  }
+  for (const n of idx) {
+    const p = page[n];
+    p.chars = [];
+    for (let s = 0; s < 3; s++) p.chars.push({ sel: "none", base: "", extra: "" });
+    p.loc = "none";
+    p.locBase = "";
+    p.locExtra = "";
+    p.action = "";
+  }
+  return { page: Number(pageNum), indexes: idx, fields: ["charSel", "charBase", "charExtra", "loc", "locBase", "locExtra", "action"] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
