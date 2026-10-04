@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Context menu DONE 2026.10.04.36 (option c, whole-card right-click, own 550ms long-press, prompt+seed/size, Paste at clicked panel)
+- **Status:** ✅ DONE — 11-row menu delegating to per-panel buttons; 3-case rule; Select = checkbox-toggle; Paste = panelPasteAction(clicked). Fixed row-click ctxPanel capture bug (caught by probe). Suites green (smoke 114/0, state-diff 38/0, gen 18/0, fixtures 18/0, core 77/0, diff-core 24/0, byte-identical, 0 errors) + 9/9 menu probe. Pushed pre-Save; re-push after Save.
+
 ### 2026-10-04 — Context menu BUILD START (author: option c + whole-card right-click, own long-press delay, prompt+seed/size, Paste at clicked panel)
 - **Status:** 🟢 START NOW — custom menu delegating to per-panel buttons; Select = checkbox-toggle; no code yet at log time.
 
