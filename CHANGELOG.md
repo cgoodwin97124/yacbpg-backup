@@ -1,3 +1,9 @@
+## 2026.10.04.22 — 2026-10-04 — 🧭 P5 wave 2: panel cards answer through delegation
+
+- **The plain version:** nothing visible changes. The buttons and controls the app builds on the fly for every panel — generate, select, reorder, image slots, prompt history — now answer through the same delegated listeners as the static controls, instead of each carrying its own inline handler.
+- **Under the hood:** the 82 `on*="…${…}…"` attributes inside the JS templates became `data-action="w2-N"` plus `data-a0…` carrying the original expressions (panel index, slot, history key) verbatim, evaluated at render exactly as before; a generated 76-entry `W2ACT` table (reviewed line by line before applying) replays each body with numbers as numbers (`i`/`s`/`idx`) and the dialog key as a string. The dispatcher now consults both tables. A mid-wave tooling fault wrote a 53 MB `index.html` (a dropped length field); it was restored from the pre-wave backup and re-applied with single-pass assembly, then verified byte-sane. The two smoke lines calling `cb.onclick()` directly needed no change — library checkboxes use property-assigned handlers, which this wave does not touch.
+- **The numbers:** differential **23/0**, core **77/0**, smoke **114/0**, generation **18/0**, fixtures **18/0**, state-diff **38/0**, **0** perchance errors, project restored **byte-for-byte** after every run. Live probe: a real panel-select checkbox click through the delegation path selected and deselected with storage untouched.
+
 ## 2026.10.04.21 — 2026-10-04 — 🧭 P5 wave 1: static controls answer through delegation
 
 - **The plain version:** nothing visible changes. Every static button, dropdown and control now answers through four delegated page-level listeners instead of its own inline handler — the first step of pulling the wiring out of the markup.
