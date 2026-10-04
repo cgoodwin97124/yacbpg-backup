@@ -1,6 +1,11 @@
 - 2026.10.03.11 DONE: R3 shipped (34 production collectPanelState sites to storeJsonNow; ~14 legacy fallback tails/elses deleted; renderAnalysis/promptHistoryThumbKeys swapped). Suites: state-diff 38/0, smoke 114/0/4, fixtures 18/0, gen 18/0/1 (one stale-DOM false alarm, green on fresh page; run-gen.js now reloads before parking), diff-core 21/0, multi-page undo chain 0 parsed diffs, 0 perchanceErrors. Saved build pushed post-Save. Cow in field intact (park f2369488 throughout). Next: R4 final (pinning grep-check + rename to testCollectPanelState, ship .12).
 - 2026.10.03 R3 START NOW: 34 production collectPanelState sites (10 analysis + 23 structural + promptHistoryThumbKeys) to storeJsonNow + else-fallback deletions, ship .11. Comment lines 36/68 excluded (not code).
 
+### 2026-10-04 - Wave 2 preliminary recon
+- **Request (verbatim):** Saved. Start the preliminary steps on Wave 2 and tell me your findings in V-5.
+- **Status:** PRELIMINARY ONLY - recon the write sites, no implementation. ghPush backup for .16 runs first (author saved).
+
+
 ### 2026-10-03 - Elaborate P4 questions in V-5
 - **Request (verbatim):** Elaborate on these in V-5?
 - **Status:** elaboration requested on the 4 P4 images.js recon questions before the author answers them. No implementation - still waiting on the question round.
