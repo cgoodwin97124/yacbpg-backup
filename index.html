@@ -1367,8 +1367,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.26 — 2026-10-04 — 🧪 P6 step 1: try the new UI before you commit
-- A 🧪 switch top-right previews the bundle (Advanced control hiding, toast notifications, converged danger dialogs); off on load, session-only, nothing persisted. Zero behavior change with it off.
+## 2026.10.04.27 — 2026-10-04 — 🎨 Per-panel Style accordion: Style, Palette, Size, Seed always visible
+- Style, Palette and Size move from the panel header into a per-panel 🎨 Style accordion that ignores the Advanced switch; Seed stays in the header. Zero behavior change with the 🧪 switch off.
 </script>
 
 
@@ -5693,34 +5693,7 @@ color-scheme:light;
                 ${imgCountOptionHtml()}
               </select>
             </div>
-            <div class="panel-imgs-sel adv">
-              <label for="panel-style-${i}">Style:</label>
-              <select id="panel-style-${i}" data-action="w2-16" data-a0="${i}" title="Override this panel's art style — [Default (Global)] follows the global Art Style dropdown">
-                <option value="" selected>[Default (Global)]</option>
-              </select>
-            </div>
-            <div class="panel-imgs-sel adv">
-              <label for="panel-palette-${i}">Palette:</label>
-              <select id="panel-palette-${i}" data-action="w2-17" data-a0="${i}" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
-                <option value="" selected>[Default (Global)]</option>
-              </select>
-            </div>
-            <div class="panel-imgs-sel adv">
-              <label for="panel-size-${i}">Size:</label>
-              <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
-                <option value="" selected>[Default (Global)]</option>
-                <option value="512x512">512 × 512</option>
-                <option value="768x768">768 × 768</option>
-                <option value="1024x1024">1024 × 1024</option>
-                <option value="1920x1080">1920 × 1080</option>
-                <option value="1080x1920">1080 × 1920</option>
-                <option value="custom">Custom…</option>
-              </select>
-              <span class="panel-size-custom" id="panel-size-custom-${i}" hidden>
-                <input id="panel-size-w-${i}" type="number" min="64" max="1920" placeholder="W">
-                <input id="panel-size-h-${i}" type="number" min="64" max="1080" placeholder="H">
-              </span>
-            </div>
+            
             <div class="panel-imgs-sel">
               <label for="panel-seed-${i}">Seed:</label>
               <input id="panel-seed-${i}" class="panel-seed-input" type="text" placeholder="random" title="This panel's seed — leave blank to follow the page seed. Once a generation picks a seed, it's filled in here." data-action="w2-19" data-a0="${i}">
@@ -5754,6 +5727,39 @@ color-scheme:light;
             <div class="panel-acc-body">
               <div class="panel-acc-stack">
                 <div id="panel-objects-${i}"></div>
+              </div>
+            </div>
+          </div>
+                    <div class="panel-acc" data-collapsed="1">
+            <div class="panel-acc-toggle" data-action="w2-55" title="This panel's art style, color palette, and image size">🎨 Style</div>
+            <div class="panel-acc-body">
+  <div class="panel-imgs-sel">
+                <label for="panel-style-${i}">Style:</label>
+                <select id="panel-style-${i}" data-action="w2-16" data-a0="${i}" title="Override this panel's art style — [Default (Global)] follows the global Art Style dropdown">
+                  <option value="" selected>[Default (Global)]</option>
+                </select>
+              </div>
+              <div class="panel-imgs-sel">
+                <label for="panel-palette-${i}">Palette:</label>
+                <select id="panel-palette-${i}" data-action="w2-17" data-a0="${i}" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
+                  <option value="" selected>[Default (Global)]</option>
+                </select>
+              </div>
+              <div class="panel-imgs-sel">
+                <label for="panel-size-${i}">Size:</label>
+                <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
+                  <option value="" selected>[Default (Global)]</option>
+                  <option value="512x512">512 × 512</option>
+                  <option value="768x768">768 × 768</option>
+                  <option value="1024x1024">1024 × 1024</option>
+                  <option value="1920x1080">1920 × 1080</option>
+                  <option value="1080x1920">1080 × 1920</option>
+                  <option value="custom">Custom…</option>
+                </select>
+                <span class="panel-size-custom" id="panel-size-custom-${i}" hidden>
+                  <input id="panel-size-w-${i}" type="number" min="64" max="1920" placeholder="W">
+                  <input id="panel-size-h-${i}" type="number" min="64" max="1080" placeholder="H">
+                </span>
               </div>
             </div>
           </div>
@@ -6936,13 +6942,6 @@ color-scheme:light;
     document.body.classList.toggle('adv-off', uiPreviewOn && advOff);
     if (!uiPreviewOn) return;
     for (let i = 1; i <= 24; i++) {
-      for (const p of ['panel-style-', 'panel-palette-', 'panel-size-']) {
-        const sel = document.getElementById(p + i);
-        if (sel) advSetWrap(sel.closest('.panel-imgs-sel'), sel.value !== '');
-      }
-      const sw = document.getElementById('panel-size-w-' + i);
-      const sh = document.getElementById('panel-size-h-' + i);
-      advSetWrap(document.getElementById('panel-size-custom-' + i), !!((sw && sw.value) || (sh && sh.value)));
       const ss = document.getElementById('panel-sameseed-' + i);
       if (ss) advSetWrap(ss.closest('label'), ss.checked);
       const pe = document.getElementById('prompt-editor-' + i);
