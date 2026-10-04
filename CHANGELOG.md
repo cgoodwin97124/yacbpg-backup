@@ -1,3 +1,6 @@
+## 2026.10.04.25 — 2026-10-04 — 🛡️ Security hardening: import size guard + full escaping
+- Imports over 100MB are refused with a status message before parsing (both project and library paths). escapeHtml now also escapes single quotes. Zero visible change.
+
 ## 2026.10.04.24 — 2026-10-04 — 🧭 P5 wave 3b: the flat export surface is deleted
 
 - **The plain version:** nothing visible changes. The app no longer leaves 159 spare handles hanging off the page for the markup to grab — every button already knocks through the delegation doorway instead, so the spares are gone.
