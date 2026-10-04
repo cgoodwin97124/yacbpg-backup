@@ -1,3 +1,5 @@
+## 2026.10.04.33 — 2026-10-04 — ⌘K palette starts closed, headers join keyboard nav
+- All palette sections start collapsed for the session, and ↑/↓ walks through headers and rows alike: → opens a header, ← closes it (← on a row closes its section), Enter on a header toggles it. Verified live keyboard-only (open/navigate/open-row/close/filter/Esc, screenshot, zero storage writes). Suites green (smoke 114/0, diff-core 24/0, byte-identical restore, 0 errors).
 ## 2026.10.04.32 — 2026-10-04 — ⌘K palette sections become accordions
 - Each palette group is now an accordion: arrowhead header (▾/▸, no chip), click to collapse or expand. Collapsed state is session-only; typing a filter auto-expands every matching group, and keyboard navigation skips collapsed sections. Verified live (collapse/filter/keyboard/Esc, zero storage writes, screenshot). Suites green (smoke 114/0, diff-core 24/0, byte-identical restore, 0 errors).
 ## 2026.10.04.31 — 2026-10-04 — ⌘K Command palette: every action, one keystroke
