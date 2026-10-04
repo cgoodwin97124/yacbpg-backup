@@ -1,3 +1,5 @@
+## 2026.10.04.31 — 2026-10-04 — ⌘K Command palette: every action, one keystroke
+- A command palette lists 43 actions in 8 groups with fuzzy filter and ↑↓/Enter/Esc keyboard control, opened with Ctrl/⌘-K or the ⌘K Commands button at the left of the header. Running a row clicks the real control, so confirms and disabled states behave identically (Undo shows dimmed with nothing to undo). Session-only, nothing persisted. Verified live (open/filter/run Storyboard, disabled Undo no-op, zero storage writes). Suites green (smoke 114/0, state-diff 38/0, gen 18/0, fixtures 18/0, core 77/0, diff-core 24/0, byte-identical restores, 0 errors).
 ## 2026.10.04.30 — 2026-10-04 — 🏃 Run panel: the queue, live
 - A floating run panel shows every panel in the run with its live state, seed and thumbnail, the end target up top, working ⏸/▶/■, and a per-row 🔄 that re-runs immediately (disabled mid-queue). Verified with a stubbed slow run (rendering → paused → resumed → stopped). Suites green (smoke 114/0, state-diff 38/0, gen 18/0, byte-identical restores, 0 errors).
 ## 2026.10.04.29 — 2026-10-04 — ✨ New UI is now the default (toggle kept)
