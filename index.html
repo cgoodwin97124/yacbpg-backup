@@ -200,6 +200,12 @@ color-scheme:light;
   #cmdInput { flex: 1 1 auto; min-width: 0; background: var(--well); color: var(--text); border: 1px solid var(--border-2); border-radius: 6px; padding: 9px 12px; font-size: 0.95rem; }
   .cmd-close { flex: 0 0 auto; width: 38px; border-radius: 6px; border: 1px solid var(--border-2); background: var(--surface-3); color: var(--text); cursor: pointer; font-size: 0.9rem; }
   #cmdList { overflow-y: auto; max-height: 52vh; padding: 4px; }
+  #ctxMenu { position: fixed; z-index: 10030; background: var(--surface); color: var(--text); border: 2px solid var(--purple); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.65); min-width: 250px; max-width: calc(100vw - 24px); padding: 4px; }
+  #ctxMenu[hidden] { display: none; }
+  .ctx-title { padding: 6px 12px 2px; font-size: 0.75rem; opacity: 0.7; }
+  .ctx-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+  .ctx-row:hover { background: var(--hover); }
+  .ctx-row.off { opacity: 0.45; cursor: default; }
   .cmd-group { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-8); padding: 8px 10px 3px; cursor: pointer; user-select: none; }
   .cmd-arrow { display: inline-block; width: 1.2em; }
   .cmd-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
@@ -837,6 +843,7 @@ color-scheme:light;
   <div id="cmdList"></div>
   <div class="cmd-foot">↑↓ move · → open · ← close · Enter run · Esc close</div>
 </div>
+<div id="ctxMenu" hidden></div>
 <div class="page-layout">
   <div class="menu-frame" id="menuFrame">
     <div class="menu-scroll">
@@ -949,7 +956,7 @@ color-scheme:light;
         <div class="help-panel select-panel">
           <h3>Panel Selection</h3>
           <p class="lib-hint">Tick the checkbox at the left of a panel's header to select it. <b>Shift-click</b> a checkbox to select the whole range from the last one you ticked. While anything is selected, the buttons in the <b>⚙ Panel</b> menu of any <i>selected</i> panel act on the <b>whole selection</b> at once — <b>🔄 Generate</b>, <b>⚡ Generate All To Here</b>, <b>⚡ Generate All From Here</b>, <b>⚡ Generate (x) to (y)…</b>, <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>🗑 Clear Images</b>, <b>🗑 Clear</b> and <b>🗑 Delete</b> — and their labels show the count. (<b>⇅ Move</b> lives in a selected panel's title bar and moves the whole selection as a block.) The same buttons, plus <b>⇅ Move</b> and <b>⟳ Refresh descriptions</b>, are repeated in this menu below, so you can run any of them without opening a panel's menu first. The destructive ones (<b>Clear Images</b>, <b>Clear</b>, <b>Delete</b>) ask first and offer <b>Only This Panel</b> if you change your mind (the copies below belong to no single panel, so they only ask to confirm); on a multi-page project <b>Delete</b> can also <b>Delete &amp; Refill</b>, pulling panels up from the following pages so the page keeps its length. <b>🔄 Generate</b> renders just the selected panels; <b>⚡ Generate All From Here</b> starts at the first selected panel and runs to the end of the page. <b>⟳ Refresh from library</b> — the button beside a line's <b>Basic Description</b> in a panel's <b>📖 Panel Library</b> — fills that line from your library; <b>with 2 or more panels selected it refills the Basic Description of every character and location line in all of the selected panels at once</b> (its label then reads “⟳ Refresh N panels”), leaving lines that have no library description untouched. Only the checkbox (or <b>Esc</b>) deselects; clicking a panel's body never changes the selection. The selection is a working aid: it is never saved with the project and it clears when you switch pages.</p>
-          <p class="lib-hint">With something selected the <b>selection bar</b> appears at the bottom of the screen: <b>📋 Copy</b> puts the selected panels — their settings <i>and</i> their generated images — on an in-app clipboard, <b>✂ Cut</b> does the same and then removes them from the page, and <b>✕ Clear</b> just deselects. While the clipboard holds something, every panel header shows a <b>📋 Paste</b> chip that inserts the copied panels <i>before</i> that panel, contiguously, using the same full-page reflow as Duplicate (asking first if the page is full). <b>Paste</b> consumes a <b>Cut</b> — its chip disappears afterwards — while a <b>Copy</b> stays on the clipboard so you can paste it again and again until you copy something else. The clipboard lives in this tab only and is never saved with the project.</p>
+          <p class="lib-hint">With something selected the <b>selection bar</b> appears at the bottom of the screen: <b>📋 Copy</b> puts the selected panels — their settings <i>and</i> their generated images — on an in-app clipboard, <b>✂ Cut</b> does the same and then removes them from the page, and <b>✕ Clear</b> just deselects. While the clipboard holds something, every panel header shows a <b>📋 Paste</b> chip that inserts the copied panels <i>before</i> that panel, contiguously, using the same full-page reflow as Duplicate (asking first if the page is full). <b>Paste</b> consumes a <b>Cut</b> — its chip disappears afterwards — while a <b>Copy</b> stays on the clipboard so you can paste it again and again until you copy something else. The clipboard lives in this tab only and is never saved with the project. Right-click a panel (or long-press its header area on touch) for the same actions in a context menu.</p>
           <div class="panel-header-btns" style="margin-top:0;justify-content:flex-start;">
             <button class="btn-view" data-action="w1-43" title="Select every panel on this page">☑ Select all panels</button>
             <button class="btn-view" data-action="w1-44" title="Copy the selected panels to the clipboard (their settings and images)">📋 Copy</button>
@@ -1455,8 +1462,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.35 — 2026-10-04 — Commands regrouped: File / Edit / View
-- The command palette is regrouped: File first, then Edit (Undo, Select all, Copy, Cut, new Paste, Clear, plus Edit › Panel and Edit › Page sublevels), then View (Focus greyed unless panels are selected), then Generate, Library and Danger. New Edit → Paste inserts the clipboard before the first selected panel (greyed when nothing is selected or the clipboard is empty); Copy, Cut and Focus grey with no selection too. The menu bar gains a View menu between Edit and Library, and Page Setup moved into Edit as the Page section.
+## 2026.10.04.36 — 2026-10-04 — Panel context menu: right-click / long-press
+- Right-click any panel (or long-press its header area on touch) for a context menu: Generate, To/From Here, Duplicate, Paste, Copy prompt (prompt + seed + size), Focus, Select-toggle, Clear Images, Clear and Delete. The desktop 3-case selection rule applies, Paste targets the clicked panel, and every row delegates to the same per-panel buttons, so grey states and confirms behave identically.
 </script>
 
 
@@ -4789,7 +4796,8 @@ color-scheme:light;
     if (imgPreviewTouch) hideImagePreview();
   });
   document.addEventListener('contextmenu', e => {
-    if (imgPreviewTouch) e.preventDefault();
+    if (imgPreviewTouch || ctxMenuTouch) e.preventDefault();
+    ctxMenuTouch = false;
   });
 
   document.addEventListener('visibilitychange', () => {
@@ -7488,6 +7496,174 @@ color-scheme:light;
       if (e.target && e.target.closest && (e.target.closest('#cmdPalette') || e.target.closest('[data-action="w1-146"]'))) return;
       paletteClose();
     }, true);
+  })();
+
+  let ctxPanel = 0;
+  let ctxMenuTouch = false;
+  const CTX_LONGPRESS_MS = 550;
+  const CTX_ITEMS = [
+    { t: "🔄 Generate", btn: i => 'panel-gen-btn-' + i },
+    { t: "⚡ Generate All To Here", btn: i => 'panel-gento-btn-' + i },
+    { t: "⚡ Generate All From Here", btn: i => 'panel-genfrom-btn-' + i },
+    { t: "⧉ Duplicate", btn: i => 'panel-dup-btn-' + i },
+    { t: "📋 Paste", fn: i => panelPasteAction(i), off: () => clipboardCount() === 0 },
+    { t: "📋 Copy prompt", fn: i => copyPanelPromptFull(i) },
+    { t: "🔍 Focus", fn: () => focusSelectedPanels() },
+    { t: "☑ Select", fn: i => onPanelSelectClick(i, { target: { checked: !panelSelection.has(i) } }) },
+    { t: "🗑 Clear Images", btn: i => 'panel-clear-imgs-btn-' + i },
+    { t: "🗑 Clear", btn: i => 'panel-clear-btn-' + i },
+    { t: "🗑 Delete", btn: i => 'panel-del-btn-' + i },
+  ];
+
+  function ctxSelectFor(i) {
+    if (!panelSelection.size || !panelSelection.has(i)) {
+      panelSelection.clear();
+      panelSelection.add(i);
+      selectionAnchor = i;
+      updateSelectionUI();
+    }
+  }
+
+  function openPanelContextMenu(i, x, y) {
+    const total = getPanelCount();
+    if (!(i >= 1 && i <= total)) return;
+    ctxSelectFor(i);
+    ctxPanel = i;
+    const box = document.getElementById('ctxMenu');
+    if (!box) return;
+    box.innerHTML = '';
+    const n = panelSelection.size;
+    const title = document.createElement('div');
+    title.className = 'ctx-title';
+    title.textContent = n > 1 ? ('Panel ' + i + ' — ' + n + ' selected') : ('Panel ' + i);
+    box.append(title);
+    for (const c of CTX_ITEMS) {
+      const r = document.createElement('div');
+      const isOff = typeof c.off === 'function' && c.off();
+      r.className = 'ctx-row' + (isOff ? ' off' : '');
+      r.textContent = c.t;
+      if (!isOff) {
+        ((item) => {
+          r.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const ici = ctxPanel;
+            closePanelContextMenu();
+            if (item.btn) {
+              const b = document.getElementById(item.btn(ici));
+              if (b) { b.click(); return; }
+            }
+            if (item.fn) item.fn(ici);
+          });
+        })(c);
+      }
+      box.append(r);
+    }
+    box.hidden = false;
+    const w = box.offsetWidth || 260;
+    const h = box.offsetHeight || 300;
+    box.style.left = Math.max(8, Math.min(x, window.innerWidth - w - 8)) + 'px';
+    box.style.top = Math.max(8, Math.min(y, window.innerHeight - h - 8)) + 'px';
+  }
+
+  function closePanelContextMenu() {
+    const box = document.getElementById('ctxMenu');
+    if (box) box.hidden = true;
+    ctxPanel = 0;
+  }
+
+  function panelCardIndex(el) {
+    const card = el && el.closest ? el.closest('.panel-card') : null;
+    if (!card || !card.id) return 0;
+    const m = /^panel-card-(\d+)$/.exec(card.id);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
+  async function copyPanelPromptFull(i) {
+    const statusEl = document.getElementById('statusEl');
+    let fullPrompt = '';
+    let hasContent = false;
+    try {
+      const r = await buildPanelPrompt(i);
+      fullPrompt = r.fullPrompt;
+      hasContent = r.hasContent;
+    } catch (e) {}
+    if (!hasContent) {
+      if (statusEl) statusEl.textContent = '⚠ Panel ' + i + ' has no content — nothing to copy.';
+      return;
+    }
+    const seedEl = document.getElementById('panel-seed-' + i);
+    const seed = (seedEl && (seedEl.value || seedEl.placeholder)) || 'random';
+    let size = '';
+    try {
+      const sz = readPanelSize(i);
+      size = sz.sel === 'custom' ? ((sz.w || '?') + 'x' + (sz.h || '?')) : (sz.sel || '');
+    } catch (e) {}
+    if (!size) {
+      const gs = document.getElementById('imageSizeSel');
+      size = (gs && gs.value) || 'default';
+    }
+    await copyText(fullPrompt + '\nSeed: ' + seed + '\nSize: ' + size);
+    if (statusEl) statusEl.textContent = 'Copied prompt (+seed/size) for Panel ' + i + '.';
+  }
+
+  (function ctxMenuWire() {
+    document.addEventListener('contextmenu', function (e) {
+      const grid = document.getElementById('comicGrid');
+      if (!grid || !grid.contains(e.target)) return;
+      const i = panelCardIndex(e.target);
+      if (!i) return;
+      e.preventDefault();
+      openPanelContextMenu(i, e.clientX, e.clientY);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closePanelContextMenu();
+    }, true);
+    document.addEventListener('click', function (e) {
+      const box = document.getElementById('ctxMenu');
+      if (!box || box.hidden) return;
+      if (e.target && e.target.closest && e.target.closest('#ctxMenu')) return;
+      closePanelContextMenu();
+    }, true);
+    document.addEventListener('scroll', function () { closePanelContextMenu(); }, { passive: true, capture: true });
+    window.addEventListener('resize', function () { closePanelContextMenu(); });
+    let lpTimer = null;
+    let lpStart = null;
+    document.addEventListener('touchstart', function (e) {
+      clearTimeout(lpTimer);
+      lpTimer = null;
+      lpStart = null;
+      const grid = document.getElementById('comicGrid');
+      if (!grid || !grid.contains(e.target)) return;
+      if (e.target && e.target.closest && e.target.closest('input, select, textarea, button, a, img, .panel-img-box, .po-sel, .po-desc, [contenteditable]')) return;
+      const i = panelCardIndex(e.target);
+      if (!i) return;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      lpStart = { x: t.clientX, y: t.clientY, i: i };
+      lpTimer = setTimeout(function () {
+        lpTimer = null;
+        if (!lpStart) return;
+        ctxMenuTouch = true;
+        openPanelContextMenu(lpStart.i, lpStart.x, lpStart.y);
+        lpStart = null;
+      }, CTX_LONGPRESS_MS);
+    }, { passive: true });
+    ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) {
+      document.addEventListener(ev, function (e) {
+        if (ev === 'touchmove' && lpStart && e.changedTouches[0]) {
+          const t = e.changedTouches[0];
+          if (Math.abs(t.clientX - lpStart.x) > 12 || Math.abs(t.clientY - lpStart.y) > 12) {
+            clearTimeout(lpTimer);
+            lpTimer = null;
+            lpStart = null;
+          }
+          return;
+        }
+        clearTimeout(lpTimer);
+        lpTimer = null;
+        lpStart = null;
+      }, { passive: true });
+    });
   })();
 
   function confirmDanger(o) {
@@ -12798,7 +12974,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
