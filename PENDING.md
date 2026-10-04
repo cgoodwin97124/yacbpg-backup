@@ -1,4 +1,8 @@
 
+### 2026-10-04 — Commands phase 0 START (author, verbatim: "Let's start Commands phase 0!" + answers a/b/c, paste-overwrite dropped)
+- **Status:** 🟢 START NOW — palette + menu bar/groups restructure, NO cursor code. Paste = insert-only (single → before that panel; multi → before first selected; grey when none selected or clipboard empty). Move lives in Panel. Refresh descriptions in Panel too (acts on selection). Pref default-off + gap-checkboxes-only deferred to cursor phase.
+- **Palette groups:** File | Edit (Undo/Select all/Copy/Cut/Paste/Clear) | Edit › Panel (Generate/To/From/Range/Add/Duplicate/Move/Refresh/Clear Images/Clear/Delete) | Edit › Page (Add/Delete/Renumber) | View (Storyboard/Focus grey-unless-selected/JSON/Analysis/Manual/Menu/Layout/Fullscreen/Panels) | Generate (All/Pause/Stop) | Library | Danger. No Help palette commands exist; menu-bar Help stays last.
+
 ### 2026-10-04 — Commands answers + notional-cursor recon (author answers 1-5 + cursor proposal)
 - **Status:** 🟢 START NOW — Commands answers logged; cursor idea in RECON (no code).
 - **Answers:** (1) Page as sublevel under Edit; Generate/Library/Danger after View, Help last. (2) Panel submenu: Generate/To/From/Range/Add/Duplicate/Clear/Clear Images/Delete (prior move/remove/consolidate talk takes precedence). (3) Paste: 1 selected → before that panel; multi → paste OVER selection with warn + Undo-logged. (4) Grey Copy/Cut/Focus (+selection) when none: yes. (5) Apply to menu bar + groups too.
