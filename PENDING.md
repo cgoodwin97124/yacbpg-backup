@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Palette accordions (author, verbatim: "In the Ctrl-K command menu, can we have each of the sections under an accordion (no chip, just the arrowhead)?")
+- **Status:** 🟢 START NOW — group headers become arrowhead accordion toggles (no chip); collapsed state session-only; filtering auto-expands matches. One version (.32). Smoke + guards + byte-identical restore before push.
+
 ### 2026-10-04 — P6 palette v1 BUILD (author, verbatim: "Your recommendation is good. Go ahead and build.")
 - **Status:** ✅ DONE 2026.10.04.31 — palette-only v1 shipped (43 rows, 8 groups, w1-146/147, zero new window exports), all suites green, pushed pre-Save; re-pushed post-Save (## 2026.10.04.31 now in repo).
 
