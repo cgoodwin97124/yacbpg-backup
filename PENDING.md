@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Commands phase 0 DONE 2026.10.04.35 (palette File/Edit/View + View menu + Paste, no cursor code)
+- **Status:** ✅ DONE — palette regrouped, View menu button + group, Page Setup moved to Edit as Page section, new Paste (insert-before-first-selected, no overwrite), Copy/Cut/Paste/Focus grey with none selected. Suites green (smoke 114/0, state-diff 38/0, gen 18/0, fixtures 18/0, core 77/0, diff-core 24/0, byte-identical, 0 errors). Pushed pre-Save (18 files, repo verified .35); re-push after Save.
+
 ### 2026-10-04 — Commands phase 0 START (author, verbatim: "Let's start Commands phase 0!" + answers a/b/c, paste-overwrite dropped)
 - **Status:** 🟢 START NOW — palette + menu bar/groups restructure, NO cursor code. Paste = insert-only (single → before that panel; multi → before first selected; grey when none selected or clipboard empty). Move lives in Panel. Refresh descriptions in Panel too (acts on selection). Pref default-off + gap-checkboxes-only deferred to cursor phase.
 - **Palette groups:** File | Edit (Undo/Select all/Copy/Cut/Paste/Clear) | Edit › Panel (Generate/To/From/Range/Add/Duplicate/Move/Refresh/Clear Images/Clear/Delete) | Edit › Page (Add/Delete/Renumber) | View (Storyboard/Focus grey-unless-selected/JSON/Analysis/Manual/Menu/Layout/Fullscreen/Panels) | Generate (All/Pause/Stop) | Library | Danger. No Help palette commands exist; menu-bar Help stays last.
