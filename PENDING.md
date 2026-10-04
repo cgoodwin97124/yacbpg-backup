@@ -1,4 +1,8 @@
 
+### 2026-10-04 — P5 W1: static handlers to delegation (IMPLEMENTATION)
+- **Status:** 🟢 START NOW (author, verbatim: "Your recommendations, and go!") — all four recon questions per recommendation: static-first order, debug hooks kept, data-action dispatchers per area, backup/auth handlers last.
+- **Scope:** convert the 153 static-markup inline handlers to data-action delegation; delete only exports made newly-dead; debug hooks kept. One version (2026.10.04.21). Full suites + byte-identical restore before push.
+
 ### 2026-10-04 — P5 UI-layer extraction RECON (read-only, no code)
 - **Status:** 🟢 START NOW (author, verbatim: "P5 recon, go!")
 - **Scope:** recon only — fresh counts of inline handlers / window exports / id-lookups against the .20 build, handler-to-function map, wave plan. Ends with questions; no code until greenlit per the standing recon+ask rule.
