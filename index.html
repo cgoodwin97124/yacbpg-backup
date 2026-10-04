@@ -784,7 +784,7 @@ color-scheme:light;
   <button class="page-nav-btn" data-action="w1-6" title="Next page">▶</button>
 </div>
 <button id="addPageFab" data-action="w1-7" title="Create a new empty page (4 panels) and switch to it">＋ Add Page</button>
-<button id="uiPreviewFab" data-action="w1-139" title="Preview the new P6 interface (non-destructive trial — flip back anytime)">🧪 New UI: Off</button>
+<button id="uiPreviewFab" data-action="w1-139" title="The new P6 interface is on — flip back to the old interface anytime">🧪 New UI: On</button>
 <div id="toastStack"></div>
 <div id="runSlot" hidden></div>
 <div class="page-layout">
@@ -1370,8 +1370,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.28 — 2026-10-04 — 🎨 Style chip in the panel header
-- The per-panel 🎨 Style accordion moves into the panel header as a toggle chip; its Style/Palette/Size body drops full-width inside the header. Seed stays put. Zero behavior change with the 🧪 switch off.
+## 2026.10.04.29 — 2026-10-04 — ✨ New UI is now the default (toggle kept)
+- The 🧪 interface loads on: Advanced hiding, toasts, converged danger dialogs, per-panel 🎨 Style chip. The fab flips back to the old interface for the session. Nothing persisted.
 </script>
 
 
@@ -6916,7 +6916,7 @@ color-scheme:light;
     if (r) r(value);
   }
 
-  let uiPreviewOn = false;
+  let uiPreviewOn = true;
   let advOff = true;
   function toggleUiPreview() {
     uiPreviewOn = !uiPreviewOn;
@@ -12597,6 +12597,11 @@ color-scheme:light;
     applyPanelsVisible(savedPanelsVisible);
     initHeaderObserver();
     buildPanelGrid();
+    uiPreviewOn = true;
+    document.body.classList.add('ui-new');
+    const fab0 = document.getElementById('uiPreviewFab');
+    if (fab0) fab0.textContent = '🧪 New UI: On';
+    refreshAdvVisibility();
     initFocusSync();
     populatePageSel();
     updateDeletePageBtn();
