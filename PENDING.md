@@ -899,3 +899,4 @@ Moved to `archive/PENDING-done-2026-09.md` on 2026-09-27 (docs archive-split): 9
 - 2026-10-04 Security fixes 1+2 greenlit ("Yes, let's make fixes 1 and 2 first.") — recon: import size guard + escapeHtml single-quote. Status: IN PROGRESS.
 - 2026-10-04 Security fixes 1+2 DONE 2026.10.04.25 — 100MB guard live-verified ("Import failed…" for oversized file), escapeHtml quote fix in, page healthy (24 cards, no errors).
 - 2026-10-04 .25 post-Save re-push CONFIRMED (retry) — repo stamps 2026.10.04.25, 18 files pushed.
+- 2026-10-04 P6 step 1 answers recorded: Seed+title stay visible; Advanced = header switch; toasts 5s; progress stacks above; converge all dialogs (all provisional, will review in practice). NEW: UI preview toggle request (floating top-right switch, non-destructive trial before commit). Status: RECON.
