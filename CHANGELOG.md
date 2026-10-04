@@ -1,3 +1,5 @@
+## 2026.10.04.34 — 2026-10-04 — Focus takes a set: multi-panel focus
+- Focus now opens a set of panels stacked vertically: selecting panels and running Focus shows them all, with the list, dropdown and prev/next cycling within the set (single-panel Focus unchanged, selection stays live). Verified live (set open/nav-wrap/close order, selection entry, screenshot, zero storage writes). Suites green (smoke 114/0, state-diff 38/0, gen 18/0, fixtures 18/0, core 77/0, diff-core 24/0, byte-identical restores, 0 errors).
 ## 2026.10.04.33 — 2026-10-04 — ⌘K palette starts closed, headers join keyboard nav
 - All palette sections start collapsed for the session, and ↑/↓ walks through headers and rows alike: → opens a header, ← closes it (← on a row closes its section), Enter on a header toggles it. Verified live keyboard-only (open/navigate/open-row/close/filter/Esc, screenshot, zero storage writes). Suites green (smoke 114/0, diff-core 24/0, byte-identical restore, 0 errors).
 ## 2026.10.04.32 — 2026-10-04 — ⌘K palette sections become accordions
