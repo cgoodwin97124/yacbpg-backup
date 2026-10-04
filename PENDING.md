@@ -1,10 +1,10 @@
 
 ### 2026-10-04 — P6 palette v1 BUILD (author, verbatim: "Your recommendation is good. Go ahead and build.")
-- **Status:** 🟢 START NOW — palette-only v1: header button leftmost in #appHeader + Ctrl/Cmd-K, curated set w/ confirms, fuzzy+groups+keys session-only. One version (.31). Full suites + byte-identical restore before push.
+- **Status:** ✅ DONE 2026.10.04.31 — palette-only v1 shipped (43 rows, 8 groups, w1-146/147, zero new window exports), all suites green, pushed pre-Save; re-push after Save captures the new index.html.
 
 ### 2026-10-04 — P6 palette answers (author ver batim: "1. Ok / 2. Key combo plus header button…where? / 3. Ok / 4. Ok")
-- **Status:** 🟢 START NOW — palette-only v1, Ctrl/K + header button (placement = open recommendation), curated set w/ confirms, fuzzy+groups+keys session-only.
-- **Next:** recommend header placement, confirm, then implement one version + suites + pre-Save push.
+- **Status:** ✅ DONE 2026.10.04.31 — see build entry above.
+- **Placement:** leftmost in #appHeader per recommendation, author-approved.
 
 ### 2026-10-04 — Repeat at V-5 (author, verbatim: "Repeat this at V-5 please?")
 - **Status:** ✅ DONE — V-5 = verbosity L5 (L4 + recon detail, alternatives, file:line refs); repeating palette recon below at L5, no code.
