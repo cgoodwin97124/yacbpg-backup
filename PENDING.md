@@ -1,13 +1,16 @@
 
+### 2026-10-04 — Re-push .34 confirmed + Commands START NOW (author, verbatim: "Saved!  Go ahead and re-push and then on to Commands!")
+- **Status:** 🟢 START NOW — re-push DONE (18 files, repo verified .34); Commands recon underway (catalog + grey hooks), questions next, no code until greenlit.
+
 ### 2026-10-04 — Multi-panel Focus BUILD (author, verbatim: "And this is the green light to go!" + answers: vertical scroll / nav within set / rec? / single unchanged)
-- **Status:** ✅ DONE 2026.10.04.34 — multi-focus shipped (focusSet/focusCards/openFocusPanels/focusSelectedPanels, w1-148 + palette row, G12:59 updated to within-set contract), all suites green, pushed pre-Save; re-push after Save.
+- **Status:** ✅ DONE 2026.10.04.34 — multi-focus shipped (focusSet/focusCards/openFocusPanels/focusSelectedPanels, w1-148 + palette row, G12:59 updated to within-set contract), all suites green, pushed pre-Save; ✅ re-pushed post-Save 2026-10-04 (repo index.html verified ## 2026.10.04.34, 18 files).
 
 ### 2026-10-04 — Multi-panel Focus (author spec, implements FIRST per author order)
 - **Status:** 🟢 START NOW — recon + questions first (new view behavior); no code yet.
 - **Spec:** Focus shows multiple panels; selecting several panels then Focus (context menu in selection, Commands View > Focus, or panel button) brings up those panels.
 
 ### 2026-10-04 — Commands menu restructure (author spec, QUEUED until Focus lands)
-- **Status:** 🕒 QUEUED — implement after Focus.
+- **Status:** 🟢 START NOW 2026-10-04 (Focus .34 shipped + re-pushed; author: "Go ahead and re-push and then on to Commands!") — recon + questions first, no code yet.
 - **Spec:** Project→File, File top above Edit; Selection.* moves under Edit; new Panel submenu under Edit holding all panel ops; Views→View directly after Edit; Focus lives under View, greyed unless panel(s) selected; Copy/Cut/Paste under Edit acting on current selection, greyed with none.
 
 ### 2026-10-04 — Context menu answers (author, QUEUED until Commands lands)
