@@ -843,6 +843,7 @@ color-scheme:light;
       <div class="menu-bar" id="menuBar">
         <button class="menu-btn" data-menu="file" data-action="w1-8">📄 File</button>
         <button class="menu-btn" data-menu="edit" data-action="w1-9">🎨 Edit</button>
+        <button class="menu-btn" data-menu="view" data-action="w1-150">👁 View</button>
         <button class="menu-btn" data-menu="library" data-action="w1-10">📚 Library</button>
         <button class="menu-btn" data-menu="help" data-action="w1-11">❓ Help</button>
         <button class="menu-btn menu-action" id="menuGenerateBtn" data-action="w1-12" title="Generate every panel on this page">⚡ Generate All</button>
@@ -890,8 +891,91 @@ color-scheme:light;
             <div class="lib-hint">Reopen a project with one click instead of going through the file dialog. Everything you save with 💾 Save… / 💾 Save as…, open with ＋ Add…, or import with ⬆ Import Project is remembered here automatically. Where the browser allows it an entry points at the real file, so it always loads that file's current contents; where it doesn't (Firefox, Safari), the entry keeps its own copy of the project as it was at that moment — which even survives moving or deleting the original file. Entries show the filename and when they were last used (browsers never reveal a file's folder), and one whose file has gone removes itself when clicked. How many are kept is set in 🎨 Edit → Preferences.</div>
           </div>
         </div>
+      </div>
+
+      <div class="menu-group" id="menuGroup-edit" hidden>
         <div class="config-panel">
-          <div class="config-header"><h2>Page Setup</h2></div>
+          <div class="config-header"><h2>Art Style &amp; Keywords</h2></div>
+          <div class="input-group">
+            <label>Global Positive Keywords / Art Style:</label>
+            <input id="globalPos" type="text" value="comic book art, crisp ink lines, vibrant cel shading, high contrast, dramatic shadows">
+          </div>
+          <div class="input-group">
+            <label>Global Negative Keywords:</label>
+            <input id="globalNeg" type="text" value="photorealistic, 3d render, blurry, deformed hands, text, speech bubbles, low quality">
+          </div>
+          <div class="input-group">
+            <label>Allow NSFW Content:</label>
+            <label class="check-label"><input type="checkbox" id="nsfwCheck"> <span>When unchecked, "nsfw, nudity, explicit" is added to the negative keywords and "fully clothed" to the prompt. Check to let the model follow your prompts without SFW filters.</span></label>
+          </div>
+        </div>
+        <div class="help-panel preset-panel">
+          <h3>Art Style &amp; Color Palette Presets</h3>
+          <p class="lib-hint">Pick a style and a palette — the combo replaces the <b>Global Positive Keywords</b> field (photo styles also swap the <b>Global Negative Keywords</b>, since they intentionally allow realism). You can still add your own extra keywords afterwards. Your last choice is remembered across reloads.</p>
+          <div class="preset-row">
+            <div class="input-group">
+              <label for="presetStyle">Art Style:</label>
+              <select id="presetStyle" data-action="w1-39"></select>
+            </div>
+            <div class="input-group">
+              <label for="presetPalette">Color Palette:</label>
+              <select id="presetPalette" data-action="w1-39"></select>
+            </div>
+          </div>
+        </div>
+        <div class="help-panel keyword-panel">
+          <h3>Full Keyword List</h3>
+          <p class="lib-hint">Live view of the exact global keywords used by every panel, updated as you type, change presets, or toggle the NSFW flag. Keywords shown with a dashed blue border are auto-added because NSFW is off. Click any chip to copy just that keyword, or use the buttons to copy the whole list.</p>
+          <div class="kw-section">
+            <div class="kw-header"><b>Positive Keywords</b><button class="btn-copy" data-action="w1-40">📋 Copy all</button></div>
+            <div class="kw-chips" id="kwPosChips"></div>
+          </div>
+          <div class="kw-section">
+            <div class="kw-header"><b>Negative Keywords</b><button class="btn-copy" data-action="w1-41">📋 Copy all</button></div>
+            <div class="kw-chips" id="kwNegChips"></div>
+          </div>
+          <div class="kw-section">
+            <div class="kw-header"><b id="kwFilterMode" class="kw-mode">SFW mode — filters ON</b></div>
+            <div class="kw-chips" id="kwFilterChips"></div>
+            <div id="kwFilterNote" class="lib-hint" style="margin-top:8px;"></div>
+          </div>
+          <div id="kwCopiedEl" class="kw-copied"></div>
+        </div>
+        <div class="help-panel json-open-panel">
+          <h3>🧩 Project JSON</h3>
+          <p class="lib-hint">Open the whole project — every page and panel, your library, the global keywords/settings, the preset and the UI flags — as one JSON document in a full-page editor. <b>Find / Replace</b> works across the editable text fields (with Regex and a global Replace all). Only the fields you can edit elsewhere in the app are editable — everything else (<code>version</code>, <code>currentPage</code>, library ids, the document structure) is shown greyed and locked, so a replace can never corrupt it. Generated images are not part of this document (they only travel in the 💾 Export <code>.zip</code>).</p>
+          <button class="btn-view" data-action="w1-42" title="Open the project as an editable JSON document">🧩 Open JSON Editor</button>
+        </div>
+        <div class="help-panel select-panel">
+          <h3>Panel Selection</h3>
+          <p class="lib-hint">Tick the checkbox at the left of a panel's header to select it. <b>Shift-click</b> a checkbox to select the whole range from the last one you ticked. While anything is selected, the buttons in the <b>⚙ Panel</b> menu of any <i>selected</i> panel act on the <b>whole selection</b> at once — <b>🔄 Generate</b>, <b>⚡ Generate All To Here</b>, <b>⚡ Generate All From Here</b>, <b>⚡ Generate (x) to (y)…</b>, <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>🗑 Clear Images</b>, <b>🗑 Clear</b> and <b>🗑 Delete</b> — and their labels show the count. (<b>⇅ Move</b> lives in a selected panel's title bar and moves the whole selection as a block.) The same buttons, plus <b>⇅ Move</b> and <b>⟳ Refresh descriptions</b>, are repeated in this menu below, so you can run any of them without opening a panel's menu first. The destructive ones (<b>Clear Images</b>, <b>Clear</b>, <b>Delete</b>) ask first and offer <b>Only This Panel</b> if you change your mind (the copies below belong to no single panel, so they only ask to confirm); on a multi-page project <b>Delete</b> can also <b>Delete &amp; Refill</b>, pulling panels up from the following pages so the page keeps its length. <b>🔄 Generate</b> renders just the selected panels; <b>⚡ Generate All From Here</b> starts at the first selected panel and runs to the end of the page. <b>⟳ Refresh from library</b> — the button beside a line's <b>Basic Description</b> in a panel's <b>📖 Panel Library</b> — fills that line from your library; <b>with 2 or more panels selected it refills the Basic Description of every character and location line in all of the selected panels at once</b> (its label then reads “⟳ Refresh N panels”), leaving lines that have no library description untouched. Only the checkbox (or <b>Esc</b>) deselects; clicking a panel's body never changes the selection. The selection is a working aid: it is never saved with the project and it clears when you switch pages.</p>
+          <p class="lib-hint">With something selected the <b>selection bar</b> appears at the bottom of the screen: <b>📋 Copy</b> puts the selected panels — their settings <i>and</i> their generated images — on an in-app clipboard, <b>✂ Cut</b> does the same and then removes them from the page, and <b>✕ Clear</b> just deselects. While the clipboard holds something, every panel header shows a <b>📋 Paste</b> chip that inserts the copied panels <i>before</i> that panel, contiguously, using the same full-page reflow as Duplicate (asking first if the page is full). <b>Paste</b> consumes a <b>Cut</b> — its chip disappears afterwards — while a <b>Copy</b> stays on the clipboard so you can paste it again and again until you copy something else. The clipboard lives in this tab only and is never saved with the project.</p>
+          <div class="panel-header-btns" style="margin-top:0;justify-content:flex-start;">
+            <button class="btn-view" data-action="w1-43" title="Select every panel on this page">☑ Select all panels</button>
+            <button class="btn-view" data-action="w1-44" title="Copy the selected panels to the clipboard (their settings and images)">📋 Copy</button>
+            <button class="btn-view" data-action="w1-45" title="Copy the selected panels to the clipboard and remove them from the page">✂ Cut</button>
+            <button class="btn-view" id="selMenuPasteBtn" data-action="w1-149" disabled title="Insert the copied panels before the first selected panel">📋 Paste</button>
+            <button class="btn-clear" data-action="w1-46" title="Clear the selection (Esc)">✕ Clear selection</button>
+          </div>
+          <p class="lib-hint" style="margin-top:16px;"><b>The whole-selection buttons, in one place.</b> These are the same actions as the ones in a selected panel's <b>⚙ Panel</b> menu (and its <b>⇅ Move</b>), so you can run them without opening a panel first. They are greyed out until at least one panel is selected, and their labels show the count. When an action needs a position — <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>⇅ Move</b>, <b>⚡ Generate All To Here</b> and the range picker — it works from the <b>last selected panel</b>, exactly as it does when you click it inside a panel. The destructive ones (<b>🗑 Clear Images</b>, <b>🗑 Clear</b>, <b>🗑 Delete</b>) still ask first. <b>⟳ Refresh descriptions</b> refills the <b>Basic Description</b> of every character and location line in the selected panels from what is saved in your library, leaving lines that have no library description (and the <i>Panel Specific Description</i> boxes and Action prompts) as they are.</p>
+          <div id="selMenuHint" class="lib-hint" style="color:var(--text-8);">Select at least one panel (the checkbox at the left of a panel's header) to use these buttons.</div>
+          <div class="panel-header-btns" style="margin-top:6px;justify-content:flex-start;">
+            <button class="btn-view" id="selMenuFocusBtn" data-action="w1-148" disabled title="Open the selected panels in the focus view — the list, dropdown and prev/next cycle within the set">🔍 Focus</button>
+            <button class="btn-reroll" id="selMenuGenBtn" data-action="w1-47" disabled title="Generate every selected panel (with several selected, the in-panel button does the same)">🔄 Generate</button>
+            <button class="btn-add-lib" id="selMenuGenToBtn" data-action="w1-48" disabled title="Generate from panel 1 up to and including the last selected panel">⚡ Generate All To Here</button>
+            <button class="btn-add-lib" id="selMenuGenFromBtn" data-action="w1-49" disabled title="Generate from the first selected panel to the end of the page">⚡ Generate All From Here</button>
+            <button class="btn-add-lib" id="selMenuGenRangeBtn" data-action="w1-50" disabled title="Choose an inclusive range of panels to generate — it starts out as the selected span">⚡ Generate (x) to (y)…</button>
+            <button class="btn-dup" id="selMenuDupBtn" data-action="w1-51" disabled title="Duplicate every selected panel — each copy sits right after its original, with no images">⧉ Duplicate</button>
+            <button class="btn-add-panel" id="selMenuAddBtn" data-action="w1-52" disabled title="Add one new empty panel per selected panel, after the last selected panel">＋ Add Panel</button>
+            <button class="btn-reorder" id="selMenuMoveBtn" data-action="w1-53" disabled title="Move the selected panels as a block — the picker opens on the last selected panel">⇅ Move</button>
+            <button class="btn-view" id="selMenuRefreshBtn" data-action="w1-54" disabled title="Refill the Basic Description of every character and location line in the selected panels from your library">⟳ Refresh descriptions</button>
+            <button class="btn-clear btn-clear-images" id="selMenuClearImgsBtn" data-action="w1-55" disabled title="Remove all generated images from every selected panel, keeping their characters, location, and action">🗑 Clear Images</button>
+            <button class="btn-clear" id="selMenuClearBtn" data-action="w1-56" disabled title="Remove all images, characters, locations, and descriptions from every selected panel">🗑 Clear</button>
+            <button class="btn-del-panel" id="selMenuDelBtn" data-action="w1-57" disabled style="background:var(--red);color:#fff;" title="Delete every selected panel — later panels move up and are renumbered">🗑 Delete</button>
+          </div>
+        </div>
+        <div class="config-panel">
+          <div class="config-header"><h2>Page</h2></div>
           <div class="input-group">
             <label>Page:</label>
             <div class="chip-row">
@@ -975,87 +1059,7 @@ color-scheme:light;
             <label class="check-label" style="margin-top:8px;"><input type="checkbox" id="previewEnabledCheck" checked> <span><b>Enable image preview</b> — hover (computer) or press-and-hold (mobile) to show a larger version of an image. Uncheck to turn the preview off entirely.</span></label>
           </div>
         </div>
-      </div>
 
-      <div class="menu-group" id="menuGroup-edit" hidden>
-        <div class="config-panel">
-          <div class="config-header"><h2>Art Style &amp; Keywords</h2></div>
-          <div class="input-group">
-            <label>Global Positive Keywords / Art Style:</label>
-            <input id="globalPos" type="text" value="comic book art, crisp ink lines, vibrant cel shading, high contrast, dramatic shadows">
-          </div>
-          <div class="input-group">
-            <label>Global Negative Keywords:</label>
-            <input id="globalNeg" type="text" value="photorealistic, 3d render, blurry, deformed hands, text, speech bubbles, low quality">
-          </div>
-          <div class="input-group">
-            <label>Allow NSFW Content:</label>
-            <label class="check-label"><input type="checkbox" id="nsfwCheck"> <span>When unchecked, "nsfw, nudity, explicit" is added to the negative keywords and "fully clothed" to the prompt. Check to let the model follow your prompts without SFW filters.</span></label>
-          </div>
-        </div>
-        <div class="help-panel preset-panel">
-          <h3>Art Style &amp; Color Palette Presets</h3>
-          <p class="lib-hint">Pick a style and a palette — the combo replaces the <b>Global Positive Keywords</b> field (photo styles also swap the <b>Global Negative Keywords</b>, since they intentionally allow realism). You can still add your own extra keywords afterwards. Your last choice is remembered across reloads.</p>
-          <div class="preset-row">
-            <div class="input-group">
-              <label for="presetStyle">Art Style:</label>
-              <select id="presetStyle" data-action="w1-39"></select>
-            </div>
-            <div class="input-group">
-              <label for="presetPalette">Color Palette:</label>
-              <select id="presetPalette" data-action="w1-39"></select>
-            </div>
-          </div>
-        </div>
-        <div class="help-panel keyword-panel">
-          <h3>Full Keyword List</h3>
-          <p class="lib-hint">Live view of the exact global keywords used by every panel, updated as you type, change presets, or toggle the NSFW flag. Keywords shown with a dashed blue border are auto-added because NSFW is off. Click any chip to copy just that keyword, or use the buttons to copy the whole list.</p>
-          <div class="kw-section">
-            <div class="kw-header"><b>Positive Keywords</b><button class="btn-copy" data-action="w1-40">📋 Copy all</button></div>
-            <div class="kw-chips" id="kwPosChips"></div>
-          </div>
-          <div class="kw-section">
-            <div class="kw-header"><b>Negative Keywords</b><button class="btn-copy" data-action="w1-41">📋 Copy all</button></div>
-            <div class="kw-chips" id="kwNegChips"></div>
-          </div>
-          <div class="kw-section">
-            <div class="kw-header"><b id="kwFilterMode" class="kw-mode">SFW mode — filters ON</b></div>
-            <div class="kw-chips" id="kwFilterChips"></div>
-            <div id="kwFilterNote" class="lib-hint" style="margin-top:8px;"></div>
-          </div>
-          <div id="kwCopiedEl" class="kw-copied"></div>
-        </div>
-        <div class="help-panel json-open-panel">
-          <h3>🧩 Project JSON</h3>
-          <p class="lib-hint">Open the whole project — every page and panel, your library, the global keywords/settings, the preset and the UI flags — as one JSON document in a full-page editor. <b>Find / Replace</b> works across the editable text fields (with Regex and a global Replace all). Only the fields you can edit elsewhere in the app are editable — everything else (<code>version</code>, <code>currentPage</code>, library ids, the document structure) is shown greyed and locked, so a replace can never corrupt it. Generated images are not part of this document (they only travel in the 💾 Export <code>.zip</code>).</p>
-          <button class="btn-view" data-action="w1-42" title="Open the project as an editable JSON document">🧩 Open JSON Editor</button>
-        </div>
-        <div class="help-panel select-panel">
-          <h3>Panel Selection</h3>
-          <p class="lib-hint">Tick the checkbox at the left of a panel's header to select it. <b>Shift-click</b> a checkbox to select the whole range from the last one you ticked. While anything is selected, the buttons in the <b>⚙ Panel</b> menu of any <i>selected</i> panel act on the <b>whole selection</b> at once — <b>🔄 Generate</b>, <b>⚡ Generate All To Here</b>, <b>⚡ Generate All From Here</b>, <b>⚡ Generate (x) to (y)…</b>, <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>🗑 Clear Images</b>, <b>🗑 Clear</b> and <b>🗑 Delete</b> — and their labels show the count. (<b>⇅ Move</b> lives in a selected panel's title bar and moves the whole selection as a block.) The same buttons, plus <b>⇅ Move</b> and <b>⟳ Refresh descriptions</b>, are repeated in this menu below, so you can run any of them without opening a panel's menu first. The destructive ones (<b>Clear Images</b>, <b>Clear</b>, <b>Delete</b>) ask first and offer <b>Only This Panel</b> if you change your mind (the copies below belong to no single panel, so they only ask to confirm); on a multi-page project <b>Delete</b> can also <b>Delete &amp; Refill</b>, pulling panels up from the following pages so the page keeps its length. <b>🔄 Generate</b> renders just the selected panels; <b>⚡ Generate All From Here</b> starts at the first selected panel and runs to the end of the page. <b>⟳ Refresh from library</b> — the button beside a line's <b>Basic Description</b> in a panel's <b>📖 Panel Library</b> — fills that line from your library; <b>with 2 or more panels selected it refills the Basic Description of every character and location line in all of the selected panels at once</b> (its label then reads “⟳ Refresh N panels”), leaving lines that have no library description untouched. Only the checkbox (or <b>Esc</b>) deselects; clicking a panel's body never changes the selection. The selection is a working aid: it is never saved with the project and it clears when you switch pages.</p>
-          <p class="lib-hint">With something selected the <b>selection bar</b> appears at the bottom of the screen: <b>📋 Copy</b> puts the selected panels — their settings <i>and</i> their generated images — on an in-app clipboard, <b>✂ Cut</b> does the same and then removes them from the page, and <b>✕ Clear</b> just deselects. While the clipboard holds something, every panel header shows a <b>📋 Paste</b> chip that inserts the copied panels <i>before</i> that panel, contiguously, using the same full-page reflow as Duplicate (asking first if the page is full). <b>Paste</b> consumes a <b>Cut</b> — its chip disappears afterwards — while a <b>Copy</b> stays on the clipboard so you can paste it again and again until you copy something else. The clipboard lives in this tab only and is never saved with the project.</p>
-          <div class="panel-header-btns" style="margin-top:0;justify-content:flex-start;">
-            <button class="btn-view" data-action="w1-43" title="Select every panel on this page">☑ Select all panels</button>
-            <button class="btn-view" data-action="w1-44" title="Copy the selected panels to the clipboard (their settings and images)">📋 Copy</button>
-            <button class="btn-view" data-action="w1-45" title="Copy the selected panels to the clipboard and remove them from the page">✂ Cut</button>
-            <button class="btn-clear" data-action="w1-46" title="Clear the selection (Esc)">✕ Clear selection</button>
-          </div>
-          <p class="lib-hint" style="margin-top:16px;"><b>The whole-selection buttons, in one place.</b> These are the same actions as the ones in a selected panel's <b>⚙ Panel</b> menu (and its <b>⇅ Move</b>), so you can run them without opening a panel first. They are greyed out until at least one panel is selected, and their labels show the count. When an action needs a position — <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>⇅ Move</b>, <b>⚡ Generate All To Here</b> and the range picker — it works from the <b>last selected panel</b>, exactly as it does when you click it inside a panel. The destructive ones (<b>🗑 Clear Images</b>, <b>🗑 Clear</b>, <b>🗑 Delete</b>) still ask first. <b>⟳ Refresh descriptions</b> refills the <b>Basic Description</b> of every character and location line in the selected panels from what is saved in your library, leaving lines that have no library description (and the <i>Panel Specific Description</i> boxes and Action prompts) as they are.</p>
-          <div id="selMenuHint" class="lib-hint" style="color:var(--text-8);">Select at least one panel (the checkbox at the left of a panel's header) to use these buttons.</div>
-          <div class="panel-header-btns" style="margin-top:6px;justify-content:flex-start;">
-            <button class="btn-reroll" id="selMenuGenBtn" data-action="w1-47" disabled title="Generate every selected panel (with several selected, the in-panel button does the same)">🔄 Generate</button>
-            <button class="btn-add-lib" id="selMenuGenToBtn" data-action="w1-48" disabled title="Generate from panel 1 up to and including the last selected panel">⚡ Generate All To Here</button>
-            <button class="btn-add-lib" id="selMenuGenFromBtn" data-action="w1-49" disabled title="Generate from the first selected panel to the end of the page">⚡ Generate All From Here</button>
-            <button class="btn-add-lib" id="selMenuGenRangeBtn" data-action="w1-50" disabled title="Choose an inclusive range of panels to generate — it starts out as the selected span">⚡ Generate (x) to (y)…</button>
-            <button class="btn-dup" id="selMenuDupBtn" data-action="w1-51" disabled title="Duplicate every selected panel — each copy sits right after its original, with no images">⧉ Duplicate</button>
-            <button class="btn-add-panel" id="selMenuAddBtn" data-action="w1-52" disabled title="Add one new empty panel per selected panel, after the last selected panel">＋ Add Panel</button>
-            <button class="btn-reorder" id="selMenuMoveBtn" data-action="w1-53" disabled title="Move the selected panels as a block — the picker opens on the last selected panel">⇅ Move</button>
-            <button class="btn-view" id="selMenuRefreshBtn" data-action="w1-54" disabled title="Refill the Basic Description of every character and location line in the selected panels from your library">⟳ Refresh descriptions</button>
-            <button class="btn-clear btn-clear-images" id="selMenuClearImgsBtn" data-action="w1-55" disabled title="Remove all generated images from every selected panel, keeping their characters, location, and action">🗑 Clear Images</button>
-            <button class="btn-clear" id="selMenuClearBtn" data-action="w1-56" disabled title="Remove all images, characters, locations, and descriptions from every selected panel">🗑 Clear</button>
-            <button class="btn-del-panel" id="selMenuDelBtn" data-action="w1-57" disabled style="background:var(--red);color:#fff;" title="Delete every selected panel — later panels move up and are renumbered">🗑 Delete</button>
-          </div>
-        </div>
         <div class="help-panel reset-panel">
           <h3>Reset to Defaults</h3>
           <p class="lib-hint">Restores all page settings (keywords, seed, panel count, NSFW flag, presets), clears every panel's selections and images, and returns the page to its factory state. This cannot be undone — use <b>📄 File → Backup Project</b> first if you want a way back.</p>
@@ -1103,6 +1107,37 @@ color-scheme:light;
           </label>
         </div>
       </div>
+      <div class="menu-group" id="menuGroup-view" hidden>
+        <div class="config-panel">
+          <div class="config-header"><h2>View</h2></div>
+          <div class="input-group">
+            <label>Views:</label>
+            <div class="chip-row">
+              <button class="btn-add-lib" data-action="w1-0" title="Temporarily hide the whole UI and show every panel of the current page as a comic-page grid">▦ Storyboard View</button>
+              <button class="btn-view" id="viewFocusBtn" data-action="w1-148" title="Open the selected panels in the focus view" disabled>🔍 Focus selected panels</button>
+            </div>
+            <div class="lib-hint">Storyboard shows every panel of the current page as a comic-page grid. Focus opens just the selected panels, stacked vertically, with the list, dropdown and prev/next cycling within the set.</div>
+          </div>
+          <div class="input-group">
+            <label>Tools:</label>
+            <div class="chip-row">
+              <button class="btn-view" data-action="w1-42" title="Open the project as an editable JSON document">🧩 Open JSON Editor</button>
+              <button class="btn-view" data-action="w1-79" title="Cross-reference your library items against every panel on a page">📊 Open Analysis</button>
+              <button class="btn-view" data-action="w1-81" title="Open the full user manual in a new tab">📖 Open User Manual</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Display:</label>
+            <div class="chip-row">
+              <button class="menu-toggle" data-action="w1-1" title="Show or hide the menu panel">☰ Show / Hide Menu</button>
+              <button class="layout-toggle" data-action="w1-2" title="Move the menu to the top or to the side of the screen">▤ Menu layout</button>
+              <button class="menu-fs-toggle" data-action="w1-3" title="Show the whole menu in a full-screen overlay">⛶ Full Screen</button>
+              <button class="btn-view" data-action="w1-4" title="Show or hide all panel cards">▧ Show / Hide Panels</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="menu-group" id="menuGroup-library" hidden>
         <div class="library-section">
           <p class="lib-hint">Reusable characters and locations. <b>📁 This project</b> is the library this project owns — it is saved inside the project, and it is what the panel dropdowns use. <b>🗂 My catalogue</b> is the reusable set saved in this browser and shared by every project; copy an item in with <b>⤓</b> (or offer one back to the catalogue with <b>⤒</b>). Use the green <b>+</b> button next to a section heading to add a new item, or create one right from a panel (＋ New Character… / ＋ New Location…).</p>
@@ -1121,8 +1156,8 @@ color-scheme:light;
           <h3>How to Use</h3>
           <ol>
             <li><b>Pick your page size</b> — open <b>📄 File</b> and choose how many panels you want (1, 4, 6, 12, or 24). Each menu section's panels start collapsed — click a panel's header (e.g. "Page Setup") to expand its options.</li>
-            <li><b>Work across pages</b> — open <b>📄 File → Page Setup → Page:</b> to add, name, switch, and delete pages. Each page has its own number of panels, its own seed, and its own panels; the app-wide settings (image size, art style, NSFW flag) are shared. Generating and both view modes always act on the current page, and images are remembered per page in memory until you reload.</li>
-            <li><b>Set the art style</b> — open <b>🎨 Edit</b> for art style &amp; palette presets, hand-edit the global positive/negative keywords, or view and copy the full list in the <b>Keyword List</b>. To control how literally the AI follows your words, use the <b>Prompt Obedience</b> slider in <b>📄 File → Page Setup</b> (1–30; 7 is the balanced default). Low values are loose and free, high values are very faithful but with diminishing returns — past ~15 colors oversaturate and halo / text artifacts appear.</li>
+            <li><b>Work across pages</b> — open <b>🎨 Edit → Page:</b> to add, name, switch, and delete pages. Each page has its own number of panels, its own seed, and its own panels; the app-wide settings (image size, art style, NSFW flag) are shared. Generating and both view modes always act on the current page, and images are remembered per page in memory until you reload.</li>
+            <li><b>Set the art style</b> — open <b>🎨 Edit</b> for art style &amp; palette presets, hand-edit the global positive/negative keywords, or view and copy the full list in the <b>Keyword List</b>. To control how literally the AI follows your words, use the <b>Prompt Obedience</b> slider in <b>🎨 Edit → Page</b> (1–30; 7 is the balanced default). Low values are loose and free, high values are very faithful but with diminishing returns — past ~15 colors oversaturate and halo / text artifacts appear.</li>
             <li><b>Fill in each panel</b> — for every panel, choose up to 3 characters, a location, and an optional action like "kicking the door down". The <code>modifier</code> boxes let you tweak a character's look or mood per panel. Use the <b>Images</b> selector in each panel's header to render 1–4 images from the same prompt (variations of the same scene), <b>📄 File → Images per Panel</b> sets the default that new and blank panels start at — it is saved with the project, so it is still set the next time you open the app — and its <b>Apply to all</b> button sets every panel at once. A panel renders as long as it has <i>any</i> content — a character, location, or action. Completely empty panels (no prompt beyond the presets) are skipped automatically. The character dropdowns list your saved library characters first, with the "No Character Selected" option at the bottom.</li>
             <li><b>Title and reorder your panels</b> — each panel's title bar has a <b>title box</b> (right of "Panel N", display-only — it isn't added to the prompt). The <code>⇅ Move</code> chip opens a 1-to-N picker: choose a position to move that panel there, shifting the panels in between (e.g. moving panel 5 to position 2 makes it Panel 2, and the old 2–4 each move up one). Everything about a panel — title, characters, modifiers, location, action, panel seed, image count, and prompt override — moves with it, and the arrangement survives reloads and is included in your settings backup/import.</li>
             <li><b>Use saved descriptions</b> — add reusable character or location descriptions in <b>📚 Library</b>. It shows <b>📁 This project</b> (the characters and locations this project owns — saved inside the project and used by its panel dropdowns) and <b>🗂 My catalogue</b> (the reusable set saved in this browser and shared by every project). Copy a catalogue item into this project with <b>⤓</b>; offer one back to the catalogue with <b>⤒</b> to reuse it elsewhere. Tick the checkbox on any row to select it — shift-click a checkbox to select a whole range, or use <b>☑ Select all</b> under a section heading — and the <b>⤒</b>, <b>⤓</b> and <b>🗑</b> buttons on a selected row then act on every selected item at once. A panel uses a saved character only when you explicitly select it in a character slot; it never draws one in automatically. The <b>⛶ Full Screen</b> button opens the Library in a full-screen overlay — the same live list, so your edits save as you type — which is a lot easier to work with on a phone; leave it with <b>← Back to page</b> or <b>Esc</b>. The <b>⬆ Import…</b> button there pulls saved characters/locations (and actions, if the file has them) out of a project file — a <code>.json</code> backup or a <code>.zip</code> — <b>into My catalogue</b>, so you can reuse them in another project; you pick which items to bring in and can edit them first. The <b>📊 Analysis</b> button opens a matrix of your library items against the current page's panels — a ✅ marks each item a panel uses, and you can edit that panel's per-item description right in the grid (or <b>＋ Add</b> an unused item to a panel).</li>
@@ -1266,7 +1301,7 @@ color-scheme:light;
       <select id="analysisGlobalStyle" data-action="w1-104" title="Project default art style (Edit → Art Style &amp; Color Palette Presets)"></select>
     </span>
     <span class="agb-item"><label for="analysisGlobalSize">Size</label>
-      <select id="analysisGlobalSize" data-action="w1-105" title="Project default image size (File → Page Setup)"></select>
+      <select id="analysisGlobalSize" data-action="w1-105" title="Project default image size (Edit → Page)"></select>
       <span class="agb-custom" id="analysisGlobalSizeCustom" hidden>
         <input id="analysisGlobalSizeW" class="agb-num" type="number" min="64" max="1920" placeholder="W" data-action="w1-106">
         <input id="analysisGlobalSizeH" class="agb-num" type="number" min="64" max="1080" placeholder="H" data-action="w1-106">
@@ -1420,8 +1455,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.34 — 2026-10-04 — Focus takes a set: multi-panel focus
-- Focus now opens a set of panels stacked vertically: selecting several panels and running Focus shows them all, with the list, dropdown and prev/next cycling within the set. Single-panel Focus is unchanged, and the selection stays live behind the view.
+## 2026.10.04.35 — 2026-10-04 — Commands regrouped: File / Edit / View
+- The command palette is regrouped: File first, then Edit (Undo, Select all, Copy, Cut, new Paste, Clear, plus Edit › Panel and Edit › Page sublevels), then View (Focus greyed unless panels are selected), then Generate, Library and Danger. New Edit → Paste inserts the clipboard before the first selected panel (greyed when nothing is selected or the clipboard is empty); Copy, Cut and Focus grey with no selection too. The menu bar gains a View menu between Edit and Library, and Page Setup moved into Edit as the Page section.
 </script>
 
 
@@ -3171,7 +3206,7 @@ color-scheme:light;
   }
 
   function menuFullscreenSectionName() {
-    const names = { file: '📄 File', edit: '🎨 Edit', library: '📚 Library', help: '❓ Help' };
+    const names = { file: '📄 File', edit: '🎨 Edit', view: '👁 View', library: '📚 Library', help: '❓ Help' };
     for (const g of document.querySelectorAll('.menu-group')) {
       if (!g.hidden) return names[g.id.replace('menuGroup-', '')] || '';
     }
@@ -5772,7 +5807,7 @@ color-scheme:light;
                 </div>
                 <div class="panel-imgs-sel">
                   <label for="panel-size-${i}">Size:</label>
-                  <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
+                  <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in Edit → Page">
                     <option value="" selected>[Default (Global)]</option>
                     <option value="512x512">512 × 512</option>
                     <option value="768x768">768 × 768</option>
@@ -6377,6 +6412,9 @@ color-scheme:light;
       b.textContent = entry[1];
       b.disabled = n === 0;
     }
+    for (const b of document.querySelectorAll('[data-action="w1-44"], [data-action="w1-45"]')) b.disabled = n === 0;
+    for (const b of document.querySelectorAll('[data-action="w1-148"]')) b.disabled = n === 0;
+    syncPasteBtn();
     const menuHint = document.getElementById('selMenuHint');
     if (menuHint) menuHint.hidden = n > 0;
     for (const rb of document.querySelectorAll('.pl-base-refresh')) {
@@ -6475,6 +6513,7 @@ color-scheme:light;
       b.textContent = n ? ('📋 Paste ' + n) : '📋 Paste';
       b.title = n ? ('Insert the ' + n + ' copied panel' + (n === 1 ? '' : 's') + ' here, before Panel ' + i + ' — anything that no longer fits reflows onto the following page') : '';
     }
+    syncPasteBtn();
   }
 
   function positionAddPageFab() {
@@ -6559,8 +6598,27 @@ color-scheme:light;
     }
   }
 
-  async function panelPasteAction(i) {
+  function pasteBeforeSelection() {
     const statusEl = document.getElementById('statusEl');
+    const total = getPanelCount();
+    const sel = panelSelectionSorted().filter(i => i <= total);
+    if (!sel.length) {
+      if (statusEl) statusEl.textContent = '⚠ Select at least one panel first — Paste inserts before the first selected panel.';
+      return;
+    }
+    if (!clipboardCount()) {
+      if (statusEl) statusEl.textContent = '⚠ Nothing on the clipboard — Copy or Cut some panels first.';
+      return;
+    }
+    panelPasteAction(sel[0]);
+  }
+
+  function syncPasteBtn() {
+    const dis = panelSelection.size === 0 || clipboardCount() === 0;
+    for (const b of document.querySelectorAll('[data-action="w1-149"]')) b.disabled = dis;
+  }
+
+  async function panelPasteAction(i) {    const statusEl = document.getElementById('statusEl');
     const n = clipboardCount();
     if (!n) return;
     const total = getPanelCount();
@@ -7154,45 +7212,46 @@ color-scheme:light;
     runPanelSingle(i);
   }
   const PALETTE_COMMANDS = [
+    { t: "Save…", g: "File", act: "w1-17" },
+    { t: "Save as…", g: "File", act: "w1-18" },
+    { t: "Export Project (.zip)", g: "File", act: "w1-19" },
+    { t: "Import Project (.json / .zip)", g: "File", act: "w1-20" },
+    { t: "Backup to GitHub…", g: "File", act: "w1-21" },
+    { t: "New Project", g: "File", act: "w1-22" },
+    { t: "Open recent…", g: "File", act: "w1-25" },
+    { t: "Clear recent list", g: "File", act: "w1-26" },
+    { t: "Undo", g: "Edit", act: "w1-15" },
+    { t: "Select all panels", g: "Edit", act: "w1-43" },
+    { t: "Copy", g: "Edit", act: "w1-44" },
+    { t: "Cut", g: "Edit", act: "w1-45" },
+    { t: "Paste", g: "Edit", act: "w1-149" },
+    { t: "Clear selection", g: "Edit", act: "w1-46" },
+    { t: "Generate selected panels", g: "Edit › Panel", act: "w1-47" },
+    { t: "Generate All To Here", g: "Edit › Panel", act: "w1-48" },
+    { t: "Generate All From Here", g: "Edit › Panel", act: "w1-49" },
+    { t: "Generate (x) to (y)…", g: "Edit › Panel", act: "w1-50" },
+    { t: "Add Panel", g: "Edit › Panel", act: "w1-52" },
+    { t: "Duplicate", g: "Edit › Panel", act: "w1-51" },
+    { t: "Move", g: "Edit › Panel", act: "w1-53" },
+    { t: "Refresh descriptions", g: "Edit › Panel", act: "w1-54" },
+    { t: "Clear Images", g: "Edit › Panel", act: "w1-55" },
+    { t: "Clear", g: "Edit › Panel", act: "w1-56" },
+    { t: "Delete", g: "Edit › Panel", act: "w1-57" },
+    { t: "Add Page", g: "Edit › Page", act: "w1-7" },
+    { t: "Delete Page", g: "Edit › Page", act: "w1-28" },
+    { t: "Renumber Page", g: "Edit › Page", act: "w1-29" },
+    { t: "Storyboard", g: "View", act: "w1-0" },
+    { t: "Focus selected panels", g: "View", act: "w1-148" },
+    { t: "Open JSON Editor", g: "View", act: "w1-42" },
+    { t: "Open Analysis", g: "View", act: "w1-79" },
+    { t: "Open Manual", g: "View", act: "w1-81" },
+    { t: "Show / Hide Menu", g: "View", act: "w1-1" },
+    { t: "Menu layout", g: "View", act: "w1-2" },
+    { t: "Full Screen", g: "View", act: "w1-3" },
+    { t: "Show / Hide Panels", g: "View", act: "w1-4" },
     { t: "Generate All", g: "Generate", act: "w1-12" },
     { t: "Pause", g: "Generate", act: "w1-13" },
     { t: "Stop", g: "Generate", act: "w1-14" },
-    { t: "Generate selected panels", g: "Generate", act: "w1-47" },
-    { t: "Generate All To Here", g: "Generate", act: "w1-48" },
-    { t: "Generate All From Here", g: "Generate", act: "w1-49" },
-    { t: "Generate (x) to (y)…", g: "Generate", act: "w1-50" },
-    { t: "Undo", g: "Edit", act: "w1-15" },
-    { t: "Select all panels", g: "Selection", act: "w1-43" },
-    { t: "Copy", g: "Selection", act: "w1-44" },
-    { t: "Cut", g: "Selection", act: "w1-45" },
-    { t: "Clear selection", g: "Selection", act: "w1-46" },
-    { t: "Duplicate", g: "Selection", act: "w1-51" },
-    { t: "Add Panel", g: "Selection", act: "w1-52" },
-    { t: "Move", g: "Selection", act: "w1-53" },
-    { t: "Refresh descriptions", g: "Selection", act: "w1-54" },
-    { t: "Clear Images", g: "Selection", act: "w1-55" },
-    { t: "Clear", g: "Selection", act: "w1-56" },
-    { t: "Delete", g: "Selection", act: "w1-57" },
-    { t: "Add Page", g: "Page", act: "w1-7" },
-    { t: "Delete Page", g: "Page", act: "w1-28" },
-    { t: "Renumber Page", g: "Page", act: "w1-29" },
-    { t: "Save…", g: "Project", act: "w1-17" },
-    { t: "Save as…", g: "Project", act: "w1-18" },
-    { t: "Export Project (.zip)", g: "Project", act: "w1-19" },
-    { t: "Import Project (.json / .zip)", g: "Project", act: "w1-20" },
-    { t: "Backup to GitHub…", g: "Project", act: "w1-21" },
-    { t: "New Project", g: "Project", act: "w1-22" },
-    { t: "Open recent…", g: "Project", act: "w1-25" },
-    { t: "Clear recent list", g: "Project", act: "w1-26" },
-    { t: "Storyboard", g: "Views", act: "w1-0" },
-    { t: "Focus selected panels", g: "Views", act: "w1-148" },
-    { t: "Open JSON Editor", g: "Views", act: "w1-42" },
-    { t: "Open Analysis", g: "Views", act: "w1-79" },
-    { t: "Open Manual", g: "Views", act: "w1-81" },
-    { t: "Show / Hide Menu", g: "Views", act: "w1-1" },
-    { t: "Menu layout", g: "Views", act: "w1-2" },
-    { t: "Full Screen", g: "Views", act: "w1-3" },
-    { t: "Show / Hide Panels", g: "Views", act: "w1-4" },
     { t: "Import library…", g: "Library", act: "w1-78" },
     { t: "Copy style keywords", g: "Library", act: "w1-40" },
     { t: "Copy negative keywords", g: "Library", act: "w1-41" },
@@ -10391,7 +10450,7 @@ color-scheme:light;
     }
   }
 
-  const MENU_NAMES = ['file', 'edit', 'library', 'help'];
+  const MENU_NAMES = ['file', 'edit', 'view', 'library', 'help'];
 
   function setupMenuCollapse() {
     for (const panel of document.querySelectorAll('.menu-group .config-panel, .menu-group .help-panel')) {
@@ -12640,6 +12699,8 @@ color-scheme:light;
     "w1-146": { ev: "click", run: (el, e) => { paletteToggle() } },
     "w1-147": { ev: "click", run: (el, e) => { paletteClose() } },
     "w1-148": { ev: "click", run: (el, e) => { focusSelectedPanels() } },
+    "w1-149": { ev: "click", run: (el, e) => { pasteBeforeSelection() } },
+    "w1-150": { ev: "click", run: (el, e) => { switchMenu('view') } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
@@ -12737,7 +12798,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
