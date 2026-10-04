@@ -2,7 +2,7 @@
 ### 2026-10-04 — P5 W1: static handlers to delegation (IMPLEMENTATION)
 - **Status:** 🟢 START NOW (author, verbatim: "Your recommendations, and go!") — all four recon questions per recommendation: static-first order, debug hooks kept, data-action dispatchers per area, backup/auth handlers last.
 - **Scope:** convert the 153 static-markup inline handlers to data-action delegation; delete only exports made newly-dead; debug hooks kept. One version (2026.10.04.21). Full suites + byte-identical restore before push.
-- **Status:** ✅ **DONE 2026.10.04.21** — shipped, all suites green (23/77/114/18/18/38, 0 errors, byte-identical restores), pushed pre-Save; re-push after Save captures the new index.html. No exports deleted (101 test-referenced); dynamic card handlers deferred to W2.
+- **Status:** ✅ **DONE 2026.10.04.21** — shipped, all suites green (23/77/114/18/18/38, 0 errors, byte-identical restores), pushed pre-Save; re-pushed post-Save (## 2026.10.04.21 — 2026-10-04 — 🧭 P5 wave 1: static control now in repo). No exports deleted (101 test-referenced); dynamic card handlers deferred to W2.
 
 ### 2026-10-04 — P5 UI-layer extraction RECON (read-only, no code)
 - **Status:** 🟢 START NOW (author, verbatim: "P5 recon, go!")
