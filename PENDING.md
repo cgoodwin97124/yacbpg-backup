@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Context menu recon START (author, verbatim: "Let's start the recon.")
+- **Status:** 🟢 START NOW — recon only (existing panel menu + contextmenu/long-press hooks, catalog mapping, Copy-prompt action), questions next, no code until greenlit.
+
 ### 2026-10-04 — Commands phase 0 DONE 2026.10.04.35 (palette File/Edit/View + View menu + Paste, no cursor code)
 - **Status:** ✅ DONE — palette regrouped, View menu button + group, Page Setup moved to Edit as Page section, new Paste (insert-before-first-selected, no overwrite), Copy/Cut/Paste/Focus grey with none selected. Suites green (smoke 114/0, state-diff 38/0, gen 18/0, fixtures 18/0, core 77/0, diff-core 24/0, byte-identical, 0 errors). Pushed pre-Save (18 files) BUT repo index.html is still .34: ghPush reads the served (saved) page, so .35 lands only after Save + re-push. ✅ re-pushed post-Save, repo index.html verified ## 2026.10.04.35 (18 files).
 
