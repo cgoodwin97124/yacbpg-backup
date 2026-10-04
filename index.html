@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.22 — 2026-10-04 — 🧭 P5 wave 2: panel cards answer through delegation
-- All 82 template-built controls (panel cards, image slots, history rows) now answer through the same delegated listeners, carrying their panel index in data attributes; no test changes were needed and every function and export stays. Zero behavior change.
+## 2026.10.04.23 — 2026-10-04 — 🧭 P5 wave 3a: the test API moves behind window.__dbg
+- The suites now reach the app through one window.__dbg namespace instead of 92 flat window names, which are deleted; debug hooks, the boot gate and the already-namespaced debug names stay exactly where they were. Zero behavior change.
 </script>
 
 
@@ -10662,42 +10662,42 @@ color-scheme:light;
     applyLayoutMode(cur === 'side' ? 'top' : 'side');
   }
 
-  window.switchMenu = switchMenu;
+
   window.applyMenu = applyMenu;
   window.toggleMenu = toggleMenu;
-  window.applyPreset = applyPreset;
+
   window.updateResetControls = updateResetControls;
-  window.resetEverything = resetEverything;
+
   window.copyKeywords = copyKeywords;
-  window.buildPanelGrid = buildPanelGrid;
-  window.updatePanelVisibility = updatePanelVisibility;
+
+
   window.onPanelCountChange = onPanelCountChange;
-  window.generateSinglePanel = generateSinglePanel;
-  window.generateSinglePanelSlot = generateSinglePanelSlot;
-  window.generateComicPage = generateComicPage;
-  window.pauseGenerations = pauseGenerations;
+
+
+
+
   window.copyPanelPrompt = copyPanelPrompt;
   window.copyPromptHistoryEntry = copyPromptHistoryEntry;
   window.generateFromPromptHistory = generateFromPromptHistory;
   window.renderPromptHistory = renderPromptHistory;
   window.copyImageToAction = copyImageToAction;
-  window.togglePromptEditor = togglePromptEditor;
-  window.buildPanelPrompt = buildPanelPrompt;
+
+
   window.getMaps = getMaps;
   window.showPanelImage = showPanelImage;
   window.observePanelCard = observePanelCard;
-  window.toggleLayout = toggleLayout;
+
   window.syncSideMenuHeight = syncSideMenuHeight;
   window.clearPanelImage = clearPanelImage;
-  window.clearPanelImages = clearPanelImages;
-  window.clearPanelImageSlot = clearPanelImageSlot;
-  window.onPanelImgCountChange = onPanelImgCountChange;
+
+
+
   window.onPanelStyleChange = onPanelStyleChange;
   window.onPanelPaletteChange = onPanelPaletteChange;
   window.onPanelSizeChange = onPanelSizeChange;
   window.onPanelSameSeedChange = onPanelSameSeedChange;
-  window.panelSameSeedOn = panelSameSeedOn;
-  window.setPanelSameSeed = setPanelSameSeed;
+
+
   window.togglePanelAcc = togglePanelAcc;
   window.togglePanelLine = togglePanelLine;
   window.showPanelMenus = showPanelMenus;
@@ -10706,29 +10706,29 @@ color-scheme:light;
   window.updatePanelSummary = updatePanelSummary;
   window.applyAllImageCount = applyAllImageCount;
   window.onBulkImgCountChange = onBulkImgCountChange;
-  window.makeRepresentative = makeRepresentative;
-  window.toggleSlotProtect = toggleSlotProtect;
-  window.duplicatePanel = duplicatePanel;
-  window.addPanel = addPanel;
-  window.deletePanel = deletePanel;
-  window.undoStructuralOp = undoStructuralOp;
-  window.revertPanelPrompt = revertPanelPrompt;
-  window.onPanelSelectClick = onPanelSelectClick;
-  window.selectAllPanels = selectAllPanels;
-  window.clearPanelSelection = clearPanelSelection;
+
+
+
+
+
+
+
+
+
+
   window.updateSelectionUI = updateSelectionUI;
   window.panelDuplicateAction = panelDuplicateAction;
   window.panelAddAction = panelAddAction;
-  window.batchDuplicatePanels = batchDuplicatePanels;
-  window.batchAddPanels = batchAddPanels;
-  window.panelCopyAction = panelCopyAction;
-  window.panelCutAction = panelCutAction;
-  window.panelPasteAction = panelPasteAction;
+
+
+
+
+
   window.updatePasteUI = updatePasteUI;
   window.positionAddPageFab = positionAddPageFab;
-  window.batchMoveToPage = batchMoveToPage;
+
   window.batchMoveToNewPage = batchMoveToNewPage;
-  window.moveSelectionWithinPage = moveSelectionWithinPage;
+
   window.panelGenerateAction = panelGenerateAction;
   window.panelGenerateFromHereAction = panelGenerateFromHereAction;
   window.panelGenerateToHereAction = panelGenerateToHereAction;
@@ -10736,18 +10736,18 @@ color-scheme:light;
   window.panelClearAction = panelClearAction;
   window.panelClearImagesAction = panelClearImagesAction;
   window.panelDeleteAction = panelDeleteAction;
-  window.batchDeletePanels = batchDeletePanels;
+
   window.showChoiceDialog = showChoiceDialog;
-  window.choiceDialogPick = choiceDialogPick;
-  window.openSingleView = openSingleView;
-  window.closeSingleView = closeSingleView;
-  window.singleNav = singleNav;
+
+
+
+
   window.singleNavTo = singleNavTo;
-  window.openStoryboard = openStoryboard;
-  window.closeStoryboard = closeStoryboard;
-  window.switchPage = switchPage;
-  window.addPage = addPage;
-  window.deletePage = deletePage;
+
+
+
+
+
   window.pageNavDelta = pageNavDelta;
   window.updatePageNav = updatePageNav;
   window.syncFocusControls = syncFocusControls;
@@ -10755,26 +10755,26 @@ color-scheme:light;
   window.onPageSummaryInput = onPageSummaryInput;
   window.togglePageRenumberPicker = togglePageRenumberPicker;
   window.onPageRenumberSelect = onPageRenumberSelect;
-  window.renumberPageTo = renumberPageTo;
-  window.clearPanelSeed = clearPanelSeed;
-  window.copySeedFromPrevPanel = copySeedFromPrevPanel;
-  window.movePanelToPage = movePanelToPage;
+
+
+
+
   window.movePanelToNewPage = movePanelToNewPage;
-  window.storyboardNavDelta = storyboardNavDelta;
+
   window.renderStoryboardPage = renderStoryboardPage;
   window.updateStoryboardNav = updateStoryboardNav;
   window.onProjectNameInput = onProjectNameInput;
   window.toggleReorderPicker = toggleReorderPicker;
   window.onReorderSelect = onReorderSelect;
-  window.resequencePanel = resequencePanel;
+
   window.openPanelImage = openPanelImage;
   window.savePanelImage = savePanelImage;
   window.openPanelAll = openPanelAll;
   window.savePanelAll = savePanelAll;
   window.onImageSizeChange = onImageSizeChange;
   window.onGuidanceScaleChange = onGuidanceScaleChange;
-  window.exportSettings = exportSettings;
-  window.exportZip = exportZip;
+
+
   window.parseZipImages = parseZipImages;
   window.repopulateImportedImages = repopulateImportedImages;
   window.imgSlotUrl = imgSlotUrl;
@@ -10792,18 +10792,18 @@ color-scheme:light;
   window.confirmNewProjectSave = confirmNewProjectSave;
   window.confirmNewProjectNoSave = confirmNewProjectNoSave;
   window.cancelNewProject = cancelNewProject;
-  window.haltGenerations = haltGenerations;
+
   window.setStopButtonEnabled = setStopButtonEnabled;
   window.togglePanels = togglePanels;
   window.onHidePasswordPrefChange = onHidePasswordPrefChange;
   window.onPrefMenuFullscreenChange = onPrefMenuFullscreenChange;
   window.onPrefGenAlwaysVisibleChange = onPrefGenAlwaysVisibleChange;
-  window.onPrefBgGenerateChange = onPrefBgGenerateChange;
-  window.onPrefKeepAwakeChange = onPrefKeepAwakeChange;
-  window.applyKeepAwake = applyKeepAwake;
+
+
+
   window.startKeepAwake = startKeepAwake;
-  window.stopKeepAwake = stopKeepAwake;
-  window.keepAwakeStateText = keepAwakeStateText;
+
+
   window.onPrefHdrAllViewsChange = onPrefHdrAllViewsChange;
   window.onThemeModeChange = onThemeModeChange;
   window.onAccentChange = onAccentChange;
@@ -10816,7 +10816,7 @@ color-scheme:light;
   window.togglePwEye = togglePwEye;
   window.confirmSetPassword = confirmSetPassword;
   window.confirmEnterPassword = confirmEnterPassword;
-  window.openUserManual = openUserManual;
+
 
   const MANUAL_CMD_REF = {
     findPanelById: { sig: '(id)', ro: true, desc: 'Read-only lookup. Returns { page, index } for a stable panel id. Changes nothing.' },
@@ -11017,55 +11017,55 @@ color-scheme:light;
   window.__openRound2Form = function () { return openDevForm('src/round2-form.html', 'Refactor round 2 — the state layer (P2)'); };
   window.__openRefImagesForm = function () { return openDevForm('src/refimages-form.html', 'Reference images — the hooks'); };
   window.__openBatchForm = function () { return openDevForm('src/batch-form.html', 'Batch structural commands — the questions'); };
-  window.closeUserManual = closeUserManual;
+
   window.deletePanelChar = deletePanelChar;
   window.deletePanelLoc = deletePanelLoc;
   window.deletePanelAct = deletePanelAct;
-  window.copyFromPrevPanel = copyFromPrevPanel;
-  window.refreshPanelLineBase = refreshPanelLineBase;
+
+
   window.refreshPanelLineFromLibrary = refreshPanelLineFromLibrary;
   window.pickPanelDescription = pickPanelDescription;
-  window.savePanelDescription = savePanelDescription;
+
   window.refreshPanelDescBadge = refreshPanelDescBadge;
   window.panelDescOptionsHtml = panelDescOptionsHtml;  window.batchRefreshPanelLineBases = batchRefreshPanelLineBases;
   window.selMenuAction = selMenuAction;
   window.updateCopyPrevChipStates = updateCopyPrevChipStates;
-  window.newPanelLibraryEntry = newPanelLibraryEntry;
-  window.addLibraryEntryByType = addLibraryEntryByType;
+
+
   window.openLibraryRename = openLibraryRename;
-  window.applyLibraryRename = applyLibraryRename;
-  window.loadLibraryObjects = loadLibraryObjects;
-  window.saveLibraryObjects = saveLibraryObjects;
-  window.renderLibrary = renderLibrary;
+
+
+
+
   window.loadCatalogue = loadCatalogue;
   window.saveCatalogue = saveCatalogue;
   window.initProjectLibrary = initProjectLibrary;
-  window.projectLibraryArray = projectLibraryArray;
+
   window.loadKept = loadKept;
-  window.saveKept = saveKept;
+
   window.initProjectKept = initProjectKept;
-  window.projectKeptArray = projectKeptArray;
+
   window.initProjectStore = initProjectStore;
-  window.collectDomSnapshot = collectDomSnapshot;
-  window.testCollectPanelState = testCollectPanelState;
-  window.savePanelState = savePanelState;
+
+
+
   window.__storeJson = storeJsonNow;
   window.__storeModule = function () { return coreModules.store; };
   window.__schemaModule = function () { return coreModules.schema; };
   window.__commandsModule = function () { return coreModules.commands; };
   window.__imageStore = function () { return panelImageStore; };
   window.__panelOverrideSet = function (i) { return !!panelPromptOverrides[i]; };
-  window.runPanelCommand = runPanelCommand;
+
   window.renderCommittedFields = renderCommittedFields;
   window.deleteLibraryObject = deleteLibraryObject;
   window.deleteCatalogueObject = deleteCatalogueObject;
-  window.applyLibraryDelete = applyLibraryDelete;
+
   window.copyCatalogueItemToProject = copyCatalogueItemToProject;
   window.copyProjectItemToCatalogue = copyProjectItemToCatalogue;
-  window.countLibReferences = countLibReferences;
+
   window.onLibSelectClick = onLibSelectClick;
   window.selectAllLib = selectAllLib;
-  window.clearLibSelection = clearLibSelection;
+
   window.updateLibSelectionUI = updateLibSelectionUI;
   window.batchCopyToCatalogue = batchCopyToCatalogue;
   window.batchCopyToProject = batchCopyToProject;
@@ -11868,21 +11868,21 @@ color-scheme:light;
     clearTimeout(jsonUndoTimer);
     ov.hidden = true;
   }
-  window.openAnalysis = openAnalysis;
-  window.closeAnalysis = closeAnalysis;
-  window.openJsonEditor = openJsonEditor;
-  window.closeJsonEditor = closeJsonEditor;
-  window.jsonEditorInput = jsonEditorInput;
+
+
+
+
+
   window.jsonEditorSyncScroll = jsonEditorSyncScroll;
   window.jsonEditorRenderAll = jsonEditorRenderAll;
-  window.jsonEditorFindChanged = jsonEditorFindChanged;
+
   window.jsonEditorFindNext = jsonEditorFindNext;
   window.jsonEditorReplaceOne = jsonEditorReplaceOne;
-  window.jsonEditorReplaceAll = jsonEditorReplaceAll;
+
   window.jsonEditorProblem = jsonEditorProblem;
-  window.jsonEditorApply = jsonEditorApply;
+
   window.jsonEditorReload = jsonEditorReload;
-  window.jsonEditorUndoApply = jsonEditorUndoApply;
+
   window.jsonEditorCopy = jsonEditorCopy;
   window.openMenuFullscreen = openMenuFullscreen;
   window.closeMenuFullscreen = closeMenuFullscreen;
@@ -12129,11 +12129,12 @@ color-scheme:light;
     "w2-74": { ev: "click", run: (el, e) => { generateFromPromptHistory((+el.dataset.a0),(+el.dataset.a1)) } },
     "w2-75": { ev: "click", run: (el, e) => { openRecentEntry((+el.dataset.a0)) } },
   };
-  window.openGhBackup = openGhBackup;
-  window.ghClose = ghClose;
-  window.ghSaveSettings = ghSaveSettings;
+
+
+
   window.ghTest = ghTest;
-  window.ghPush = ghPush;
+
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
