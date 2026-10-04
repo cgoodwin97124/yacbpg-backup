@@ -1,4 +1,8 @@
 
+### 2026-10-04 — P5 W3b: delete the leftover flat exports (IMPLEMENTATION)
+- **Status:** 🟢 START NOW (author, verbatim: "Go!") — W3b greenlit.
+- **Scope:** recon external referrers for the 176 allowlisted names (devtests, src forms, main.pjs, dynamic window access, string-eval), keep hooks/appReady/__X/debug trio, delete the verified-dead flat assignments, shrink the diff-core allowlist. One version (2026.10.04.24). Full suites + byte-identical restore before push.
+
 ### 2026-10-04 — P5 W3a: test API behind window.__dbg, flat exports deleted (IMPLEMENTATION)
 - **Status:** 🟢 START NOW (author, verbatim: "Your recommendations, go.") — all four W3 questions per recommendation: __dbg namespace, two releases (W3a then W3b), property handlers left alone, no debug additions.
 - **Scope:** add window.__dbg with the test-referenced names, destructure in page-run suites, delete the flat assignments, add a window-allowlist guard to diff-core.js. One version (2026.10.04.23). Full suites + byte-identical restore before push.
