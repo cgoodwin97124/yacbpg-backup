@@ -4,6 +4,9 @@
 ### 2026-10-04 - Wave 2 preliminary recon
 - **Request (verbatim):** Saved. Start the preliminary steps on Wave 2 and tell me your findings in V-5.
 - **Status:** PRELIMINARY ONLY - recon the write sites, no implementation. ghPush backup for .16 runs first (author saved).
+- **Findings (2026-10-04):** 13 write sites in 7 groups: showPanelImage funnel (all gen/copy/import writes end there), 4x stop-cleanup slot deletes, gen ensure/wipe (8073/8105), representative swap, copy-dest writes (redundant with showPanelImage - deletable), 3x clears, setPageImagesFor bulk commit. Structural ops build position-map entries {panel,img} and commit via setPageImagesFor - so wave 2 needs setPage too. switchPage stops all gen first (no cross-page late writes). panelIdAt is DOM-based (fragile for wave-3 ids - needs project-based resolver). ghPush .16 backup done (18 files).
+- **Proposal:** wave 2 adds set/clearSlot/clearPanel/ensurePanel/swapSlots/setPage, storage stays position-keyed; id-flip + remap deletion + ~10 live-map indexer migrations land in wave 3. Wholesale resets to wave 3.
+- **Questions:** (1) wave-2 scope as listed - good? (2) id-flip deferred to wave 3 - good, or flip in wave 2? (3) wholesale resets ride with wave 3 - good?
 
 
 ### 2026-10-03 - Elaborate P4 questions in V-5
