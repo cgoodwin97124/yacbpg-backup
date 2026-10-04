@@ -162,6 +162,14 @@ color-scheme:light;
   #panelsToggleBtn:hover { background: var(--hover); }
   #addPageFab { position: fixed; right: 16px; bottom: 16px; z-index: 1000; background: var(--bg); color: var(--green-text); border: 2px solid var(--green); border-radius: 6px; padding: 10px 14px; cursor: pointer; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
   #addPageFab:hover { background: var(--hover); }
+  #uiPreviewFab { position: fixed; top: 12px; right: 12px; z-index: 10006; background: var(--bg); color: var(--purple, #c9a6ff); border: 2px solid var(--purple, #8e6cc9); border-radius: 6px; padding: 10px 14px; cursor: pointer; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+  #uiPreviewFab:hover { background: var(--hover); }
+  #advSwitchWrap { display: none; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; }
+  body.ui-new #advSwitchWrap { display: inline-flex; }
+  body.ui-new.adv-off .adv:not(.adv-set) { display: none !important; }
+  #toastStack { position: fixed; left: 50%; transform: translateX(-50%); bottom: 118px; z-index: 10007; display: flex; flex-direction: column; gap: 8px; max-width: calc(100vw - 24px); width: max-content; }
+  .toast { background: var(--surface); color: var(--text); border: 2px solid var(--accent); border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); cursor: pointer; max-width: calc(100vw - 24px); }
+  #runSlot { position: fixed; left: 50%; transform: translateX(-50%); bottom: 70px; z-index: 10007; background: var(--surface); color: var(--text); border: 2px solid var(--green); border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.6); max-width: calc(100vw - 24px); }
   #pageNav { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 1001; display: flex; align-items: center; gap: 6px; background: var(--bg); color: var(--green-text); border: 2px solid var(--green); border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
   #pageNav[hidden] { display: none; }
   .page-nav-btn { background: var(--bg); color: var(--green-text); border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; padding: 4px 10px; border-radius: 4px; }
@@ -758,6 +766,7 @@ color-scheme:light;
     <button class="menu-toggle" id="menuToggleBtn" data-action="w1-1" title="Show or hide the menu panel">☰ Hide Menu</button>
     <button class="layout-toggle" id="layoutToggleBtn" data-action="w1-2" title="Move the menu to the top or to the side of the screen">▤ Menu: Side</button>
     <button class="menu-fs-toggle" id="menuFullscreenBtn" data-action="w1-3" title="Show the whole menu in a full-screen overlay">⛶ Full Screen</button>
+    <label id="advSwitchWrap" title="Show expert controls (guidance, overrides, seeds, preview tuning)"><input type="checkbox" id="advSwitchCheck" data-action="w1-140"> Advanced</label>
     <span class="hdr-gen-ctr" id="hdrGenCtr" hidden></span>
   </div>
   <div style="flex:1 1 auto; min-width:0;">
@@ -772,6 +781,9 @@ color-scheme:light;
   <button class="page-nav-btn" data-action="w1-6" title="Next page">▶</button>
 </div>
 <button id="addPageFab" data-action="w1-7" title="Create a new empty page (4 panels) and switch to it">＋ Add Page</button>
+<button id="uiPreviewFab" data-action="w1-139" title="Preview the new P6 interface (non-destructive trial — flip back anytime)">🧪 New UI: Off</button>
+<div id="toastStack"></div>
+<div id="runSlot" hidden></div>
 <div class="page-layout">
   <div class="menu-frame" id="menuFrame">
     <div class="menu-scroll">
@@ -880,12 +892,12 @@ color-scheme:light;
               <option value="1080x1920">1080 × 1920 (9:16)</option>
               <option value="custom">Custom…</option>
             </select>
-            <div id="imageSizeCustom" hidden>
+            <div id="imageSizeCustom" class="adv" hidden>
               <input id="imgSizeW" type="number" min="64" max="1920" placeholder="Width (max 1920)">
               <input id="imgSizeH" type="number" min="64" max="1080" placeholder="Height (max 1080)">
             </div>
           </div>
-          <div class="input-group">
+          <div class="input-group adv">
             <label>Prompt Obedience (guidance scale): <span id="guidanceScaleValue" class="guidance-value g-low">7</span></label>
             <input id="guidanceScaleInput" type="range" min="1" max="30" step="1" value="7" data-action="w1-36" class="guidance-slider">
             <div class="lib-hint">How literally the AI follows your prompt. Low (1–4) = loose and free; <b>7 = balanced (default)</b>; higher = very faithful but with <b>diminishing returns</b> — past ~15 colors oversaturate and halo / text artifacts appear. Shared by every panel on all pages.</div>
@@ -903,7 +915,7 @@ color-scheme:light;
             </div>
             <div class="lib-hint"><b>Default for new and blank panels</b> — kept with the project (it rides along in Export / Import), so it is still set the next time you open the app. <b>Apply to all</b> sets the Images selector for every panel (all 24) right now; individual panels can still be changed afterwards.</div>
           </div>
-          <div class="input-group">
+          <div class="input-group adv">
             <label>Image Preview Delay (ms):</label>
             <input id="previewDelayInput" type="number" min="0" max="5000" step="50" value="350">
             <div id="previewDelayHint" class="lib-hint">How long to hover over an image (computer) or press-and-hold it (mobile) before the larger preview appears. 0 shows it instantly.</div>
@@ -1355,8 +1367,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.25 — 2026-10-04 — 🛡️ Security hardening: import size guard + full escaping
-- Imports over 100MB are refused with a status message before parsing. escapeHtml now also escapes single quotes. Zero visible change.
+## 2026.10.04.26 — 2026-10-04 — 🧪 P6 step 1: try the new UI before you commit
+- A 🧪 switch top-right previews the bundle (Advanced control hiding, toast notifications, converged danger dialogs); off on load, session-only, nothing persisted. Zero behavior change with it off.
 </script>
 
 
@@ -5681,19 +5693,19 @@ color-scheme:light;
                 ${imgCountOptionHtml()}
               </select>
             </div>
-            <div class="panel-imgs-sel">
+            <div class="panel-imgs-sel adv">
               <label for="panel-style-${i}">Style:</label>
               <select id="panel-style-${i}" data-action="w2-16" data-a0="${i}" title="Override this panel's art style — [Default (Global)] follows the global Art Style dropdown">
                 <option value="" selected>[Default (Global)]</option>
               </select>
             </div>
-            <div class="panel-imgs-sel">
+            <div class="panel-imgs-sel adv">
               <label for="panel-palette-${i}">Palette:</label>
               <select id="panel-palette-${i}" data-action="w2-17" data-a0="${i}" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
                 <option value="" selected>[Default (Global)]</option>
               </select>
             </div>
-            <div class="panel-imgs-sel">
+            <div class="panel-imgs-sel adv">
               <label for="panel-size-${i}">Size:</label>
               <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
                 <option value="" selected>[Default (Global)]</option>
@@ -5745,7 +5757,7 @@ color-scheme:light;
               </div>
             </div>
           </div>
-          <div class="panel-acc" data-collapsed="1">
+          <div class="panel-acc adv" data-collapsed="1">
             <div class="panel-acc-toggle" data-action="w2-55" title="View or edit this panel's exact prompt">📝 Prompt</div>
             <div class="panel-acc-body">
               <button class="btn-prompt" data-action="w2-56" data-a0="${i}" title="View or edit this panel's exact prompt (style keywords + content), overriding the interface-built one">📝 Prompt</button>
@@ -5784,7 +5796,7 @@ color-scheme:light;
               <button class="btn-clear btn-clear-images" id="panel-clear-imgs-btn-${i}" data-action="w2-66" data-a0="${i}" title="Remove all of this panel's images at once (keeps its characters, location, and action). With several panels selected, this clears the images of every selected panel." hidden>🗑 Clear Images</button>
               <button class="btn-clear" id="panel-clear-btn-${i}" data-action="w2-67" data-a0="${i}" title="Remove ALL of this panel's images, characters, locations, and descriptions (also stops an in-progress generation). With several panels selected, this clears every selected panel.">🗑 Clear</button>
               <button class="btn-del-panel" id="panel-del-btn-${i}" data-action="w2-68" data-a0="${i}" style="background:var(--red);color:#fff;" title="Delete this panel — later panels move up and are renumbered (its images and protection go too). With several panels selected, this deletes every selected panel, optionally pulling panels up from the following pages to keep this page full.">🗑 Delete</button>
-              <label class="check-label panel-acc-check" title="Normally this panel's images use the panel's seed, seed + 1, seed + 2… — one seed per image. Tick this to render every image of this panel with the same seed: the value in the panel's Seed box above (or the page seed + this panel's position, when that box is empty).">
+              <label class="check-label panel-acc-check adv" title="Normally this panel's images use the panel's seed, seed + 1, seed + 2… — one seed per image. Tick this to render every image of this panel with the same seed: the value in the panel's Seed box above (or the page seed + this panel's position, when that box is empty).">
                 <input type="checkbox" id="panel-sameseed-${i}" data-action="w2-69" data-a0="${i}">
                 <span><b>🎲 Same seed for every image</b> — no +1 per image.</span>
               </label>
@@ -6895,6 +6907,88 @@ color-scheme:light;
     if (r) r(value);
   }
 
+  let uiPreviewOn = false;
+  let advOff = true;
+  function toggleUiPreview() {
+    uiPreviewOn = !uiPreviewOn;
+    document.body.classList.toggle('ui-new', uiPreviewOn);
+    const fab = document.getElementById('uiPreviewFab');
+    if (fab) fab.textContent = uiPreviewOn ? '🧪 New UI: On' : '🧪 New UI: Off';
+    refreshAdvVisibility();
+    if (!uiPreviewOn) clearRunSlot();
+  }
+  function setAdvancedMode(on) {
+    advOff = !on;
+    const cb = document.getElementById('advSwitchCheck');
+    if (cb) cb.checked = !!on;
+    refreshAdvVisibility();
+  }
+  let advRefreshTimer = null;
+  function scheduleAdvRefresh() {
+    if (!uiPreviewOn) return;
+    clearTimeout(advRefreshTimer);
+    advRefreshTimer = setTimeout(refreshAdvVisibility, 300);
+  }
+  function advSetWrap(el, set) {
+    if (el) el.classList.toggle('adv-set', !!set);
+  }
+  function refreshAdvVisibility() {
+    document.body.classList.toggle('adv-off', uiPreviewOn && advOff);
+    if (!uiPreviewOn) return;
+    for (let i = 1; i <= 24; i++) {
+      for (const p of ['panel-style-', 'panel-palette-', 'panel-size-']) {
+        const sel = document.getElementById(p + i);
+        if (sel) advSetWrap(sel.closest('.panel-imgs-sel'), sel.value !== '');
+      }
+      const sw = document.getElementById('panel-size-w-' + i);
+      const sh = document.getElementById('panel-size-h-' + i);
+      advSetWrap(document.getElementById('panel-size-custom-' + i), !!((sw && sw.value) || (sh && sh.value)));
+      const ss = document.getElementById('panel-sameseed-' + i);
+      if (ss) advSetWrap(ss.closest('label'), ss.checked);
+      const pe = document.getElementById('prompt-editor-' + i);
+      if (pe) advSetWrap(pe.closest('.panel-acc'), !!panelPromptOverrides[i]);
+    }
+    const g = document.getElementById('guidanceScaleInput');
+    if (g) advSetWrap(g.closest('.input-group'), g.value !== '7');
+    const sc = document.getElementById('imageSizeSel');
+    const iw = document.getElementById('imgSizeW');
+    const ih = document.getElementById('imgSizeH');
+    advSetWrap(document.getElementById('imageSizeCustom'), !!sc && (sc.value === 'custom' || !!((iw && iw.value) || (ih && ih.value))));
+    const pd = document.getElementById('previewDelayInput');
+    const pc = document.getElementById('previewEnabledCheck');
+    if (pd && pc) advSetWrap(pd.closest('.input-group'), pd.value !== '350' || !pc.checked);
+  }
+  document.addEventListener('input', () => scheduleAdvRefresh(), true);
+  document.addEventListener('change', () => scheduleAdvRefresh(), true);
+
+  function notify(text) {
+    if (!uiPreviewOn || !text) return;
+    const stack = document.getElementById('toastStack');
+    if (!stack) return;
+    const d = document.createElement('div');
+    d.className = 'toast';
+    d.textContent = String(text);
+    d.onclick = () => d.remove();
+    stack.prepend(d);
+    while (stack.children.length > 4) stack.lastChild.remove();
+    setTimeout(() => { if (d.isConnected) d.remove(); }, 5000);
+  }
+  function setRunSlot(text) {
+    const el = document.getElementById('runSlot');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+  function clearRunSlot() { setRunSlot(''); }
+
+  function confirmDanger(o) {
+    const btns = [{ label: o.icon + ' ' + o.verb + ' ' + o.count, cls: 'choice-danger', value: 'go' }];
+    if (o.onlyThis) btns.push({ label: '🎯 Only ' + o.onlyThis, cls: 'choice-plain', value: 'one', title: 'Apply to just this one and leave the selection alone' });
+    btns.push({ label: 'Cancel', cls: 'choice-neutral', value: null });
+    const paras = ['<ul class="danger-losses">' + o.losses.map(l => '<li>' + l + '</li>').join('') + '</ul>' + (o.undo ? 'You can undo this with ↩ Undo.' : 'This cannot be undone.')];
+    return showChoiceDialog({ title: (o.icon + ' ' + o.verb + ' ' + o.count + (o.noun ? ' ' + o.noun : '') + '?'), paragraphs: paras, hint: o.hint || '', buttons: btns });
+  }
+
   function panelGenerateAction(i) {
     if (panelBatchMode(i) && panelSelection.size > 1) {
       const sel = panelSelectionSorted();
@@ -6994,22 +7088,19 @@ color-scheme:light;
   function panelClearAction(i, opts) {
     if (!panelBatchMode(i) || panelSelection.size < 2) { clearPanelImage(i); return; }
     const sel = panelSelectionSorted();
-    const btns = [
-      { label: '🗑 Clear ' + sel.length + ' Panels', cls: 'choice-danger', value: 'all' }
-    ];
-    if (!(opts && opts.noSingle)) btns.push({ label: '🎯 Only Panel ' + i, cls: 'choice-plain', value: 'one', title: 'Clear just Panel ' + i + ' and leave the selection alone' });
-    btns.push({ label: 'Cancel', cls: 'choice-neutral', value: null });
-    showChoiceDialog({
-      title: '🗑 Clear ' + sel.length + ' panels?',
-      paragraphs: ['This removes the images <b>and</b> all of the characters, location, and action text from the <b>' + sel.length + '</b> selected panels. It cannot be undone.'],
-      hint: 'Selected: ' + sel.join(', ') + '.',
-      buttons: btns
+    confirmDanger({
+      icon: '🗑', verb: 'Clear', count: sel.length + ' Panels', noun: '',
+      losses: ['Generated images of panels <b>' + sel.join(', ') + '</b>', 'Their characters, location and action text'],
+      undo: false, hint: 'Selected: ' + sel.join(', ') + '.',
+      onlyThis: (opts && opts.noSingle) ? null : ('Panel ' + i)
     }).then(v => {
-      if (v === 'all') {
+      if (v === 'go') {
         for (const p of sel) clearPanelImage(p);
         clearPanelSelection();
+        const msg = 'Cleared ' + sel.length + ' panels (panel ' + sel.join(', ') + ').';
         const statusEl = document.getElementById('statusEl');
-        if (statusEl) statusEl.textContent = 'Cleared ' + sel.length + ' panels (panel ' + sel.join(', ') + ').';
+        if (statusEl) statusEl.textContent = msg;
+        notify(msg);
       } else if (v === 'one') {
         clearPanelImage(i);
       }
@@ -7019,22 +7110,19 @@ color-scheme:light;
   function panelClearImagesAction(i, opts) {
     if (!panelBatchMode(i) || panelSelection.size < 2) { clearPanelImages(i); return; }
     const sel = panelSelectionSorted();
-    const btns = [
-      { label: '🗑 Clear Images (' + sel.length + ' Panels)', cls: 'choice-danger', value: 'all' }
-    ];
-    if (!(opts && opts.noSingle)) btns.push({ label: '🎯 Only Panel ' + i, cls: 'choice-plain', value: 'one', title: 'Clear just Panel ' + i + '\u2019s images and leave the selection alone' });
-    btns.push({ label: 'Cancel', cls: 'choice-neutral', value: null });
-    showChoiceDialog({
-      title: '🗑 Clear the images of ' + sel.length + ' panels?',
-      paragraphs: ['This removes every generated image from the <b>' + sel.length + '</b> selected panels, keeping their characters, location, and action text. It cannot be undone.'],
-      hint: 'Selected: ' + sel.join(', ') + '.',
-      buttons: btns
+    confirmDanger({
+      icon: '🗑', verb: 'Clear Images', count: '(' + sel.length + ' Panels)', noun: '',
+      losses: ['Every generated image of panels <b>' + sel.join(', ') + '</b>', 'Characters, location and action text are kept'],
+      undo: false, hint: 'Selected: ' + sel.join(', ') + '.',
+      onlyThis: (opts && opts.noSingle) ? null : ('Panel ' + i)
     }).then(v => {
-      if (v === 'all') {
+      if (v === 'go') {
         for (const p of sel) clearPanelImages(p);
         clearPanelSelection();
+        const msg = 'Cleared the images of ' + sel.length + ' panels (panel ' + sel.join(', ') + ').';
         const statusEl = document.getElementById('statusEl');
-        if (statusEl) statusEl.textContent = 'Cleared the images of ' + sel.length + ' panels (panel ' + sel.join(', ') + ').';
+        if (statusEl) statusEl.textContent = msg;
+        notify(msg);
       } else if (v === 'one') {
         clearPanelImages(i);
       }
@@ -9510,7 +9598,7 @@ color-scheme:light;
 
   function doImportFile(file, isZip) {
     const st = document.getElementById('backupStatusEl');
-    if (importTooBig(file)) { if (st) st.textContent = 'Import failed: ' + importTooBigMsg(file); return; }
+    if (importTooBig(file)) { if (st) st.textContent = 'Import failed: ' + importTooBigMsg(file); notify(st ? st.textContent : ''); return; }
     if (isZip) {
       file.arrayBuffer().then(buf => unzipEntries(buf)).then(async entries => {
         const settingsName = Object.keys(entries).find(n => /comic-generator-settings\.json$/i.test(n));
@@ -9521,8 +9609,10 @@ color-scheme:light;
         const imgs = await parseZipImages(entries);
         const count = repopulateImportedImages(imgs);
         if (st) st.textContent = 'Imported ✓ — settings' + (count ? ' + ' + count + ' image' + (count === 1 ? '' : 's') + ' restored.' : ' restored (no images found in the .zip).');
+        notify(st ? st.textContent : '');
       }).catch(e => {
         if (st) st.textContent = 'Import failed: ' + (e.message || e);
+        notify(st ? st.textContent : '');
       });
       return;
     }
@@ -9530,8 +9620,10 @@ color-scheme:light;
       applyImportedSettings(JSON.parse(text));
       addRecentSnapshot(file.name || 'project.json', text);
       if (st) st.textContent = 'Imported ✓ — all settings restored.';
+      notify(st ? st.textContent : '');
     }).catch(e => {
       if (st) st.textContent = 'Import failed: ' + (e.message || e);
+      notify(st ? st.textContent : '');
     });
   }
 
@@ -9780,6 +9872,7 @@ color-scheme:light;
     for (let si = 0; si < seq.length; si++) {
       const i = seq[si];
       statusEl.textContent = `${pageName}: generating panels… (${isList ? ((si + 1) + '/' + seq.length) : (i + '/' + totalPanels)})`;
+      if (uiPreviewOn) setRunSlot(statusEl.textContent);
       let result;
       try { result = await generateSinglePanel(i); } catch (e) { result = 'error'; }
       if (result === 'generated') generated++;
@@ -9791,10 +9884,12 @@ color-scheme:light;
           resumePanel = null;
           runEndPanel = null;
           statusEl.textContent = 'Stopped — generation cancelled. Press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to generate.';
+          if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify('Run stopped.'); }
         } else {
           resumePanel = isList ? i : ((result === 'cleared') ? i : i + 1);
           if (resumePanel > totalPanels) resumePanel = totalPanels;
           statusEl.textContent = (pausedManually ? 'Paused' : pageName + ': paused — tab went to background') + ' — press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to continue from panel ' + resumePanel + '.';
+          if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
         }
         break;
       }
@@ -9803,6 +9898,7 @@ color-scheme:light;
       statusEl.textContent = (skipped > 0 || failed > 0 || protectedCount > 0
         ? `Done: generated ${generated}, skipped ${skipped}${protectedCount ? ", protected " + protectedCount : ""}, failed ${failed}.`
         : `Done: generated ${generated} panel${generated === 1 ? "" : "s"}.`);
+      if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
     }
     } finally {
       genBtn.disabled = false;
@@ -12051,6 +12147,8 @@ color-scheme:light;
     "w1-136": { ev: "click", run: (el, e) => { runCommandConsole() } },
     "w1-137": { ev: "click", run: (el, e) => { closeCommandConsole() } },
     "w1-138": { ev: "scroll", run: (el, e) => { jsonEditorSyncScroll(); } },
+    "w1-139": { ev: "click", run: (el, e) => { toggleUiPreview() } },
+    "w1-140": { ev: "change", run: (el, e) => { setAdvancedMode(el.checked) } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
@@ -12148,7 +12246,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
