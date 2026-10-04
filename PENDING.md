@@ -1,4 +1,8 @@
 
+### 2026-10-04 — .30 post-Save re-push (author, verbatim: "Saved! Go ahead and re-push.")
+- **Status:** 🟢 START NOW — re-push .30 (run panel) after Save so repo index.html matches served build.
+- **Scope:** no code changes; openGhBackup → ghPush → ghClose; verify repo index.html stamps 2026.10.04.30.
+
 ### 2026-10-04 — P5 W3b: delete the leftover flat exports (IMPLEMENTATION)
 - **Status:** 🟢 START NOW (author, verbatim: "Go!") — W3b greenlit.
 - **Scope:** recon external referrers for the 176 allowlisted names (devtests, src forms, main.pjs, dynamic window access, string-eval), keep hooks/appReady/__X/debug trio, delete the verified-dead flat assignments, shrink the diff-core allowlist. One version (2026.10.04.24). Full suites + byte-identical restore before push.
