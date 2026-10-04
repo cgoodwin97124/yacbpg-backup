@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.18 — 2026-10-04 — 🖼️ P4 wave 3: images go id-keyed, remaps deleted
-- Store owns panelId-keyed images (IMAGES_VERSION 3); pos signatures stay via storage-backed resolver. Gen captures panel id at start (late arrivals self-correct); commits absorb after save; remap fns/dead code deleted; undo takes store snapshots; resets clear the store. Zero behavior change.
+## 2026.10.04.19 — 2026-10-04 — 🖼️ P4 wave 4: clipboard/undo/paste go id-native, session shell deleted
+- Paste plants clipboard images under fresh panel ids (setById inside the cascade, before the single re-render); undo keeps the store snapshot only; move-across-pages session shuffle, renumber session plumbing, and the whole pageSession/panelImages fallback shell are gone — every accessor talks to the id-keyed store directly. Zero behavior change.
 </script>
 
 
@@ -4437,10 +4437,8 @@ color-scheme:light;
   let imgObserver = null;
   let gridHasListeners = false;
   let currentPage = 1;
-  const pageSession = {};
   const GENERATION_TIMEOUT_MS = 120000;
   const panelBusy = {};
-  let panelImages = {};
   let panelPromptOverrides = {};
   let panelPromptHistory = {};
   let promptHistoryRuns = {};
@@ -4489,41 +4487,25 @@ color-scheme:light;
     return Object.keys(pm).map(Number).sort((a, b) => a - b);
   }
   function imgSlotUrl(i, k) {
-    if (panelImageStore) return panelImageStore.get(currentPage, i, k);
-    const a = panelImages[i];
-    return Array.isArray(a) ? a[k - 1] : undefined;
+    return panelImageStore.get(currentPage, i, k);
   }
   function imgSlotCount(i) {
-    if (panelImageStore) return panelImageStore.count(currentPage, i);
-    return (panelImages[i] || []).filter(d => !!d).length;
+    return panelImageStore.count(currentPage, i);
   }
   function imgSlotsCopy(i) {
-    if (panelImageStore) return panelImageStore.getPanel(currentPage, i);
-    const a = panelImages[i];
-    return Array.isArray(a) ? a.slice() : null;
+    return panelImageStore.getPanel(currentPage, i);
   }
   function hasImagesAnywhere() {
-    if (panelImageStore) return panelImageStore.hasAnywhere();
-    for (const key in panelImages) if (panelImages[key] && panelImages[key].some(d => !!d)) return true;
-    for (const key in pageSession) {
-      const sess = pageSession[key];
-      if (sess && sess.images) {
-        for (const pi in sess.images) if (sess.images[pi] && sess.images[pi].some(d => !!d)) return true;
-      }
-    }
-    return false;
+    return panelImageStore.hasAnywhere();
   }
   function imgDropSlot(i, k) {
-    if (panelImageStore) return panelImageStore.clearSlot(currentPage, i, k);
-    if (panelImages[i]) delete panelImages[i][k - 1];
+    return panelImageStore.clearSlot(currentPage, i, k);
   }
   function imgWipePanel(i) {
-    if (panelImageStore) return panelImageStore.clearPanel(currentPage, i);
-    panelImages[i] = [];
+    return panelImageStore.clearPanel(currentPage, i);
   }
   function imgEnsurePanel(i) {
-    if (panelImageStore) return panelImageStore.ensurePanel(currentPage, i);
-    if (!panelImages[i]) panelImages[i] = [];
+    return panelImageStore.ensurePanel(currentPage, i);
   }
 
   function ensureImageObserver() {
@@ -4553,8 +4535,7 @@ color-scheme:light;
   }
 
   function showPanelImage(i, k, dataUrl, pid) {
-    if (panelImageStore) { if (pid) panelImageStore.setById(pid, k, dataUrl); else panelImageStore.set(currentPage, i, k, dataUrl); }
-    else { if (!panelImages[i]) panelImages[i] = []; panelImages[i][k - 1] = dataUrl; }
+    if (pid) panelImageStore.setById(pid, k, dataUrl); else panelImageStore.set(currentPage, i, k, dataUrl);
     const card = document.getElementById('panel-card-' + i);
     const img = document.getElementById('img-panel-' + i + '-' + k);
     if (!img) return;
@@ -5125,24 +5106,19 @@ color-scheme:light;
     const raw = readPanelState();
     const st = normalizeState(raw);
     currentPage = st.currentPage;
-    if (panelImageStore) {
-      try {
-        const ids = [];
-        const pages = raw && raw.pages;
-        if (pages) for (const pgk of Object.keys(pages)) {
-          const page = pages[pgk];
-          if (!page || typeof page !== 'object') continue;
-          for (const pos of Object.keys(page)) {
-            const p = page[pos];
-            if (p && typeof p === 'object' && typeof p.id === 'string' && p.id) ids.push(p.id);
-          }
+    try {
+      const ids = [];
+      const pages = raw && raw.pages;
+      if (pages) for (const pgk of Object.keys(pages)) {
+        const page = pages[pgk];
+        if (!page || typeof page !== 'object') continue;
+        for (const pos of Object.keys(page)) {
+          const p = page[pos];
+          if (p && typeof p === 'object' && typeof p.id === 'string' && p.id) ids.push(p.id);
         }
-        panelImageStore.prune(ids);
-      } catch (e) {}
-    } else {
-      const sess = pageSession[currentPage];
-      panelImages = (sess && sess.images) || {};
-    }
+      }
+      panelImageStore.prune(ids);
+    } catch (e) {}
     panelPromptOverrides = {};
     panelPromptHistory = {};
     promptHistoryRuns = {};
@@ -5159,7 +5135,6 @@ color-scheme:light;
     stopAllGenerations();
     const state = storeJsonNow();
     if (!state) return;
-    pageSession[currentPage] = { images: panelImages };
     currentPage = n;
     state.currentPage = n;
     savePanelStateShape(state);
@@ -5183,7 +5158,6 @@ color-scheme:light;
       const project = storeJsonNow();
       const hit = project ? cmd(project) : null;
       if (hit) {
-        pageSession[from] = { images: panelImages };
         currentPage = hit.page;
         savePanelStateShape(project);
         loadCurrentPage();
@@ -5239,7 +5213,6 @@ color-scheme:light;
       const project = storeJsonNow();
       const hit = project ? cmd(project, from) : null;
       if (hit) {
-        delete pageSession[hit.deleted];
         currentPage = hit.page;
         savePanelStateShape(project);
         loadCurrentPage();
@@ -5311,11 +5284,8 @@ color-scheme:light;
       const project = storeJsonNow();
       if (project) {
         const label = pageLabel(project.pages[fromKey], fromKey);
-        pageSession[currentPage] = { images: panelImages };
-        const hit = cmdRenumber(project, fromKey, toPos, pageSession);
+        const hit = cmdRenumber(project, fromKey, toPos, {});
         if (hit) {
-          for (const k in pageSession) delete pageSession[k];
-          Object.assign(pageSession, hit.session);
           savePanelStateShape(project);
           currentPage = hit.newCurrent;
           if (typeof analysisPage !== 'undefined' && hit.map[analysisPage] !== undefined) analysisPage = hit.map[analysisPage];
@@ -5355,22 +5325,14 @@ color-scheme:light;
   }
 
   function collectAllPageImages() {
-    if (panelImageStore) {
-      const out = {};
-      let pgs = [];
-      try {
-        const raw = readPanelState();
-        if (raw && raw.pages) pgs = Object.keys(raw.pages).map(Number).filter(k => !isNaN(k));
-      } catch (e) {}
-      if (!pgs.length) pgs = [currentPage];
-      for (const pg of pgs) out[pg] = pageImagesOf(pg);
-      return out;
-    }
     const out = {};
-    for (const [pg, sess] of Object.entries(pageSession)) {
-      if (sess && sess.images) out[pg] = sess.images;
-    }
-    out[currentPage] = panelImages;
+    let pgs = [];
+    try {
+      const raw = readPanelState();
+      if (raw && raw.pages) pgs = Object.keys(raw.pages).map(Number).filter(k => !isNaN(k));
+    } catch (e) {}
+    if (!pgs.length) pgs = [currentPage];
+    for (const pg of pgs) out[pg] = pageImagesOf(pg);
     return out;
   }
 
@@ -6064,34 +6026,8 @@ color-scheme:light;
       const effMode = (mode === 'append' || mode === 'prepend' || mode === 'replace') ? mode : ((targetPage > src) ? 'prepend' : 'append');
       const hit = project ? cmdMoveToPage(project, src, total, i, targetPage, tCount, effMode) : null;
       if (hit) {
-        pageSession[src] = { images: panelImages };
-        const srcImages = panelImages;
-        const movedImg = srcImages[i] ? JSON.parse(JSON.stringify(srcImages[i])) : null;
-        const tSess = pageSession[targetPage];
-        const tImages = (tSess && tSess.images) ? tSess.images : {};
-        const newTImages = {};
-        for (let p = 1; p <= 24; p++) {
-          if (p === hit.index) { if (movedImg) newTImages[p] = movedImg; continue; }
-          const oldPos = (effMode === 'append' || effMode === 'replace') ? p : (p - 1);
-          if (oldPos >= 1 && oldPos <= tCount && tImages[oldPos]) newTImages[p] = tImages[oldPos];
-        }
-        pageSession[targetPage] = { images: newTImages };
-        if (hit.deletesSrcPage) {
-          delete pageSession[src];
-        } else {
-          const order = [];
-          for (let p = 1; p <= total; p++) order.push(p);
-          order.splice(i - 1, 1);
-          const newSrcImages = {};
-          for (let p = 1; p <= total - 1; p++) {
-            const oldPos = order[p - 1];
-            if (srcImages[oldPos]) newSrcImages[p] = srcImages[oldPos];
-          }
-          pageSession[src] = { images: newSrcImages };
-        }
         savePanelStateShape(project);
         currentPage = targetPage;
-        if (!panelImageStore) panelImages = pageSession[targetPage].images;
         panelPromptOverrides = {};
         panelPromptHistory = {};
         promptHistoryRuns = {};
@@ -6157,10 +6093,7 @@ color-scheme:light;
     resumePanel = null;
     runEndPanel = null;
     try {
-      const sessions = {};
-      for (const k in pageSession) sessions[k] = { images: pageSession[k] ? pageSession[k].images : {} };
-      sessions[currentPage] = { images: panelImages };
-      structUndoStack.push({ label: String(label || 'change'), saved: JSON.stringify(storeJsonNow()), sessions: JSON.parse(JSON.stringify(sessions)), page: currentPage, imgSnap: panelImageStore ? panelImageStore.snapshot() : null });
+      structUndoStack.push({ label: String(label || 'change'), saved: JSON.stringify(storeJsonNow()), page: currentPage, imgSnap: panelImageStore.snapshot() });
       while (structUndoStack.length > STRUCT_UNDO_MAX) structUndoStack.shift();
     } catch (e) {}
     updateStructUndoUI();
@@ -6173,9 +6106,7 @@ color-scheme:light;
     const statusEl = document.getElementById('statusEl');
     stopAllGenerations();
     try { savePanelStateShape(JSON.parse(f.saved)); } catch (e) { if (statusEl) statusEl.textContent = 'Undo failed — the snapshot would not parse.'; return; }
-    if (panelImageStore && f.imgSnap) panelImageStore.restore(f.imgSnap);
-    for (const k in pageSession) delete pageSession[k];
-    for (const k in (f.sessions || {})) pageSession[k] = { images: (f.sessions[k] || {}).images || {} };
+    if (f.imgSnap) panelImageStore.restore(f.imgSnap);
     currentPage = f.page;
     loadCurrentPage();
     populatePageSel();
@@ -6227,28 +6158,16 @@ color-scheme:light;
   }
 
   function pageImagesOf(pg) {
-    if (panelImageStore) {
-      const out = {};
-      for (const pos of imagePositionsOf(pg)) {
-        const a = panelImageStore.getPanel(pg, pos);
-        if (a) out[pos] = a;
-      }
-      return out;
+    const out = {};
+    for (const pos of imagePositionsOf(pg)) {
+      const a = panelImageStore.getPanel(pg, pos);
+      if (a) out[pos] = a;
     }
-    if (pg === currentPage) return panelImages;
-    const sess = pageSession[pg];
-    return (sess && sess.images) || {};
+    return out;
   }
 
   function setPageImagesFor(pg, imgs) {
-    if (panelImageStore) { panelImageStore.absorbPage(pg, imgs); return; }
-    if (pg === currentPage) {
-      for (const k in panelImages) delete panelImages[k];
-      Object.assign(panelImages, imgs);
-      pageSession[pg] = Object.assign({}, pageSession[pg] || {}, { images: panelImages });
-      return;
-    }
-    pageSession[pg] = Object.assign({}, pageSession[pg] || {}, { images: imgs });
+    panelImageStore.absorbPage(pg, imgs);
   }
 
   function planReflow(pages, fromPage) {
@@ -6589,17 +6508,28 @@ color-scheme:light;
     const pasteProject = (typeof cmdPaste === 'function' && typeof newPanelId === 'function') ? storeJsonNow() : null;
     const pastePanels = pasteProject ? cmdPaste(pasteProject, currentPage, total, i, panelClipboard.map(e => e.panel), newPanelId) : null;
     const entries = [];
+    const freshIds = [];
     if (pastePanels) {
+      for (let c = 0; c < panelClipboard.length; c++) {
+        const fp = pastePanels[i - 1 + c];
+        freshIds.push(fp && fp.id ? fp.id : null);
+      }
       let j = 0;
       for (let p = 1; p <= total; p++) {
-        if (p === i) for (const e of panelClipboard) entries.push({ panel: pastePanels[j++], img: e.img ? JSON.parse(JSON.stringify(e.img)) : null });
+        if (p === i) for (let c = 0; c < panelClipboard.length; c++) entries.push({ panel: pastePanels[j++], img: null });
         entries.push({ panel: pastePanels[j++], img: imgs[p] ? imgs[p] : null });
       }
     } else {
       if (statusEl) statusEl.textContent = 'Panels could not be pasted — please reload and try again.';
       return;
     }
-    const res = cascadePageSequence(currentPage, entries) || { moves: 0, createdPage: null };
+    const plantById = {};
+    for (let c = 0; c < panelClipboard.length; c++) {
+      const cimg = panelClipboard[c].img;
+      const fid = freshIds[c];
+      if (cimg && fid) plantById[fid] = cimg;
+    }
+    const res = cascadePageSequence(currentPage, entries, plantById) || { moves: 0, createdPage: null };
     if (wasCut) { panelClipboard = null; panelClipboardCut = false; }
     updatePasteUI();
     if (statusEl) {
@@ -6648,7 +6578,7 @@ color-scheme:light;
     return { page: np, imgs: imgs };
   }
 
-  function cascadePageSequence(srcPage, entries) {
+  function cascadePageSequence(srcPage, entries, plantById) {
     const cmdCascade = panelCommands ? panelCommands.cascadeEntries : null;
     if (typeof cmdCascade === 'function') {
       const project = storeJsonNow();
@@ -6660,6 +6590,10 @@ color-scheme:light;
         if (hit) {
           savePanelStateShape(project);
           for (const k of Object.keys(hit.images)) setPageImagesFor(Number(k), hit.images[k]);
+          if (plantById) for (const fid of Object.keys(plantById)) {
+            const parr = plantById[fid];
+            if (parr) for (let s = 1; s <= parr.length; s++) if (parr[s - 1]) panelImageStore.setById(fid, s, parr[s - 1]);
+          }
           currentPage = project.currentPage;
           loadCurrentPage();
           populatePageSel();
@@ -6841,7 +6775,6 @@ color-scheme:light;
       if (hit) {
         currentPage = targetPage;
         savePanelStateShape(project);
-        if (hit.deletesSrcPage) delete pageSession[src];
         setPageImagesFor(targetPage, built.imgs);
         if (srcBuilt) setPageImagesFor(src, srcBuilt.imgs);
         loadCurrentPage();
@@ -7235,7 +7168,6 @@ color-scheme:light;
       for (let p = step.take + 1; p <= c; p++) rest.push({ panel: JSON.parse(JSON.stringify(pages[k][p] || {})), img: kImgs[p] ? kImgs[p] : null });
       if (!rest.length) {
         delete pages[k];
-        delete pageSession[k];
       } else {
         const nb = pageObjectFromEntries(pages, k, rest);
         pages[k] = nb.page;
@@ -8447,13 +8379,11 @@ color-scheme:light;
   }
 
   function hasPanelImages(i) {
-    if (panelImageStore) return panelImageStore.hasAny(currentPage, i);
-    return !!(panelImages[i] && panelImages[i].some(d => !!d));
+    return panelImageStore.hasAny(currentPage, i);
   }
 
   function hasPanelImage(i, k) {
-    if (panelImageStore) return panelImageStore.has(currentPage, i, k);
-    return !!(panelImages[i] && panelImages[i][k - 1]);
+    return panelImageStore.has(currentPage, i, k);
   }
 
   function isSlotProtected(i, k) {
@@ -8509,8 +8439,7 @@ color-scheme:light;
   function makeRepresentative(i, k) {
     if (!hasPanelImage(i, k)) return;
     if (k === 1) return;
-    if (panelImageStore) panelImageStore.swapSlots(currentPage, i, 1, k);
-    else { const arr0 = panelImages[i]; const tmp = arr0[0]; arr0[0] = arr0[k - 1]; arr0[k - 1] = tmp; }
+    panelImageStore.swapSlots(currentPage, i, 1, k);
     const p1 = isSlotProtected(i, 1), pk = isSlotProtected(i, k);
     if (p1 !== pk) { setSlotProtected(i, 1, pk); setSlotProtected(i, k, p1); }
     const a0 = imgSlotUrl(i, 1), ak = imgSlotUrl(i, k);
@@ -9396,25 +9325,10 @@ color-scheme:light;
 
   function repopulateImportedImages(imgs) {
     let count = 0;
-    if (panelImageStore) {
-      for (const pg of Object.keys(imgs)) {
-        const pageImgs = imgs[pg];
-        for (const ip of Object.keys(pageImgs)) count += pageImgs[ip].filter(d => !!d).length;
-        panelImageStore.absorbPage(Number(pg), pageImgs);
-      }
-    } else {
-      for (const pg of Object.keys(imgs)) {
-        const pageImgs = imgs[pg];
-        for (const ip of Object.keys(pageImgs)) {
-          count += pageImgs[ip].filter(d => !!d).length;
-          if (String(pg) === String(currentPage)) {
-            panelImages[parseInt(ip, 10)] = pageImgs[ip];
-          } else {
-            const sess = pageSession[pg] || (pageSession[pg] = { images: {}, sync: {} });
-            sess.images[parseInt(ip, 10)] = pageImgs[ip];
-          }
-        }
-      }
+    for (const pg of Object.keys(imgs)) {
+      const pageImgs = imgs[pg];
+      for (const ip of Object.keys(pageImgs)) count += pageImgs[ip].filter(d => !!d).length;
+      panelImageStore.absorbPage(Number(pg), pageImgs);
     }
     for (let i = 1; i <= 24; i++) {
       const arr = imgSlotsCopy(i);
@@ -9458,9 +9372,7 @@ color-scheme:light;
     if (!data || typeof data !== 'object') throw new Error('not a valid settings file');
     if (data.version !== 1 && data.version !== 2) throw new Error('unsupported file version');
     for (let i = 1; i <= 24; i++) for (let k = 1; k <= 4; k++) setSlotProtected(i, k, false);
-    for (const k in pageSession) delete pageSession[k];
-    if (panelImageStore) panelImageStore.resetAll();
-    for (const k in panelImages) delete panelImages[k];
+    panelImageStore.resetAll();
     for (const k in panelPromptOverrides) delete panelPromptOverrides[k];
     for (const k in panelPromptHistory) delete panelPromptHistory[k];
     promptHistoryRuns = {};
@@ -10147,7 +10059,6 @@ color-scheme:light;
       if (pick !== 'go') return;
     }
     currentPage = 1;
-    for (const k in pageSession) delete pageSession[k];
 
     const fresh = defaultProject();
     const freshPage = fresh.pages[1];
@@ -10235,8 +10146,7 @@ color-scheme:light;
         if (img) { img.removeAttribute('src'); delete img.dataset.hidden; img.alt = ""; }
       }
     }
-    for (const k in panelImages) delete panelImages[k];
-    if (panelImageStore) panelImageStore.resetAll();
+    panelImageStore.resetAll();
     for (const k in panelPromptOverrides) delete panelPromptOverrides[k];
     for (const k in panelPromptHistory) delete panelPromptHistory[k];
     promptHistoryRuns = {};
@@ -10877,7 +10787,7 @@ color-scheme:light;
     movePanelToPage: { sig: '(srcPage, total, index, targetPage, tCount, mode)', desc: 'Move one panel across pages. Mode is prepend, append or replace; a full target refuses.' },
     moveManyToPage: { sig: '(srcPage, total, [indexes], targetPage, tCount, replaceTarget)', desc: 'Move a block of panels across pages as one unit.' },
     moveMany: { sig: '(pageNum, total, [indexes], toPos)', desc: 'Move a block of panels within a page as one unit.' },
-    renumberPages: { sig: '(fromKey, toPos)', session: true, desc: 'Move a page to a new position; the other pages renumber around it.' },
+    renumberPages: { sig: '(fromKey, toPos)', desc: 'Move a page to a new position; the other pages renumber around it.' },
     reflowInsert: { sig: '(srcPage, total, afterIndex, incomingPanel, incomingImg)', images: true, desc: 'Insert one panel into a full page; the overflow cascades onto following pages.' },
     cascadeEntries: { sig: '(srcPage, entries)', images: true, desc: 'Rewrite a page from an entries list [{ panel, img }] and spill the overflow onto following pages. The shared engine behind duplicate, add and paste.' },
     duplicateEntries: { sig: '(pageNum, total, [indexes])', makeId: true, desc: 'Build the batch-duplicate panel list: originals interleaved with fresh-id imageless copies. Returns panels only; dispatch pairs the images.' },
@@ -10926,7 +10836,6 @@ color-scheme:light;
     if (!list) { manualCommandSay('Arguments must be a JSON array.', true); return null; }
     list = list.map(a => a === '$page' ? currentPage : (a === '$total' ? getPanelCount() : a));
     if (meta.makeId && !list.some(a => typeof a === 'function') && typeof newPanelId === 'function') list.push(newPanelId);
-    if (meta.session) { pageSession[currentPage] = { images: panelImages }; list.push(pageSession); }
     if (meta.images) { const m = {}; for (const k of Object.keys(project.pages)) m[k] = pageImagesOf(Number(k)); list.push(m); }
     let hit = null;
     try { hit = cmd.apply(null, [JSON.parse(JSON.stringify(project))].concat(list)); } catch (e) { hit = null; }
@@ -10939,25 +10848,19 @@ color-scheme:light;
     try { hit2 = cmd.apply(null, [project].concat(list)); } catch (e) { hit2 = null; }
     if (!hit2) { structUndoStack.pop(); updateStructUndoUI(); manualCommandSay('Command refused on the live project. Nothing changed.', true); return null; }
     savePanelStateShape(project);
-    if (hit2.session) {
-      for (const k in pageSession) delete pageSession[k];
-      Object.assign(pageSession, hit2.session);
+    if (hit2.images) {
+      for (const k of Object.keys(hit2.images)) setPageImagesFor(Number(k), hit2.images[k] || {});
     } else {
-      if (hit2.images) {
-        for (const k of Object.keys(hit2.images)) setPageImagesFor(Number(k), hit2.images[k] || {});
-      } else {
-        for (const k of Object.keys(project.pages)) {
-          const pg = Number(k);
-          const page = project.pages[k];
-          const nim = {};
-          for (let p = 1; p <= 24; p++) {
-            const id = page[p] && page[p].id;
-            if (typeof id === 'string' && id && idMap[id] !== undefined) nim[p] = idMap[id];
-          }
-          setPageImagesFor(pg, nim);
+      for (const k of Object.keys(project.pages)) {
+        const pg = Number(k);
+        const page = project.pages[k];
+        const nim = {};
+        for (let p = 1; p <= 24; p++) {
+          const id = page[p] && page[p].id;
+          if (typeof id === 'string' && id && idMap[id] !== undefined) nim[p] = idMap[id];
         }
+        setPageImagesFor(pg, nim);
       }
-      for (const k of Object.keys(pageSession)) if (!project.pages[k]) delete pageSession[k];
     }
     if (Number.isInteger(project.currentPage)) currentPage = project.currentPage;
     loadCurrentPage();
