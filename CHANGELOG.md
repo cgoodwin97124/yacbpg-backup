@@ -1,3 +1,5 @@
+## 2026.10.04.27 — 2026-10-04 — 🎨 Per-panel Style accordion: Style, Palette, Size, Seed always visible
+- Style, Palette and Size move from the panel header into a per-panel 🎨 Style accordion that ignores the Advanced switch; Seed stays in the header. Verified live in the 🧪 preview (accordion open, custom W/H reveal, set-values stay visible) — suites green (smoke 114/0, state-diff 38/0, core 77/0, diff-core 24/0, byte-identical restores, 0 errors).
 ## 2026.10.04.26 — 2026-10-04 — 🧪 P6 step 1: try the new UI before you commit
 - A 🧪 New UI switch (top-right, off on load, session-only) previews the bundle: Advanced mode hides expert controls (Seed and title stay; set values stay visible), toasts replace scattered status lines, and danger dialogs share one grammar. Delete flow already matched it. Suites: smoke 114/0, diff-core 24/0, core 77/0, byte-identical restore.
 
