@@ -914,3 +914,4 @@ Moved to `archive/PENDING-done-2026-09.md` on 2026-09-27 (docs archive-split): 9
 - 2026-10-04 .28 post-Save re-push requested ("Saved! Feels pretty good. Go ahead and re-push!") — pushing served .28, will confirm.
 - 2026-10-04 .28 post-Save re-push CONFIRMED — repo index.html stamps 2026.10.04.28, 18 files pushed.
 - 2026-10-04 Lock in new UI as default GREENLIT ("Let's lock in the new UI as the default first, but keep the toggle.") + recommended order for next candidates requested. Status: IN PROGRESS.
+- 2026-10-04 Lock in new UI as default DONE 2026.10.04.29 — uiPreviewOn defaults true, boot applies ui-new + fab + refreshAdvVisibility, toggle kept session-only. Smoke 114/0 green. Recommended order answered: run panel, command palette, inspector, modes.
