@@ -602,6 +602,9 @@ color-scheme:light;
   .panel-imgs .panel-img-box { margin-bottom: 0; }
   .panel-imgs-sel { display: flex; align-items: center; gap: 6px; color: var(--accent); font-weight: bold; font-size: 0.8rem; white-space: nowrap; }
   .panel-imgs-sel select { width: auto; margin: 0; padding: 3px 6px; font-size: 0.8rem; }
+  .panel-header-row .panel-acc { display: contents; }
+  .panel-header-row .panel-acc-toggle { background: var(--surface-3); border: 1px solid var(--border-2); border-radius: 4px; padding: 3px 8px; align-self: center; }
+  .panel-header-row .panel-acc-body { flex: 1 1 100%; }
   .panel-size-custom { display: inline-flex; align-items: center; gap: 4px; }
   .panel-size-custom input { width: 52px; margin: 0; padding: 3px 6px; font-size: 0.8rem; }
   .panel-img-slot { display: flex; flex-direction: column; gap: 5px; }
@@ -1367,8 +1370,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.27 — 2026-10-04 — 🎨 Per-panel Style accordion: Style, Palette, Size, Seed always visible
-- Style, Palette and Size move from the panel header into a per-panel 🎨 Style accordion that ignores the Advanced switch; Seed stays in the header. Zero behavior change with the 🧪 switch off.
+## 2026.10.04.28 — 2026-10-04 — 🎨 Style chip in the panel header
+- The per-panel 🎨 Style accordion moves into the panel header as a toggle chip; its Style/Palette/Size body drops full-width inside the header. Seed stays put. Zero behavior change with the 🧪 switch off.
 </script>
 
 
@@ -5702,6 +5705,39 @@ color-scheme:light;
                 <button class="btn-line-del" id="seed-clear-${i}" data-action="w2-21" data-a0="${i}" title="Clear this panel's seed (back to the page seed, or random)">✕</button>
               </span>
             </div>
+  <div class="panel-acc" data-collapsed="1">
+              <div class="panel-acc-toggle" data-action="w2-55" title="This panel's art style, color palette, and image size">🎨 Style</div>
+              <div class="panel-acc-body">
+    <div class="panel-imgs-sel">
+                  <label for="panel-style-${i}">Style:</label>
+                  <select id="panel-style-${i}" data-action="w2-16" data-a0="${i}" title="Override this panel's art style — [Default (Global)] follows the global Art Style dropdown">
+                    <option value="" selected>[Default (Global)]</option>
+                  </select>
+                </div>
+                <div class="panel-imgs-sel">
+                  <label for="panel-palette-${i}">Palette:</label>
+                  <select id="panel-palette-${i}" data-action="w2-17" data-a0="${i}" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
+                    <option value="" selected>[Default (Global)]</option>
+                  </select>
+                </div>
+                <div class="panel-imgs-sel">
+                  <label for="panel-size-${i}">Size:</label>
+                  <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
+                    <option value="" selected>[Default (Global)]</option>
+                    <option value="512x512">512 × 512</option>
+                    <option value="768x768">768 × 768</option>
+                    <option value="1024x1024">1024 × 1024</option>
+                    <option value="1920x1080">1920 × 1080</option>
+                    <option value="1080x1920">1080 × 1920</option>
+                    <option value="custom">Custom…</option>
+                  </select>
+                  <span class="panel-size-custom" id="panel-size-custom-${i}" hidden>
+                    <input id="panel-size-w-${i}" type="number" min="64" max="1920" placeholder="W">
+                    <input id="panel-size-h-${i}" type="number" min="64" max="1080" placeholder="H">
+                  </span>
+                </div>
+              </div>
+            </div>
             <button class="btn-reroll btn-header-gen" data-action="w2-22" data-a0="${i}" title="Generate this panel's images">🔄 Generate</button>
             <div class="panel-imgs-sel">
               <button class="btn-reorder" id="reorder-btn-${i}" data-action="w2-23" data-a0="${i}" title="Move this panel to a different position. With several panels selected, this moves the whole selection as a block.">⇅ Move</button>
@@ -5730,40 +5766,7 @@ color-scheme:light;
               </div>
             </div>
           </div>
-                    <div class="panel-acc" data-collapsed="1">
-            <div class="panel-acc-toggle" data-action="w2-55" title="This panel's art style, color palette, and image size">🎨 Style</div>
-            <div class="panel-acc-body">
-  <div class="panel-imgs-sel">
-                <label for="panel-style-${i}">Style:</label>
-                <select id="panel-style-${i}" data-action="w2-16" data-a0="${i}" title="Override this panel's art style — [Default (Global)] follows the global Art Style dropdown">
-                  <option value="" selected>[Default (Global)]</option>
-                </select>
-              </div>
-              <div class="panel-imgs-sel">
-                <label for="panel-palette-${i}">Palette:</label>
-                <select id="panel-palette-${i}" data-action="w2-17" data-a0="${i}" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
-                  <option value="" selected>[Default (Global)]</option>
-                </select>
-              </div>
-              <div class="panel-imgs-sel">
-                <label for="panel-size-${i}">Size:</label>
-                <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
-                  <option value="" selected>[Default (Global)]</option>
-                  <option value="512x512">512 × 512</option>
-                  <option value="768x768">768 × 768</option>
-                  <option value="1024x1024">1024 × 1024</option>
-                  <option value="1920x1080">1920 × 1080</option>
-                  <option value="1080x1920">1080 × 1920</option>
-                  <option value="custom">Custom…</option>
-                </select>
-                <span class="panel-size-custom" id="panel-size-custom-${i}" hidden>
-                  <input id="panel-size-w-${i}" type="number" min="64" max="1920" placeholder="W">
-                  <input id="panel-size-h-${i}" type="number" min="64" max="1080" placeholder="H">
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="panel-acc adv" data-collapsed="1">
+                    <div class="panel-acc adv" data-collapsed="1">
             <div class="panel-acc-toggle" data-action="w2-55" title="View or edit this panel's exact prompt">📝 Prompt</div>
             <div class="panel-acc-body">
               <button class="btn-prompt" data-action="w2-56" data-a0="${i}" title="View or edit this panel's exact prompt (style keywords + content), overriding the interface-built one">📝 Prompt</button>
