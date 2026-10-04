@@ -4,6 +4,9 @@
 ### 2026-10-04 - P4 wave 3 preliminary recon
 - **Request (verbatim):** Saved! Go ahead and push, then let's start the preliminaries for wave 3. Please present any findings in V-5.
 - **Status:** PRELIMINARY ONLY - id-flip design recon (resolver source, session boundary, live-map consumers, gen-during-structure), no implementation. ghPush backup for .17 runs first (author saved).
+- **Findings (2026-10-04):** resolver source solved - every commit site holds the POST-command project, so pass it explicitly (no injection/cache/staleness); storage-backed resolve also airtight (savePanelStateShape is sync). P3 commands keep position-map I/O, page translates at boundary (new snapshotPage) - commands.js untouched. Entries keep {panel,img} through wave 3; wave 4 goes id-keyed. Deletions: 2 remap fns, beforeIds snapshots, newImgs loops, manual-console refiling, pageImages live accessor, vestigial sync:{} (write-only). Migrations ~8 readers to get/getPanel/snapshotPage. panelImages var dies; pageSession shell stays for waves 4/5. Gen id-capture-at-start converts late-arrival mislanding into correct-or-dropped.
+- **Proposal:** wave 3 = flip internals to byId + deletions + reader migrations + snapshotPage/setById; signatures stay (pg,pos,k).
+- **Questions:** (1) wave-3 scope as listed - good? (2) gen hot path: capture id at gen start, or resolve at write time? (3) pageSession shell stays for 4/5, or absorb sessions now (pulling snapshot/restore forward)?
 
 
 ### 2026-10-04 - P4 wave 2 IMPLEMENTATION (deferred flip)
