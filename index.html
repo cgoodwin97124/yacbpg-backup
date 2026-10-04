@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.21 — 2026-10-04 — 🧭 P5 wave 1: static controls answer through delegation
-- All 153 static buttons/controls now answer through four delegated document listeners (data-action table, capture phase) instead of inline handlers; every function and export stays. Zero behavior change.
+## 2026.10.04.22 — 2026-10-04 — 🧭 P5 wave 2: panel cards answer through delegation
+- All 82 template-built controls (panel cards, image slots, history rows) now answer through the same delegated listeners, carrying their panel index in data attributes; no test changes were needed and every function and export stays. Zero behavior change.
 </script>
 
 
@@ -1590,7 +1590,7 @@ color-scheme:light;
       refStatusSaved(found.obj.name, cur.length + 1);
       return;
     }
-    const thumbs = cur.map((r, k) => '<button onclick="choiceDialogPick(' + k + ')" title="Replace reference ' + (k + 1) + '" style="display:inline-block;text-align:center;margin:0 6px 6px 0;vertical-align:top;background:none;border:none;padding:0;cursor:pointer;"><img src="' + r.src + '" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:2px solid var(--border-7,#666);display:block;" alt="Reference ' + (k + 1) + '"><span style="font-size:0.8rem;">' + (k + 1) + '</span></button>').join('');
+    const thumbs = cur.map((r, k) => '<button data-action="w2-0" data-a0="' + k + '" title="Replace reference ' + (k + 1) + '" style="display:inline-block;text-align:center;margin:0 6px 6px 0;vertical-align:top;background:none;border:none;padding:0;cursor:pointer;"><img src="' + r.src + '" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:2px solid var(--border-7,#666);display:block;" alt="Reference ' + (k + 1) + '"><span style="font-size:0.8rem;">' + (k + 1) + '</span></button>').join('');
     showChoiceDialog({
       title: 'Replace a reference image?',
       paragraphs: ['<b>' + escapeHtml(String(found.obj.name || '(unnamed)')) + '</b> already holds 3 reference images. Tap the one the new image replaces:<div style="margin-top:8px;">' + thumbs + '</div>'],
@@ -4292,17 +4292,17 @@ color-scheme:light;
     const collapsed = plLineCollapsedAttr(key);
     return `<div class="pl-line" data-pl-key="${key}" data-collapsed="${collapsed}">
       <div class="pl-line-head">
-        <button type="button" class="pl-line-toggle" onclick="togglePanelLine(this)" aria-expanded="${collapsed === '0' ? 'true' : 'false'}" title="Show or hide this character's descriptions">${collapsed === '1' ? '▸' : '▾'}</button>
+        <button type="button" class="pl-line-toggle" data-action="w2-1" aria-expanded="${collapsed === '0' ? 'true' : 'false'}" title="Show or hide this character's descriptions">${collapsed === '1' ? '▸' : '▾'}</button>
         <select class="po-sel" id="panel-char-select-${i}-${s}">${charOptionsHtml()}</select>
-        <button class="btn-copy-prev" id="char-copy-prev-${i}-${s}" onclick="copyFromPrevPanel(${i},'char',${s})" title="Copy this character from the nearest earlier panel that has one">⇤</button>
-        <button class="btn-line-del" onclick="deletePanelChar(${i},${s})" title="Remove this character from the panel">✕</button>
+        <button class="btn-copy-prev" id="char-copy-prev-${i}-${s}" data-action="w2-2" data-a0="${i}" data-a1="${s}" title="Copy this character from the nearest earlier panel that has one">⇤</button>
+        <button class="btn-line-del" data-action="w2-3" data-a0="${i}" data-a1="${s}" title="Remove this character from the panel">✕</button>
       </div>
       <div class="pl-line-body">
         <div class="pl-line-field pl-base-field" id="panel-char-basefield-${i}-${s}">
           <div class="pl-base-head">
             <span class="pl-line-label">Basic Description</span>
             <span class="pl-base-badge" id="panel-char-basediff-${i}-${s}">edited</span>
-            <button type="button" class="pl-base-refresh" id="panel-char-baseref-${i}-${s}" onclick="refreshPanelLineFromLibrary('char',${i},${s})" title="Replace this with the text currently saved in your library for the selected character">⟳ Refresh from library</button>
+            <button type="button" class="pl-base-refresh" id="panel-char-baseref-${i}-${s}" data-action="w2-4" data-a0="${i}" data-a1="${s}" title="Replace this with the text currently saved in your library for the selected character">⟳ Refresh from library</button>
           </div>
           <textarea class="po-desc" id="panel-char-base-${i}-${s}" rows="2" placeholder="Filled from the character's library description when you pick one. Edit it to use your own wording in this panel."></textarea>
         </div>
@@ -4310,7 +4310,7 @@ color-scheme:light;
           <div class="pl-base-head">
             <span class="pl-line-label">Panel Specific Description</span>
             <select class="pl-desc-pick" id="panel-char-extra-pick-${i}-${s}" title="Fill this box from a saved Panel Specific Description — they are shared, so any character or location can use any of them">${panelDescOptionsHtml()}</select>
-            <button type="button" class="pl-base-refresh" id="panel-char-extra-save-${i}-${s}" onclick="savePanelDescription('char',${i},${s})" title="Save the text in this box to your library as a named Panel Specific Description">💾 Save to library</button>
+            <button type="button" class="pl-base-refresh" id="panel-char-extra-save-${i}-${s}" data-action="w2-5" data-a0="${i}" data-a1="${s}" title="Save the text in this box to your library as a named Panel Specific Description">💾 Save to library</button>
             <span class="pl-base-badge" id="panel-char-extra-badge-${i}-${s}"></span>
           </div>
           <textarea class="po-desc" id="panel-char-extra-${i}-${s}" rows="2" placeholder="Optional. Added after the Basic Description in this panel's prompt."></textarea>
@@ -4324,17 +4324,17 @@ color-scheme:light;
     const collapsed = plLineCollapsedAttr(key);
     return `<div class="pl-line" data-pl-key="${key}" data-collapsed="${collapsed}">
       <div class="pl-line-head">
-        <button type="button" class="pl-line-toggle" onclick="togglePanelLine(this)" aria-expanded="${collapsed === '0' ? 'true' : 'false'}" title="Show or hide this location's descriptions">${collapsed === '1' ? '▸' : '▾'}</button>
+        <button type="button" class="pl-line-toggle" data-action="w2-1" aria-expanded="${collapsed === '0' ? 'true' : 'false'}" title="Show or hide this location's descriptions">${collapsed === '1' ? '▸' : '▾'}</button>
         <select class="po-sel" id="panel-loc-select-${i}">${locOptionsHtml()}</select>
-        <button class="btn-copy-prev" id="loc-copy-prev-${i}" onclick="copyFromPrevPanel(${i},'loc')" title="Copy this location from the nearest earlier panel that has one">⇤</button>
-        <button class="btn-line-del" onclick="deletePanelLoc(${i})" title="Remove this location from the panel">✕</button>
+        <button class="btn-copy-prev" id="loc-copy-prev-${i}" data-action="w2-6" data-a0="${i}" title="Copy this location from the nearest earlier panel that has one">⇤</button>
+        <button class="btn-line-del" data-action="w2-7" data-a0="${i}" title="Remove this location from the panel">✕</button>
       </div>
       <div class="pl-line-body">
         <div class="pl-line-field pl-base-field" id="panel-loc-basefield-${i}">
           <div class="pl-base-head">
             <span class="pl-line-label">Basic Description</span>
             <span class="pl-base-badge" id="panel-loc-basediff-${i}">edited</span>
-            <button type="button" class="pl-base-refresh" id="panel-loc-baseref-${i}" onclick="refreshPanelLineFromLibrary('loc',${i})" title="Replace this with the text currently saved in your library for the selected location">⟳ Refresh from library</button>
+            <button type="button" class="pl-base-refresh" id="panel-loc-baseref-${i}" data-action="w2-8" data-a0="${i}" title="Replace this with the text currently saved in your library for the selected location">⟳ Refresh from library</button>
           </div>
           <textarea class="po-desc" id="panel-loc-base-${i}" rows="2" placeholder="Filled from the location's library description when you pick one. Edit it to use your own wording in this panel."></textarea>
         </div>
@@ -4342,7 +4342,7 @@ color-scheme:light;
           <div class="pl-base-head">
             <span class="pl-line-label">Panel Specific Description</span>
             <select class="pl-desc-pick" id="panel-loc-extra-pick-${i}" title="Fill this box from a saved Panel Specific Description — they are shared, so any character or location can use any of them">${panelDescOptionsHtml()}</select>
-            <button type="button" class="pl-base-refresh" id="panel-loc-extra-save-${i}" onclick="savePanelDescription('loc',${i},1)" title="Save the text in this box to your library as a named Panel Specific Description">💾 Save to library</button>
+            <button type="button" class="pl-base-refresh" id="panel-loc-extra-save-${i}" data-action="w2-9" data-a0="${i}" title="Save the text in this box to your library as a named Panel Specific Description">💾 Save to library</button>
             <span class="pl-base-badge" id="panel-loc-extra-badge-${i}"></span>
           </div>
           <textarea class="po-desc" id="panel-loc-extra-${i}" rows="2" placeholder="Optional. Added after the Basic Description in this panel's prompt."></textarea>
@@ -4353,9 +4353,9 @@ color-scheme:light;
 
   function actRowHtml(i) {
     return `<div class="po-row pl-slot">
-      <textarea class="po-desc pl-act-wide" id="panel-act-${i}" rows="2" placeholder="Freeform description of what happens" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();generateSinglePanel(${i});}"></textarea>
-      <button class="btn-copy-prev" id="act-copy-prev-${i}" onclick="copyFromPrevPanel(${i},'act')" title="Copy this action prompt from the nearest earlier panel that has one">⇤</button>
-      <button class="btn-line-del" onclick="deletePanelAct(${i})" title="Remove this action from the panel">✕</button>
+      <textarea class="po-desc pl-act-wide" id="panel-act-${i}" rows="2" placeholder="Freeform description of what happens" data-action="w2-10" data-a0="${i}"></textarea>
+      <button class="btn-copy-prev" id="act-copy-prev-${i}" data-action="w2-11" data-a0="${i}" title="Copy this action prompt from the nearest earlier panel that has one">⇤</button>
+      <button class="btn-line-del" data-action="w2-12" data-a0="${i}" title="Remove this action from the panel">✕</button>
     </div>`;
   }
 
@@ -5663,31 +5663,31 @@ color-scheme:light;
       grid.insertAdjacentHTML('beforeend', `
         <div id="panel-card-${i}" class="panel-card">
           <div class="panel-header-row">
-            <label class="panel-select-wrap" title="Select this panel. Shift-click a checkbox to select the whole range from the last one you ticked."><input type="checkbox" id="panel-select-${i}" class="panel-select-cb" onclick="onPanelSelectClick(${i}, event)"></label>
-            <button class="btn-paste-chip" id="panel-paste-btn-${i}" onclick="panelPasteAction(${i})" title="" hidden>📋 Paste</button>
+            <label class="panel-select-wrap" title="Select this panel. Shift-click a checkbox to select the whole range from the last one you ticked."><input type="checkbox" id="panel-select-${i}" class="panel-select-cb" data-action="w2-13" data-a0="${i}"></label>
+            <button class="btn-paste-chip" id="panel-paste-btn-${i}" data-action="w2-14" data-a0="${i}" title="" hidden>📋 Paste</button>
             <span class="panel-title">Panel ${i}</span>
             <input id="panel-title-${i}" class="panel-title-input" type="text" placeholder="Panel title…" title="Give this panel its own title">
             <div class="panel-imgs-sel">
               <label for="panel-img-count-${i}">Images:</label>
-              <select id="panel-img-count-${i}" onchange="onPanelImgCountChange(${i})" title="How many images to render for this panel (all use the same prompt)">
+              <select id="panel-img-count-${i}" data-action="w2-15" data-a0="${i}" title="How many images to render for this panel (all use the same prompt)">
                 ${imgCountOptionHtml()}
               </select>
             </div>
             <div class="panel-imgs-sel">
               <label for="panel-style-${i}">Style:</label>
-              <select id="panel-style-${i}" onchange="onPanelStyleChange(${i})" title="Override this panel's art style — [Default (Global)] follows the global Art Style dropdown">
+              <select id="panel-style-${i}" data-action="w2-16" data-a0="${i}" title="Override this panel's art style — [Default (Global)] follows the global Art Style dropdown">
                 <option value="" selected>[Default (Global)]</option>
               </select>
             </div>
             <div class="panel-imgs-sel">
               <label for="panel-palette-${i}">Palette:</label>
-              <select id="panel-palette-${i}" onchange="onPanelPaletteChange(${i})" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
+              <select id="panel-palette-${i}" data-action="w2-17" data-a0="${i}" title="Override this panel's color palette — [Default (Global)] follows the global Color Palette dropdown">
                 <option value="" selected>[Default (Global)]</option>
               </select>
             </div>
             <div class="panel-imgs-sel">
               <label for="panel-size-${i}">Size:</label>
-              <select id="panel-size-${i}" onchange="onPanelSizeChange(${i})" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
+              <select id="panel-size-${i}" data-action="w2-18" data-a0="${i}" title="Override this panel's image size — [Default (Global)] follows the Image Size in File → Page Setup">
                 <option value="" selected>[Default (Global)]</option>
                 <option value="512x512">512 × 512</option>
                 <option value="768x768">768 × 768</option>
@@ -5703,34 +5703,34 @@ color-scheme:light;
             </div>
             <div class="panel-imgs-sel">
               <label for="panel-seed-${i}">Seed:</label>
-              <input id="panel-seed-${i}" class="panel-seed-input" type="text" placeholder="random" title="This panel's seed — leave blank to follow the page seed. Once a generation picks a seed, it's filled in here." onkeydown="if(event.key==='Enter'){event.preventDefault();generateSinglePanel(${i});}">
+              <input id="panel-seed-${i}" class="panel-seed-input" type="text" placeholder="random" title="This panel's seed — leave blank to follow the page seed. Once a generation picks a seed, it's filled in here." data-action="w2-19" data-a0="${i}">
               <span class="seed-chips">
-                <button class="btn-copy-prev" id="seed-copy-prev-${i}" onclick="copySeedFromPrevPanel(${i})" title="Copy the previous panel's seed — or clear this panel's seed if the previous panel's is blank/random (−1)">⇤</button>
-                <button class="btn-line-del" id="seed-clear-${i}" onclick="clearPanelSeed(${i})" title="Clear this panel's seed (back to the page seed, or random)">✕</button>
+                <button class="btn-copy-prev" id="seed-copy-prev-${i}" data-action="w2-20" data-a0="${i}" title="Copy the previous panel's seed — or clear this panel's seed if the previous panel's is blank/random (−1)">⇤</button>
+                <button class="btn-line-del" id="seed-clear-${i}" data-action="w2-21" data-a0="${i}" title="Clear this panel's seed (back to the page seed, or random)">✕</button>
               </span>
             </div>
-            <button class="btn-reroll btn-header-gen" onclick="generateSinglePanel(${i})" title="Generate this panel's images">🔄 Generate</button>
+            <button class="btn-reroll btn-header-gen" data-action="w2-22" data-a0="${i}" title="Generate this panel's images">🔄 Generate</button>
             <div class="panel-imgs-sel">
-              <button class="btn-reorder" id="reorder-btn-${i}" onclick="toggleReorderPicker(${i})" title="Move this panel to a different position. With several panels selected, this moves the whole selection as a block.">⇅ Move</button>
-              <select id="panel-reorder-${i}" class="reorder-select" hidden onchange="onReorderSelect(${i}, this)"></select>
+              <button class="btn-reorder" id="reorder-btn-${i}" data-action="w2-23" data-a0="${i}" title="Move this panel to a different position. With several panels selected, this moves the whole selection as a block.">⇅ Move</button>
+              <select id="panel-reorder-${i}" class="reorder-select" hidden data-action="w2-24" data-a0="${i}"></select>
             </div>
           </div>
           <div class="panel-summary" id="panel-summary-${i}" title="">
             <span class="ps-name" id="ps-char-${i}"></span><span class="ps-sep"> · </span><span class="ps-name" id="ps-loc-${i}"></span><span class="ps-sep"> · </span><span class="ps-act" id="ps-act-${i}"></span>
           </div>
           <div class="panel-imgs">
-            <div class="panel-img-slot" id="imgslot-panel-${i}-1"><div class="slot-reroll"><button class="btn-img-reroll" onclick="generateSinglePanelSlot(${i},1)" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-1"><img id="img-panel-${i}-1" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-1"><button class="btn-img-chip btn-view" onclick="openPanelImage(${i},1)" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" onclick="savePanelImage(${i},1)" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" onclick="clearPanelImageSlot(${i},1)" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" onclick="toggleSlotProtect(${i},1)" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" onclick="makeRepresentative(${i},1)" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" onclick="copyImageToAction(${i},1)" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
-            <div class="panel-img-slot" id="imgslot-panel-${i}-2"><div class="slot-reroll"><button class="btn-img-reroll" onclick="generateSinglePanelSlot(${i},2)" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-2"><img id="img-panel-${i}-2" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-2"><button class="btn-img-chip btn-view" onclick="openPanelImage(${i},2)" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" onclick="savePanelImage(${i},2)" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" onclick="clearPanelImageSlot(${i},2)" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" onclick="toggleSlotProtect(${i},2)" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" onclick="makeRepresentative(${i},2)" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" onclick="copyImageToAction(${i},2)" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
-            <div class="panel-img-slot" id="imgslot-panel-${i}-3"><div class="slot-reroll"><button class="btn-img-reroll" onclick="generateSinglePanelSlot(${i},3)" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-3"><img id="img-panel-${i}-3" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-3"><button class="btn-img-chip btn-view" onclick="openPanelImage(${i},3)" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" onclick="savePanelImage(${i},3)" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" onclick="clearPanelImageSlot(${i},3)" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" onclick="toggleSlotProtect(${i},3)" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" onclick="makeRepresentative(${i},3)" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" onclick="copyImageToAction(${i},3)" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
-            <div class="panel-img-slot" id="imgslot-panel-${i}-4"><div class="slot-reroll"><button class="btn-img-reroll" onclick="generateSinglePanelSlot(${i},4)" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-4"><img id="img-panel-${i}-4" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-4"><button class="btn-img-chip btn-view" onclick="openPanelImage(${i},4)" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" onclick="savePanelImage(${i},4)" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" onclick="clearPanelImageSlot(${i},4)" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" onclick="toggleSlotProtect(${i},4)" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" onclick="makeRepresentative(${i},4)" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" onclick="copyImageToAction(${i},4)" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-1"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-25" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-1"><img id="img-panel-${i}-1" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-1"><button class="btn-img-chip btn-view" data-action="w2-26" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-27" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-28" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-29" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-30" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-31" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-2"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-32" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-2"><img id="img-panel-${i}-2" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-2"><button class="btn-img-chip btn-view" data-action="w2-33" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-34" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-35" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-36" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-37" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-38" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-3"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-39" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-3"><img id="img-panel-${i}-3" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-3"><button class="btn-img-chip btn-view" data-action="w2-40" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-41" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-42" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-43" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-44" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-45" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-4"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-46" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-4"><img id="img-panel-${i}-4" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-4"><button class="btn-img-chip btn-view" data-action="w2-47" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-48" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-49" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-50" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-51" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-52" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
           </div>
           <div class="panel-header-btns" style="margin-top:12px;justify-content:flex-end;">
-            <button class="btn-view menu-show" onclick="togglePanelMenus(${i})" title="Show all of this panel's accordion menus, or hide them again (the same button does both)">Show/Hide Menus</button>
-            <button class="btn-view" onclick="openSingleView(${i})" title="Work on this panel alone in single-panel view">🔍 Focus</button>
-            <button class="btn-reroll" onclick="generateSinglePanel(${i})">🔄 Generate</button>
+            <button class="btn-view menu-show" data-action="w2-53" data-a0="${i}" title="Show all of this panel's accordion menus, or hide them again (the same button does both)">Show/Hide Menus</button>
+            <button class="btn-view" data-action="w2-54" data-a0="${i}" title="Work on this panel alone in single-panel view">🔍 Focus</button>
+            <button class="btn-reroll" data-action="w2-22" data-a0="${i}">🔄 Generate</button>
           </div>
           <div class="panel-acc" data-collapsed="1">
-            <div class="panel-acc-toggle" onclick="togglePanelAcc(this)" title="This panel's characters, location, and action prompt">📖 Panel Library</div>
+            <div class="panel-acc-toggle" data-action="w2-55" title="This panel's characters, location, and action prompt">📖 Panel Library</div>
             <div class="panel-acc-body">
               <div class="panel-acc-stack">
                 <div id="panel-objects-${i}"></div>
@@ -5738,23 +5738,23 @@ color-scheme:light;
             </div>
           </div>
           <div class="panel-acc" data-collapsed="1">
-            <div class="panel-acc-toggle" onclick="togglePanelAcc(this)" title="View or edit this panel's exact prompt">📝 Prompt</div>
+            <div class="panel-acc-toggle" data-action="w2-55" title="View or edit this panel's exact prompt">📝 Prompt</div>
             <div class="panel-acc-body">
-              <button class="btn-prompt" onclick="togglePromptEditor(${i})" title="View or edit this panel's exact prompt (style keywords + content), overriding the interface-built one">📝 Prompt</button>
-              <button class="btn-copy-prompt" onclick="copyPanelPrompt(${i})" title="Copy this panel's full prompt to the clipboard">📋 Copy Prompt</button>
+              <button class="btn-prompt" data-action="w2-56" data-a0="${i}" title="View or edit this panel's exact prompt (style keywords + content), overriding the interface-built one">📝 Prompt</button>
+              <button class="btn-copy-prompt" data-action="w2-57" data-a0="${i}" title="Copy this panel's full prompt to the clipboard">📋 Copy Prompt</button>
               <div class="prompt-editor" id="prompt-editor-${i}" hidden>
                 <label>Panel Prompt — Positive:</label>
                 <textarea id="prompt-pos-${i}" rows="3" placeholder="Full positive prompt for this panel (style keywords + characters + location + action)"></textarea>
                 <label>Panel Prompt — Negative:</label>
                 <textarea id="prompt-neg-${i}" rows="2" placeholder="Negative keywords for this panel"></textarea>
                 <div class="chip-row" style="margin-top:8px;">
-                  <button class="btn-view" id="prompt-revert-${i}" onclick="revertPanelPrompt(${i})" title="Forget this panel's hand-edited prompt and go back to the automatic prompt built from its settings" hidden>⟳ Revert to automatic prompt</button>
+                  <button class="btn-view" id="prompt-revert-${i}" data-action="w2-58" data-a0="${i}" title="Forget this panel's hand-edited prompt and go back to the automatic prompt built from its settings" hidden>⟳ Revert to automatic prompt</button>
                 </div>
                 <p class="lib-hint" style="margin-top:8px;">Editing here overrides this panel's prompt for the generate/reroll buttons, and the override stays frozen until you edit it here again or press ⟳ Revert. Only this panel's Style or Palette — or the global keywords, preset or NSFW flag, which change the same keywords — resets it back to automatic. Clearing the positive box returns it to automatic too.</p>
               </div>
               <div class="panel-acc-stack">
                 <div class="panel-acc" data-collapsed="1">
-                  <div class="panel-acc-toggle" onclick="togglePanelAcc(this)" title="This panel's prompt history: the exact prompt text and the seed(s) each of its last five generations used">🕘 Generated Prompt</div>
+                  <div class="panel-acc-toggle" data-action="w2-55" title="This panel's prompt history: the exact prompt text and the seed(s) each of its last five generations used">🕘 Generated Prompt</div>
                   <div class="panel-acc-body">
                     <p class="lib-hint gp-hint">Frozen snapshots — the exact prompt text and seed(s) each generation used. Later edits to characters, keywords or the prompt editor never change them. The newest five are kept.</p>
                     <div class="gp-list" id="gp-list-${i}"></div>
@@ -5764,30 +5764,30 @@ color-scheme:light;
             </div>
           </div>
           <div class="panel-acc" data-collapsed="1">
-            <div class="panel-acc-toggle" onclick="togglePanelAcc(this)" title="Duplicate, add, clear, or delete this panel">⚙ Panel</div>
+            <div class="panel-acc-toggle" data-action="w2-55" title="Duplicate, add, clear, or delete this panel">⚙ Panel</div>
             <div class="panel-acc-body">
-              <button class="btn-clear btn-panel-menu" onclick="collapsePanelMenus(${i})" title="Collapse all of this panel's accordion menus again">Collapse Menu</button>
-              <button class="btn-reroll" id="panel-gen-btn-${i}" onclick="panelGenerateAction(${i})" title="Generate this panel's images. With several panels selected, this generates every selected panel.">🔄 Generate</button>
-              <button class="btn-add-lib" id="panel-gento-btn-${i}" onclick="panelGenerateToHereAction(${i})" title="Generate panel 1 up to and including this panel. With several panels selected, this finishes at the last selected panel instead.">⚡ Generate All To Here</button>
-              <button class="btn-add-lib" id="panel-genfrom-btn-${i}" onclick="panelGenerateFromHereAction(${i})" title="Generate this panel and every panel after it on this page. With several panels selected, this starts from the first selected panel.">⚡ Generate All From Here</button>
-              <button class="btn-add-lib" id="panel-genrange-btn-${i}" onclick="panelGenerateRangeAction(${i})" title="Choose an inclusive range of panels on this page to generate (e.g. panel 3 to panel 7). With several panels selected, the range starts out as the selected span.">⚡ Generate (x) to (y)…</button>
-              <button class="btn-dup" id="panel-dup-btn-${i}" onclick="panelDuplicateAction(${i})" title="Insert a copy of this panel right after it — all of its data and prompt, but no images. With several panels selected, this duplicates the whole selection.">⧉ Duplicate</button>
-              <button class="btn-add-panel" id="panel-add-btn-${i}" onclick="panelAddAction(${i})" title="Insert a new empty panel right after this one — later panels move down and are renumbered. With several panels selected, this adds one new empty panel per selected panel after the last of them.">＋ Add Panel</button>
-              <button class="btn-clear btn-clear-images" id="panel-clear-imgs-btn-${i}" onclick="panelClearImagesAction(${i})" title="Remove all of this panel's images at once (keeps its characters, location, and action). With several panels selected, this clears the images of every selected panel." hidden>🗑 Clear Images</button>
-              <button class="btn-clear" id="panel-clear-btn-${i}" onclick="panelClearAction(${i})" title="Remove ALL of this panel's images, characters, locations, and descriptions (also stops an in-progress generation). With several panels selected, this clears every selected panel.">🗑 Clear</button>
-              <button class="btn-del-panel" id="panel-del-btn-${i}" onclick="panelDeleteAction(${i})" style="background:var(--red);color:#fff;" title="Delete this panel — later panels move up and are renumbered (its images and protection go too). With several panels selected, this deletes every selected panel, optionally pulling panels up from the following pages to keep this page full.">🗑 Delete</button>
+              <button class="btn-clear btn-panel-menu" data-action="w2-59" data-a0="${i}" title="Collapse all of this panel's accordion menus again">Collapse Menu</button>
+              <button class="btn-reroll" id="panel-gen-btn-${i}" data-action="w2-60" data-a0="${i}" title="Generate this panel's images. With several panels selected, this generates every selected panel.">🔄 Generate</button>
+              <button class="btn-add-lib" id="panel-gento-btn-${i}" data-action="w2-61" data-a0="${i}" title="Generate panel 1 up to and including this panel. With several panels selected, this finishes at the last selected panel instead.">⚡ Generate All To Here</button>
+              <button class="btn-add-lib" id="panel-genfrom-btn-${i}" data-action="w2-62" data-a0="${i}" title="Generate this panel and every panel after it on this page. With several panels selected, this starts from the first selected panel.">⚡ Generate All From Here</button>
+              <button class="btn-add-lib" id="panel-genrange-btn-${i}" data-action="w2-63" data-a0="${i}" title="Choose an inclusive range of panels on this page to generate (e.g. panel 3 to panel 7). With several panels selected, the range starts out as the selected span.">⚡ Generate (x) to (y)…</button>
+              <button class="btn-dup" id="panel-dup-btn-${i}" data-action="w2-64" data-a0="${i}" title="Insert a copy of this panel right after it — all of its data and prompt, but no images. With several panels selected, this duplicates the whole selection.">⧉ Duplicate</button>
+              <button class="btn-add-panel" id="panel-add-btn-${i}" data-action="w2-65" data-a0="${i}" title="Insert a new empty panel right after this one — later panels move down and are renumbered. With several panels selected, this adds one new empty panel per selected panel after the last of them.">＋ Add Panel</button>
+              <button class="btn-clear btn-clear-images" id="panel-clear-imgs-btn-${i}" data-action="w2-66" data-a0="${i}" title="Remove all of this panel's images at once (keeps its characters, location, and action). With several panels selected, this clears the images of every selected panel." hidden>🗑 Clear Images</button>
+              <button class="btn-clear" id="panel-clear-btn-${i}" data-action="w2-67" data-a0="${i}" title="Remove ALL of this panel's images, characters, locations, and descriptions (also stops an in-progress generation). With several panels selected, this clears every selected panel.">🗑 Clear</button>
+              <button class="btn-del-panel" id="panel-del-btn-${i}" data-action="w2-68" data-a0="${i}" style="background:var(--red);color:#fff;" title="Delete this panel — later panels move up and are renumbered (its images and protection go too). With several panels selected, this deletes every selected panel, optionally pulling panels up from the following pages to keep this page full.">🗑 Delete</button>
               <label class="check-label panel-acc-check" title="Normally this panel's images use the panel's seed, seed + 1, seed + 2… — one seed per image. Tick this to render every image of this panel with the same seed: the value in the panel's Seed box above (or the page seed + this panel's position, when that box is empty).">
-                <input type="checkbox" id="panel-sameseed-${i}" onchange="onPanelSameSeedChange(${i})">
+                <input type="checkbox" id="panel-sameseed-${i}" data-action="w2-69" data-a0="${i}">
                 <span><b>🎲 Same seed for every image</b> — no +1 per image.</span>
               </label>
             </div>
           </div>
           <div class="panel-acc" data-collapsed="1">
-            <div class="panel-acc-toggle" onclick="togglePanelAcc(this)" title="Open, download, or export this panel's images and settings">💾 Files</div>
+            <div class="panel-acc-toggle" data-action="w2-55" title="Open, download, or export this panel's images and settings">💾 Files</div>
             <div class="panel-acc-body">
-              <button class="btn-open-all btn-view" onclick="openPanelAll(${i})" title="Open all of this panel's images in new tabs" disabled>↗ Open All</button>
-              <button class="btn-save-all btn-dl" onclick="savePanelAll(${i})" title="Download all of this panel's images as a single .zip" disabled>⬇ Save All (.zip)</button>
-              <button class="btn-export" onclick="exportSettings()" title="Download all panels' settings into one JSON file">⬇ Export</button>
+              <button class="btn-open-all btn-view" data-action="w2-70" data-a0="${i}" title="Open all of this panel's images in new tabs" disabled>↗ Open All</button>
+              <button class="btn-save-all btn-dl" data-action="w2-71" data-a0="${i}" title="Download all of this panel's images as a single .zip" disabled>⬇ Save All (.zip)</button>
+              <button class="btn-export" data-action="w2-72" title="Download all panels' settings into one JSON file">⬇ Export</button>
             </div>
           </div>
         </div>`);
@@ -7835,8 +7835,8 @@ color-scheme:light;
       + '<span class="gp-num">#' + (idx + 1) + '</span>'
       + '<span class="gp-seeds">' + escapeHtml(promptHistorySeedLabel(entry)) + '</span>'
       + (when ? '<span class="gp-time">' + escapeHtml(when) + '</span>' : '')
-      + '<button class="btn-copy-prompt gp-copy" onclick="copyPromptHistoryEntry(' + i + ',' + idx + ')" title="Copy this saved prompt to the clipboard">📋 Copy</button>'
-      + '<button class="btn-reroll gp-gen" onclick="generateFromPromptHistory(' + i + ',' + idx + ')" title="Generate this panel from this prompt — the exact prompt text and seed(s) saved in this entry are used instead of the interface-built prompt. The saved history is left alone: nothing is added, moved or reordered.">🔄 Generate</button>'
+      + '<button class="btn-copy-prompt gp-copy" data-action="w2-73" data-a0="' + i + '" data-a1="' + idx + '" title="Copy this saved prompt to the clipboard">📋 Copy</button>'
+      + '<button class="btn-reroll gp-gen" data-action="w2-74" data-a0="' + i + '" data-a1="' + idx + '" title="Generate this panel from this prompt — the exact prompt text and seed(s) saved in this entry are used instead of the interface-built prompt. The saved history is left alone: nothing is added, moved or reordered.">🔄 Generate</button>'
       + '</div>'
       + '<label class="gp-label">Positive prompt — exactly what was sent:</label>'
       + '<textarea class="gp-pos" readonly rows="4" title="Saved copy of the positive prompt this generation used. It is never changed by later edits.">' + escapeHtml(entry.pos || '') + '</textarea>'
@@ -9208,7 +9208,7 @@ color-scheme:light;
     }
     ctn.innerHTML = visible.map(function (e, idx) {
       const isSnap = e.kind === 'snapshot';
-      return '<button type="button" class="recent-item" onclick="openRecentEntry(' + idx + ')" title="' + (isSnap ? 'Load the in-browser copy of ' : 'Open ') + escapeHtml(e.name) + '">'
+      return '<button type="button" class="recent-item" data-action="w2-75" data-a0="' + idx + '" title="' + (isSnap ? 'Load the in-browser copy of ' : 'Open ') + escapeHtml(e.name) + '">'
         + '<span class="recent-name">📄 ' + escapeHtml(e.name) + '</span>'
         + (isSnap ? '<span class="recent-tag">in-browser copy</span>' : '')
         + '<span class="recent-when">' + escapeHtml(recentTimeText(e.at)) + '</span>'
@@ -12046,11 +12046,89 @@ color-scheme:light;
     document.addEventListener(t, function (e) {
       const t0 = e.target && e.target.closest ? e.target.closest("[data-action]") : null;
       if (!t0) return;
-      const a = W1ACT[t0.getAttribute("data-action")];
+      const a = W1ACT[t0.getAttribute("data-action")] || W2ACT[t0.getAttribute("data-action")];
       if (!a || a.ev !== t) return;
       if (a.run(t0, e) === false) e.preventDefault();
     }, true);
   });
+  const W2ACT = {
+    "w2-0": { ev: "click", run: (el, e) => { choiceDialogPick((el.dataset.a0)) } },
+    "w2-1": { ev: "click", run: (el, e) => { togglePanelLine(el) } },
+    "w2-2": { ev: "click", run: (el, e) => { copyFromPrevPanel((+el.dataset.a0),'char',(+el.dataset.a1)) } },
+    "w2-3": { ev: "click", run: (el, e) => { deletePanelChar((+el.dataset.a0),(+el.dataset.a1)) } },
+    "w2-4": { ev: "click", run: (el, e) => { refreshPanelLineFromLibrary('char',(+el.dataset.a0),(+el.dataset.a1)) } },
+    "w2-5": { ev: "click", run: (el, e) => { savePanelDescription('char',(+el.dataset.a0),(+el.dataset.a1)) } },
+    "w2-6": { ev: "click", run: (el, e) => { copyFromPrevPanel((+el.dataset.a0),'loc') } },
+    "w2-7": { ev: "click", run: (el, e) => { deletePanelLoc((+el.dataset.a0)) } },
+    "w2-8": { ev: "click", run: (el, e) => { refreshPanelLineFromLibrary('loc',(+el.dataset.a0)) } },
+    "w2-9": { ev: "click", run: (el, e) => { savePanelDescription('loc',(+el.dataset.a0),1) } },
+    "w2-10": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();generateSinglePanel((+el.dataset.a0));} } },
+    "w2-11": { ev: "click", run: (el, e) => { copyFromPrevPanel((+el.dataset.a0),'act') } },
+    "w2-12": { ev: "click", run: (el, e) => { deletePanelAct((+el.dataset.a0)) } },
+    "w2-13": { ev: "click", run: (el, e) => { onPanelSelectClick((+el.dataset.a0), e) } },
+    "w2-14": { ev: "click", run: (el, e) => { panelPasteAction((+el.dataset.a0)) } },
+    "w2-15": { ev: "change", run: (el, e) => { onPanelImgCountChange((+el.dataset.a0)) } },
+    "w2-16": { ev: "change", run: (el, e) => { onPanelStyleChange((+el.dataset.a0)) } },
+    "w2-17": { ev: "change", run: (el, e) => { onPanelPaletteChange((+el.dataset.a0)) } },
+    "w2-18": { ev: "change", run: (el, e) => { onPanelSizeChange((+el.dataset.a0)) } },
+    "w2-19": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'){e.preventDefault();generateSinglePanel((+el.dataset.a0));} } },
+    "w2-20": { ev: "click", run: (el, e) => { copySeedFromPrevPanel((+el.dataset.a0)) } },
+    "w2-21": { ev: "click", run: (el, e) => { clearPanelSeed((+el.dataset.a0)) } },
+    "w2-22": { ev: "click", run: (el, e) => { generateSinglePanel((+el.dataset.a0)) } },
+    "w2-23": { ev: "click", run: (el, e) => { toggleReorderPicker((+el.dataset.a0)) } },
+    "w2-24": { ev: "change", run: (el, e) => { onReorderSelect((+el.dataset.a0), el) } },
+    "w2-25": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),1) } },
+    "w2-26": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),1) } },
+    "w2-27": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),1) } },
+    "w2-28": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),1) } },
+    "w2-29": { ev: "click", run: (el, e) => { toggleSlotProtect((+el.dataset.a0),1) } },
+    "w2-30": { ev: "click", run: (el, e) => { makeRepresentative((+el.dataset.a0),1) } },
+    "w2-31": { ev: "click", run: (el, e) => { copyImageToAction((+el.dataset.a0),1) } },
+    "w2-32": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),2) } },
+    "w2-33": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),2) } },
+    "w2-34": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),2) } },
+    "w2-35": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),2) } },
+    "w2-36": { ev: "click", run: (el, e) => { toggleSlotProtect((+el.dataset.a0),2) } },
+    "w2-37": { ev: "click", run: (el, e) => { makeRepresentative((+el.dataset.a0),2) } },
+    "w2-38": { ev: "click", run: (el, e) => { copyImageToAction((+el.dataset.a0),2) } },
+    "w2-39": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),3) } },
+    "w2-40": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),3) } },
+    "w2-41": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),3) } },
+    "w2-42": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),3) } },
+    "w2-43": { ev: "click", run: (el, e) => { toggleSlotProtect((+el.dataset.a0),3) } },
+    "w2-44": { ev: "click", run: (el, e) => { makeRepresentative((+el.dataset.a0),3) } },
+    "w2-45": { ev: "click", run: (el, e) => { copyImageToAction((+el.dataset.a0),3) } },
+    "w2-46": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),4) } },
+    "w2-47": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),4) } },
+    "w2-48": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),4) } },
+    "w2-49": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),4) } },
+    "w2-50": { ev: "click", run: (el, e) => { toggleSlotProtect((+el.dataset.a0),4) } },
+    "w2-51": { ev: "click", run: (el, e) => { makeRepresentative((+el.dataset.a0),4) } },
+    "w2-52": { ev: "click", run: (el, e) => { copyImageToAction((+el.dataset.a0),4) } },
+    "w2-53": { ev: "click", run: (el, e) => { togglePanelMenus((+el.dataset.a0)) } },
+    "w2-54": { ev: "click", run: (el, e) => { openSingleView((+el.dataset.a0)) } },
+    "w2-55": { ev: "click", run: (el, e) => { togglePanelAcc(el) } },
+    "w2-56": { ev: "click", run: (el, e) => { togglePromptEditor((+el.dataset.a0)) } },
+    "w2-57": { ev: "click", run: (el, e) => { copyPanelPrompt((+el.dataset.a0)) } },
+    "w2-58": { ev: "click", run: (el, e) => { revertPanelPrompt((+el.dataset.a0)) } },
+    "w2-59": { ev: "click", run: (el, e) => { collapsePanelMenus((+el.dataset.a0)) } },
+    "w2-60": { ev: "click", run: (el, e) => { panelGenerateAction((+el.dataset.a0)) } },
+    "w2-61": { ev: "click", run: (el, e) => { panelGenerateToHereAction((+el.dataset.a0)) } },
+    "w2-62": { ev: "click", run: (el, e) => { panelGenerateFromHereAction((+el.dataset.a0)) } },
+    "w2-63": { ev: "click", run: (el, e) => { panelGenerateRangeAction((+el.dataset.a0)) } },
+    "w2-64": { ev: "click", run: (el, e) => { panelDuplicateAction((+el.dataset.a0)) } },
+    "w2-65": { ev: "click", run: (el, e) => { panelAddAction((+el.dataset.a0)) } },
+    "w2-66": { ev: "click", run: (el, e) => { panelClearImagesAction((+el.dataset.a0)) } },
+    "w2-67": { ev: "click", run: (el, e) => { panelClearAction((+el.dataset.a0)) } },
+    "w2-68": { ev: "click", run: (el, e) => { panelDeleteAction((+el.dataset.a0)) } },
+    "w2-69": { ev: "change", run: (el, e) => { onPanelSameSeedChange((+el.dataset.a0)) } },
+    "w2-70": { ev: "click", run: (el, e) => { openPanelAll((+el.dataset.a0)) } },
+    "w2-71": { ev: "click", run: (el, e) => { savePanelAll((+el.dataset.a0)) } },
+    "w2-72": { ev: "click", run: (el, e) => { exportSettings() } },
+    "w2-73": { ev: "click", run: (el, e) => { copyPromptHistoryEntry((+el.dataset.a0),(+el.dataset.a1)) } },
+    "w2-74": { ev: "click", run: (el, e) => { generateFromPromptHistory((+el.dataset.a0),(+el.dataset.a1)) } },
+    "w2-75": { ev: "click", run: (el, e) => { openRecentEntry((+el.dataset.a0)) } },
+  };
   window.openGhBackup = openGhBackup;
   window.ghClose = ghClose;
   window.ghSaveSettings = ghSaveSettings;
