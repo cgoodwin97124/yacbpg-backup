@@ -1,4 +1,9 @@
 
+### 2026-10-04 — Commands answers + notional-cursor recon (author answers 1-5 + cursor proposal)
+- **Status:** 🟢 START NOW — Commands answers logged; cursor idea in RECON (no code).
+- **Answers:** (1) Page as sublevel under Edit; Generate/Library/Danger after View, Help last. (2) Panel submenu: Generate/To/From/Range/Add/Duplicate/Clear/Clear Images/Delete (prior move/remove/consolidate talk takes precedence). (3) Paste: 1 selected → before that panel; multi → paste OVER selection with warn + Undo-logged. (4) Grey Copy/Cut/Focus (+selection) when none: yes. (5) Apply to menu bar + groups too.
+- **Cursor recon asked:** notional cursor between panels (checkboxes-between-panels variant), arrows/shift-arrows, click/right-click rules, clipboard ops + New Panel + Insert Page Break at cursor, pref under View or Edit→Preferences. Report disruptiveness, no code until greenlit.
+
 ### 2026-10-04 — Re-push .34 confirmed + Commands START NOW (author, verbatim: "Saved!  Go ahead and re-push and then on to Commands!")
 - **Status:** 🟢 START NOW — re-push DONE (18 files, repo verified .34); Commands recon underway (catalog + grey hooks), questions next, no code until greenlit.
 
