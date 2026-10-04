@@ -2,6 +2,8 @@
 ### 2026-10-04 — P5 UI-layer extraction RECON (read-only, no code)
 - **Status:** 🟢 START NOW (author, verbatim: "P5 recon, go!")
 - **Scope:** recon only — fresh counts of inline handlers / window exports / id-lookups against the .20 build, handler-to-function map, wave plan. Ends with questions; no code until greenlit per the standing recon+ask rule.
+- **Findings (read-only, vs .20 build 634,585 bytes / 12,294 lines):** 236 inline handlers = 153 static markup + 82 JS-template strings (64 carrying a panel index via template interpolation — the dynamic grid cards). 270 window exports (+71 since roadmap baseline); 118 never named in any handler, of which 103 are called by internal code and 15 look lonely — but 2 are native browser APIs (showSaveFilePicker/showOpenFilePicker feature-checks), 1 is the boot gate (appReady), and the rest are intentional devtools/debug hooks (__open*Form, __store*/__imageStore, parseZipImages et al). src/ core remains DOM-free (0 window refs; 1 document ref in jsontext.js). Delegated input/change listeners already exist at grid level — the pattern to extend.
+- **Proposed waves:** W1 static-markup handlers to data-action delegation + delete newly-dead exports; W2 the 64 dynamic grid-card handlers to delegation by panel id (pairs with P2-P4 id work); W3 export-surface sweep (keep debug-hook convention). One version + full suites + byte-identical restore per wave.
 
 ### 2026-10-04 — re-push 2026.10.04.20 post-Save + next-steps V-5
 - **Status:** ✅ DONE 2026.10.04.20 — re-pushed post-Save (ghPush: 18 files), next steps presented in V-5. No code changes.
