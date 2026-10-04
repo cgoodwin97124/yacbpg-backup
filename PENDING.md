@@ -1,4 +1,8 @@
 
+### 2026-10-04 — P5 W3a: test API behind window.__dbg, flat exports deleted (IMPLEMENTATION)
+- **Status:** 🟢 START NOW (author, verbatim: "Your recommendations, go.") — all four W3 questions per recommendation: __dbg namespace, two releases (W3a then W3b), property handlers left alone, no debug additions.
+- **Scope:** add window.__dbg with the test-referenced names, destructure in page-run suites, delete the flat assignments, add a window-allowlist guard to diff-core.js. One version (2026.10.04.23). Full suites + byte-identical restore before push.
+
 ### 2026-10-04 — P5 W2: dynamic card handlers to delegation by panel id (IMPLEMENTATION)
 - **Status:** 🟢 START NOW (author, verbatim: "Go!") — W2 greenlit.
 - **Scope:** convert the 64 dynamic (template-built, panel-index-carrying) handlers + remaining script-template ones to delegation; update the two smoke lines that call cb.onclick directly; no export deletions. One version (2026.10.04.22). Full suites + byte-identical restore before push.
