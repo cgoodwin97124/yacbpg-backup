@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.15 — 2026-10-03 — 📊 Analysis chips go through commands (non-current pages)
-- analysisSetPanelStyle/Size/Seed + page seed route by id (existing setStyle/setSize/setPanelSeed + new setPalette/setPageSeed); old paths as fallback. Zero behavior change.
+## 2026.10.03.16 — 2026-10-03 — 🖼️ P4 wave 1: image reads go through src/state/images.js
+- New createImageStore() facade over the session maps (IMAGES_VERSION 1); all image reads (display, preview, counts, clipboard snapshot, export collect, analysis) route through it with legacy fallback. Writes/remaps untouched. Zero behavior change.
 </script>
 
 
@@ -1366,7 +1366,7 @@ color-scheme:light;
   const CHAR_KEYS = ["none", "hero", "villain", "sidekick", "civilian"];
   const LOC_KEYS = ["none", "city", "lab", "hideout", "rooftop"];
 
-  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null, schema: null, store: null, commands: null };
+  const coreModules = { zip: null, jsontext: null, keywords: null, seeds: null, prompt: null, library: null, schema: null, store: null, commands: null, images: null };
   const coreLoads = [];
   const coreLoad = (name, path, apply) => {
     coreLoads.push(new Promise((resolve) => {
@@ -1451,6 +1451,14 @@ color-scheme:light;
   let panelCommands = null;
   coreLoad('commands', './src/state/commands.js', (m) => {
     if (m.COMMANDS) panelCommands = m.COMMANDS;
+  });
+  let createImageStore = null;
+  let panelImageStore = null;
+  coreLoad('images', './src/state/images.js', (m) => {
+    if (m.createImageStore) {
+      createImageStore = m.createImageStore;
+      panelImageStore = createImageStore(imageMaps());
+    }
   });
   const coreReady = Promise.all(coreLoads).then((failed) => failed.filter(Boolean));
 
@@ -3246,6 +3254,7 @@ color-scheme:light;
   }
 
   function analysisPageImages(pg) {
+    if (panelImageStore) return panelImageStore.pageImages(pg);
     if (pg === currentPage) return panelImages;
     const sess = pageSession[pg];
     return (sess && sess.images) || {};
@@ -4440,6 +4449,38 @@ color-scheme:light;
   let promptHistoryRuns = {};
   const PROMPT_HISTORY_MAX = 5;
   const inFlightGen = new Map();
+  function imageMaps() {
+    return {
+      get current() { return panelImages; },
+      get currentPage() { return currentPage; },
+      sessions: pageSession,
+    };
+  }
+  function imgSlotUrl(i, k) {
+    if (panelImageStore) return panelImageStore.get(currentPage, i, k);
+    const a = panelImages[i];
+    return Array.isArray(a) ? a[k - 1] : undefined;
+  }
+  function imgSlotCount(i) {
+    if (panelImageStore) return panelImageStore.count(currentPage, i);
+    return (panelImages[i] || []).filter(d => !!d).length;
+  }
+  function imgSlotsCopy(i) {
+    if (panelImageStore) return panelImageStore.getPanel(currentPage, i);
+    const a = panelImages[i];
+    return Array.isArray(a) ? a.slice() : null;
+  }
+  function hasImagesAnywhere() {
+    if (panelImageStore) return panelImageStore.hasAnywhere();
+    for (const key in panelImages) if (panelImages[key] && panelImages[key].some(d => !!d)) return true;
+    for (const key in pageSession) {
+      const sess = pageSession[key];
+      if (sess && sess.images) {
+        for (const pi in sess.images) if (sess.images[pi] && sess.images[pi].some(d => !!d)) return true;
+      }
+    }
+    return false;
+  }
 
   function ensureImageObserver() {
     if (imgObserver) return;
@@ -4451,7 +4492,8 @@ color-scheme:light;
           const img = document.getElementById('img-panel-' + i + '-' + k);
           if (!img) continue;
           if (entry.isIntersecting) {
-            if (panelImages[i] && panelImages[i][k - 1]) { img.src = panelImages[i][k - 1]; delete img.dataset.hidden; }
+            const u = imgSlotUrl(i, k);
+            if (u) { img.src = u; delete img.dataset.hidden; }
           } else {
             if (img.src) { img.removeAttribute('src'); img.dataset.hidden = '1'; }
           }
@@ -4508,7 +4550,7 @@ color-scheme:light;
     const m = /^imgbox-panel-(\d+)-(\d+)$/.exec(box.id);
     if (!m) return null;
     const i = parseInt(m[1], 10), k = parseInt(m[2], 10);
-    const dataUrl = panelImages[i] && panelImages[i][k - 1];
+    const dataUrl = imgSlotUrl(i, k);
     return dataUrl ? { i, k, dataUrl } : null;
   }
 
@@ -5249,6 +5291,7 @@ color-scheme:light;
   }
 
   function collectAllPageImages() {
+    if (panelImageStore) return panelImageStore.allPages();
     const out = {};
     for (const [pg, sess] of Object.entries(pageSession)) {
       if (sess && sess.images) out[pg] = sess.images;
@@ -6143,6 +6186,7 @@ color-scheme:light;
   }
 
   function pageImagesOf(pg) {
+    if (panelImageStore) return panelImageStore.pageImages(pg);
     if (pg === currentPage) return panelImages;
     const sess = pageSession[pg];
     return (sess && sess.images) || {};
@@ -6257,7 +6301,7 @@ color-scheme:light;
       const ci = document.getElementById('panel-clear-imgs-btn-' + i);
       if (ci) {
         ci.textContent = (sel && n > 1) ? ('🗑 Clear Images (' + n + ')') : '🗑 Clear Images';
-        ci.hidden = ((panelImages[i] || []).filter(d => !!d).length < 2) && !(sel && n > 1);
+        ci.hidden = (imgSlotCount(i) < 2) && !(sel && n > 1);
       }
       const clr = document.getElementById('panel-clear-btn-' + i);
       if (clr) clr.textContent = (sel && n > 1) ? ('🗑 Clear ' + n + ' Panels') : '🗑 Clear';
@@ -7742,7 +7786,7 @@ color-scheme:light;
     const jobs = [];
     for (const s of seeds) {
       if (!s || typeof s.k !== 'number' || haveK.indexOf(s.k) !== -1) continue;
-      const dataUrl = (panelImages[i] || [])[s.k - 1];
+      const dataUrl = imgSlotUrl(i, s.k);
       if (dataUrl) jobs.push({ k: s.k, dataUrl: dataUrl });
     }
     if (!jobs.length) return;
@@ -8336,7 +8380,7 @@ color-scheme:light;
   }
 
   function openPanelImage(i, k) {
-    const dataUrl = (panelImages[i] || [])[k - 1];
+    const dataUrl = imgSlotUrl(i, k);
     if (!dataUrl) return;
     const blobUrl = dataUrlToBlobUrl(dataUrl);
     if (!blobUrl) return;
@@ -8358,7 +8402,7 @@ color-scheme:light;
 
   function savePanelImage(i, k) {
     try {
-      const dataUrl = (panelImages[i] || [])[k - 1];
+      const dataUrl = imgSlotUrl(i, k);
       if (!dataUrl) return;
       const blobUrl = dataUrlToBlobUrl(dataUrl);
       if (!blobUrl) return;
@@ -8373,10 +8417,12 @@ color-scheme:light;
   }
 
   function hasPanelImages(i) {
+    if (panelImageStore) return panelImageStore.hasAny(currentPage, i);
     return !!(panelImages[i] && panelImages[i].some(d => !!d));
   }
 
   function hasPanelImage(i, k) {
+    if (panelImageStore) return panelImageStore.has(currentPage, i, k);
     return !!(panelImages[i] && panelImages[i][k - 1]);
   }
 
@@ -8403,7 +8449,7 @@ color-scheme:light;
 
   function updatePanelAllButtons(i) {
     const has = hasPanelImages(i);
-    const count = (panelImages[i] || []).filter(d => !!d).length;
+    const count = imgSlotCount(i);
     const card = document.getElementById('panel-card-' + i);
     if (!card) return;
     for (const cls of ['btn-open-all', 'btn-save-all']) {
@@ -8427,7 +8473,7 @@ color-scheme:light;
 
   function updateRepHighlight(i) {
     const box = document.getElementById('imgbox-panel-' + i + '-1');
-    if (box) box.classList.toggle('rep', !!(panelImages[i] && panelImages[i][0]));
+    if (box) box.classList.toggle('rep', !!imgSlotUrl(i, 1));
   }
 
   function makeRepresentative(i, k) {
@@ -8532,7 +8578,7 @@ color-scheme:light;
     const optLabel = (p) => {
       const ti = document.getElementById('panel-title-' + p);
       const title = ti ? String(ti.value || '').trim() : '';
-      const n = (panelImages[p] || []).filter(d => !!d).length;
+      const n = imgSlotCount(p);
       return 'Panel ' + p + (title ? ' — ' + title : '') + ' · ' + (n === 0 ? 'no images' : n + (n === 1 ? ' image' : ' images'));
     };
     const parts = [];
@@ -8590,7 +8636,7 @@ color-scheme:light;
   }
 
   function openPanelAll(i) {
-    const arr = panelImages[i] || [];
+    const arr = imgSlotsCopy(i) || [];
     for (let k = 1; k <= 4; k++) {
       const dataUrl = arr[k - 1];
       if (!dataUrl) continue;
@@ -8614,7 +8660,7 @@ color-scheme:light;
   }
 
   function savePanelAll(i) {
-    const arr = panelImages[i] || [];
+    const arr = imgSlotsCopy(i) || [];
     const files = [];
     for (let k = 1; k <= 4; k++) {
       const dataUrl = arr[k - 1];
@@ -8639,7 +8685,7 @@ color-scheme:light;
       if (slot) slot.style.display = k <= count ? 'block' : 'none';
       const sbtns = document.getElementById('slotbtns-panel-' + i + '-' + k);
       if (sbtns) sbtns.style.display = k <= count ? 'flex' : 'none';
-      setPanelImageButtons(i, k, !!(panelImages[i] && panelImages[i][k - 1]));
+      setPanelImageButtons(i, k, hasPanelImage(i, k));
     }
   }
 
@@ -8864,7 +8910,7 @@ color-scheme:light;
     grid.innerHTML = '';
     for (let p = 1; p <= total; p++) {
       const cell = document.createElement('div');
-      const dataUrl = panelImages[p] && panelImages[p][0];
+      const dataUrl = imgSlotUrl(p, 1);
       cell.className = 'sb-cell' + (dataUrl ? '' : ' sb-empty');
       const titleEl = document.getElementById('panel-title-' + p);
       const title = titleEl && titleEl.value.trim() ? titleEl.value.trim() : '';
@@ -9426,13 +9472,7 @@ color-scheme:light;
   }
 
   function hasActiveProject() {
-    for (const key in panelImages) if (panelImages[key] && panelImages[key].some(d => !!d)) return true;
-    for (const key in pageSession) {
-      const sess = pageSession[key];
-      if (sess && sess.images) {
-        for (const pi in sess.images) if (sess.images[pi] && sess.images[pi].some(d => !!d)) return true;
-      }
-    }
+    if (hasImagesAnywhere()) return true;
     const raw = readPanelState();
     if (!raw || typeof raw !== 'object') return false;
     if (raw.projectName && String(raw.projectName).trim()) return true;
@@ -11022,6 +11062,7 @@ color-scheme:light;
   window.__storeModule = function () { return coreModules.store; };
   window.__schemaModule = function () { return coreModules.schema; };
   window.__commandsModule = function () { return coreModules.commands; };
+  window.__imageStore = function () { return panelImageStore; };
   window.__panelOverrideSet = function (i) { return !!panelPromptOverrides[i]; };
   window.runPanelCommand = runPanelCommand;
   window.renderCommittedFields = renderCommittedFields;
@@ -12025,7 +12066,7 @@ color-scheme:light;
     }
   }
 
-  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/refimages-form.html', 'src/batch-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js', 'src/state/commands.js'];
+  const GH_SRC_FILES = ['src/manual.html', 'src/question-form.html', 'src/refactor-form.html', 'src/round2-form.html', 'src/refimages-form.html', 'src/batch-form.html', 'src/core/zip.js', 'src/core/jsontext.js', 'src/core/keywords.js', 'src/core/seeds.js', 'src/core/prompt.js', 'src/core/library-core.js', 'src/core/schema.js', 'src/state/store.js', 'src/state/commands.js', 'src/state/images.js'];
 
   function extractTemplateSource(html) {
     const key = '"outputTemplate":"';
