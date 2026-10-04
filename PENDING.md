@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Context menu BUILD START (author: option c + whole-card right-click, own long-press delay, prompt+seed/size, Paste at clicked panel)
+- **Status:** 🟢 START NOW — custom menu delegating to per-panel buttons; Select = checkbox-toggle; no code yet at log time.
+
 ### 2026-10-04 — Context menu recon START (author, verbatim: "Let's start the recon.")
 - **Status:** 🟢 START NOW — recon only (existing panel menu + contextmenu/long-press hooks, catalog mapping, Copy-prompt action), questions next, no code until greenlit.
 
