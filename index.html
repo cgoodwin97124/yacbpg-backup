@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.19 — 2026-10-04 — 🖼️ P4 wave 4: clipboard/undo/paste go id-native, session shell deleted
-- Paste plants clipboard images under fresh panel ids (setById inside the cascade, before the single re-render); undo keeps the store snapshot only; move-across-pages session shuffle, renumber session plumbing, and the whole pageSession/panelImages fallback shell are gone — every accessor talks to the id-keyed store directly. Zero behavior change.
+## 2026.10.04.20 — 2026-10-04 — 🖼️ P4 wave 5: export/import go id-native
+- Zip entries are now named panel-i-k-<panelId> so images find their panel even if the settings were reordered; import plants id-named files straight under their panel id (old positional names still import as before, unknown ids fall back to their recorded position). Zero behavior change.
 </script>
 
 
@@ -9306,27 +9306,68 @@ color-scheme:light;
   }
 
   async function parseZipImages(entries) {
-    const imgs = {};
-    const re = /^panels\/(?:page-(\d+)\/)?panel-(\d+)-(\d+)\.(png|jpe?g|webp)$/i;
+    const pos = {};
+    const byId = {};
+    const reOld = /^panels\/(?:page-(\d+)\/)?panel-(\d+)-(\d+)\.(png|jpe?g|webp)$/i;
+    const reId = /^panels\/(?:page-(\d+)\/)?panel-(\d+)-(\d+)-(.+)\.(png|jpe?g|webp)$/i;
+    const mimeOf = (ext) => ext === 'png' ? 'image/png' : (ext === 'webp' ? 'image/webp' : 'image/jpeg');
     for (const name of Object.keys(entries)) {
-      const m = re.exec(name);
+      let m = reId.exec(name);
+      if (m) {
+        const pg = m[1] ? parseInt(m[1], 10) : 1;
+        const i = parseInt(m[2], 10);
+        const k = parseInt(m[3], 10);
+        const id = m[4];
+        const url = await bytesToBlobDataUrl(entries[name], mimeOf(m[5].toLowerCase()));
+        if (!byId[id]) byId[id] = { pg: pg, pos: i, slots: [] };
+        byId[id].slots[k - 1] = url;
+        continue;
+      }
+      m = reOld.exec(name);
       if (!m) continue;
       const pg = m[1] ? parseInt(m[1], 10) : 1;
       const i = parseInt(m[2], 10);
       const k = parseInt(m[3], 10);
-      const ext = m[4].toLowerCase();
-      const mime = ext === 'png' ? 'image/png' : (ext === 'webp' ? 'image/webp' : 'image/jpeg');
-      if (!imgs[pg]) imgs[pg] = {};
-      if (!imgs[pg][i]) imgs[pg][i] = [];
-      imgs[pg][i][k - 1] = await bytesToBlobDataUrl(entries[name], mime);
+      const url = await bytesToBlobDataUrl(entries[name], mimeOf(m[4].toLowerCase()));
+      if (!pos[pg]) pos[pg] = {};
+      if (!pos[pg][i]) pos[pg][i] = [];
+      pos[pg][i][k - 1] = url;
     }
-    return imgs;
+    return { pos: pos, byId: byId };
   }
 
   function repopulateImportedImages(imgs) {
     let count = 0;
-    for (const pg of Object.keys(imgs)) {
-      const pageImgs = imgs[pg];
+    const pos = (imgs && imgs.pos) || {};
+    const byIds = (imgs && imgs.byId) || {};
+    const liveIds = {};
+    try {
+      const raw = readPanelState();
+      const pages = raw && raw.pages;
+      if (pages) for (const pgk of Object.keys(pages)) {
+        const page = pages[pgk];
+        if (!page || typeof page !== 'object') continue;
+        for (const key of Object.keys(page)) {
+          const p = page[key];
+          if (p && typeof p === 'object' && typeof p.id === 'string' && p.id) liveIds[p.id] = true;
+        }
+      }
+    } catch (e) {}
+    for (const id of Object.keys(byIds)) {
+      const rec = byIds[id];
+      const slots = rec && rec.slots;
+      if (!slots) continue;
+      if (liveIds[id]) {
+        for (let s = 1; s <= slots.length; s++) if (slots[s - 1]) { panelImageStore.setById(id, s, slots[s - 1]); count++; }
+      } else if (rec && rec.pos >= 1) {
+        const pg = rec.pg || 1;
+        if (!pos[pg]) pos[pg] = {};
+        if (!pos[pg][rec.pos]) pos[pg][rec.pos] = [];
+        for (let s = 0; s < slots.length; s++) if (slots[s] && !pos[pg][rec.pos][s]) pos[pg][rec.pos][s] = slots[s];
+      }
+    }
+    for (const pg of Object.keys(pos)) {
+      const pageImgs = pos[pg];
       for (const ip of Object.keys(pageImgs)) count += pageImgs[ip].filter(d => !!d).length;
       panelImageStore.absorbPage(Number(pg), pageImgs);
     }
@@ -9347,16 +9388,22 @@ color-scheme:light;
     files.push({ name: 'comic-generator-settings.json', data: new TextEncoder().encode(JSON.stringify(buildExportData(true), null, 2)) });
     let images = 0;
     const allPages = collectAllPageImages();
+    let exportRaw = null;
+    try { exportRaw = readPanelState(); } catch (e) {}
     for (const pg of Object.keys(allPages)) {
       const pageImgs = allPages[pg];
       if (!pageImgs) continue;
       for (let i = 1; i <= 24; i++) {
         const arr = pageImgs[i];
         if (!arr) continue;
+        const epage = exportRaw && exportRaw.pages ? exportRaw.pages[pg] : null;
+        const epanel = epage && typeof epage === 'object' ? epage[i] : null;
+        const eid = epanel && typeof epanel.id === 'string' && epanel.id ? epanel.id : null;
         for (let k = 1; k <= 4; k++) {
           const dataUrl = arr[k - 1];
           if (!dataUrl) continue;
-          files.push({ name: 'panels/page-' + pg + '/panel-' + i + '-' + k + (dataUrl.includes('image/jpeg') ? '.jpg' : '.png'), data: dataUrlToBytes(dataUrl) });
+          const ebase = eid ? ('panel-' + i + '-' + k + '-' + eid) : ('panel-' + i + '-' + k);
+          files.push({ name: 'panels/page-' + pg + '/' + ebase + (dataUrl.includes('image/jpeg') ? '.jpg' : '.png'), data: dataUrlToBytes(dataUrl) });
           images++;
         }
       }
@@ -10728,6 +10775,9 @@ color-scheme:light;
   window.onGuidanceScaleChange = onGuidanceScaleChange;
   window.exportSettings = exportSettings;
   window.exportZip = exportZip;
+  window.parseZipImages = parseZipImages;
+  window.repopulateImportedImages = repopulateImportedImages;
+  window.imgSlotUrl = imgSlotUrl;
   window.saveSettings = saveSettings;
   window.saveSettingsAs = saveSettingsAs;
   window.importSettingsFromFile = importSettingsFromFile;
