@@ -1,3 +1,5 @@
+## 2026.10.04.29 — 2026-10-04 — ✨ New UI is now the default (toggle kept)
+- The 🧪 interface loads on (Advanced hiding, toasts, converged danger dialogs, 🎨 Style chip); the fab flips back to the old interface for the session, nothing persisted. Verified on fresh load (ui-new + adv-off, 51 adv controls hidden, toggle both ways) — smoke 114/0, byte-identical restore, 0 errors.
 ## 2026.10.04.28 — 2026-10-04 — 🎨 Style chip in the panel header
 - The per-panel 🎨 Style accordion moves into the panel header as a toggle chip; its Style/Palette/Size body drops full-width inside the header. Verified live (chip toggle, full-width drop-down, Show/Hide Menus, adv-off) — suites green (smoke 114/0, state-diff 38/0, byte-identical restores, 0 errors).
 ## 2026.10.04.27 — 2026-10-04 — 🎨 Per-panel Style accordion: Style, Palette, Size, Seed always visible
