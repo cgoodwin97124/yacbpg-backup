@@ -1,6 +1,6 @@
 
 ### 2026-10-04 — P6 palette v1 BUILD (author, verbatim: "Your recommendation is good. Go ahead and build.")
-- **Status:** ✅ DONE 2026.10.04.31 — palette-only v1 shipped (43 rows, 8 groups, w1-146/147, zero new window exports), all suites green, pushed pre-Save; re-push after Save captures the new index.html.
+- **Status:** ✅ DONE 2026.10.04.31 — palette-only v1 shipped (43 rows, 8 groups, w1-146/147, zero new window exports), all suites green, pushed pre-Save; re-pushed post-Save (## 2026.10.04.31 now in repo).
 
 ### 2026-10-04 — P6 palette answers (author ver batim: "1. Ok / 2. Key combo plus header button…where? / 3. Ok / 4. Ok")
 - **Status:** ✅ DONE 2026.10.04.31 — see build entry above.
