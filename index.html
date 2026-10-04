@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.17 — 2026-10-04 — 🖼️ P4 wave 2: image writes go through src/state/images.js
-- Store gains set/clearSlot/clearPanel/ensurePanel/swapSlots/setPage (IMAGES_VERSION 2); the funnel, stop-cleanups, gen wipe/ensure, representative swap, copy dests, all clears and bulk commits route through it with legacy fallback. Storage still position-keyed; remaps untouched. Zero behavior change.
+## 2026.10.04.18 — 2026-10-04 — 🖼️ P4 wave 3: images go id-keyed, remaps deleted
+- Store owns panelId-keyed images (IMAGES_VERSION 3); pos signatures stay via storage-backed resolver. Gen captures panel id at start (late arrivals self-correct); commits absorb after save; remap fns/dead code deleted; undo takes store snapshots; resets clear the store. Zero behavior change.
 </script>
 
 
@@ -1457,7 +1457,7 @@ color-scheme:light;
   coreLoad('images', './src/state/images.js', (m) => {
     if (m.createImageStore) {
       createImageStore = m.createImageStore;
-      panelImageStore = createImageStore(imageMaps());
+      panelImageStore = createImageStore({ resolveId: resolveImageId, listPositions: imagePositionsOf });
     }
   });
   const coreReady = Promise.all(coreLoads).then((failed) => failed.filter(Boolean));
@@ -3254,10 +3254,7 @@ color-scheme:light;
   }
 
   function analysisPageImages(pg) {
-    if (panelImageStore) return panelImageStore.pageImages(pg);
-    if (pg === currentPage) return panelImages;
-    const sess = pageSession[pg];
-    return (sess && sess.images) || {};
+    return pageImagesOf(pg);
   }
 
   function analysisCharSel(pageData, i, s) {
@@ -4449,12 +4446,47 @@ color-scheme:light;
   let promptHistoryRuns = {};
   const PROMPT_HISTORY_MAX = 5;
   const inFlightGen = new Map();
-  function imageMaps() {
-    return {
-      get current() { return panelImages; },
-      get currentPage() { return currentPage; },
-      sessions: pageSession,
-    };
+  let imgIdCache = { raw: null, map: null };
+  function storageImageIdMap() {
+    let raw = null;
+    try { raw = localStorage.getItem(PANEL_STATE_KEY); } catch (e) {}
+    if (!raw) return {};
+    if (imgIdCache.raw !== raw) {
+      const map = {};
+      try {
+        const proj = JSON.parse(raw);
+        const pages = proj && proj.pages;
+        if (pages && typeof pages === 'object') for (const pgk of Object.keys(pages)) {
+          const page = pages[pgk];
+          if (!page || typeof page !== 'object') continue;
+          const pm = {};
+          for (const pos of Object.keys(page)) {
+            const n = Number(pos);
+            if (String(n) !== pos || !Number.isInteger(n) || n < 1) continue;
+            const p = page[pos];
+            if (p && typeof p === 'object' && typeof p.id === 'string' && p.id) pm[pos] = p.id;
+          }
+          map[pgk] = pm;
+        }
+      } catch (e) {}
+      imgIdCache = { raw: raw, map: map };
+    }
+    return imgIdCache.map;
+  }
+  function resolveImageId(pg, pos) {
+    if (pg === currentPage) {
+      const card = document.getElementById('panel-card-' + pos);
+      const did = card && card.dataset ? card.dataset.panelId : '';
+      if (typeof did === 'string' && did) return did;
+    }
+    const pm = storageImageIdMap()[pg];
+    const id = pm ? pm[pos] : null;
+    return (typeof id === 'string' && id) ? id : null;
+  }
+  function imagePositionsOf(pg) {
+    const pm = storageImageIdMap()[pg];
+    if (!pm) return [];
+    return Object.keys(pm).map(Number).sort((a, b) => a - b);
   }
   function imgSlotUrl(i, k) {
     if (panelImageStore) return panelImageStore.get(currentPage, i, k);
@@ -4520,12 +4552,16 @@ color-scheme:light;
     imgObserver.observe(card);
   }
 
-  function showPanelImage(i, k, dataUrl) {
-    if (panelImageStore) panelImageStore.set(currentPage, i, k, dataUrl);
+  function showPanelImage(i, k, dataUrl, pid) {
+    if (panelImageStore) { if (pid) panelImageStore.setById(pid, k, dataUrl); else panelImageStore.set(currentPage, i, k, dataUrl); }
     else { if (!panelImages[i]) panelImages[i] = []; panelImages[i][k - 1] = dataUrl; }
     const card = document.getElementById('panel-card-' + i);
     const img = document.getElementById('img-panel-' + i + '-' + k);
     if (!img) return;
+    if (pid && card && String((card.dataset && card.dataset.panelId) || '') !== String(pid)) {
+      setPanelImageButtons(i, k, hasPanelImage(i, k));
+      return;
+    }
     setPanelImageButtons(i, k, true);
     if (!card || !imgObserver) { img.src = dataUrl; return; }
     imgObserver.unobserve(card);
@@ -5089,8 +5125,24 @@ color-scheme:light;
     const raw = readPanelState();
     const st = normalizeState(raw);
     currentPage = st.currentPage;
-    const sess = pageSession[currentPage];
-    panelImages = (sess && sess.images) || {};
+    if (panelImageStore) {
+      try {
+        const ids = [];
+        const pages = raw && raw.pages;
+        if (pages) for (const pgk of Object.keys(pages)) {
+          const page = pages[pgk];
+          if (!page || typeof page !== 'object') continue;
+          for (const pos of Object.keys(page)) {
+            const p = page[pos];
+            if (p && typeof p === 'object' && typeof p.id === 'string' && p.id) ids.push(p.id);
+          }
+        }
+        panelImageStore.prune(ids);
+      } catch (e) {}
+    } else {
+      const sess = pageSession[currentPage];
+      panelImages = (sess && sess.images) || {};
+    }
     panelPromptOverrides = {};
     panelPromptHistory = {};
     promptHistoryRuns = {};
@@ -5303,7 +5355,17 @@ color-scheme:light;
   }
 
   function collectAllPageImages() {
-    if (panelImageStore) return panelImageStore.allPages();
+    if (panelImageStore) {
+      const out = {};
+      let pgs = [];
+      try {
+        const raw = readPanelState();
+        if (raw && raw.pages) pgs = Object.keys(raw.pages).map(Number).filter(k => !isNaN(k));
+      } catch (e) {}
+      if (!pgs.length) pgs = [currentPage];
+      for (const pg of pgs) out[pg] = pageImagesOf(pg);
+      return out;
+    }
     const out = {};
     for (const [pg, sess] of Object.entries(pageSession)) {
       if (sess && sess.images) out[pg] = sess.images;
@@ -6029,7 +6091,7 @@ color-scheme:light;
         }
         savePanelStateShape(project);
         currentPage = targetPage;
-        panelImages = pageSession[targetPage].images;
+        if (!panelImageStore) panelImages = pageSession[targetPage].images;
         panelPromptOverrides = {};
         panelPromptHistory = {};
         promptHistoryRuns = {};
@@ -6074,7 +6136,7 @@ color-scheme:light;
         for (let p = 1; p <= total; p++) order.push(p);
         order.splice(from - 1, 1);
         order.splice(to - 1, 0, from);
-        remapPanelSession(order, total);
+        stopAllGenerations();
         reorderPanelMaps(order, total);
         for (let j = 1; j <= 24; j++) {
           const card = document.getElementById('panel-card-' + j);
@@ -6084,21 +6146,6 @@ color-scheme:light;
         return;
       }
     }
-  }
-
-  function remapPanelSession(order, total) {
-    for (const [pending, key] of inFlightGen) {
-      if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
-      panelBusy[key.i] = false;
-    }
-    inFlightGen.clear();
-    const newImages = {};
-    for (let p = 1; p <= total; p++) {
-      const oldPos = order[p - 1];
-      if (panelImages[oldPos]) newImages[p] = panelImages[oldPos];
-    }
-    for (const k in panelImages) delete panelImages[k];
-    Object.assign(panelImages, newImages);
   }
 
   const STRUCT_UNDO_MAX = 5;
@@ -6113,7 +6160,7 @@ color-scheme:light;
       const sessions = {};
       for (const k in pageSession) sessions[k] = { images: pageSession[k] ? pageSession[k].images : {} };
       sessions[currentPage] = { images: panelImages };
-      structUndoStack.push({ label: String(label || 'change'), saved: JSON.stringify(storeJsonNow()), sessions: JSON.parse(JSON.stringify(sessions)), page: currentPage });
+      structUndoStack.push({ label: String(label || 'change'), saved: JSON.stringify(storeJsonNow()), sessions: JSON.parse(JSON.stringify(sessions)), page: currentPage, imgSnap: panelImageStore ? panelImageStore.snapshot() : null });
       while (structUndoStack.length > STRUCT_UNDO_MAX) structUndoStack.shift();
     } catch (e) {}
     updateStructUndoUI();
@@ -6126,6 +6173,7 @@ color-scheme:light;
     const statusEl = document.getElementById('statusEl');
     stopAllGenerations();
     try { savePanelStateShape(JSON.parse(f.saved)); } catch (e) { if (statusEl) statusEl.textContent = 'Undo failed — the snapshot would not parse.'; return; }
+    if (panelImageStore && f.imgSnap) panelImageStore.restore(f.imgSnap);
     for (const k in pageSession) delete pageSession[k];
     for (const k in (f.sessions || {})) pageSession[k] = { images: (f.sessions[k] || {}).images || {} };
     currentPage = f.page;
@@ -6169,25 +6217,6 @@ color-scheme:light;
     promptHistoryRuns = {};
   }
 
-  function remapPanelImagesById(project, beforeIds) {
-    for (const [pending, key] of inFlightGen) {
-      if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
-      panelBusy[key.i] = false;
-    }
-    inFlightGen.clear();
-    const page = (project && project.pages) ? project.pages[currentPage] : null;
-    if (!page) return;
-    const oldById = {};
-    for (const k in (beforeIds || {})) if (panelImages[k]) oldById[beforeIds[k]] = panelImages[k];
-    const newImages = {};
-    for (let p = 1; p <= 24; p++) {
-      const id = page[p] && page[p].id;
-      if (id && oldById[id]) newImages[p] = oldById[id];
-    }
-    for (const k in panelImages) delete panelImages[k];
-    Object.assign(panelImages, newImages);
-  }
-
   function panelCountStateFor(n) {
     if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: '' };
     return { sel: 'custom', custom: String(n) };
@@ -6198,14 +6227,21 @@ color-scheme:light;
   }
 
   function pageImagesOf(pg) {
-    if (panelImageStore) return panelImageStore.pageImages(pg);
+    if (panelImageStore) {
+      const out = {};
+      for (const pos of imagePositionsOf(pg)) {
+        const a = panelImageStore.getPanel(pg, pos);
+        if (a) out[pos] = a;
+      }
+      return out;
+    }
     if (pg === currentPage) return panelImages;
     const sess = pageSession[pg];
     return (sess && sess.images) || {};
   }
 
   function setPageImagesFor(pg, imgs) {
-    if (panelImageStore) { panelImageStore.setPage(pg, imgs); return; }
+    if (panelImageStore) { panelImageStore.absorbPage(pg, imgs); return; }
     if (pg === currentPage) {
       for (const k in panelImages) delete panelImages[k];
       Object.assign(panelImages, imgs);
@@ -6242,8 +6278,8 @@ color-scheme:light;
         for (const k of Object.keys(project.pages)) images[k] = pageImagesOf(Number(k));
         const hit = cmdReflow(project, currentPage, total, i, incomingPanel, incomingImg, images);
         if (hit) {
-          for (const k of Object.keys(hit.images)) setPageImagesFor(Number(k), hit.images[k]);
           savePanelStateShape(project);
+          for (const k of Object.keys(hit.images)) setPageImagesFor(Number(k), hit.images[k]);
           currentPage = project.currentPage;
           loadCurrentPage();
           populatePageSel();
@@ -6622,8 +6658,8 @@ color-scheme:light;
         for (const k of Object.keys(project.pages)) images[k] = pageImagesOf(Number(k));
         const hit = cmdCascade(project, srcPage, entries, images);
         if (hit) {
-          for (const k of Object.keys(hit.images)) setPageImagesFor(Number(k), hit.images[k]);
           savePanelStateShape(project);
+          for (const k of Object.keys(hit.images)) setPageImagesFor(Number(k), hit.images[k]);
           currentPage = project.currentPage;
           loadCurrentPage();
           populatePageSel();
@@ -6738,11 +6774,13 @@ color-scheme:light;
       const project = storeJsonNow();
       const hit = project ? cmdMoveMany(project, currentPage, total, sel, toPos) : null;
       if (hit) {
-        const liveImgs = pageImagesOf(currentPage);
-        const newImgs = {};
-        for (let k = 0; k < hit.order.length; k++) if (liveImgs[hit.order[k]]) newImgs[k + 1] = liveImgs[hit.order[k]];
         savePanelStateShape(project);
-        setPageImagesFor(currentPage, newImgs);
+        if (!panelImageStore) {
+          const liveImgs = pageImagesOf(currentPage);
+          const newImgs = {};
+          for (let k = 0; k < hit.order.length; k++) if (liveImgs[hit.order[k]]) newImgs[k + 1] = liveImgs[hit.order[k]];
+          setPageImagesFor(currentPage, newImgs);
+        }
         loadCurrentPage();
         populatePageSel();
         updateDeletePageBtn();
@@ -7267,14 +7305,12 @@ color-scheme:light;
     pushStructUndo('duplicate panel');
     const cmd = panelCommands ? panelCommands.duplicatePanel : null;
     if (typeof cmd === 'function' && typeof newPanelId === 'function') {
-      const beforeIds = {};
-      for (let p = 1; p <= total; p++) beforeIds[p] = panelIdAt(p);
       const project = storeJsonNow();
       const hit = project ? cmd(project, currentPage, total, i, newPanelId) : null;
       if (hit) {
         savePanelStateShape(project);
         clearPanelSelection();
-        remapPanelImagesById(project, beforeIds);
+        stopAllGenerations();
         shiftPanelMapsForInsert(i, 1);
         for (let j = 1; j <= 24; j++) {
           const card = document.getElementById('panel-card-' + j);
@@ -7320,14 +7356,12 @@ color-scheme:light;
     pushStructUndo('add panel');
     const cmd = panelCommands ? panelCommands.addPanel : null;
     if (typeof cmd === 'function' && typeof newPanelId === 'function') {
-      const beforeIds = {};
-      for (let p = 1; p <= total; p++) beforeIds[p] = panelIdAt(p);
       const project = storeJsonNow();
       const hit = project ? cmd(project, currentPage, total, i, 1, newPanelId) : null;
       if (hit) {
         savePanelStateShape(project);
         clearPanelSelection();
-        remapPanelImagesById(project, beforeIds);
+        stopAllGenerations();
         shiftPanelMapsForInsert(i, 1);
         for (let j = 1; j <= 24; j++) {
           const card = document.getElementById('panel-card-' + j);
@@ -7389,14 +7423,12 @@ color-scheme:light;
     pushStructUndo('delete panel');
     const cmd = panelCommands ? panelCommands.deletePanel : null;
     if (typeof cmd === 'function') {
-      const beforeIds = {};
-      for (let p = 1; p <= total; p++) beforeIds[p] = panelIdAt(p);
       const project = storeJsonNow();
       const hit = project ? cmd(project, currentPage, total, i) : null;
       if (hit) {
         savePanelStateShape(project);
         clearPanelSelection();
-        remapPanelImagesById(project, beforeIds);
+        stopAllGenerations();
         const order = [];
         for (let p = 1; p <= total; p++) order.push(p);
         order.splice(i - 1, 1);
@@ -7411,22 +7443,6 @@ color-scheme:light;
       }
     }
     if (statusEl) statusEl.textContent = 'Panel ' + i + ' could not be deleted — please reload and try again.';
-  }
-
-  function remapPanelSessionForDuplicate(order, copyPos) {
-    for (const [pending, key] of inFlightGen) {
-      if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
-      panelBusy[key.i] = false;
-    }
-    inFlightGen.clear();
-    const newImages = {};
-    for (let p = 1; p <= 24; p++) {
-      if (p === copyPos) continue;
-      const src = order[p - 1];
-      if (panelImages[src]) newImages[p] = panelImages[src];
-    }
-    for (const k in panelImages) delete panelImages[k];
-    Object.assign(panelImages, newImages);
   }
 
   function getPanelKeywords(i) {
@@ -8021,6 +8037,7 @@ color-scheme:light;
     if (!box || !img) return 'ok';
     if (stopRequested) return 'cleared';
     const card = document.getElementById('panel-card-' + i);
+    const genPid = panelIdAt(i);
     box.classList.remove('failed', 'paused', 'cleared');
     img.removeAttribute('src');
     img.alt = "";
@@ -8040,7 +8057,7 @@ color-scheme:light;
       const result = await withRunSignal(withTimeout(pending, GENERATION_TIMEOUT_MS, runSignal ? runSignal.p : null));
       if (!result || !result.dataUrl) throw new Error('The image service returned no image (it stalled, likely after a tab switch). Reload the page and try again.');
       const dataUrl = (srcSize[0] === size.w && srcSize[1] === size.h) ? result.dataUrl : await upscaleDataUrl(result.dataUrl, size.w, size.h);
-      showPanelImage(i, k, dataUrl);
+      showPanelImage(i, k, dataUrl, genPid);
       const historyRun = promptHistoryRuns[i];
       if (historyRun) historyRun.seeds.push({ k: k, seed: (typeof opts.seed === 'number' ? opts.seed : null) });
       return 'ok';
@@ -9379,22 +9396,31 @@ color-scheme:light;
 
   function repopulateImportedImages(imgs) {
     let count = 0;
-    for (const pg of Object.keys(imgs)) {
-      const pageImgs = imgs[pg];
-      for (const ip of Object.keys(pageImgs)) {
-        count += pageImgs[ip].filter(d => !!d).length;
-        if (String(pg) === String(currentPage)) {
-          panelImages[parseInt(ip, 10)] = pageImgs[ip];
-        } else {
-          const sess = pageSession[pg] || (pageSession[pg] = { images: {}, sync: {} });
-          sess.images[parseInt(ip, 10)] = pageImgs[ip];
+    if (panelImageStore) {
+      for (const pg of Object.keys(imgs)) {
+        const pageImgs = imgs[pg];
+        for (const ip of Object.keys(pageImgs)) count += pageImgs[ip].filter(d => !!d).length;
+        panelImageStore.absorbPage(Number(pg), pageImgs);
+      }
+    } else {
+      for (const pg of Object.keys(imgs)) {
+        const pageImgs = imgs[pg];
+        for (const ip of Object.keys(pageImgs)) {
+          count += pageImgs[ip].filter(d => !!d).length;
+          if (String(pg) === String(currentPage)) {
+            panelImages[parseInt(ip, 10)] = pageImgs[ip];
+          } else {
+            const sess = pageSession[pg] || (pageSession[pg] = { images: {}, sync: {} });
+            sess.images[parseInt(ip, 10)] = pageImgs[ip];
+          }
         }
       }
     }
     for (let i = 1; i <= 24; i++) {
-      if (panelImages[i]) {
+      const arr = imgSlotsCopy(i);
+      if (arr) {
         for (let k = 1; k <= 4; k++) {
-          if (panelImages[i][k - 1]) showPanelImage(i, k, panelImages[i][k - 1]);
+          if (arr[k - 1]) showPanelImage(i, k, arr[k - 1]);
         }
       }
       updatePanelAllButtons(i);
@@ -9433,6 +9459,7 @@ color-scheme:light;
     if (data.version !== 1 && data.version !== 2) throw new Error('unsupported file version');
     for (let i = 1; i <= 24; i++) for (let k = 1; k <= 4; k++) setSlotProtected(i, k, false);
     for (const k in pageSession) delete pageSession[k];
+    if (panelImageStore) panelImageStore.resetAll();
     for (const k in panelImages) delete panelImages[k];
     for (const k in panelPromptOverrides) delete panelPromptOverrides[k];
     for (const k in panelPromptHistory) delete panelPromptHistory[k];
@@ -10209,6 +10236,7 @@ color-scheme:light;
       }
     }
     for (const k in panelImages) delete panelImages[k];
+    if (panelImageStore) panelImageStore.resetAll();
     for (const k in panelPromptOverrides) delete panelPromptOverrides[k];
     for (const k in panelPromptHistory) delete panelPromptHistory[k];
     promptHistoryRuns = {};
