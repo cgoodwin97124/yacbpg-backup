@@ -892,3 +892,4 @@ Moved to `archive/PENDING-done-2026-09.md` on 2026-09-27 (docs archive-split): 9
 
 - 2026-10-04 .24 post-Save re-push requested ("Saved!") — pushing served .24, will confirm.
 - 2026-10-04 .24 post-Save re-push CONFIRMED — repo index.html stamps 2026.10.04.24, 18 files pushed, P5 fully closed.
+- 2026-10-04 P6 step 1 greenlit ("Go ahead.") — recon: control inventory for J/O/F. Status: IN PROGRESS.
