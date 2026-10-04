@@ -903,3 +903,4 @@ Moved to `archive/PENDING-done-2026-09.md` on 2026-09-27 (docs archive-split): 9
 - 2026-10-04 P6 step 1 GREENLIT ("Let's do it!"): preview switch = bundle, standing pattern, default off, Advanced switch only in new UI. Scope: J+O+F behind 🧪 switch. Status: IN PROGRESS.
 - 2026-10-04 P6 step 1 DONE 2026.10.04.26 — 🧪 bundle behind session-only switch (default off, standing pattern for later steps). Verified: 123 adv controls hide, Seed/title stay, set-values resurface, Advanced header switch (new-UI only), toasts 5s, run slot mirrors progress, confirmDanger on batch Clear/Clear-Images. Suites green, screenshot checked. Awaiting author trial.
 - 2026-10-04 .26 post-Save re-push requested ("Saved! Go ahead and re-push.") — pushing served .26, will confirm.
+- 2026-10-04 .26 post-Save re-push CONFIRMED — repo index.html stamps 2026.10.04.26, 18 files pushed.
