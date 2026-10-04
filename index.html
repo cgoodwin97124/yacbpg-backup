@@ -206,6 +206,7 @@ color-scheme:light;
   .cmd-row .cmd-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cmd-row .cmd-tag { font-size: 0.72rem; color: var(--text-8); }
   .cmd-row.sel { background: var(--hover-2); }
+  .cmd-group.sel { background: var(--hover-2); border-radius: 6px; }
   .cmd-row.off { opacity: 0.45; cursor: default; }
   .cmd-empty { padding: 14px; text-align: center; color: var(--text-8); font-size: 0.85rem; }
   .cmd-foot { padding: 6px 10px; border-top: 1px solid var(--border-3); font-size: 0.72rem; color: var(--text-8); text-align: center; }
@@ -834,7 +835,7 @@ color-scheme:light;
 <div id="cmdPalette" hidden>
   <div class="cmd-top"><input id="cmdInput" type="text" placeholder="Type a command…" autocomplete="off" spellcheck="false"><button class="cmd-close" data-action="w1-147" title="Close (Esc)">✕</button></div>
   <div id="cmdList"></div>
-  <div class="cmd-foot">↑↓ navigate · Enter run · Esc close</div>
+  <div class="cmd-foot">↑↓ move · → open · ← close · Enter run · Esc close</div>
 </div>
 <div class="page-layout">
   <div class="menu-frame" id="menuFrame">
@@ -1419,8 +1420,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.32 — 2026-10-04 — ⌘K palette sections become accordions
-- Each palette group is now an accordion: arrowhead header (▾/▸, no chip), click to collapse or expand. Collapsed state is session-only; typing a filter auto-expands every matching group.
+## 2026.10.04.33 — 2026-10-04 — ⌘K palette starts closed, headers join keyboard nav
+- All palette sections start collapsed for the session, and ↑/↓ walks through headers and rows alike: → opens a header, ← closes it (← on a row closes its section), Enter on a header toggles it.
 </script>
 
 
@@ -7196,12 +7197,21 @@ color-scheme:light;
   ];
   let palettePos = 0;
   let paletteVis = [];
-  let paletteCollapsed = new Set();
+  let paletteNav = [];
+  let paletteCollapsed = new Set(PALETTE_COMMANDS.map(function (c) { return c.g; }));
+  function paletteNavFind(g) {
+    for (let n = 0; n < paletteNav.length; n++) {
+      const e = paletteNav[n];
+      if (e.k === 'h' && e.g === g) return n;
+    }
+    return -1;
+  }
   function paletteToggleGroup(g) {
     if (paletteCollapsed.has(g)) paletteCollapsed.delete(g);
     else paletteCollapsed.add(g);
-    if (palettePos >= paletteVis.length) palettePos = 0;
     paletteRender();
+    palettePos = Math.max(0, paletteNavFind(g));
+    palettePaint();
   }
   function paletteFuzzy(q, s) {
     let j = 0;
@@ -7232,9 +7242,9 @@ color-scheme:light;
   function palettePaint() {
     const list = document.getElementById('cmdList');
     if (!list) return;
-    const rows = list.querySelectorAll('.cmd-row');
-    rows.forEach(function (r) { r.classList.toggle('sel', (+r.dataset.pos) === palettePos); });
-    const sel = list.querySelector('.cmd-row.sel');
+    const rows = list.querySelectorAll('.cmd-row, .cmd-group');
+    rows.forEach(function (r) { r.classList.toggle('sel', (+r.dataset.n) === palettePos); });
+    const sel = list.querySelector('.sel');
     if (sel) sel.scrollIntoView({ block: 'nearest' });
   }
   function paletteShut(g) {
@@ -7244,13 +7254,14 @@ color-scheme:light;
     const list = document.getElementById('cmdList');
     if (!list) return;
     paletteVis = paletteFiltered();
-    if (palettePos >= paletteVis.length) palettePos = Math.max(0, paletteVis.length - 1);
+    paletteNav = [];
     list.innerHTML = '';
     if (!paletteVis.length) {
       const d = document.createElement('div');
       d.className = 'cmd-empty';
       d.textContent = 'No matching command.';
       list.append(d);
+      palettePos = 0;
       return;
     }
     let lastG = '';
@@ -7262,16 +7273,18 @@ color-scheme:light;
         const h = document.createElement('div');
         h.className = 'cmd-group';
         h.dataset.g = c.g;
+        h.dataset.n = String(paletteNav.length);
         const ar = document.createElement('span');
         ar.className = 'cmd-arrow';
         ar.textContent = shut ? '▸' : '▾';
         h.append(ar, document.createTextNode(c.g));
         list.append(h);
+        paletteNav.push({ k: 'h', g: c.g });
       }
       if (shut) continue;
       const r = document.createElement('div');
       r.className = 'cmd-row' + (paletteOff(c.act) ? ' off' : '');
-      r.dataset.pos = String(p);
+      r.dataset.n = String(paletteNav.length);
       const l = document.createElement('span');
       l.className = 'cmd-label';
       l.textContent = c.t;
@@ -7280,12 +7293,10 @@ color-scheme:light;
       tag.textContent = c.g;
       r.append(l, tag);
       list.append(r);
+      paletteNav.push({ k: 'r', p: p });
     }
+    if (palettePos >= paletteNav.length) palettePos = Math.max(0, paletteNav.length - 1);
     palettePaint();
-    if (paletteVis.length && paletteShut(PALETTE_COMMANDS[paletteVis[palettePos]].g)) {
-      const first = paletteVis.findIndex(function (idx) { return !paletteShut(PALETTE_COMMANDS[idx].g); });
-      if (first >= 0) { palettePos = first; palettePaint(); }
-    }
   }
   function paletteOpen() {
     if (!uiPreviewOn) return;
@@ -7310,14 +7321,60 @@ color-scheme:light;
     else paletteOpen();
   }
   function paletteMove(d) {
-    if (!paletteVis.length) return;
-    for (let n = 0; n < paletteVis.length; n++) {
-      palettePos = (palettePos + d + paletteVis.length) % paletteVis.length;
-      if (!paletteShut(PALETTE_COMMANDS[paletteVis[palettePos]].g)) break;
-    }
+    if (!paletteNav.length) return;
+    palettePos = (palettePos + d + paletteNav.length) % paletteNav.length;
     palettePaint();
   }
-  function paletteRunAt(p) {
+  function paletteFirstRowAfter(n) {
+    for (let m = n + 1; m < paletteNav.length; m++) {
+      if (paletteNav[m].k === 'r') { palettePos = m; palettePaint(); break; }
+    }
+  }
+  function paletteRight() {
+    const e = paletteNav[palettePos];
+    if (!e || e.k !== 'h') return;
+    if (paletteQuery()) { paletteFirstRowAfter(palettePos); return; }
+    if (paletteCollapsed.has(e.g)) {
+      paletteCollapsed.delete(e.g);
+      paletteRender();
+      palettePos = Math.max(0, paletteNavFind(e.g));
+      palettePaint();
+    }
+  }
+  function paletteLeft() {
+    const e = paletteNav[palettePos];
+    if (!e || paletteQuery()) return;
+    if (e.k === 'r') {
+      const g = PALETTE_COMMANDS[paletteVis[e.p]].g;
+      if (!paletteCollapsed.has(g)) paletteCollapsed.add(g);
+      paletteRender();
+      palettePos = Math.max(0, paletteNavFind(g));
+      palettePaint();
+      return;
+    }
+    if (!paletteCollapsed.has(e.g)) {
+      paletteCollapsed.add(e.g);
+      paletteRender();
+      palettePos = Math.max(0, paletteNavFind(e.g));
+      palettePaint();
+    }
+  }
+  function paletteEnterAtNav(n) {
+    palettePos = n;
+    palettePaint();
+    paletteEnter();
+  }
+  function paletteEnter() {
+    const e = paletteNav[palettePos];
+    if (!e) return;
+    if (e.k === 'h') {
+      if (paletteQuery()) { paletteFirstRowAfter(palettePos); return; }
+      paletteToggleGroup(e.g);
+      return;
+    }
+    paletteRowRun(e.p);
+  }
+  function paletteRowRun(p) {
     const idx = paletteVis[p];
     if (idx == null) return;
     const c = PALETTE_COMMANDS[idx];
@@ -7337,7 +7394,9 @@ color-scheme:light;
       inp.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowDown') { e.preventDefault(); paletteMove(1); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); paletteMove(-1); }
-        else if (e.key === 'Enter') { e.preventDefault(); paletteRunAt(palettePos); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); paletteRight(); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); paletteLeft(); }
+        else if (e.key === 'Enter') { e.preventDefault(); paletteEnter(); }
         else if (e.key === 'Escape') { e.preventDefault(); paletteClose(); }
       });
     }
@@ -7346,11 +7405,11 @@ color-scheme:light;
         const hg = e.target && e.target.closest ? e.target.closest('.cmd-group') : null;
         if (hg && hg.dataset.g) { paletteToggleGroup(hg.dataset.g); return; }
         const r = e.target && e.target.closest ? e.target.closest('.cmd-row') : null;
-        if (r && r.dataset.pos != null) paletteRunAt(+r.dataset.pos);
+        if (r && r.dataset.n != null) paletteEnterAtNav(+r.dataset.n);
       });
       list.addEventListener('mouseover', function (e) {
-        const r = e.target && e.target.closest ? e.target.closest('.cmd-row') : null;
-        if (r && r.dataset.pos != null && (+r.dataset.pos) !== palettePos) { palettePos = +r.dataset.pos; palettePaint(); }
+        const r = e.target && e.target.closest ? e.target.closest('.cmd-row, .cmd-group') : null;
+        if (r && r.dataset.n != null && (+r.dataset.n) !== palettePos) { palettePos = +r.dataset.n; palettePaint(); }
       });
     }
     document.addEventListener('keydown', function (e) {
