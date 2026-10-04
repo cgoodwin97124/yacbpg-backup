@@ -910,3 +910,4 @@ Moved to `archive/PENDING-done-2026-09.md` on 2026-09-27 (docs archive-split): 9
 - 2026-10-04 P6 step 1 follow-up DONE 2026.10.04.27 — 🎨 Style accordion per panel (Style/Palette/Size), Seed stays in header, custom W/H only when Size=custom, all four exempt from adv switch. Suites green, screenshot checked. Awaiting author look-and-feel.
 - 2026-10-04 Style accordion placement question ("Could the Style accordion live in the panel header?") — recon: header-row flex-wrap fit vs inline selects vs toggle-chip with full-width drop-down body. Status: RECON.
 - 2026-10-04 Style accordion placement GREENLIT ("The toggle chip please.") — 🎨 toggle chip inline in panel header, body drops full-width inside header. Status: IN PROGRESS.
+- 2026-10-04 Style accordion placement DONE 2026.10.04.28 — 🎨 chip inline in header (display:contents), body flex 1 1 100%, Show/Hide Menus includes it. Suites green, screenshot checked. Awaiting author look-and-feel.
