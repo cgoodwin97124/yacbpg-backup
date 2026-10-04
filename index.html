@@ -200,7 +200,8 @@ color-scheme:light;
   #cmdInput { flex: 1 1 auto; min-width: 0; background: var(--well); color: var(--text); border: 1px solid var(--border-2); border-radius: 6px; padding: 9px 12px; font-size: 0.95rem; }
   .cmd-close { flex: 0 0 auto; width: 38px; border-radius: 6px; border: 1px solid var(--border-2); background: var(--surface-3); color: var(--text); cursor: pointer; font-size: 0.9rem; }
   #cmdList { overflow-y: auto; max-height: 52vh; padding: 4px; }
-  .cmd-group { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-8); padding: 8px 10px 3px; }
+  .cmd-group { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-8); padding: 8px 10px 3px; cursor: pointer; user-select: none; }
+  .cmd-arrow { display: inline-block; width: 1.2em; }
   .cmd-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
   .cmd-row .cmd-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cmd-row .cmd-tag { font-size: 0.72rem; color: var(--text-8); }
@@ -1418,8 +1419,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.31 — 2026-10-04 — ⌘K Command palette: every action, one keystroke
-- A command palette lists every major action by group with fuzzy filter and ↑↓/Enter/Esc keyboard control, opened with Ctrl/⌘-K or the ⌘K Commands button at the left of the header. Running a row clicks the real control, so confirms and disabled states behave identically. Session-only, nothing persisted.
+## 2026.10.04.32 — 2026-10-04 — ⌘K palette sections become accordions
+- Each palette group is now an accordion: arrowhead header (▾/▸, no chip), click to collapse or expand. Collapsed state is session-only; typing a filter auto-expands every matching group.
 </script>
 
 
@@ -7195,6 +7196,13 @@ color-scheme:light;
   ];
   let palettePos = 0;
   let paletteVis = [];
+  let paletteCollapsed = new Set();
+  function paletteToggleGroup(g) {
+    if (paletteCollapsed.has(g)) paletteCollapsed.delete(g);
+    else paletteCollapsed.add(g);
+    if (palettePos >= paletteVis.length) palettePos = 0;
+    paletteRender();
+  }
   function paletteFuzzy(q, s) {
     let j = 0;
     for (let i = 0; i < s.length && j < q.length; i++) if (s[i] === q[j]) j++;
@@ -7229,6 +7237,9 @@ color-scheme:light;
     const sel = list.querySelector('.cmd-row.sel');
     if (sel) sel.scrollIntoView({ block: 'nearest' });
   }
+  function paletteShut(g) {
+    return !paletteQuery() && paletteCollapsed.has(g);
+  }
   function paletteRender() {
     const list = document.getElementById('cmdList');
     if (!list) return;
@@ -7245,13 +7256,19 @@ color-scheme:light;
     let lastG = '';
     for (let p = 0; p < paletteVis.length; p++) {
       const c = PALETTE_COMMANDS[paletteVis[p]];
+      const shut = paletteShut(c.g);
       if (c.g !== lastG) {
         lastG = c.g;
         const h = document.createElement('div');
         h.className = 'cmd-group';
-        h.textContent = c.g;
+        h.dataset.g = c.g;
+        const ar = document.createElement('span');
+        ar.className = 'cmd-arrow';
+        ar.textContent = shut ? '▸' : '▾';
+        h.append(ar, document.createTextNode(c.g));
         list.append(h);
       }
+      if (shut) continue;
       const r = document.createElement('div');
       r.className = 'cmd-row' + (paletteOff(c.act) ? ' off' : '');
       r.dataset.pos = String(p);
@@ -7265,6 +7282,10 @@ color-scheme:light;
       list.append(r);
     }
     palettePaint();
+    if (paletteVis.length && paletteShut(PALETTE_COMMANDS[paletteVis[palettePos]].g)) {
+      const first = paletteVis.findIndex(function (idx) { return !paletteShut(PALETTE_COMMANDS[idx].g); });
+      if (first >= 0) { palettePos = first; palettePaint(); }
+    }
   }
   function paletteOpen() {
     if (!uiPreviewOn) return;
@@ -7290,13 +7311,17 @@ color-scheme:light;
   }
   function paletteMove(d) {
     if (!paletteVis.length) return;
-    palettePos = (palettePos + d + paletteVis.length) % paletteVis.length;
+    for (let n = 0; n < paletteVis.length; n++) {
+      palettePos = (palettePos + d + paletteVis.length) % paletteVis.length;
+      if (!paletteShut(PALETTE_COMMANDS[paletteVis[palettePos]].g)) break;
+    }
     palettePaint();
   }
   function paletteRunAt(p) {
     const idx = paletteVis[p];
     if (idx == null) return;
     const c = PALETTE_COMMANDS[idx];
+    if (paletteShut(c.g)) return;
     if (paletteOff(c.act)) return;
     paletteClose();
     const b = paletteBtns(c.act).find(function (x) { return !x.disabled; });
@@ -7318,6 +7343,8 @@ color-scheme:light;
     }
     if (list) {
       list.addEventListener('click', function (e) {
+        const hg = e.target && e.target.closest ? e.target.closest('.cmd-group') : null;
+        if (hg && hg.dataset.g) { paletteToggleGroup(hg.dataset.g); return; }
         const r = e.target && e.target.closest ? e.target.closest('.cmd-row') : null;
         if (r && r.dataset.pos != null) paletteRunAt(+r.dataset.pos);
       });
