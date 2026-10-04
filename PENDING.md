@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Repeat at V-5 (author, verbatim: "Repeat this at V-5 please?")
+- **Status:** 🟢 START NOW — ambiguous; recon what V-5 means before any work, no code yet.
+
 ### 2026-10-04 — P6 command palette (author, verbatim: "Let's do it!")
 - **Status:** 🟢 START NOW — recon + questions first per standing rule for big work; no code yet.
 - **Scope:** palette after run panel (.30); exact shape from UI-IDEAS.md + recon of menu/command surface.
