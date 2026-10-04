@@ -1,3 +1,5 @@
+## 2026.10.04.28 — 2026-10-04 — 🎨 Style chip in the panel header
+- The per-panel 🎨 Style accordion moves into the panel header as a toggle chip; its Style/Palette/Size body drops full-width inside the header. Verified live (chip toggle, full-width drop-down, Show/Hide Menus, adv-off) — suites green (smoke 114/0, state-diff 38/0, byte-identical restores, 0 errors).
 ## 2026.10.04.27 — 2026-10-04 — 🎨 Per-panel Style accordion: Style, Palette, Size, Seed always visible
 - Style, Palette and Size move from the panel header into a per-panel 🎨 Style accordion that ignores the Advanced switch; Seed stays in the header. Verified live in the 🧪 preview (accordion open, custom W/H reveal, set-values stay visible) — suites green (smoke 114/0, state-diff 38/0, core 77/0, diff-core 24/0, byte-identical restores, 0 errors).
 ## 2026.10.04.26 — 2026-10-04 — 🧪 P6 step 1: try the new UI before you commit
