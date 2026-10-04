@@ -1,3 +1,9 @@
+## 2026.10.04.23 — 2026-10-04 — 🧭 P5 wave 3a: the test API moves behind window.__dbg
+
+- **The plain version:** nothing visible changes. The automated checks now reach into the app through a single named doorway instead of 92 separate ones — housekeeping for the people who maintain the harness, invisible to everyone else.
+- **Under the hood:** `window.__dbg = { …92 names… }` (every export the suites call at runtime, verified mechanically per file: bare calls vs string mentions); the 92 flat `window.X = X` lines deleted, every in-scope declaration untouched. Suites destructure what they use (`const {…} = window.__dbg`), explicit `window.X` sites rewritten (45 in smoke, 126 in state-diff), visual/baseline shipped snippets call `__dbg.X`, the keep-awake probe reads `window.__dbg.keepAwakeStateText`, and `core.test.js` p3r4 now expects the export behind `__dbg` ([1,0,1,0]). `diff-core.js` gains the export-surface guard: the remaining flat set is frozen as an allowlist (176 names), so the surface cannot regrow silently. Debug hooks, `appReady` and the `__X` debug names stay flat. Note: devtools files (`devtests/*`, `src/*.html`) are harness/docs, not shipped app code — the sweep covers only what the live page exposes.
+- **The numbers:** differential **24/0** (incl. the new guard), core **77/0**, smoke **114/0**, generation **18/0**, fixtures **18/0**, state-diff **38/0**, **0** perchance errors, project restored **byte-for-byte** after every run. Live probe: `__dbg` holds 92 functions, flat `buildPanelGrid` is gone, hooks and `appReady` kept.
+
 ## 2026.10.04.22 — 2026-10-04 — 🧭 P5 wave 2: panel cards answer through delegation
 
 - **The plain version:** nothing visible changes. The buttons and controls the app builds on the fly for every panel — generate, select, reorder, image slots, prompt history — now answer through the same delegated listeners as the static controls, instead of each carrying its own inline handler.
