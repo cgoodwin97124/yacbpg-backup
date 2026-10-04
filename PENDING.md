@@ -4,6 +4,8 @@
 ### 2026-10-04 - P4 wave 3 IMPLEMENTATION (id-flip)
 - **Greenlight (verbatim):** Sounds good. Start wave 3 implementation with your recommendations.
 - **Status:** ACTIVE IMPLEMENTATION - wave 3: byId flip, absorbPage with explicit project, gen id-capture-at-start, remap deletions, ~8 reader migrations, prune on load, pageSession shell stays. Scope per Q1, capture per Q2, shell per Q3.
+- **Shipped (2026-10-04):** 2026.10.04.18 = P4 wave 3 (id-flip). 19-method id-keyed store, gen id-capture, remaps deleted, undo snapshotted, resets cleared. Suites: core 77/0, diff-core 23/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0/1, 0 errors, byte-identical.
+- **Next:** P4 wave 4 (clipboard/undo/paste go id-native) - needs greenlight.
 
 
 ### 2026-10-04 - P4 wave 3 preliminary recon
