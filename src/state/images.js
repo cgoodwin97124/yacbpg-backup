@@ -1,4 +1,4 @@
-export const IMAGES_VERSION = 1;
+export const IMAGES_VERSION = 2;
 
 function isMap(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -87,5 +87,77 @@ export function createImageStore(maps) {
     return false;
   }
 
-  return { pageImages, get, has, hasAny, count, getPanel, allPages, hasAnywhere };
+  function writableMap(pg) {
+    if (pg === M.currentPage) return isMap(M.current) ? M.current : null;
+    const sess = isMap(M.sessions) ? M.sessions[pg] : null;
+    const imgs = sess ? sess.images : null;
+    return isMap(imgs) ? imgs : null;
+  }
+
+  function set(pg, pos, k, url) {
+    const si = slotIndex(k);
+    if (si < 0) return false;
+    const map = writableMap(pg);
+    if (!map) return false;
+    let a = map[pos];
+    if (!Array.isArray(a)) { a = []; map[pos] = a; }
+    a[si] = url;
+    return true;
+  }
+
+  function clearSlot(pg, pos, k) {
+    const si = slotIndex(k);
+    if (si < 0) return false;
+    const map = writableMap(pg);
+    if (!map) return false;
+    const a = Array.isArray(map[pos]) ? map[pos] : null;
+    if (!a) return false;
+    delete a[si];
+    return true;
+  }
+
+  function clearPanel(pg, pos) {
+    const map = writableMap(pg);
+    if (!map) return false;
+    map[pos] = [];
+    return true;
+  }
+
+  function ensurePanel(pg, pos) {
+    const map = writableMap(pg);
+    if (!map) return false;
+    if (!Array.isArray(map[pos])) map[pos] = [];
+    return true;
+  }
+
+  function swapSlots(pg, pos, a, b) {
+    const ai = slotIndex(a);
+    const bi = slotIndex(b);
+    if (ai < 0 || bi < 0) return false;
+    const map = writableMap(pg);
+    if (!map) return false;
+    const arr = Array.isArray(map[pos]) ? map[pos] : null;
+    if (!arr) return false;
+    const t = arr[ai];
+    arr[ai] = arr[bi];
+    arr[bi] = t;
+    return true;
+  }
+
+  function setPage(pg, map) {
+    const src = isMap(map) ? map : {};
+    if (pg === M.currentPage) {
+      const cur = isMap(M.current) ? M.current : null;
+      if (!cur) return false;
+      for (const k of Object.keys(cur)) delete cur[k];
+      Object.assign(cur, src);
+      if (isMap(M.sessions)) M.sessions[pg] = Object.assign({}, M.sessions[pg] || {}, { images: cur });
+      return true;
+    }
+    if (!isMap(M.sessions)) return false;
+    M.sessions[pg] = Object.assign({}, M.sessions[pg] || {}, { images: src });
+    return true;
+  }
+
+  return { pageImages, get, has, hasAny, count, getPanel, allPages, hasAnywhere, set, clearSlot, clearPanel, ensurePanel, swapSlots, setPage };
 }
