@@ -896,3 +896,4 @@ Moved to `archive/PENDING-done-2026-09.md` on 2026-09-27 (docs archive-split): 9
 - 2026-10-04 P6 step 1 recon DONE (pending confirm) — ~80 controls/panel inventoried; J/O/F proposals ready for questions.
 - 2026-10-04 Security audit greenlit ("Yes please!") — recon: token storage, import parsing, HTML escaping, share-via-file XSS. Status: IN PROGRESS.
 - 2026-10-04 Security audit recon DONE — verdict: no blocking issues. XSS paths all escape/DOM-built, live probe fired nothing; token is scoped PAT in localStorage; import is version-checked+normalised. Two minors: no import file-size guard, escapeHtml skips single-quote. P6 step 1 may proceed; fixes need greenlight.
+- 2026-10-04 Security fixes 1+2 greenlit ("Yes, let's make fixes 1 and 2 first.") — recon: import size guard + escapeHtml single-quote. Status: IN PROGRESS.
