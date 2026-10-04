@@ -1,4 +1,16 @@
 
+### 2026-10-04 — Multi-panel Focus (author spec, implements FIRST per author order)
+- **Status:** 🟢 START NOW — recon + questions first (new view behavior); no code yet.
+- **Spec:** Focus shows multiple panels; selecting several panels then Focus (context menu in selection, Commands View > Focus, or panel button) brings up those panels.
+
+### 2026-10-04 — Commands menu restructure (author spec, QUEUED until Focus lands)
+- **Status:** 🕒 QUEUED — implement after Focus.
+- **Spec:** Project→File, File top above Edit; Selection.* moves under Edit; new Panel submenu under Edit holding all panel ops; Views→View directly after Edit; Focus lives under View, greyed unless panel(s) selected; Copy/Cut/Paste under Edit acting on current selection, greyed with none.
+
+### 2026-10-04 — Context menu answers (author, QUEUED until Commands lands)
+- **Status:** 🕒 QUEUED — implement last. Items: Generate, To/From Here, Duplicate, Copy prompt, Focus, Select, Delete, PLUS Clear and Clear Images.
+- **Selection rule (desktop-standard):** no selection → right-click selects panel, menu acts on it; selection + right-click inside → selection kept, menu acts on selection; selection + right-click outside → reselect to clicked panel, menu acts on it. Copy/Cut/Paste follow the same rule.
+
 ### 2026-10-04 — P6 context menu (author, verbatim: "Go ahead on the context menu.")
 - **Status:** 🟢 START NOW — recon + questions first per standing rule for big work; no code yet.
 - **Scope:** panel right-click / long-press menu from the same command catalog, scoped to that panel (UI-IDEAS.md §C second half).
