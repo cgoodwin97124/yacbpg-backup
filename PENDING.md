@@ -1,3 +1,7 @@
+
+### 2026-10-04 — re-push 2026.10.04.20 post-Save + next-steps V-5
+- **Status:** 🟢 START NOW (author, verbatim: "Saved!  Go ahead and re-push, then tell me the next steps in V-5.")
+- **Request:** re-push the saved .20 build via ghPush so the repo captures the new index.html, then present next steps in V-5 verbose detail. No code changes.
 - 2026.10.03.11 DONE: R3 shipped (34 production collectPanelState sites to storeJsonNow; ~14 legacy fallback tails/elses deleted; renderAnalysis/promptHistoryThumbKeys swapped). Suites: state-diff 38/0, smoke 114/0/4, fixtures 18/0, gen 18/0/1 (one stale-DOM false alarm, green on fresh page; run-gen.js now reloads before parking), diff-core 21/0, multi-page undo chain 0 parsed diffs, 0 perchanceErrors. Saved build pushed post-Save. Cow in field intact (park f2369488 throughout). Next: R4 final (pinning grep-check + rename to testCollectPanelState, ship .12).
 - 2026.10.03 R3 START NOW: 34 production collectPanelState sites (10 analysis + 23 structural + promptHistoryThumbKeys) to storeJsonNow + else-fallback deletions, ship .11. Comment lines 36/68 excluded (not code).
 
