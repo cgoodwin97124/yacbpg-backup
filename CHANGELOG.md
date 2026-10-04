@@ -1,3 +1,6 @@
+## 2026.10.04.26 — 2026-10-04 — 🧪 P6 step 1: try the new UI before you commit
+- A 🧪 New UI switch (top-right, off on load, session-only) previews the bundle: Advanced mode hides expert controls (Seed and title stay; set values stay visible), toasts replace scattered status lines, and danger dialogs share one grammar. Delete flow already matched it. Suites: smoke 114/0, diff-core 24/0, core 77/0, byte-identical restore.
+
 ## 2026.10.04.25 — 2026-10-04 — 🛡️ Security hardening: import size guard + full escaping
 - Imports over 100MB are refused with a status message before parsing (both project and library paths). escapeHtml now also escapes single quotes. Zero visible change.
 
