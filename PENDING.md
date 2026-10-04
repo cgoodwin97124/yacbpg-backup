@@ -4,6 +4,8 @@
 ### 2026-10-04 - P4 wave 2 IMPLEMENTATION (deferred flip)
 - **Greenlight (verbatim):** Defer: your reasoning is good. Go ahead and begin.
 - **Status:** ACTIVE IMPLEMENTATION - wave 2: set/clearSlot/clearPanel/ensurePanel/swapSlots/setPage, storage stays position-keyed (flip deferred to wave 3). ~13 page edits + core checks, then full suites.
+- **Shipped (2026-10-04):** 2026.10.04.17 = P4 wave 2 (deferred flip). 14-method store, all writes routed, position-keyed storage kept. Suites: core 79/0, diff-core 23/0, state-diff 38/38, smoke 114/0/4, fixtures 18/0, gen 18/0/1, 0 errors, byte-identical, no flakes.
+- **Next:** P4 wave 3 (id-flip + remap deletion + live-map indexer migration) - needs greenlight.
 
 
 ### 2026-10-04 - Wave 2 preliminary recon
