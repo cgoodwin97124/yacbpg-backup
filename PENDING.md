@@ -1,4 +1,8 @@
 
+### 2026-10-04 — P6 palette answers (author ver batim: "1. Ok / 2. Key combo plus header button…where? / 3. Ok / 4. Ok")
+- **Status:** 🟢 START NOW — palette-only v1, Ctrl/K + header button (placement = open recommendation), curated set w/ confirms, fuzzy+groups+keys session-only.
+- **Next:** recommend header placement, confirm, then implement one version + suites + pre-Save push.
+
 ### 2026-10-04 — Repeat at V-5 (author, verbatim: "Repeat this at V-5 please?")
 - **Status:** ✅ DONE — V-5 = verbosity L5 (L4 + recon detail, alternatives, file:line refs); repeating palette recon below at L5, no code.
 
