@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Palette closed-start + header keyboard nav (author, verbatim: "I'd like the sections to start closed, and the keyboard to be able to navigate to the section headers. Up and down arrow keys navigate up and down; right arrow opens a header, left arrow closes it.")
+- **Status:** 🟢 START NOW — all groups collapsed initially (session); headers in the ↑/↓ order; → opens, ← closes (row: ← collapses its group); Enter on header toggles. One version (.33). Functional + smoke + guards before push.
+
 ### 2026-10-04 — Palette accordions (author, verbatim: "In the Ctrl-K command menu, can we have each of the sections under an accordion (no chip, just the arrowhead)?")
 - **Status:** ✅ DONE 2026.10.04.32 — accordions shipped (paletteShut/paletteCollapsed/paletteToggleGroup, w1-146/147 unchanged), smoke 114/0 + diff-core 24/0 + byte-identical restore, pushed pre-Save; re-push after Save.
 
