@@ -1,4 +1,7 @@
 
+### 2026-10-04 — Multi-panel Focus BUILD (author, verbatim: "And this is the green light to go!" + answers: vertical scroll / nav within set / rec? / single unchanged)
+- **Status:** 🟢 START NOW — generalize stage to a panel set (list/dropdown/nav within set, selection kept live behind Focus per recommendation). One version (.34). Full suites + byte-identical restore before push.
+
 ### 2026-10-04 — Multi-panel Focus (author spec, implements FIRST per author order)
 - **Status:** 🟢 START NOW — recon + questions first (new view behavior); no code yet.
 - **Spec:** Focus shows multiple panels; selecting several panels then Focus (context menu in selection, Commands View > Focus, or panel button) brings up those panels.
