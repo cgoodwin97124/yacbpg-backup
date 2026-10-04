@@ -1,4 +1,8 @@
 
+### 2026-10-04 — P5 UI-layer extraction RECON (read-only, no code)
+- **Status:** 🟢 START NOW (author, verbatim: "P5 recon, go!")
+- **Scope:** recon only — fresh counts of inline handlers / window exports / id-lookups against the .20 build, handler-to-function map, wave plan. Ends with questions; no code until greenlit per the standing recon+ask rule.
+
 ### 2026-10-04 — re-push 2026.10.04.20 post-Save + next-steps V-5
 - **Status:** ✅ DONE 2026.10.04.20 — re-pushed post-Save (ghPush: 18 files), next steps presented in V-5. No code changes.
 - **Request:** re-push the saved .20 build via ghPush so the repo captures the new index.html, then present next steps in V-5 verbose detail. No code changes.
