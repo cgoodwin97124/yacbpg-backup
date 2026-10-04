@@ -1,3 +1,9 @@
+## 2026.10.04.21 — 2026-10-04 — 🧭 P5 wave 1: static controls answer through delegation
+
+- **The plain version:** nothing visible changes. Every static button, dropdown and control now answers through four delegated page-level listeners instead of its own inline handler — the first step of pulling the wiring out of the markup.
+- **Under the hood:** the 153 static `on*="…"` attributes became `data-action="w1-N"` entries in a generated `W1ACT` table (138 unique bodies; original code moved verbatim, `this`→element, `event`→the delivered event, `return false` still prevents the default). One listener each for click/change/input/keydown, in the capture phase so they also catch directly-dispatched test events that never bubbled (that gap failed two smoke checks before the fix). No `window` export deleted — 101 are referenced by the suites — and the 82 script-template handlers (dynamic cards) wait for wave 2. Backup/auth handlers were included; nothing was off-limits in the event.
+- **The numbers:** differential **23/0**, core **77/0**, smoke **114/0**, generation **18/0**, fixtures **18/0**, state-diff **38/0**, **0** perchance errors, project restored **byte-for-byte** after every run. Live probes: a real Storyboard open/close click through the delegation path, and a key-by-key storage compare showing the author project untouched.
+
 ## 2026.10.04.20 — 2026-10-04 — 🖼️ P4 wave 5: export/import go id-native
 
 - **The plain version:** nothing visible changes. Exported .zip files now stamp each panel's stable id onto its image filenames, so importing finds the right panel even if the project file was edited or reordered in between. Zip files exported by older versions still import exactly as before.
