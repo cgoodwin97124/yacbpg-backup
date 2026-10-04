@@ -2,7 +2,7 @@
 ### 2026-10-04 — P5 W2: dynamic card handlers to delegation by panel id (IMPLEMENTATION)
 - **Status:** 🟢 START NOW (author, verbatim: "Go!") — W2 greenlit.
 - **Scope:** convert the 64 dynamic (template-built, panel-index-carrying) handlers + remaining script-template ones to delegation; update the two smoke lines that call cb.onclick directly; no export deletions. One version (2026.10.04.22). Full suites + byte-identical restore before push.
-- **Status:** ✅ **DONE 2026.10.04.22** — shipped (82 converted, 76-entry table reviewed pre-apply), all suites green (23/77/114/18/18/38, 0 errors, byte-identical restores), no test changes needed, pushed pre-Save; re-push after Save captures the new index.html.
+- **Status:** ✅ **DONE 2026.10.04.22** — shipped (82 converted, 76-entry table reviewed pre-apply), all suites green (23/77/114/18/18/38, 0 errors, byte-identical restores), no test changes needed, pushed pre-Save; re-pushed post-Save (## 2026.10.04.22 — 2026-10-04 — 🧭 P5 wave 2: panel cards an now in repo).
 
 ### 2026-10-04 — P5 W1: static handlers to delegation (IMPLEMENTATION)
 - **Status:** 🟢 START NOW (author, verbatim: "Your recommendations, and go!") — all four recon questions per recommendation: static-first order, debug hooks kept, data-action dispatchers per area, backup/auth handlers last.
