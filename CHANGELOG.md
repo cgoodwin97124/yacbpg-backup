@@ -1,3 +1,5 @@
+## 2026.10.04.30 — 2026-10-04 — 🏃 Run panel: the queue, live
+- A floating run panel shows every panel in the run with its live state, seed and thumbnail, the end target up top, working ⏸/▶/■, and a per-row 🔄 that re-runs immediately (disabled mid-queue). Verified with a stubbed slow run (rendering → paused → resumed → stopped). Suites green (smoke 114/0, state-diff 38/0, gen 18/0, byte-identical restores, 0 errors).
 ## 2026.10.04.29 — 2026-10-04 — ✨ New UI is now the default (toggle kept)
 - The 🧪 interface loads on (Advanced hiding, toasts, converged danger dialogs, 🎨 Style chip); the fab flips back to the old interface for the session, nothing persisted. Verified on fresh load (ui-new + adv-off, 51 adv controls hidden, toggle both ways) — smoke 114/0, byte-identical restore, 0 errors.
 ## 2026.10.04.28 — 2026-10-04 — 🎨 Style chip in the panel header
