@@ -1420,8 +1420,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.33 — 2026-10-04 — ⌘K palette starts closed, headers join keyboard nav
-- All palette sections start collapsed for the session, and ↑/↓ walks through headers and rows alike: → opens a header, ← closes it (← on a row closes its section), Enter on a header toggles it.
+## 2026.10.04.34 — 2026-10-04 — Focus takes a set: multi-panel focus
+- Focus now opens a set of panels stacked vertically: selecting several panels and running Focus shows them all, with the list, dropdown and prev/next cycling within the set. Single-panel Focus is unchanged, and the selection stays live behind the view.
 </script>
 
 
@@ -5729,7 +5729,7 @@ color-scheme:light;
 
   function buildPanelGrid() {
     const grid = document.getElementById('comicGrid');
-    const singleResume = singleCard ? currentSingle : 0;
+    const singleResume = focusCards.length ? focusSet.slice() : null;
     if (singleResume) detachSingleStage();
     grid.innerHTML = '';
     for (let i = 1; i <= 24; i++) {
@@ -5892,7 +5892,8 @@ color-scheme:light;
     }
     if (singleResume) {
       const total = getPanelCount();
-      if (total >= 1) openSingleView(Math.min(singleResume, total));
+      const valid = singleResume.filter(function (n) { return n >= 1 && n <= total; });
+      if (valid.length) openFocusPanels(valid);
       else closeSingleView();
     }
   }
@@ -5958,9 +5959,11 @@ color-scheme:light;
       if (!custom.value) custom.value = 4;
     }
     updatePanelVisibility();
-    if (singleCard) {
+    if (focusCards.length) {
       const total = getPanelCount();
-      if (total >= 1) openSingleView(Math.min(currentSingle, total));
+      const valid = focusSet.filter(function (n) { return n >= 1 && n <= total; });
+      if (valid.length) openFocusPanels(valid);
+      else closeSingleView();
     }
     schedulePanelSave();
   }
@@ -7182,6 +7185,7 @@ color-scheme:light;
     { t: "Open recent…", g: "Project", act: "w1-25" },
     { t: "Clear recent list", g: "Project", act: "w1-26" },
     { t: "Storyboard", g: "Views", act: "w1-0" },
+    { t: "Focus selected panels", g: "Views", act: "w1-148" },
     { t: "Open JSON Editor", g: "Views", act: "w1-42" },
     { t: "Open Analysis", g: "Views", act: "w1-79" },
     { t: "Open Manual", g: "Views", act: "w1-81" },
@@ -9274,38 +9278,64 @@ color-scheme:light;
   }
 
   let currentSingle = 0;
-  let singleAnchor = null;
-  let singleCard = null;
+  let focusSet = [];
+  let focusCards = [];
 
   function detachSingleStage() {
     const stage = document.getElementById('singleStage');
     if (stage) stage.innerHTML = '';
-    singleCard = null;
-    singleAnchor = null;
+    focusCards = [];
+    focusSet = [];
+    currentSingle = 0;
   }
 
   function restoreSingleCardToGrid() {
-    if (!singleCard) return;
     const grid = document.getElementById('comicGrid');
-    if (!grid || singleCard.parentNode === grid) return;
-    if (singleAnchor && singleAnchor.parentNode === grid) grid.insertBefore(singleCard, singleAnchor);
-    else singleCard.remove();
+    if (!grid) { focusCards = []; return; }
+    let pending = focusCards.slice();
+    focusCards = [];
+    for (let guard = 0; guard <= pending.length && pending.length; guard++) {
+      const rest = [];
+      let moved = false;
+      for (const f of pending) {
+        if (f.card.parentNode === grid) continue;
+        if (!f.anchor) { grid.appendChild(f.card); moved = true; continue; }
+        if (f.anchor.parentNode === grid) { grid.insertBefore(f.card, f.anchor); moved = true; continue; }
+        rest.push(f);
+      }
+      pending = rest;
+      if (!moved) break;
+    }
+    for (const f of pending) f.card.remove();
   }
 
   function openSingleView(i) {
+    openFocusPanels([i]);
+  }
+
+  function openFocusPanels(seq) {
     const total = getPanelCount();
-    if (!(i >= 1 && i <= total)) return;
-    const card = document.getElementById('panel-card-' + i);
-    if (!card) return;
-    if (singleCard && singleCard !== card) restoreSingleCardToGrid();
-    currentSingle = i;
-    singleCard = card;
-    singleAnchor = card.nextElementSibling;
+    const set = [];
+    for (const n of (seq || [])) {
+      const p = parseInt(n, 10);
+      if (p >= 1 && p <= total && !set.includes(p)) set.push(p);
+    }
+    if (!set.length) return;
+    restoreSingleCardToGrid();
+    const stage = document.getElementById('singleStage');
+    focusSet = set;
+    currentSingle = set[0];
+    for (const p of set) {
+      const card = document.getElementById('panel-card-' + p);
+      if (!card) continue;
+      focusCards.push({ i: p, card: card, anchor: card.nextElementSibling });
+    }
+    if (!focusCards.length) { focusSet = []; return; }
     const list = document.getElementById('singleList');
     const sel = document.getElementById('singlePanelSel');
     list.innerHTML = '';
     sel.innerHTML = '';
-    for (let p = 1; p <= total; p++) {
+    for (const p of set) {
       const li = document.createElement('button');
       li.textContent = 'Panel ' + p;
       li.dataset.p = String(p);
@@ -9316,10 +9346,20 @@ color-scheme:light;
       opt.textContent = 'Panel ' + p;
       sel.appendChild(opt);
     }
-    document.getElementById('singleStage').appendChild(card);
+    for (const f of focusCards) stage.appendChild(f.card);
     document.getElementById('singleOverlay').hidden = false;
     document.addEventListener('keydown', singleKeyHandler);
     updateSingleNav();
+  }
+
+  function focusSelectedPanels() {
+    const sel = selMenuSelection();
+    if (!sel) {
+      const st = document.getElementById('statusEl');
+      if (st) st.textContent = '⚠ Select at least one panel first — Focus opens the panel selection.';
+      return;
+    }
+    openFocusPanels(sel);
   }
 
   function updateSingleNav() {
@@ -9330,27 +9370,19 @@ color-scheme:light;
   }
 
   function singleNav(delta) {
-    const total = getPanelCount();
-    let next = currentSingle + delta;
-    if (next < 1) next = total;
-    if (next > total) next = 1;
-    singleNavTo(next);
+    if (!focusSet.length) return;
+    let at = focusSet.indexOf(currentSingle);
+    if (at < 0) at = 0;
+    singleNavTo(focusSet[(at + delta + focusSet.length) % focusSet.length]);
   }
 
   function singleNavTo(p) {
     p = parseInt(p, 10);
-    const total = getPanelCount();
-    if (!(p >= 1 && p <= total) || p === currentSingle) return;
-    restoreSingleCardToGrid();
-    const newCard = document.getElementById('panel-card-' + p);
-    if (newCard) {
-      singleAnchor = newCard.nextElementSibling;
-      document.getElementById('singleStage').appendChild(newCard);
-      singleCard = newCard;
-      currentSingle = p;
-    }
+    if (!focusSet.includes(p) || p === currentSingle) return;
+    currentSingle = p;
     updateSingleNav();
-    document.getElementById('singleOverlay').scrollTop = 0;
+    const f = focusCards.find(function (x) { return x.i === p; });
+    if (f && f.card.scrollIntoView) { try { f.card.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
   }
 
   function syncFocusControls() {
@@ -9391,8 +9423,7 @@ color-scheme:light;
   function closeSingleView() {
     document.removeEventListener('keydown', singleKeyHandler);
     restoreSingleCardToGrid();
-    singleCard = null;
-    singleAnchor = null;
+    focusSet = [];
     currentSingle = 0;
     document.getElementById('singleOverlay').hidden = true;
   }
@@ -12608,6 +12639,7 @@ color-scheme:light;
     "w1-145": { ev: "click", run: (el, e) => { runPanelHide() } },
     "w1-146": { ev: "click", run: (el, e) => { paletteToggle() } },
     "w1-147": { ev: "click", run: (el, e) => { paletteClose() } },
+    "w1-148": { ev: "click", run: (el, e) => { focusSelectedPanels() } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
@@ -12705,7 +12737,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pauseGenerations, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
