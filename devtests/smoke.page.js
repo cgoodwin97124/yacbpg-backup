@@ -1,3 +1,4 @@
+const {__panelOverrideSet, addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, buildPanelGrid, buildPanelPrompt, clearLibSelection, clearPanelSeed, clearPanelSelection, closeAnalysis, closeJsonEditor, closeSingleView, closeStoryboard, closeUserManual, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, ghClose, ghPush, ghSaveSettings, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, movePanelToPage, newPanelLibraryEntry, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, resequencePanel, resetEverything, revertPanelPrompt, saveKept, saveLibraryObjects, savePanelDescription, selectAllPanels, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, toggleLayout, togglePromptEditor, undoStructuralOp, updatePanelVisibility} = window.__dbg;
 window.confirm = () => true;
 window.alert = () => {};
 window.__smokePrompts = [];
@@ -27,9 +28,11 @@ const GROUPS = {
   G16: "panel identity (the id on every panel)",
   G17: "renaming a library character/location and propagating it",
   G18: "the kept-image hook (the project's own kept array)",
-  G19: "the GitHub backup (the served page read back, the fifteen files)",
+  G19: "the GitHub backup (the served page read back, the eighteen files)",
   G20: "Panel Descriptions in the library (the shared pool, the picker, the pill)",
   G21: "library multi-select (batch copy to My catalogue, batch delete)",
+  G23: "reference images on Characters/Locations (thumbnails, viewer, copy ask, JSON lock, delete note)",
+  G22: "persistent manual Prompt edits, the revert chip, structural undo",
   MAN: "not automatable against the unmodified build - manual check",
 };
 
@@ -58,7 +61,7 @@ const eqArr = (a, b, what) => (JSON.stringify(a) === JSON.stringify(b) ? ok(what
 const rawState = () => { try { return JSON.parse(localStorage.getItem("comicGen.panelState") || "{}"); } catch (e) { return { parseError: e.message }; } };
 const pageKeys = (s) => Object.keys((s || rawState()).pages || {}).map(Number).sort((a, b) => a - b);
 const cardsShown = () => [...document.querySelectorAll('[id^="panel-card-"]')].filter((el) => el.style.display !== "none").length;
-const libObjs = () => (window.projectLibraryArray ? window.projectLibraryArray() : []);
+const libObjs = () => (__dbg.projectLibraryArray ? __dbg.projectLibraryArray() : []);
 const catLog = () => { try { return JSON.parse(localStorage.getItem("comicGen.libObjects") || "[]"); } catch (e) { return []; } };
 const setVal = (id, v) => {
   const el = $(id);
@@ -87,6 +90,10 @@ const clickButtonText = (root, text) => {
   if (!b) return null;
   b.click();
   return b.textContent.trim().slice(0, 50);
+};
+const libRowByName = (nm) => {
+  const inp = [...document.querySelectorAll("#libObjects .lib-row .lib-name-input")].find((i) => i.value === nm);
+  return inp ? inp.closest(".lib-row") : null;
 };
 
 const pageCount = (pd) => (pd && pd.panelCountSel === "custom" ? Number(pd.panelCountCustom || 0) : Number((pd && pd.panelCountSel) || 0));
@@ -238,6 +245,8 @@ async function run() {
     await settle();
     const pagesBefore = pageKeys().length;
     addPanel(24);
+    await sleep(250);
+    answer("add anyway");
     await settle();
     const s = rawState();
     const keys = pageKeys(s);
@@ -251,6 +260,8 @@ async function run() {
     if (keys1.length !== 2) return no("precondition: pages=" + JSON.stringify(keys1));
     const p2Before = pageCount(s1.pages[2]);
     duplicatePanel(23);
+    await sleep(250);
+    answer("duplicate anyway");
     await settle();
     const s2 = rawState();
     return eqArr([pageCount(s2.pages[1]), pageCount(s2.pages[2]) - p2Before], [24, 1], "page1,page2Growth");
@@ -261,6 +272,8 @@ async function run() {
     await settle();
     const before = cardsShown();
     deletePanel(2);
+    await sleep(250);
+    answer("delete panel 2");
     await settle();
     return eqArr([getVal("panel-act-2"), cardsShown()], ["SENTINEL-THREE", before - 1], "act2,shown");
   });
@@ -552,7 +565,7 @@ async function run() {
     setVal("panel-char-select-1-2", "lib:char:" + hero2.id);
     await sleep(250);
     const seeded = getVal("panel-char-base-1-2");
-    const cleared = window.applyLibraryDelete(hero2.id, true);
+    const cleared = __dbg.applyLibraryDelete(hero2.id, true);
     await sleep(250);
     return eqArr(
       [warned, offered, keptText, fellBack, gone, cleared && cleared.cleared, seeded, getVal("panel-char-base-1-2"), getVal("panel-char-select-1-2")],
@@ -774,10 +787,23 @@ async function run() {
     const first = getVal("singlePanelSel");
     singleNav(1);
     await sleep(250);
-    const second = getVal("singlePanelSel");
+    const stays = getVal("singlePanelSel");
     closeSingleView();
     await sleep(200);
-    return eqArr([open, first, second, $("singleOverlay").hidden], [true, "1", "2", true], "open,1,2,closed");
+    const gridOk = $("comicGrid").children.length === 24;
+    openFocusPanels([3, 1]);
+    await sleep(300);
+    const multi = getVal("singlePanelSel");
+    singleNav(1);
+    await sleep(250);
+    const stepped = getVal("singlePanelSel");
+    singleNav(1);
+    await sleep(250);
+    const wrapped = getVal("singlePanelSel");
+    closeSingleView();
+    await sleep(200);
+    const order = [...$("comicGrid").children].every((c, n) => c.id === "panel-card-" + (n + 1));
+    return eqArr([open, first, stays, multi, stepped, wrapped, $("singleOverlay").hidden, gridOk, order], [true, "1", "1", "3", "1", "3", true, true, true], "open,single-stays,multi,step,wrap,closed,grid");
   });
 
   await t("G12: 60 the storyboard renders the page and closes", async () => {
@@ -1249,10 +1275,10 @@ async function run() {
     setVal("projectNameInput", getVal("projectNameInput"));
     await settle();
     const st = rawState();
-    const live = window.projectKeptArray();
+    const live = __dbg.projectKeptArray();
     const exp = doc && doc.settings ? doc.settings.kept : null;
     return eqArr([
-      typeof window.projectKeptArray, Array.isArray(live), live.length,
+      typeof __dbg.projectKeptArray, Array.isArray(live), live.length,
       Array.isArray(exp), Array.isArray(exp) ? exp.length : -1,
       Array.isArray(st.kept), Array.isArray(st.kept) ? st.kept.length : -1
     ], ["function", true, 0, true, 0, true, 0], "type,live,export,saved");
@@ -1260,9 +1286,9 @@ async function run() {
 
   await t("G18: 90 a kept entry survives the save and the export/import round trip", async () => {
     const entry = { id: "k-smoke-1", panel: "p-smoke", slot: 2, image: "data:image/png;base64,AAA", prompt: "a cow at dusk", seed: "17" };
-    window.saveKept([entry]);
+    __dbg.saveKept([entry]);
     await settle();
-    const live = window.projectKeptArray();
+    const live = __dbg.projectKeptArray();
     const savedAfter = (rawState().kept || []).length;
     captureDownloads();
     exportSettings();
@@ -1271,9 +1297,9 @@ async function run() {
     const text = await cap.blobs[cap.blobs.length - 1].text();
     const doc = JSON.parse(text);
     const exported = (doc.settings && doc.settings.kept) || [];
-    window.saveKept([]);
+    __dbg.saveKept([]);
     await settle();
-    const cleared = window.projectKeptArray().length;
+    const cleared = __dbg.projectKeptArray().length;
     const input = $("importSettingsInput");
     const dt = new DataTransfer();
     dt.items.add(new File([text], "kept.json", { type: "application/json" }));
@@ -1283,9 +1309,9 @@ async function run() {
     if ($("importConfirmOverlay") && !$("importConfirmOverlay").hidden) clickButtonText($("importConfirmOverlay"), "continue");
     if (dialogOpen()) answer();
     await sleep(1200);
-    const back = window.projectKeptArray();
+    const back = __dbg.projectKeptArray();
     const savedBack = (rawState().kept || []).length;
-    window.saveKept([]);
+    __dbg.saveKept([]);
     await settle();
     return eqArr([
       live.length, live[0] && live[0].prompt, live[0] && live[0].slot, savedAfter,
@@ -1307,13 +1333,13 @@ async function run() {
     jsonEditorApply();
     await sleep(350);
     const status = $("jsonStatusEl") ? $("jsonStatusEl").textContent : "";
-    const unchanged = window.projectKeptArray().length === 0;
+    const unchanged = __dbg.projectKeptArray().length === 0;
     closeJsonEditor(true);
     await sleep(200);
     return eqArr([hasKept, dirty, /problem/i.test(status), unchanged], [true, true, true, true], "hasKept,edited,refused,unchanged status=" + status.slice(0, 70));
   });
 
-  await t("G19: 92 the backup assembles all fifteen files (the served page read back with a cache-buster)", async () => {
+  await t("G19: 92 the backup assembles all eighteen files (the served page read back with a cache-buster)", async () => {
     const realFetch = window.fetch;
     const puts = [];
     window.fetch = function (url, opts) {
@@ -1334,22 +1360,22 @@ async function run() {
       await sleep(150);
       const tok = $("ghTokenInput") ? $("ghTokenInput").value : "";
       if (!tok) { ghClose(); return { skip: "no token in this browser" }; }
-      await window.ghPush();
+      await __dbg.ghPush();
       const status = $("ghStatusEl").textContent;
       const names = puts.map((p) => p.path);
-      const want = ["main.pjs", "index.html", "src/manual.html", "src/question-form.html", "src/refactor-form.html", "src/round2-form.html", "src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js", "src/state/store.js", "src/state/commands.js"];
+      const want = ["main.pjs", "index.html", "src/manual.html", "src/question-form.html", "src/refactor-form.html", "src/round2-form.html", "src/refimages-form.html", "src/batch-form.html", "src/core/zip.js", "src/core/jsontext.js", "src/core/keywords.js", "src/core/seeds.js", "src/core/prompt.js", "src/core/library-core.js", "src/core/schema.js", "src/state/store.js", "src/state/commands.js", "src/state/images.js"];
       const order = want.every((p, i) => names[i] === p);
       const idxLen = names.indexOf("index.html") >= 0 ? puts[names.indexOf("index.html")].len : 0;
       const sizes = puts.every((p) => p.len > 900);
       ghClose();
       await sleep(120);
-      return eqArr([names.length, order, sizes, /Pushed 15 files/.test(status), idxLen > 500000], [15, true, true, true, true], "files=" + names.length + " idxB64=" + idxLen + " status=" + status.slice(0, 60));
+      return eqArr([names.length, order, sizes, /Pushed 18 files/.test(status), idxLen > 500000], [18, true, true, true, true], "files=" + names.length + " idxB64=" + idxLen + " status=" + status.slice(0, 60));
     } finally {
       window.fetch = realFetch;
     }
   });
 
-  await t("G20: 93 the Panel Description box saves its text to the library as a named entry", async () => {
+  await t("G20: 93 the Panel Specific Description box saves its text to the library as a named entry", async () => {
     const box = $("panel-char-extra-1-1");
     const pick = $("panel-char-extra-pick-1-1");
     if (!box || !pick) return no("missing box/pick");
@@ -1357,9 +1383,9 @@ async function run() {
     await settle();
     const badgeCustom = ($("panel-char-extra-badge-1-1") || {}).textContent || "";
     window.__smokePrompts = ["Torn jacket"];
-    const saved = window.savePanelDescription("char", 1, 1);
+    const saved = __dbg.savePanelDescription("char", 1, 1);
     await settle();
-    const item = libObjs().find((o) => o.type === "Panel Description" && o.name === "Torn jacket");
+    const item = libObjs().find((o) => o.type === "Panel Specific Description" && o.name === "Torn jacket");
     const badgeName = ($("panel-char-extra-badge-1-1") || {}).textContent || "";
     const offered = [...(($("panel-char-extra-pick-1-2") || {}).options || [])].some((o) => o.textContent === "Torn jacket");
     return eqArr([
@@ -1368,8 +1394,8 @@ async function run() {
     ], [true, true, "wearing a torn jacket", true, true, true], "saved,item,desc,badgeCustom,badgeName,offered");
   });
 
-  await t("G20: 94 picking a saved Panel Description copies its text into the box", async () => {
-    const item = libObjs().find((o) => o.type === "Panel Description");
+  await t("G20: 94 picking a saved Panel Specific Description copies its text into the box", async () => {
+    const item = libObjs().find((o) => o.type === "Panel Specific Description");
     if (!item) return no("no saved panel description");
     if (!$("panel-char-extra-pick-2-1")) return no("panel 2 char slot 1 not on screen");
     setVal("panel-char-extra-pick-2-1", "lib:pd:" + item.id);
@@ -1391,30 +1417,30 @@ async function run() {
     return eqArr([getVal("panel-char-extra-1-1"), /not in your library/.test(badge)], ["wearing a torn jacket", true], "boxFrozen,badgeFlipped");
   });
 
-  await t("G20: 96 the main Library bucket exists and its creation dialog can make a Panel Description", async () => {
+  await t("G20: 96 the main Library bucket exists and its creation dialog can make a Panel Specific Description", async () => {
     const buckets = [...document.querySelectorAll("#libObjects .lib-bucket")].map((h) => h.textContent);
     window.__smokePrompts = ["P22 Hero", "a bold hero", "Torn jacket"];
     addLibraryEntryByType("Character");
     await settle();
     const hero = libObjs().find((o) => o.name === "P22 Hero");
-    const poolAfterReuse = libObjs().filter((o) => o.type === "Panel Description").length;
+    const poolAfterReuse = libObjs().filter((o) => o.type === "Panel Specific Description").length;
     window.__smokePrompts = ["P22 Place", "a windy cliff", "at dusk", "Dusk"];
     addLibraryEntryByType("Location");
     await settle();
     const place = libObjs().find((o) => o.name === "P22 Place");
-    const dusk = libObjs().find((o) => o.type === "Panel Description" && o.name === "Dusk");
+    const dusk = libObjs().find((o) => o.type === "Panel Specific Description" && o.name === "Dusk");
     return eqArr([
-      buckets.some((b) => /Panel Descriptions/.test(b)), !!hero, poolAfterReuse, !!place, !!dusk, dusk && dusk.desc
+      buckets.some((b) => /Panel Specific Descriptions/.test(b)), !!hero, poolAfterReuse, !!place, !!dusk, dusk && dusk.desc
     ], [true, true, 1, true, true, "at dusk"], "bucket,hero,reused,place,newPd,newPdText");
   });
 
-  await t("G20: 97 a new character made from a panel carries its Panel Description in", async () => {
+  await t("G20: 97 a new character made from a panel carries its Panel Specific Description in", async () => {
     if (!$("panel-char-extra-2-1")) return no("panel 2 not on screen");
     window.__smokePrompts = ["P22 Local", "a local hero", "duelling at dawn", "Dawn duel"];
-    window.newPanelLibraryEntry("char", 2, 1);
+    __dbg.newPanelLibraryEntry("char", 2, 1);
     await settle();
     const local = libObjs().find((o) => o.name === "P22 Local");
-    const pd = libObjs().find((o) => o.type === "Panel Description" && o.name === "Dawn duel");
+    const pd = libObjs().find((o) => o.type === "Panel Specific Description" && o.name === "Dawn duel");
     const sel = getVal("panel-char-select-2-1");
     const badge = ($("panel-char-extra-badge-2-1") || {}).textContent || "";
     return eqArr([
@@ -1424,7 +1450,7 @@ async function run() {
     ], [true, true, "duelling at dawn", true, "duelling at dawn", true], "local,pd,sel,box,badge");
   });
 
-  await t("G20: 98 the box is labelled Panel Description and the old wording is gone", async () => {
+  await t("G20: 98 the box is labelled Panel Specific Description and the old wording is gone", async () => {
     const card = $("panel-card-1");
     if (!card) return no("no panel 1");
     const labels = [...card.querySelectorAll(".pl-line-label")].map((e) => e.textContent.trim());
@@ -1435,7 +1461,7 @@ async function run() {
     }
     const html = clone.innerHTML;
     return eqArr([
-      labels.filter((l) => l === "Panel Description").length,
+      labels.filter((l) => l === "Panel Specific Description").length,
       labels.filter((l) => /extra description/i.test(l)).length,
       /This panel — extra description/.test(html)
     ], [4, 0, false], "renamed,oldGone," + labels.join("/"));
@@ -1448,7 +1474,7 @@ async function run() {
   const libSelCount = () => document.querySelectorAll("#libObjects .lib-row.lib-selected").length;
 
   await t("G21: 99 every library row has a checkbox and ticking one selects only that row", async () => {
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     const rows = libRows();
     const withCb = rows.filter((r) => r.querySelector(".lib-select-cb")).length;
     const first = rows[0];
@@ -1458,12 +1484,12 @@ async function run() {
     const relabel = (first.querySelector(".btn-del-lib") || {}).textContent;
     const hintShown = !$("libSelHint").hidden;
     const clearShown = [...document.querySelectorAll(".btn-lib-clearsel")].every((b) => !b.hidden);
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     return eqArr([withCb === rows.length, rows.length > 1, sel, checked, relabel, hintShown, clearShown], [true, true, 1, 1, "🗑", true, true], "allRows,cb,selected,checked,relabel,hint,clear");
   });
 
   await t("G21: 100 shift-click selects a range and the chips relabel for the batch", async () => {
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     const rows = libRows();
     tickLib(rows[0]);
     tickLib(rows[rows.length - 1], true);
@@ -1473,12 +1499,12 @@ async function run() {
     const labels = [up && up.textContent, del && del.textContent];
     untickLib(rows[rows.length - 1], true);
     const after = libSelCount();
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     return eqArr([all, labels, after], [rows.length, ["⤒ Copy " + rows.length, "🗑 Delete " + rows.length], 0], "range,labels,rangeUntick");
   });
 
   await t("G21: 101 the selection is DOM-only and never reaches the save", async () => {
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     const before = localStorage.getItem("comicGen.panelState");
     const keysBefore = Object.keys(localStorage).sort().join(",");
     tickLib(libRows()[0]);
@@ -1486,19 +1512,19 @@ async function run() {
     const after = localStorage.getItem("comicGen.panelState");
     const keysAfter = Object.keys(localStorage).sort().join(",");
     const selected = libSelCount();
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     return eqArr([selected, before === after, keysBefore === keysAfter, /select/i.test(after || "")], [1, true, true, false], "selected,savedIdentical,keysSame,noSelectKey");
   });
 
   await t("G21: 102 Select all covers one section only", async () => {
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     const projRows = [...document.querySelectorAll("#libObjects .lib-row-proj")];
     const btn = document.querySelector("#libObjects .lib-scope-row .btn-lib-selectall");
     if (!btn || !projRows.length) return no("no select-all chip");
     btn.click();
     const selProj = document.querySelectorAll("#libObjects .lib-row-proj.lib-selected").length;
     const selCat = document.querySelectorAll("#libObjects .lib-row-cat.lib-selected").length;
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     return eqArr([selProj, selCat], [projRows.length, 0], "projectOnly,catUntouched");
   });
 
@@ -1512,7 +1538,7 @@ async function run() {
     const place = libObjs().find((o) => o.name === "P23 Place");
     if (!alpha || !place) return no("items not created: " + libObjs().map((o) => o.name).join("|").slice(0, 90));
     const pre = catLog().filter((o) => o.id === alpha.id || o.id === place.id).length;
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     tickLib(libRowOf("P23 Alpha", false));
     tickLib(libRowOf("P23 Place", false));
     const sel = libSelCount();
@@ -1530,7 +1556,7 @@ async function run() {
     ta.value = "alpha text EDITED in the project";
     ta.dispatchEvent(new Event("input", { bubbles: true }));
     await settle();
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     const row = libRowOf("P23 Alpha", false);
     tickLib(row);
     row.querySelector(".btn-copy-up").click();
@@ -1546,7 +1572,7 @@ async function run() {
   await t("G21: 105 confirming that dialog updates the catalogue entry", async () => {
     const alpha = libObjs().find((o) => o.name === "P23 Alpha");
     if (!alpha) return no("no P23 Alpha");
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     const row = libRowOf("P23 Alpha", false);
     tickLib(row);
     row.querySelector(".btn-copy-up").click();
@@ -1566,8 +1592,8 @@ async function run() {
     setVal("panel-loc-select-1", "lib:loc:" + place.id);
     await settle();
     const seeded = getVal("panel-char-base-1-1");
-    const refs = window.countLibReferences(alpha.id);
-    window.clearLibSelection();
+    const refs = __dbg.countLibReferences(alpha.id);
+    __dbg.clearLibSelection();
     tickLib(libRowOf("P23 Alpha", false));
     tickLib(libRowOf("P23 Place", false));
     libRowOf("P23 Alpha", false).querySelector(".btn-del-lib").click();
@@ -1609,7 +1635,7 @@ async function run() {
     const rowP = libRowOf("P23 Place", true);
     if (!rowA || !rowP) return no("no catalogue row");
     if (rowA.querySelector(".btn-copy-down").disabled || rowP.querySelector(".btn-copy-down").disabled) return no("catalogue row still in this project");
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     tickLib(rowA);
     tickLib(rowP);
     const sel = libSelCount();
@@ -1621,7 +1647,7 @@ async function run() {
   });
 
   await t("G21: 109 Esc clears the library selection while the Library panel is open", async () => {
-    window.clearLibSelection();
+    __dbg.clearLibSelection();
     switchMenu("library");
     await sleep(120);
     tickLib(libRows()[0]);
@@ -1630,6 +1656,146 @@ async function run() {
     await sleep(120);
     const after = libSelCount();
     return eqArr([before, after], [1, 0], "before,after");
+  });
+
+  await t("G22: 110 every panel card carries a revert chip that tracks its override", async () => {
+    if (!window.__panelOverrideSet) return { skip: "no override seam" };
+    const n = cardsShown();
+    if (!n) return no("no panel cards");
+    const bad = [];
+    for (let i = 1; i <= n; i++) {
+      const chip = $("prompt-revert-" + i);
+      if (!chip) { bad.push(i); continue; }
+      if (chip.hidden === window.__panelOverrideSet(i)) bad.push("state" + i);
+    }
+    return bad.length ? no("bad chips: " + bad.join(",").slice(0, 120)) : ok(n + " cards, chips track overrides");
+  });
+
+  await t("G22: 111 the structural undo button exists and labels the last op", async () => {
+    const b = $("globalUndoBtn");
+    if (!b) return no("no #globalUndoBtn");
+    if (typeof __dbg.undoStructuralOp !== "function") return no("no undoStructuralOp");
+    const labelOk = b.disabled ? b.textContent === "↩ Undo" : /^\u21A9 Undo .+/.test(b.textContent);
+    return labelOk ? ok("label=" + b.textContent.slice(0, 40) + (b.disabled ? " (empty stack)" : " (stack non-empty)")) : no("bad label: " + b.textContent.slice(0, 60));
+  });
+
+  await t("G22: 112 a manual Prompt edit survives an action edit and the revert chip clears it", async () => {
+    if (!window.__panelOverrideSet || typeof __dbg.revertPanelPrompt !== "function") return { skip: "no prompt seams" };
+    const n = cardsShown();
+    let i = 0;
+    for (let p = 1; p <= n; p++) {
+      if (!window.__panelOverrideSet(p) && $("prompt-pos-" + p) && $("panel-act-" + p) && $("prompt-revert-" + p)) { i = p; break; }
+    }
+    if (!i) return { skip: "every panel already has an override" };
+    setVal("prompt-pos-" + i, "G22 FROZEN POS");
+    setVal("prompt-neg-" + i, "G22 FROZEN NEG");
+    await sleep(150);
+    const chipShown = !$("prompt-revert-" + i).hidden;
+    setVal("panel-act-" + i, "G22 action edit");
+    await settle();
+    const kept = (rawState().pages[1][i] || {}).promptOverride || {};
+    const seamKept = window.__panelOverrideSet(i);
+    $("prompt-revert-" + i).click();
+    await sleep(250);
+    const cleared = !((rawState().pages[1][i] || {}).promptOverride) && !window.__panelOverrideSet(i);
+    const chipHidden = $("prompt-revert-" + i).hidden;
+    return eqArr([chipShown, kept.pos, kept.neg, seamKept, cleared, chipHidden], [true, "G22 FROZEN POS", "G22 FROZEN NEG", true, true, true], "chip,kept,seam,reverted,chipOff");
+  });
+
+  await t("G23: 113 a Character with refs survives save and rides the export", async () => {
+    const px = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+    __dbg.saveLibraryObjects((__dbg.loadLibraryObjects() || []).filter((o) => !o || !String(o.id || "").startsWith("tmp-g23-")));
+    await settle();
+    const base = __dbg.loadLibraryObjects() || [];
+    __dbg.saveLibraryObjects([...base, { id: "tmp-g23-char", type: "Character", name: "Tmp G23 Char", desc: "g23 temp", refs: [{ src: px }, { src: px }] }]);
+    await settle();
+    const back = (__dbg.loadLibraryObjects() || []).find((o) => o && o.id === "tmp-g23-char");
+    captureDownloads();
+    exportSettings();
+    await sleep(500);
+    cap.restore();
+    const text = cap.blobs.length ? await cap.blobs[cap.blobs.length - 1].text() : "";
+    let doc = null;
+    try { doc = JSON.parse(text); } catch (e) {}
+    const exp = doc && doc.settings && Array.isArray(doc.settings.library) ? doc.settings.library.find((o) => o && o.id === "tmp-g23-char") : null;
+    return eqArr([back && back.refs.length, !!exp, exp && exp.refs.length], [2, true, 2], "saved,exported");
+  });
+
+  await t("G23: 114 the row shows two thumbnails and the viewer opens with Remove/Close", async () => {
+    __dbg.renderLibrary();
+    await sleep(300);
+    const row = libRowByName("Tmp G23 Char");
+    if (!row) return no("tmp row not rendered");
+    const thumbs = [...row.querySelectorAll('img[alt^="Reference"]')];
+    if (thumbs.length !== 2) return no("thumbs=" + thumbs.length);
+    thumbs[0].click();
+    await sleep(400);
+    const good = dialogOpen() && /Reference 1 of 2/.test(dialogTitle()) && dialogButtons().join("|").includes("Remove this image");
+    const ans = answer("close");
+    await sleep(300);
+    return good && !dialogOpen() ? ok("viewer opened and closed: " + ans) : no("title=" + dialogTitle() + " btns=" + dialogButtons().join("|"));
+  });
+
+  await t("G23: 115 copying the item asks about the images and Cancel writes nothing", async () => {
+    const row = libRowByName("Tmp G23 Char");
+    if (!row) return no("tmp row not found");
+    const box = row.querySelector("input.lib-select-cb");
+    if (!box) return no("no select checkbox on tmp row");
+    const catBefore = catLog().length;
+    box.click();
+    await sleep(300);
+    const row2 = libRowByName("Tmp G23 Char") || row;
+    const up = [...row2.querySelectorAll("button")].find((b) => (b.textContent || "").includes("⤒"));
+    if (!up) return no("no offer chip on tmp row");
+    const tmpRefs = ((__dbg.loadLibraryObjects() || []).find((o) => o && o.id === "tmp-g23-char") || {}).refs;
+    up.click();
+    await sleep(400);
+    const asked = dialogOpen() && dialogTitle() === "Copy the reference images too?" && /2 reference images/.test(dialogText()) && /Tmp G23 Char/.test(dialogText());
+    if (!asked) {
+      const st = $("statusEl") ? $("statusEl").textContent.slice(0, 100) : "";
+      return no("no ask: title=" + dialogTitle() + " tmpRefs=" + (Array.isArray(tmpRefs) ? tmpRefs.length : typeof tmpRefs) + " status=" + st);
+    }
+    answer("cancel");
+    await sleep(300);
+    const un = [...document.querySelectorAll("input.lib-select-cb")].filter((c) => c.checked);
+    un.forEach((c) => c.click());
+    await sleep(200);
+    return eqArr([dialogOpen(), catLog().length], [false, catBefore], "closed,catalogue untouched");
+  });
+
+  await t("G23: 116 the JSON editor locks refs and Apply keeps them", async () => {
+    openJsonEditor();
+    await sleep(500);
+    const txt = $("jsonArea").value;
+    const locked = txt.includes("🔒 2 reference images") && txt.includes("never editable here");
+    if (!locked) { closeJsonEditor(true); return no("no locked line"); }
+    $("jsonArea").value = txt.replace("Tmp G23 Char", "Tmp G23 Char2");
+    $("jsonArea").dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(600);
+    jsonEditorApply();
+    await sleep(600);
+    const t2 = (__dbg.loadLibraryObjects() || []).find((o) => o && o.id === "tmp-g23-char");
+    const st = $("jsonProblemEl") ? $("jsonProblemEl").textContent : ($("jsonStatusEl") ? $("jsonStatusEl").textContent : "");
+    closeJsonEditor(true);
+    await sleep(200);
+    return eqArr([t2 && t2.name, t2 && t2.refs.length, /no changes yet/i.test(st)], ["Tmp G23 Char2", 2, true], "renamed,refs kept,status=" + st.slice(0, 50));
+  });
+
+  await t("G23: 117 deleting the item names its images and Cancel keeps it, then cleanup", async () => {
+    const row = libRowByName("Tmp G23 Char2");
+    if (!row) return no("renamed row not found");
+    [...row.querySelectorAll("button")].find((b) => (b.textContent || "").trim() === "🗑").click();
+    await sleep(400);
+    const noted = dialogOpen() && /Delete this saved character/.test(dialogTitle()) && /2 reference images/.test(dialogText());
+    if (!noted) return no("no delete note: title=" + dialogTitle());
+    answer("cancel");
+    await sleep(300);
+    const survived = (__dbg.loadLibraryObjects() || []).some((o) => o && o.id === "tmp-g23-char");
+    __dbg.saveLibraryObjects((__dbg.loadLibraryObjects() || []).filter((o) => !o || !String(o.id || "").startsWith("tmp-g23-")));
+    await settle();
+    const gone = !(__dbg.loadLibraryObjects() || []).some((o) => o && o.id === "tmp-g23-char");
+    __dbg.renderLibrary();
+    return eqArr([!dialogOpen(), survived, gone], [true, true, true], "cancelled,survived,cleaned");
   });
 
   const pass = T.filter((x) => x.ok === true).length;
