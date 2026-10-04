@@ -1355,8 +1355,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.03.16 — 2026-10-03 — 🖼️ P4 wave 1: image reads go through src/state/images.js
-- New createImageStore() facade over the session maps (IMAGES_VERSION 1); all image reads (display, preview, counts, clipboard snapshot, export collect, analysis) route through it with legacy fallback. Writes/remaps untouched. Zero behavior change.
+## 2026.10.04.17 — 2026-10-04 — 🖼️ P4 wave 2: image writes go through src/state/images.js
+- Store gains set/clearSlot/clearPanel/ensurePanel/swapSlots/setPage (IMAGES_VERSION 2); the funnel, stop-cleanups, gen wipe/ensure, representative swap, copy dests, all clears and bulk commits route through it with legacy fallback. Storage still position-keyed; remaps untouched. Zero behavior change.
 </script>
 
 
@@ -4481,6 +4481,18 @@ color-scheme:light;
     }
     return false;
   }
+  function imgDropSlot(i, k) {
+    if (panelImageStore) return panelImageStore.clearSlot(currentPage, i, k);
+    if (panelImages[i]) delete panelImages[i][k - 1];
+  }
+  function imgWipePanel(i) {
+    if (panelImageStore) return panelImageStore.clearPanel(currentPage, i);
+    panelImages[i] = [];
+  }
+  function imgEnsurePanel(i) {
+    if (panelImageStore) return panelImageStore.ensurePanel(currentPage, i);
+    if (!panelImages[i]) panelImages[i] = [];
+  }
 
   function ensureImageObserver() {
     if (imgObserver) return;
@@ -4509,8 +4521,8 @@ color-scheme:light;
   }
 
   function showPanelImage(i, k, dataUrl) {
-    if (!panelImages[i]) panelImages[i] = [];
-    panelImages[i][k - 1] = dataUrl;
+    if (panelImageStore) panelImageStore.set(currentPage, i, k, dataUrl);
+    else { if (!panelImages[i]) panelImages[i] = []; panelImages[i][k - 1] = dataUrl; }
     const card = document.getElementById('panel-card-' + i);
     const img = document.getElementById('img-panel-' + i + '-' + k);
     if (!img) return;
@@ -4666,7 +4678,7 @@ color-scheme:light;
       panelBusy[key.i] = false;
       const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
       if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
-      if (panelImages[key.i]) delete panelImages[key.i][key.k - 1];
+      imgDropSlot(key.i, key.k);
       setPanelImageButtons(key.i, key.k, false);
       const img = document.getElementById('img-panel-' + key.i + '-' + key.k);
       if (img) { img.removeAttribute('src'); delete img.dataset.hidden; img.alt = ""; }
@@ -5010,7 +5022,7 @@ color-scheme:light;
       panelBusy[key.i] = false;
       const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
       if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
-      if (panelImages[key.i]) delete panelImages[key.i][key.k - 1];
+      imgDropSlot(key.i, key.k);
       setPanelImageButtons(key.i, key.k, false);
     }
     inFlightGen.clear();
@@ -5043,7 +5055,7 @@ color-scheme:light;
       panelBusy[key.i] = false;
       const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
       if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
-      if (panelImages[key.i]) delete panelImages[key.i][key.k - 1];
+      imgDropSlot(key.i, key.k);
       setPanelImageButtons(key.i, key.k, false);
     }
     inFlightGen.clear();
@@ -5061,7 +5073,7 @@ color-scheme:light;
       panelBusy[key.i] = false;
       const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
       if (box) { box.classList.remove('generating'); box.classList.add('stopped'); }
-      if (panelImages[key.i]) delete panelImages[key.i][key.k - 1];
+      imgDropSlot(key.i, key.k);
       setPanelImageButtons(key.i, key.k, false);
     }
     inFlightGen.clear();
@@ -6193,6 +6205,7 @@ color-scheme:light;
   }
 
   function setPageImagesFor(pg, imgs) {
+    if (panelImageStore) { panelImageStore.setPage(pg, imgs); return; }
     if (pg === currentPage) {
       for (const k in panelImages) delete panelImages[k];
       Object.assign(panelImages, imgs);
@@ -8070,7 +8083,7 @@ color-scheme:light;
 
     if (!hasContent) {
       if (protectedSlots.length === 0) {
-        panelImages[i] = [];
+        imgWipePanel(i);
         for (let k = 1; k <= 4; k++) {
           const box = document.getElementById('imgbox-panel-' + i + '-' + k);
           const img = document.getElementById('img-panel-' + i + '-' + k);
@@ -8102,7 +8115,7 @@ color-scheme:light;
     }
 
     card.classList.remove('failed', 'paused', 'cleared', 'stopped');
-    if (!panelImages[i]) panelImages[i] = [];
+    imgEnsurePanel(i);
     for (let k = 1; k <= count; k++) {
       if (protectedSlots.includes(k)) continue;
       const box = document.getElementById('imgbox-panel-' + i + '-' + k);
@@ -8477,16 +8490,15 @@ color-scheme:light;
   }
 
   function makeRepresentative(i, k) {
-    if (!panelImages[i] || !panelImages[i][k - 1]) return;
+    if (!hasPanelImage(i, k)) return;
     if (k === 1) return;
-    const arr = panelImages[i];
-    const tmp = arr[0];
-    arr[0] = arr[k - 1];
-    arr[k - 1] = tmp;
+    if (panelImageStore) panelImageStore.swapSlots(currentPage, i, 1, k);
+    else { const arr0 = panelImages[i]; const tmp = arr0[0]; arr0[0] = arr0[k - 1]; arr0[k - 1] = tmp; }
     const p1 = isSlotProtected(i, 1), pk = isSlotProtected(i, k);
     if (p1 !== pk) { setSlotProtected(i, 1, pk); setSlotProtected(i, k, p1); }
-    if (arr[0]) showPanelImage(i, 1, arr[0]);
-    if (arr[k - 1]) showPanelImage(i, k, arr[k - 1]);
+    const a0 = imgSlotUrl(i, 1), ak = imgSlotUrl(i, k);
+    if (a0) showPanelImage(i, 1, a0);
+    if (ak) showPanelImage(i, k, ak);
   }
 
   let copyImageSource = { i: 1, k: 1 };
@@ -8550,15 +8562,13 @@ color-scheme:light;
   }
 
   function applyImageCopy(i, k, dests) {
-    const src = (panelImages[i] || [])[k - 1];
+    const src = imgSlotUrl(i, k);
     const res = { copied: 0, replaced: 0, skipped: 0, dests: [] };
     if (!src) return res;
     for (const d of dests) {
       if (d.i === i && d.k === k) continue;
       if (isSlotProtected(d.i, d.k)) { res.skipped++; continue; }
       if (hasPanelImage(d.i, d.k)) res.replaced++;
-      if (!panelImages[d.i]) panelImages[d.i] = [];
-      panelImages[d.i][d.k - 1] = src;
       showPanelImage(d.i, d.k, src);
       res.copied++;
       res.dests.push(d);
@@ -9654,7 +9664,7 @@ color-scheme:light;
       if (le) le.value = '';
       if (act) act.value = '';
     }
-    panelImages[i] = [];
+    imgWipePanel(i);
     for (let k = 1; k <= 4; k++) {
       const box = document.getElementById('imgbox-panel-' + i + '-' + k);
       const img = document.getElementById('img-panel-' + i + '-' + k);
@@ -9687,7 +9697,7 @@ color-scheme:light;
     }
     for (const p of stopList) inFlightGen.delete(p);
     syncStopButton();
-    panelImages[i] = [];
+    imgWipePanel(i);
     for (let k = 1; k <= 4; k++) {
       const box = document.getElementById('imgbox-panel-' + i + '-' + k);
       const img = document.getElementById('img-panel-' + i + '-' + k);
@@ -9714,7 +9724,7 @@ color-scheme:light;
       }
     }
     syncStopButton();
-    if (panelImages[i]) delete panelImages[i][k - 1];
+    imgDropSlot(i, k);
     if (box) box.classList.remove('generating', 'failed', 'paused', 'cleared', 'stopped');
     if (img) { img.removeAttribute('src'); img.alt = "Click Generate to render image"; delete img.dataset.hidden; }
     setSlotProtected(i, k, false);
