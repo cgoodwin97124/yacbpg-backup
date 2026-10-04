@@ -192,6 +192,22 @@ color-scheme:light;
   .st-failed { color: var(--red-text); border-color: var(--red); }
   .st-paused, .st-stopped, .st-skipped { color: var(--text-6); }
   .st-protected { color: var(--blue-text); border-color: var(--blue); }
+  .cmd-palette-btn { flex: 0 0 auto; background: var(--surface); color: var(--purple-text); border: 2px solid var(--purple); border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: bold; font-size: 0.82rem; white-space: nowrap; transition: 0.15s; }
+  .cmd-palette-btn:hover { background: var(--hover); }
+  #cmdPalette { position: fixed; left: 50%; transform: translateX(-50%); top: 10vh; z-index: 10020; background: var(--surface); color: var(--text); border: 2px solid var(--purple); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.65); width: 560px; max-width: calc(100vw - 24px); overflow: hidden; }
+  #cmdPalette[hidden] { display: none; }
+  .cmd-top { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border-3); }
+  #cmdInput { flex: 1 1 auto; min-width: 0; background: var(--well); color: var(--text); border: 1px solid var(--border-2); border-radius: 6px; padding: 9px 12px; font-size: 0.95rem; }
+  .cmd-close { flex: 0 0 auto; width: 38px; border-radius: 6px; border: 1px solid var(--border-2); background: var(--surface-3); color: var(--text); cursor: pointer; font-size: 0.9rem; }
+  #cmdList { overflow-y: auto; max-height: 52vh; padding: 4px; }
+  .cmd-group { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-8); padding: 8px 10px 3px; }
+  .cmd-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
+  .cmd-row .cmd-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cmd-row .cmd-tag { font-size: 0.72rem; color: var(--text-8); }
+  .cmd-row.sel { background: var(--hover-2); }
+  .cmd-row.off { opacity: 0.45; cursor: default; }
+  .cmd-empty { padding: 14px; text-align: center; color: var(--text-8); font-size: 0.85rem; }
+  .cmd-foot { padding: 6px 10px; border-top: 1px solid var(--border-3); font-size: 0.72rem; color: var(--text-8); text-align: center; }
   #pageNav { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 1001; display: flex; align-items: center; gap: 6px; background: var(--bg); color: var(--green-text); border: 2px solid var(--green); border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
   #pageNav[hidden] { display: none; }
   .page-nav-btn { background: var(--bg); color: var(--green-text); border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; padding: 4px 10px; border-radius: 4px; }
@@ -787,6 +803,7 @@ color-scheme:light;
 
 <div class="app-header" id="appHeader">
   <div class="header-btns" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-start; max-width:100%;">
+    <button class="cmd-palette-btn" data-action="w1-146" title="Open the command palette (Ctrl+K / Cmd+K)">⌘K Commands</button>
     <button class="storyboard-toggle" data-action="w1-0" title="Show all panel images as a comic page/storyboard">▦ Storyboard</button>
     <button class="menu-toggle" id="menuToggleBtn" data-action="w1-1" title="Show or hide the menu panel">☰ Hide Menu</button>
     <button class="layout-toggle" id="layoutToggleBtn" data-action="w1-2" title="Move the menu to the top or to the side of the screen">▤ Menu: Side</button>
@@ -812,6 +829,11 @@ color-scheme:light;
 <div id="runPanel" hidden>
   <div class="run-panel-head"><span>Run</span><span id="runPanelTarget"></span><span class="run-panel-btns"><button id="runPanelPause" data-action="w1-141" title="Pause the run — resume continues where it left off">⏸</button><button id="runPanelResume" data-action="w1-142" title="Continue the paused run" hidden>▶</button><button id="runPanelStop" data-action="w1-143" title="Cancel the run">■</button><button id="runPanelClose" data-action="w1-145" title="Hide this panel">✕</button></span></div>
   <div id="runPanelRows"></div>
+</div>
+<div id="cmdPalette" hidden>
+  <div class="cmd-top"><input id="cmdInput" type="text" placeholder="Type a command…" autocomplete="off" spellcheck="false"><button class="cmd-close" data-action="w1-147" title="Close (Esc)">✕</button></div>
+  <div id="cmdList"></div>
+  <div class="cmd-foot">↑↓ navigate · Enter run · Esc close</div>
 </div>
 <div class="page-layout">
   <div class="menu-frame" id="menuFrame">
@@ -1396,8 +1418,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.30 — 2026-10-04 — 🏃 Run panel: the queue, live
-- A floating run panel shows every panel in the run with its state, seed and thumbnail, the end target up top, working ⏸/▶/■, and a per-row 🔄 that re-runs immediately (disabled mid-queue). Single-panel generates open a one-row panel. Session-only, nothing persisted.
+## 2026.10.04.31 — 2026-10-04 — ⌘K Command palette: every action, one keystroke
+- A command palette lists every major action by group with fuzzy filter and ↑↓/Enter/Esc keyboard control, opened with Ctrl/⌘-K or the ⌘K Commands button at the left of the header. Running a row clicks the real control, so confirms and disabled states behave identically. Session-only, nothing persisted.
 </script>
 
 
@@ -7126,6 +7148,198 @@ color-scheme:light;
     if (runPanelActive && runPanelMode === 'queue') return;
     runPanelSingle(i);
   }
+  const PALETTE_COMMANDS = [
+    { t: "Generate All", g: "Generate", act: "w1-12" },
+    { t: "Pause", g: "Generate", act: "w1-13" },
+    { t: "Stop", g: "Generate", act: "w1-14" },
+    { t: "Generate selected panels", g: "Generate", act: "w1-47" },
+    { t: "Generate All To Here", g: "Generate", act: "w1-48" },
+    { t: "Generate All From Here", g: "Generate", act: "w1-49" },
+    { t: "Generate (x) to (y)…", g: "Generate", act: "w1-50" },
+    { t: "Undo", g: "Edit", act: "w1-15" },
+    { t: "Select all panels", g: "Selection", act: "w1-43" },
+    { t: "Copy", g: "Selection", act: "w1-44" },
+    { t: "Cut", g: "Selection", act: "w1-45" },
+    { t: "Clear selection", g: "Selection", act: "w1-46" },
+    { t: "Duplicate", g: "Selection", act: "w1-51" },
+    { t: "Add Panel", g: "Selection", act: "w1-52" },
+    { t: "Move", g: "Selection", act: "w1-53" },
+    { t: "Refresh descriptions", g: "Selection", act: "w1-54" },
+    { t: "Clear Images", g: "Selection", act: "w1-55" },
+    { t: "Clear", g: "Selection", act: "w1-56" },
+    { t: "Delete", g: "Selection", act: "w1-57" },
+    { t: "Add Page", g: "Page", act: "w1-7" },
+    { t: "Delete Page", g: "Page", act: "w1-28" },
+    { t: "Renumber Page", g: "Page", act: "w1-29" },
+    { t: "Save…", g: "Project", act: "w1-17" },
+    { t: "Save as…", g: "Project", act: "w1-18" },
+    { t: "Export Project (.zip)", g: "Project", act: "w1-19" },
+    { t: "Import Project (.json / .zip)", g: "Project", act: "w1-20" },
+    { t: "Backup to GitHub…", g: "Project", act: "w1-21" },
+    { t: "New Project", g: "Project", act: "w1-22" },
+    { t: "Open recent…", g: "Project", act: "w1-25" },
+    { t: "Clear recent list", g: "Project", act: "w1-26" },
+    { t: "Storyboard", g: "Views", act: "w1-0" },
+    { t: "Open JSON Editor", g: "Views", act: "w1-42" },
+    { t: "Open Analysis", g: "Views", act: "w1-79" },
+    { t: "Open Manual", g: "Views", act: "w1-81" },
+    { t: "Show / Hide Menu", g: "Views", act: "w1-1" },
+    { t: "Menu layout", g: "Views", act: "w1-2" },
+    { t: "Full Screen", g: "Views", act: "w1-3" },
+    { t: "Show / Hide Panels", g: "Views", act: "w1-4" },
+    { t: "Import library…", g: "Library", act: "w1-78" },
+    { t: "Copy style keywords", g: "Library", act: "w1-40" },
+    { t: "Copy negative keywords", g: "Library", act: "w1-41" },
+    { t: "Apply image count to all", g: "Library", act: "w1-38" },
+    { t: "Reset everything", g: "Danger", act: "w1-59" },
+  ];
+  let palettePos = 0;
+  let paletteVis = [];
+  function paletteFuzzy(q, s) {
+    let j = 0;
+    for (let i = 0; i < s.length && j < q.length; i++) if (s[i] === q[j]) j++;
+    return j === q.length;
+  }
+  function paletteQuery() {
+    const el = document.getElementById('cmdInput');
+    return (el ? el.value : '').trim().toLowerCase();
+  }
+  function paletteFiltered() {
+    const q = paletteQuery();
+    if (!q) return PALETTE_COMMANDS.map(function (c, i) { return i; });
+    const out = [];
+    for (let i = 0; i < PALETTE_COMMANDS.length; i++) {
+      const c = PALETTE_COMMANDS[i];
+      if (paletteFuzzy(q, (c.g + ' ' + c.t).toLowerCase())) out.push(i);
+    }
+    return out;
+  }
+  function paletteBtns(act) {
+    return Array.from(document.querySelectorAll('[data-action="' + act + '"]'));
+  }
+  function paletteOff(act) {
+    const b = paletteBtns(act);
+    return b.length > 0 && b.every(function (x) { return x.disabled; });
+  }
+  function palettePaint() {
+    const list = document.getElementById('cmdList');
+    if (!list) return;
+    const rows = list.querySelectorAll('.cmd-row');
+    rows.forEach(function (r) { r.classList.toggle('sel', (+r.dataset.pos) === palettePos); });
+    const sel = list.querySelector('.cmd-row.sel');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+  function paletteRender() {
+    const list = document.getElementById('cmdList');
+    if (!list) return;
+    paletteVis = paletteFiltered();
+    if (palettePos >= paletteVis.length) palettePos = Math.max(0, paletteVis.length - 1);
+    list.innerHTML = '';
+    if (!paletteVis.length) {
+      const d = document.createElement('div');
+      d.className = 'cmd-empty';
+      d.textContent = 'No matching command.';
+      list.append(d);
+      return;
+    }
+    let lastG = '';
+    for (let p = 0; p < paletteVis.length; p++) {
+      const c = PALETTE_COMMANDS[paletteVis[p]];
+      if (c.g !== lastG) {
+        lastG = c.g;
+        const h = document.createElement('div');
+        h.className = 'cmd-group';
+        h.textContent = c.g;
+        list.append(h);
+      }
+      const r = document.createElement('div');
+      r.className = 'cmd-row' + (paletteOff(c.act) ? ' off' : '');
+      r.dataset.pos = String(p);
+      const l = document.createElement('span');
+      l.className = 'cmd-label';
+      l.textContent = c.t;
+      const tag = document.createElement('span');
+      tag.className = 'cmd-tag';
+      tag.textContent = c.g;
+      r.append(l, tag);
+      list.append(r);
+    }
+    palettePaint();
+  }
+  function paletteOpen() {
+    if (!uiPreviewOn) return;
+    const p = document.getElementById('cmdPalette');
+    if (!p) return;
+    p.hidden = false;
+    const inp = document.getElementById('cmdInput');
+    if (inp) inp.value = '';
+    palettePos = 0;
+    paletteRender();
+    if (inp) inp.focus();
+  }
+  function paletteClose() {
+    const p = document.getElementById('cmdPalette');
+    if (p) p.hidden = true;
+    const a = document.activeElement;
+    if (a && a.id === 'cmdInput') a.blur();
+  }
+  function paletteToggle() {
+    const p = document.getElementById('cmdPalette');
+    if (p && !p.hidden) paletteClose();
+    else paletteOpen();
+  }
+  function paletteMove(d) {
+    if (!paletteVis.length) return;
+    palettePos = (palettePos + d + paletteVis.length) % paletteVis.length;
+    palettePaint();
+  }
+  function paletteRunAt(p) {
+    const idx = paletteVis[p];
+    if (idx == null) return;
+    const c = PALETTE_COMMANDS[idx];
+    if (paletteOff(c.act)) return;
+    paletteClose();
+    const b = paletteBtns(c.act).find(function (x) { return !x.disabled; });
+    if (b) { b.click(); return; }
+    const a = W1ACT[c.act];
+    if (a) a.run(null, {});
+  }
+  (function paletteWire() {
+    const inp = document.getElementById('cmdInput');
+    const list = document.getElementById('cmdList');
+    if (inp) {
+      inp.addEventListener('input', function () { palettePos = 0; paletteRender(); });
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown') { e.preventDefault(); paletteMove(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); paletteMove(-1); }
+        else if (e.key === 'Enter') { e.preventDefault(); paletteRunAt(palettePos); }
+        else if (e.key === 'Escape') { e.preventDefault(); paletteClose(); }
+      });
+    }
+    if (list) {
+      list.addEventListener('click', function (e) {
+        const r = e.target && e.target.closest ? e.target.closest('.cmd-row') : null;
+        if (r && r.dataset.pos != null) paletteRunAt(+r.dataset.pos);
+      });
+      list.addEventListener('mouseover', function (e) {
+        const r = e.target && e.target.closest ? e.target.closest('.cmd-row') : null;
+        if (r && r.dataset.pos != null && (+r.dataset.pos) !== palettePos) { palettePos = +r.dataset.pos; palettePaint(); }
+      });
+    }
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); paletteToggle(); return; }
+      if (e.key === 'Escape') {
+        const p = document.getElementById('cmdPalette');
+        if (p && !p.hidden) paletteClose();
+      }
+    }, true);
+    document.addEventListener('click', function (e) {
+      const p = document.getElementById('cmdPalette');
+      if (!p || p.hidden) return;
+      if (e.target && e.target.closest && (e.target.closest('#cmdPalette') || e.target.closest('[data-action="w1-146"]'))) return;
+      paletteClose();
+    }, true);
+  })();
 
   function confirmDanger(o) {
     const btns = [{ label: o.icon + ' ' + o.verb + ' ' + o.count, cls: 'choice-danger', value: 'go' }];
@@ -12306,6 +12520,8 @@ color-scheme:light;
     "w1-143": { ev: "click", run: (el, e) => { haltGenerations() } },
     "w1-144": { ev: "click", run: (el, e) => { runPanelReroll((+el.dataset.a0)) } },
     "w1-145": { ev: "click", run: (el, e) => { runPanelHide() } },
+    "w1-146": { ev: "click", run: (el, e) => { paletteToggle() } },
+    "w1-147": { ev: "click", run: (el, e) => { paletteClose() } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
