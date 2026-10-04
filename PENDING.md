@@ -1,4 +1,8 @@
 
+### 2026-10-04 — P6 context menu (author, verbatim: "Go ahead on the context menu.")
+- **Status:** 🟢 START NOW — recon + questions first per standing rule for big work; no code yet.
+- **Scope:** panel right-click / long-press menu from the same command catalog, scoped to that panel (UI-IDEAS.md §C second half).
+
 ### 2026-10-04 — Palette closed-start + header keyboard nav (author, verbatim: "I'd like the sections to start closed, and the keyboard to be able to navigate to the section headers. Up and down arrow keys navigate up and down; right arrow opens a header, left arrow closes it.")
 - **Status:** ✅ DONE 2026.10.04.33 — closed-start + header nav shipped (paletteNav model, paletteRight/Left/Enter, zero new window exports), functional + smoke 114/0 + diff-core 24/0 + byte-identical restore, pushed pre-Save; re-pushed post-Save (## 2026.10.04.33 now in repo).
 
