@@ -1,3 +1,9 @@
+## 2026.10.04.24 — 2026-10-04 — 🧭 P5 wave 3b: the flat export surface is deleted
+
+- **The plain version:** nothing visible changes. The app no longer leaves 159 spare handles hanging off the page for the markup to grab — every button already knocks through the delegation doorway instead, so the spares are gone.
+- **Under the hood:** 159 more flat `window.X = X` lines deleted (every one verified referrer-free: no suite/test/probe runtime use, no `src/` form or `main.pjs` use, no dynamic `window[` access, no string-eval); 18 remain under the frozen allowlist (`__dbg`, `appReady`, 13 `__X` debug names, `parseZipImages`/`repopulateImportedImages`/`imgSlotUrl`). One doubled line held two assignments (`panelDescOptionsHtml` + `batchRefreshPanelLineBases`) — both verified dead and deleted. Two real catches on the way: (1) a missed `onscroll` handler on the JSON textarea errored 1,233 times once its function left `window` — converted to the table with a new `scroll` listener; (2) that same textarea and the Recent-max input carried TWO handlers each, and the single-slot dispatcher silently served only the first — elements now support `data-action2` with fallback dispatch, and the scroll-sync (mirror + gutter follow) is probe-verified live.
+- **The numbers:** differential **24/0** (incl. the surface guard), core **77/0**, smoke **114/0**, generation **18/0**, fixtures **18/0**, state-diff **38/0**, **0** perchance errors, project restored **byte-for-byte** after every run. P5 is now complete: no inline handlers anywhere, 18 intentional `window` names.
+
 ## 2026.10.04.23 — 2026-10-04 — 🧭 P5 wave 3a: the test API moves behind window.__dbg
 
 - **The plain version:** nothing visible changes. The automated checks now reach into the app through a single named doorway instead of 92 separate ones — housekeeping for the people who maintain the harness, invisible to everyone else.
