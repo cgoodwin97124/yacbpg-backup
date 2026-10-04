@@ -1,4 +1,7 @@
 
+### 2026-10-04 — P6 palette v1 BUILD (author, verbatim: "Your recommendation is good. Go ahead and build.")
+- **Status:** 🟢 START NOW — palette-only v1: header button leftmost in #appHeader + Ctrl/Cmd-K, curated set w/ confirms, fuzzy+groups+keys session-only. One version (.31). Full suites + byte-identical restore before push.
+
 ### 2026-10-04 — P6 palette answers (author ver batim: "1. Ok / 2. Key combo plus header button…where? / 3. Ok / 4. Ok")
 - **Status:** 🟢 START NOW — palette-only v1, Ctrl/K + header button (placement = open recommendation), curated set w/ confirms, fuzzy+groups+keys session-only.
 - **Next:** recommend header placement, confirm, then implement one version + suites + pre-Save push.
