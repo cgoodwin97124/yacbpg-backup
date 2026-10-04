@@ -1,33 +1,42 @@
-export const IMAGES_VERSION = 2;
+export const IMAGES_VERSION = 3;
 
 function isMap(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
-}
-
-function slotsOf(map, pos) {
-  if (!isMap(map)) return null;
-  const a = map[pos];
-  return Array.isArray(a) ? a : null;
 }
 
 function slotIndex(k) {
   return (typeof k === "number" && Number.isInteger(k) && k >= 1) ? k - 1 : -1;
 }
 
-export function createImageStore(maps) {
-  const M = maps || {};
+function isId(v) {
+  return typeof v === "string" && v ? v : null;
+}
 
-  function pageImages(pg) {
-    if (pg === M.currentPage) return isMap(M.current) ? M.current : {};
-    const sess = isMap(M.sessions) ? M.sessions[pg] : null;
-    const imgs = sess ? sess.images : null;
-    return isMap(imgs) ? imgs : {};
+function nonEmptySlots(a) {
+  return Array.isArray(a) && a.some((d) => !!d);
+}
+
+export function createImageStore(opts) {
+  const O = opts || {};
+  const resolve = (typeof O.resolveId === "function") ? O.resolveId : () => null;
+  const positions = (typeof O.listPositions === "function") ? O.listPositions : () => [];
+  const D = {};
+
+  function idOf(pg, pos) {
+    let id = null;
+    try { id = resolve(pg, pos); } catch (e) { id = null; }
+    return isId(id);
+  }
+
+  function slotArr(pg, pos) {
+    const id = idOf(pg, pos);
+    return (id && Array.isArray(D[id])) ? D[id] : null;
   }
 
   function get(pg, pos, k) {
     const si = slotIndex(k);
     if (si < 0) return undefined;
-    const a = slotsOf(pageImages(pg), pos);
+    const a = slotArr(pg, pos);
     return a ? a[si] : undefined;
   }
 
@@ -36,12 +45,12 @@ export function createImageStore(maps) {
   }
 
   function hasAny(pg, pos) {
-    const a = slotsOf(pageImages(pg), pos);
+    const a = slotArr(pg, pos);
     return !!a && a.some((d) => !!d);
   }
 
   function count(pg, pos) {
-    const a = slotsOf(pageImages(pg), pos);
+    const a = slotArr(pg, pos);
     if (!a) return 0;
     let n = 0;
     for (const d of a) if (d) n++;
@@ -49,58 +58,24 @@ export function createImageStore(maps) {
   }
 
   function getPanel(pg, pos) {
-    const a = slotsOf(pageImages(pg), pos);
+    const a = slotArr(pg, pos);
     return a ? a.slice() : null;
   }
 
-  function allPages() {
-    const out = {};
-    if (isMap(M.sessions)) {
-      for (const pg of Object.keys(M.sessions)) {
-        const sess = M.sessions[pg];
-        if (sess && isMap(sess.images)) out[pg] = sess.images;
-      }
-    }
-    out[M.currentPage] = pageImages(M.currentPage);
-    return out;
-  }
-
   function hasAnywhere() {
-    const seen = new Set();
-    const scan = (map) => {
-      if (!isMap(map)) return false;
-      for (const pos of Object.keys(map)) {
-        const a = map[pos];
-        if (Array.isArray(a) && a.some((d) => !!d)) return true;
-      }
-      return false;
-    };
-    if (scan(isMap(M.current) ? M.current : null)) return true;
-    if (isMap(M.sessions)) {
-      for (const pg of Object.keys(M.sessions)) {
-        if (seen.has(pg)) continue;
-        seen.add(pg);
-        const sess = M.sessions[pg];
-        if (sess && scan(sess.images)) return true;
-      }
+    for (const id of Object.keys(D)) {
+      if (nonEmptySlots(D[id])) return true;
     }
     return false;
-  }
-
-  function writableMap(pg) {
-    if (pg === M.currentPage) return isMap(M.current) ? M.current : null;
-    const sess = isMap(M.sessions) ? M.sessions[pg] : null;
-    const imgs = sess ? sess.images : null;
-    return isMap(imgs) ? imgs : null;
   }
 
   function set(pg, pos, k, url) {
     const si = slotIndex(k);
     if (si < 0) return false;
-    const map = writableMap(pg);
-    if (!map) return false;
-    let a = map[pos];
-    if (!Array.isArray(a)) { a = []; map[pos] = a; }
+    const id = idOf(pg, pos);
+    if (!id) return false;
+    let a = D[id];
+    if (!Array.isArray(a)) { a = []; D[id] = a; }
     a[si] = url;
     return true;
   }
@@ -108,25 +83,25 @@ export function createImageStore(maps) {
   function clearSlot(pg, pos, k) {
     const si = slotIndex(k);
     if (si < 0) return false;
-    const map = writableMap(pg);
-    if (!map) return false;
-    const a = Array.isArray(map[pos]) ? map[pos] : null;
+    const id = idOf(pg, pos);
+    if (!id) return false;
+    const a = Array.isArray(D[id]) ? D[id] : null;
     if (!a) return false;
     delete a[si];
     return true;
   }
 
   function clearPanel(pg, pos) {
-    const map = writableMap(pg);
-    if (!map) return false;
-    map[pos] = [];
+    const id = idOf(pg, pos);
+    if (!id) return false;
+    D[id] = [];
     return true;
   }
 
   function ensurePanel(pg, pos) {
-    const map = writableMap(pg);
-    if (!map) return false;
-    if (!Array.isArray(map[pos])) map[pos] = [];
+    const id = idOf(pg, pos);
+    if (!id) return false;
+    if (!Array.isArray(D[id])) D[id] = [];
     return true;
   }
 
@@ -134,9 +109,9 @@ export function createImageStore(maps) {
     const ai = slotIndex(a);
     const bi = slotIndex(b);
     if (ai < 0 || bi < 0) return false;
-    const map = writableMap(pg);
-    if (!map) return false;
-    const arr = Array.isArray(map[pos]) ? map[pos] : null;
+    const id = idOf(pg, pos);
+    if (!id) return false;
+    const arr = Array.isArray(D[id]) ? D[id] : null;
     if (!arr) return false;
     const t = arr[ai];
     arr[ai] = arr[bi];
@@ -144,20 +119,75 @@ export function createImageStore(maps) {
     return true;
   }
 
-  function setPage(pg, map) {
-    const src = isMap(map) ? map : {};
-    if (pg === M.currentPage) {
-      const cur = isMap(M.current) ? M.current : null;
-      if (!cur) return false;
-      for (const k of Object.keys(cur)) delete cur[k];
-      Object.assign(cur, src);
-      if (isMap(M.sessions)) M.sessions[pg] = Object.assign({}, M.sessions[pg] || {}, { images: cur });
-      return true;
-    }
-    if (!isMap(M.sessions)) return false;
-    M.sessions[pg] = Object.assign({}, M.sessions[pg] || {}, { images: src });
+  function getById(id, k) {
+    const si = slotIndex(k);
+    if (si < 0) return undefined;
+    const key = isId(id);
+    const a = (key && Array.isArray(D[key])) ? D[key] : null;
+    return a ? a[si] : undefined;
+  }
+
+  function setById(id, k, url) {
+    const si = slotIndex(k);
+    const key = isId(id);
+    if (si < 0 || !key) return false;
+    let a = D[key];
+    if (!Array.isArray(a)) { a = []; D[key] = a; }
+    a[si] = url;
     return true;
   }
 
-  return { pageImages, get, has, hasAny, count, getPanel, allPages, hasAnywhere, set, clearSlot, clearPanel, ensurePanel, swapSlots, setPage };
+  function getPanelById(id) {
+    const key = isId(id);
+    const a = (key && Array.isArray(D[key])) ? D[key] : null;
+    return a ? a.slice() : null;
+  }
+
+  function absorbPage(pg, posMap) {
+    const src = isMap(posMap) ? posMap : {};
+    let list = [];
+    try { list = positions(pg) || []; } catch (e) { list = []; }
+    for (const pos of list) {
+      const id = idOf(pg, pos);
+      if (!id) continue;
+      if (Object.prototype.hasOwnProperty.call(src, pos) && nonEmptySlots(src[pos])) {
+        D[id] = src[pos].slice();
+      } else {
+        delete D[id];
+      }
+    }
+    return true;
+  }
+
+  function prune(liveIds) {
+    const keep = new Set(Array.isArray(liveIds) ? liveIds : []);
+    let dropped = 0;
+    for (const id of Object.keys(D)) {
+      if (!keep.has(id)) { delete D[id]; dropped++; }
+    }
+    return dropped;
+  }
+
+  function snapshot() {
+    const out = {};
+    for (const id of Object.keys(D)) out[id] = D[id].slice();
+    return out;
+  }
+
+  function restore(snap) {
+    for (const id of Object.keys(D)) delete D[id];
+    if (isMap(snap)) {
+      for (const id of Object.keys(snap)) {
+        if (Array.isArray(snap[id])) D[id] = snap[id].slice();
+      }
+    }
+    return true;
+  }
+
+  function resetAll() {
+    for (const id of Object.keys(D)) delete D[id];
+    return true;
+  }
+
+  return { get, has, hasAny, count, getPanel, hasAnywhere, set, clearSlot, clearPanel, ensurePanel, swapSlots, getById, setById, getPanelById, absorbPage, prune, snapshot, restore, resetAll };
 }
