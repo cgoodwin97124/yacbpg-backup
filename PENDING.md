@@ -1,6 +1,6 @@
 
 ### 2026-10-04 — Repeat at V-5 (author, verbatim: "Repeat this at V-5 please?")
-- **Status:** 🟢 START NOW — ambiguous; recon what V-5 means before any work, no code yet.
+- **Status:** ✅ DONE — V-5 = verbosity L5 (L4 + recon detail, alternatives, file:line refs); repeating palette recon below at L5, no code.
 
 ### 2026-10-04 — P6 command palette (author, verbatim: "Let's do it!")
 - **Status:** 🟢 START NOW — recon + questions first per standing rule for big work; no code yet.
