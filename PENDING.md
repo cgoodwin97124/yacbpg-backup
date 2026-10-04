@@ -1,6 +1,6 @@
 
 ### 2026-10-04 — .30 post-Save re-push (author, verbatim: "Saved! Go ahead and re-push.")
-- **Status:** 🟢 START NOW — re-push .30 (run panel) after Save so repo index.html matches served build.
+- **Status:** ✅ CONFIRMED — Pushed 18 files post-Save; repo index.html stamps ## 2026.10.04.30 so repo index.html matches served build.
 - **Scope:** no code changes; openGhBackup → ghPush → ghClose; verify repo index.html stamps 2026.10.04.30.
 
 ### 2026-10-04 — P5 W3b: delete the leftover flat exports (IMPLEMENTATION)
