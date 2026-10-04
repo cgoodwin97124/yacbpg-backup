@@ -918,3 +918,4 @@ Moved to `archive/PENDING-done-2026-09.md` on 2026-09-27 (docs archive-split): 9
 - 2026-10-04 .29 post-Save re-push requested ("Saved, go ahead and re-push.") — pushing served .29, will confirm.
 - 2026-10-04 Run panel GREENLIT ("Then let's tackle the run panel.") — recon: UI-IDEAS D + current run path (runSlot, generate loop, pause/stop). Status: RECON.
 - 2026-10-04 .29 post-Save re-push CONFIRMED — repo index.html stamps 2026.10.04.29, 18 files pushed.
+- 2026-10-04 Run panel recon DONE — loop is sequential in generateComicPage (statusEl + runSlot mirror + end/pause/stop toasts); pause/resume/stop + run bounds exist and are core-tested; per-panel seed/images readable from DOM. Open Qs: release scope (queue+target now, variants later?), panel placement, re-roll-vs-queue, thumbnail source. Awaiting answers.
