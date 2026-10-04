@@ -170,6 +170,28 @@ color-scheme:light;
   #toastStack { position: fixed; left: 50%; transform: translateX(-50%); bottom: 118px; z-index: 10007; display: flex; flex-direction: column; gap: 8px; max-width: calc(100vw - 24px); width: max-content; }
   .toast { background: var(--surface); color: var(--text); border: 2px solid var(--accent); border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); cursor: pointer; max-width: calc(100vw - 24px); }
   #runSlot { position: fixed; left: 50%; transform: translateX(-50%); bottom: 70px; z-index: 10007; background: var(--surface); color: var(--text); border: 2px solid var(--green); border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.6); max-width: calc(100vw - 24px); }
+  #runPanel { position: fixed; left: 50%; transform: translateX(-50%); bottom: 166px; z-index: 10007; background: var(--surface); color: var(--text); border: 2px solid var(--accent); border-radius: 8px; padding: 8px 10px; font-size: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); max-width: calc(100vw - 24px); width: 380px; max-height: 40vh; display: flex; flex-direction: column; }
+  #runPanel[hidden] { display: none; }
+  .run-panel-head { display: flex; align-items: center; gap: 8px; font-weight: bold; }
+  #runPanelTarget { flex: 1 1 auto; min-width: 0; font-weight: normal; color: var(--text-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .run-panel-btns { display: inline-flex; gap: 4px; }
+  .run-panel-btns button { width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--border-2); background: var(--surface-3); color: var(--text); cursor: pointer; font-size: 0.8rem; }
+  .run-panel-btns button[hidden] { display: none; }
+  #runPanelRows { overflow-y: auto; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .run-row { display: flex; align-items: center; gap: 8px; }
+  .run-row img { width: 32px; height: 32px; object-fit: cover; border-radius: 4px; background: var(--well); flex: 0 0 auto; }
+  .run-row img[hidden] { display: none; }
+  .run-name { flex: 1 1 auto; font-weight: bold; white-space: nowrap; }
+  .run-seed { color: var(--text-6); font-size: 0.75rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .run-reroll { border: 1px solid var(--border-2); background: var(--surface-3); border-radius: 4px; cursor: pointer; padding: 2px 6px; }
+  .run-reroll:disabled { opacity: 0.4; cursor: default; }
+  .run-state { font-size: 0.72rem; font-weight: bold; padding: 1px 7px; border-radius: 8px; border: 1px solid var(--border-2); white-space: nowrap; }
+  .st-queued { color: var(--text-6); }
+  .st-rendering { color: var(--accent); border-color: var(--accent); }
+  .st-done { color: var(--green-text); border-color: var(--green); }
+  .st-failed { color: var(--red-text); border-color: var(--red); }
+  .st-paused, .st-stopped, .st-skipped { color: var(--text-6); }
+  .st-protected { color: var(--blue-text); border-color: var(--blue); }
   #pageNav { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 1001; display: flex; align-items: center; gap: 6px; background: var(--bg); color: var(--green-text); border: 2px solid var(--green); border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
   #pageNav[hidden] { display: none; }
   .page-nav-btn { background: var(--bg); color: var(--green-text); border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; padding: 4px 10px; border-radius: 4px; }
@@ -787,6 +809,10 @@ color-scheme:light;
 <button id="uiPreviewFab" data-action="w1-139" title="The new P6 interface is on — flip back to the old interface anytime">🧪 New UI: On</button>
 <div id="toastStack"></div>
 <div id="runSlot" hidden></div>
+<div id="runPanel" hidden>
+  <div class="run-panel-head"><span>Run</span><span id="runPanelTarget"></span><span class="run-panel-btns"><button id="runPanelPause" data-action="w1-141" title="Pause the run — resume continues where it left off">⏸</button><button id="runPanelResume" data-action="w1-142" title="Continue the paused run" hidden>▶</button><button id="runPanelStop" data-action="w1-143" title="Cancel the run">■</button><button id="runPanelClose" data-action="w1-145" title="Hide this panel">✕</button></span></div>
+  <div id="runPanelRows"></div>
+</div>
 <div class="page-layout">
   <div class="menu-frame" id="menuFrame">
     <div class="menu-scroll">
@@ -1370,8 +1396,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.29 — 2026-10-04 — ✨ New UI is now the default (toggle kept)
-- The 🧪 interface loads on: Advanced hiding, toasts, converged danger dialogs, per-panel 🎨 Style chip. The fab flips back to the old interface for the session. Nothing persisted.
+## 2026.10.04.30 — 2026-10-04 — 🏃 Run panel: the queue, live
+- A floating run panel shows every panel in the run with its state, seed and thumbnail, the end target up top, working ⏸/▶/■, and a per-row 🔄 that re-runs immediately (disabled mid-queue). Single-panel generates open a one-row panel. Session-only, nothing persisted.
 </script>
 
 
@@ -6924,7 +6950,7 @@ color-scheme:light;
     const fab = document.getElementById('uiPreviewFab');
     if (fab) fab.textContent = uiPreviewOn ? '🧪 New UI: On' : '🧪 New UI: Off';
     refreshAdvVisibility();
-    if (!uiPreviewOn) clearRunSlot();
+    if (!uiPreviewOn) { clearRunSlot(); runPanelHide(); }
   }
   function setAdvancedMode(on) {
     advOff = !on;
@@ -6982,6 +7008,124 @@ color-scheme:light;
     el.hidden = !text;
   }
   function clearRunSlot() { setRunSlot(''); }
+  let runPanelActive = false;
+  let runPanelMode = 'ended';
+  function runPanelEl(id) { return document.getElementById(id); }
+  function runPanelSeedText(i) {
+    const pe = runPanelEl('panel-seed-' + i);
+    const pv = pe && pe.value ? pe.value.trim() : '';
+    if (pv) return pv;
+    const gv = runPanelEl('seedInput');
+    return (gv && gv.value.trim()) || 'random';
+  }
+  function runPanelThumb(i) {
+    for (let k = 1; k <= 4; k++) {
+      const img = runPanelEl('img-panel-' + i + '-' + k);
+      if (img && img.src) return img.src;
+    }
+    return '';
+  }
+  function runPanelRow(i) {
+    const rows = runPanelEl('runPanelRows');
+    const d = document.createElement('div');
+    d.className = 'run-row';
+    d.id = 'run-row-' + i;
+    const badge = document.createElement('span');
+    badge.className = 'run-state st-queued';
+    badge.textContent = 'queued';
+    const name = document.createElement('span');
+    name.className = 'run-name';
+    name.textContent = 'Panel ' + i;
+    const seed = document.createElement('span');
+    seed.className = 'run-seed';
+    seed.textContent = runPanelSeedText(i);
+    seed.title = 'Seed';
+    const thumb = document.createElement('img');
+    thumb.alt = '';
+    thumb.hidden = true;
+    const re = document.createElement('button');
+    re.className = 'run-reroll';
+    re.textContent = '🔄';
+    re.title = 'Re-run this panel now';
+    re.setAttribute('data-action', 'w1-144');
+    re.setAttribute('data-a0', String(i));
+    d.append(badge, name, seed, thumb, re);
+    rows.append(d);
+  }
+  function runPanelOpen(seq, target) {
+    if (!uiPreviewOn) return;
+    runPanelEl('runPanelRows').innerHTML = '';
+    runPanelEl('runPanelTarget').textContent = target;
+    for (const i of seq) runPanelRow(i);
+    runPanelActive = true;
+    runPanelMode = 'queue';
+    runPanelSyncBtns();
+    runPanelEl('runPanel').hidden = false;
+  }
+  function runPanelSyncBtns() {
+    const q = runPanelActive && runPanelMode === 'queue';
+    const p = runPanelActive && runPanelMode === 'paused';
+    runPanelEl('runPanelPause').hidden = !q;
+    runPanelEl('runPanelResume').hidden = !p;
+    runPanelEl('runPanelStop').hidden = !(q || p);
+    for (const b of document.querySelectorAll('#runPanelRows .run-reroll')) b.disabled = q;
+  }
+  const RUN_STATE_LABEL = {queued:'queued', rendering:'rendering', done:'done', skipped:'skipped', protected:'kept \uD83D\uDD12', failed:'failed', stopped:'stopped', paused:'paused'};
+  function runPanelMapResult(r) {
+    if (r === 'generated') return 'done';
+    if (r === 'skipped') return 'skipped';
+    if (r === 'protected') return 'protected';
+    if (r === 'error' || r === 'failed') return 'failed';
+    if (r === 'cleared') return 'stopped';
+    return 'queued';
+  }
+  function runPanelSet(i, st) {
+    if (!uiPreviewOn) return;
+    const row = runPanelEl('run-row-' + i);
+    if (!row) return;
+    const badge = row.querySelector('.run-state');
+    badge.className = 'run-state st-' + st;
+    badge.textContent = RUN_STATE_LABEL[st] || st;
+    if (st === 'done' || st === 'failed') {
+      const src = runPanelThumb(i);
+      const img = row.querySelector('img');
+      if (src) { img.src = src; img.hidden = false; }
+      row.querySelector('.run-seed').textContent = runPanelSeedText(i);
+    }
+    if (st === 'rendering') row.scrollIntoView({block:'nearest'});
+  }
+  function runPanelFinish(mode) {
+    if (!uiPreviewOn) return;
+    runPanelMode = mode;
+    runPanelSyncBtns();
+  }
+  function runPanelHide() {
+    const p = runPanelEl('runPanel');
+    if (p) p.hidden = true;
+    runPanelActive = false;
+  }
+  function runPanelTargetText(run, totalPanels) {
+    if (run.isList) return 'panels ' + run.seq.join(', ');
+    if (run.from <= 1 && run.endPanel >= totalPanels) return 'all ' + totalPanels + ' panels';
+    return 'panels ' + run.from + '\u2013' + run.endPanel;
+  }
+  function runPanelSingle(i) {
+    if (!uiPreviewOn || panelBusy[i] || (runPanelActive && (runPanelMode === 'queue' || runPanelMode === 'single'))) return generateSinglePanel(i);
+    runPanelOpen([i], 'panel ' + i);
+    runPanelMode = 'single';
+    runPanelSyncBtns();
+    runPanelSet(i, 'rendering');
+    return Promise.resolve(generateSinglePanel(i)).then(r => {
+      runPanelSet(i, runPanelMapResult(r));
+      runPanelMode = 'ended';
+      runPanelSyncBtns();
+      return r;
+    });
+  }
+  function runPanelReroll(i) {
+    if (runPanelActive && runPanelMode === 'queue') return;
+    runPanelSingle(i);
+  }
 
   function confirmDanger(o) {
     const btns = [{ label: o.icon + ' ' + o.verb + ' ' + o.count, cls: 'choice-danger', value: 'go' }];
@@ -6998,7 +7142,7 @@ color-scheme:light;
       generateComicPage(null, sel);
       return;
     }
-    generateSinglePanel(i);
+    runPanelSingle(i);
   }
 
   function panelGenerateFromHereAction(i) {
@@ -9858,6 +10002,7 @@ color-scheme:light;
     const isList = run.isList;
     const endPanel = run.endPanel;
     runEndPanel = endPanel;
+    runPanelOpen(seq, runPanelTargetText(run, totalPanels));
     let generated = 0;
     let skipped = 0;
     let protectedCount = 0;
@@ -9875,22 +10020,26 @@ color-scheme:light;
       const i = seq[si];
       statusEl.textContent = `${pageName}: generating panels… (${isList ? ((si + 1) + '/' + seq.length) : (i + '/' + totalPanels)})`;
       if (uiPreviewOn) setRunSlot(statusEl.textContent);
+      runPanelSet(i, 'rendering');
       let result;
       try { result = await generateSinglePanel(i); } catch (e) { result = 'error'; }
       if (result === 'generated') generated++;
       else if (result === 'skipped') skipped++;
       else if (result === 'protected') protectedCount++;
       else if (result === 'error') failed++;
+      runPanelSet(i, runPanelMapResult(result));
       if (stopRequested || pausedByVisibility || pausedManually) {
         if (stopRequested) {
           resumePanel = null;
           runEndPanel = null;
           statusEl.textContent = 'Stopped — generation cancelled. Press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to generate.';
           if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify('Run stopped.'); }
+          runPanelSet(i, 'stopped'); runPanelFinish('stopped');
         } else {
           resumePanel = isList ? i : ((result === 'cleared') ? i : i + 1);
           if (resumePanel > totalPanels) resumePanel = totalPanels;
           statusEl.textContent = (pausedManually ? 'Paused' : pageName + ': paused — tab went to background') + ' — press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to continue from panel ' + resumePanel + '.';
+          runPanelSet(i, 'paused'); runPanelFinish('paused');
           if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
         }
         break;
@@ -9901,6 +10050,7 @@ color-scheme:light;
         ? `Done: generated ${generated}, skipped ${skipped}${protectedCount ? ", protected " + protectedCount : ""}, failed ${failed}.`
         : `Done: generated ${generated} panel${generated === 1 ? "" : "s"}.`);
       if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
+      runPanelFinish('ended');
     }
     } finally {
       genBtn.disabled = false;
@@ -12151,6 +12301,11 @@ color-scheme:light;
     "w1-138": { ev: "scroll", run: (el, e) => { jsonEditorSyncScroll(); } },
     "w1-139": { ev: "click", run: (el, e) => { toggleUiPreview() } },
     "w1-140": { ev: "change", run: (el, e) => { setAdvancedMode(el.checked) } },
+    "w1-141": { ev: "click", run: (el, e) => { pauseGenerations() } },
+    "w1-142": { ev: "click", run: (el, e) => { generateComicPage() } },
+    "w1-143": { ev: "click", run: (el, e) => { haltGenerations() } },
+    "w1-144": { ev: "click", run: (el, e) => { runPanelReroll((+el.dataset.a0)) } },
+    "w1-145": { ev: "click", run: (el, e) => { runPanelHide() } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
@@ -12176,7 +12331,7 @@ color-scheme:light;
     "w2-7": { ev: "click", run: (el, e) => { deletePanelLoc((+el.dataset.a0)) } },
     "w2-8": { ev: "click", run: (el, e) => { refreshPanelLineFromLibrary('loc',(+el.dataset.a0)) } },
     "w2-9": { ev: "click", run: (el, e) => { savePanelDescription('loc',(+el.dataset.a0),1) } },
-    "w2-10": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();generateSinglePanel((+el.dataset.a0));} } },
+    "w2-10": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();runPanelSingle((+el.dataset.a0));} } },
     "w2-11": { ev: "click", run: (el, e) => { copyFromPrevPanel((+el.dataset.a0),'act') } },
     "w2-12": { ev: "click", run: (el, e) => { deletePanelAct((+el.dataset.a0)) } },
     "w2-13": { ev: "click", run: (el, e) => { onPanelSelectClick((+el.dataset.a0), e) } },
@@ -12185,10 +12340,10 @@ color-scheme:light;
     "w2-16": { ev: "change", run: (el, e) => { onPanelStyleChange((+el.dataset.a0)) } },
     "w2-17": { ev: "change", run: (el, e) => { onPanelPaletteChange((+el.dataset.a0)) } },
     "w2-18": { ev: "change", run: (el, e) => { onPanelSizeChange((+el.dataset.a0)) } },
-    "w2-19": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'){e.preventDefault();generateSinglePanel((+el.dataset.a0));} } },
+    "w2-19": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'){e.preventDefault();runPanelSingle((+el.dataset.a0));} } },
     "w2-20": { ev: "click", run: (el, e) => { copySeedFromPrevPanel((+el.dataset.a0)) } },
     "w2-21": { ev: "click", run: (el, e) => { clearPanelSeed((+el.dataset.a0)) } },
-    "w2-22": { ev: "click", run: (el, e) => { generateSinglePanel((+el.dataset.a0)) } },
+    "w2-22": { ev: "click", run: (el, e) => { runPanelSingle((+el.dataset.a0)) } },
     "w2-23": { ev: "click", run: (el, e) => { toggleReorderPicker((+el.dataset.a0)) } },
     "w2-24": { ev: "change", run: (el, e) => { onReorderSelect((+el.dataset.a0), el) } },
     "w2-25": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),1) } },
