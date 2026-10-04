@@ -1,3 +1,5 @@
+## 2026.10.04.36 — 2026-10-04 — Panel context menu: right-click / long-press
+- Right-click any panel (or long-press its header area on touch) for a context menu: Generate, To/From Here, Duplicate, Paste, Copy prompt (prompt + seed + size), Focus, Select-toggle, Clear Images, Clear and Delete. The desktop 3-case selection rule applies, Paste targets the clicked panel, and every row delegates to the same per-panel buttons.
 ## 2026.10.04.35 — 2026-10-04 — Commands regrouped: File / Edit / View
 - The command palette is regrouped: File first, then Edit (Undo, Select all, Copy, Cut, new Paste, Clear, plus Edit › Panel and Edit › Page sublevels), then View (Focus greyed unless panels are selected), then Generate, Library and Danger. New Edit → Paste inserts the clipboard before the first selected panel (greyed when nothing is selected or the clipboard is empty); Copy, Cut and Focus grey with no selection too. The menu bar gains a View menu between Edit and Library, and Page Setup moved into Edit as the Page section.
 ## 2026.10.04.34 — 2026-10-04 — Focus takes a set: multi-panel focus
