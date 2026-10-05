@@ -1,5 +1,5 @@
 ### 2026-10-05 â Parity round answers (plan approved, build NOT greenlit)
-- **Status:** ð¢ START NOW â answers logged; phase (a) parity rows ✅ DONE 2026.10.04.38 — 29 acts w1-151…179, prompt dialog, Style + Preferences groups. Suites green, pushed pre-Save; re-push after Save.
+- **Status:** ð¢ START NOW â answers logged; phase (a) parity rows ✅ DONE 2026.10.04.38 — 29 acts w1-151…179, prompt dialog, Style + Preferences groups. Suites green, pushed pre-Save; ✅ Saved + re-pushed 18 files 2026-10-05 (repo index.html = .38, w1-179 + promptOverlay + Preferences verified).
 - **Answers:** header extras stay (incl. Hide Panels + password flow); recommendations approved as listed; order parity â cursor â deletion; deletion deferred.
 - **Decisions:** (2) new prompt dialog for free text ok; (3) full chooser rows for style/palette; (4) guidance chooser with fixed stops; (5) Library overlay kept, launched from palette; (6) palette Reset skips arming.
 
