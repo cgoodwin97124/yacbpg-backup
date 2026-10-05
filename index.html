@@ -215,7 +215,14 @@ color-scheme:light;
   .cmd-group.sel { background: var(--hover-2); border-radius: 6px; }
   .cmd-row.off { opacity: 0.45; cursor: default; }
   .cmd-empty { padding: 14px; text-align: center; color: var(--text-8); font-size: 0.85rem; }
-  .cmd-foot { padding: 6px 10px; border-top: 1px solid var(--border-3); font-size: 0.72rem; color: var(--text-8); text-align: center; }
+ .cmd-foot { padding: 6px 10px; border-top: 1px solid var(--border-3); font-size: 0.72rem; color: var(--text-8); text-align: center; }
+  .edit-acc { background: var(--surface); border-left: 5px solid var(--accent); border-radius: 8px; padding: 0 20px 0 15px; margin-bottom: 20px; }
+  .edit-acc > summary { list-style: none; cursor: pointer; padding: 15px 0; font-size: 1.25rem; font-weight: bold; color: var(--text); user-select: none; }
+  .edit-acc > summary::-webkit-details-marker { display: none; }
+  .edit-acc > summary::before { content: '▸'; display: inline-block; width: 1.2em; color: var(--accent); }
+  .edit-acc[open] > summary::before { content: '▾'; }
+  .edit-acc > summary:hover { background: var(--hover); }
+  .edit-acc .help-panel, .edit-acc .config-panel { background: none; border: none; border-radius: 0; margin: 0; padding: 0 0 15px; }
   #pageNav { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 1001; display: flex; align-items: center; gap: 6px; background: var(--bg); color: var(--green-text); border: 2px solid var(--green); border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
   #pageNav[hidden] { display: none; }
   .page-nav-btn { background: var(--bg); color: var(--green-text); border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; padding: 4px 10px; border-radius: 4px; }
@@ -953,8 +960,9 @@ color-scheme:light;
           <p class="lib-hint">Open the whole project — every page and panel, your library, the global keywords/settings, the preset and the UI flags — as one JSON document in a full-page editor. <b>Find / Replace</b> works across the editable text fields (with Regex and a global Replace all). Only the fields you can edit elsewhere in the app are editable — everything else (<code>version</code>, <code>currentPage</code>, library ids, the document structure) is shown greyed and locked, so a replace can never corrupt it. Generated images are not part of this document (they only travel in the 💾 Export <code>.zip</code>).</p>
           <button class="btn-view" data-action="w1-42" title="Open the project as an editable JSON document">🧩 Open JSON Editor</button>
         </div>
+        <details class="edit-acc" open>
+          <summary class="edit-acc-head">Panel Selection</summary>
         <div class="help-panel select-panel">
-          <h3>Panel Selection</h3>
           <p class="lib-hint">Tick the checkbox at the left of a panel's header to select it. <b>Shift-click</b> a checkbox to select the whole range from the last one you ticked. While anything is selected, the buttons in the <b>⚙ Panel</b> menu of any <i>selected</i> panel act on the <b>whole selection</b> at once — <b>🔄 Generate</b>, <b>⚡ Generate All To Here</b>, <b>⚡ Generate All From Here</b>, <b>⚡ Generate (x) to (y)…</b>, <b>⧉ Duplicate</b>, <b>＋ Add Panel</b>, <b>🗑 Clear Images</b>, <b>🗑 Clear</b> and <b>🗑 Delete</b> — and their labels show the count. (<b>⇅ Move</b> lives in a selected panel's title bar and moves the whole selection as a block.) The same buttons, plus <b>⇅ Move</b> and <b>⟳ Refresh descriptions</b>, are repeated in this menu below, so you can run any of them without opening a panel's menu first. The destructive ones (<b>Clear Images</b>, <b>Clear</b>, <b>Delete</b>) ask first and offer <b>Only This Panel</b> if you change your mind (the copies below belong to no single panel, so they only ask to confirm); on a multi-page project <b>Delete</b> can also <b>Delete &amp; Refill</b>, pulling panels up from the following pages so the page keeps its length. <b>🔄 Generate</b> renders just the selected panels; <b>⚡ Generate All From Here</b> starts at the first selected panel and runs to the end of the page. <b>⟳ Refresh from library</b> — the button beside a line's <b>Basic Description</b> in a panel's <b>📖 Panel Library</b> — fills that line from your library; <b>with 2 or more panels selected it refills the Basic Description of every character and location line in all of the selected panels at once</b> (its label then reads “⟳ Refresh N panels”), leaving lines that have no library description untouched. Only the checkbox (or <b>Esc</b>) deselects; clicking a panel's body never changes the selection. The selection is a working aid: it is never saved with the project and it clears when you switch pages.</p>
           <p class="lib-hint">With something selected the <b>selection bar</b> appears at the bottom of the screen: <b>📋 Copy</b> puts the selected panels — their settings <i>and</i> their generated images — on an in-app clipboard, <b>✂ Cut</b> does the same and then removes them from the page, and <b>✕ Clear</b> just deselects. While the clipboard holds something, every panel header shows a <b>📋 Paste</b> chip that inserts the copied panels <i>before</i> that panel, contiguously, using the same full-page reflow as Duplicate (asking first if the page is full). <b>Paste</b> consumes a <b>Cut</b> — its chip disappears afterwards — while a <b>Copy</b> stays on the clipboard so you can paste it again and again until you copy something else. The clipboard lives in this tab only and is never saved with the project. Right-click a panel (or long-press its header area on touch) for the same actions in a context menu.</p>
           <div class="panel-header-btns" style="margin-top:0;justify-content:flex-start;">
@@ -981,8 +989,10 @@ color-scheme:light;
             <button class="btn-del-panel" id="selMenuDelBtn" data-action="w1-57" disabled style="background:var(--red);color:#fff;" title="Delete every selected panel — later panels move up and are renumbered">🗑 Delete</button>
           </div>
         </div>
+        </details>
+        <details class="edit-acc" open>
+          <summary class="edit-acc-head">Page</summary>
         <div class="config-panel">
-          <div class="config-header"><h2>Page</h2></div>
           <div class="input-group">
             <label>Page:</label>
             <div class="chip-row">
@@ -1066,6 +1076,7 @@ color-scheme:light;
             <label class="check-label" style="margin-top:8px;"><input type="checkbox" id="previewEnabledCheck" checked> <span><b>Enable image preview</b> — hover (computer) or press-and-hold (mobile) to show a larger version of an image. Uncheck to turn the preview off entirely.</span></label>
           </div>
         </div>
+        </details>
 
         <div class="help-panel reset-panel">
           <h3>Reset to Defaults</h3>
@@ -1374,6 +1385,17 @@ color-scheme:light;
   </div>
 </div>
 
+<div id="promptOverlay" class="import-confirm-overlay" hidden>
+  <div class="import-confirm-box">
+    <h3 id="promptTitle">—</h3>
+    <input id="promptInput" type="text" value="">
+    <div class="import-confirm-btns">
+      <button class="btn-confirm-save" id="promptSaveBtn">💾 Save</button>
+      <button class="btn-clear" id="promptCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="jsonEditorOverlay" class="view-overlay" hidden>
   <div class="view-top">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -1462,8 +1484,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.04.36 — 2026-10-04 — Panel context menu: right-click / long-press
-- Right-click any panel (or long-press its header area on touch) for a context menu: Generate, To/From Here, Duplicate, Paste, Copy prompt (prompt + seed + size), Focus, Select-toggle, Clear Images, Clear and Delete. The desktop 3-case selection rule applies, Paste targets the clicked panel, and every row delegates to the same per-panel buttons, so grey states and confirms behave identically.
+## 2026.10.04.38 — 2026-10-04 — Palette parity: every toolbar control as a command
+- New Edit › Style group (art-style and palette choosers, global keyword prompts, NSFW toggle with live state; the two Copy-keywords rows moved here from Library), ten new Edit › Page rows (switch/rename/summary/count/seed/size/guidance/images-per-panel/preview-delay/preview-toggle), a Preferences group with live-state rows for all 14 prefs, File additions (recent-file chooser, rename project, include-refs toggle; "Open recent…" renamed "Open file…"), and Reset from the palette skips the arm step. Free text uses a new prompt dialog; guidance uses fixed stops 1/4/7/12/20/30.
 </script>
 
 
@@ -7226,8 +7248,11 @@ color-scheme:light;
     { t: "Import Project (.json / .zip)", g: "File", act: "w1-20" },
     { t: "Backup to GitHub…", g: "File", act: "w1-21" },
     { t: "New Project", g: "File", act: "w1-22" },
-    { t: "Open recent…", g: "File", act: "w1-25" },
+    { t: "Open file…", g: "File", act: "w1-25" },
     { t: "Clear recent list", g: "File", act: "w1-26" },
+    { t: "Open recent file…", g: "File", act: "w1-151" },
+    { t: "Rename project…", g: "File", act: "w1-152" },
+    { t: function () { return "Include reference images: " + palChecked("includeRefsExport"); }, g: "File", act: "w1-153" },
     { t: "Undo", g: "Edit", act: "w1-15" },
     { t: "Select all panels", g: "Edit", act: "w1-43" },
     { t: "Copy", g: "Edit", act: "w1-44" },
@@ -7248,6 +7273,23 @@ color-scheme:light;
     { t: "Add Page", g: "Edit › Page", act: "w1-7" },
     { t: "Delete Page", g: "Edit › Page", act: "w1-28" },
     { t: "Renumber Page", g: "Edit › Page", act: "w1-29" },
+    { t: "Switch page…", g: "Edit › Page", act: "w1-159" },
+    { t: "Rename page…", g: "Edit › Page", act: "w1-160" },
+    { t: "Page summary…", g: "Edit › Page", act: "w1-161" },
+    { t: "Panel count…", g: "Edit › Page", act: "w1-162" },
+    { t: "Page seed…", g: "Edit › Page", act: "w1-163" },
+    { t: "Image size…", g: "Edit › Page", act: "w1-164" },
+    { t: "Guidance…", g: "Edit › Page", act: "w1-165" },
+    { t: "Images per panel…", g: "Edit › Page", act: "w1-166" },
+    { t: "Preview delay…", g: "Edit › Page", act: "w1-167" },
+    { t: function () { return "Image preview: " + palChecked("previewEnabledCheck"); }, g: "Edit › Page", act: "w1-168" },
+    { t: "Art style…", g: "Edit › Style", act: "w1-154" },
+    { t: "Color palette…", g: "Edit › Style", act: "w1-155" },
+    { t: "Global positive keywords…", g: "Edit › Style", act: "w1-156" },
+    { t: "Global negative keywords…", g: "Edit › Style", act: "w1-157" },
+    { t: function () { return "NSFW content: " + palChecked("nsfwCheck"); }, g: "Edit › Style", act: "w1-158" },
+    { t: "Copy style keywords", g: "Edit › Style", act: "w1-40" },
+    { t: "Copy negative keywords", g: "Edit › Style", act: "w1-41" },
     { t: "Storyboard", g: "View", act: "w1-0" },
     { t: "Focus selected panels", g: "View", act: "w1-148" },
     { t: "Open JSON Editor", g: "View", act: "w1-42" },
@@ -7261,11 +7303,100 @@ color-scheme:light;
     { t: "Pause", g: "Generate", act: "w1-13" },
     { t: "Stop", g: "Generate", act: "w1-14" },
     { t: "Import library…", g: "Library", act: "w1-78" },
-    { t: "Copy style keywords", g: "Library", act: "w1-40" },
-    { t: "Copy negative keywords", g: "Library", act: "w1-41" },
     { t: "Apply image count to all", g: "Library", act: "w1-38" },
-    { t: "Reset everything", g: "Danger", act: "w1-59" },
+    { t: function () { return "Password on hide panels: " + palChecked("hidePasswordPref"); }, g: "Preferences", act: "w1-169" },
+    { t: function () { return "Menus full screen: " + palChecked("prefMenuFullscreen"); }, g: "Preferences", act: "w1-170" },
+    { t: function () { return "Generate controls in header: " + palChecked("prefGenAlwaysVisible"); }, g: "Preferences", act: "w1-171" },
+    { t: function () { return "Header in all views: " + palChecked("prefHdrAllViews"); }, g: "Preferences", act: "w1-172" },
+    { t: function () { const el = document.getElementById("themeModeSel"); return "Color mode: " + (el ? el.value : "?"); }, g: "Preferences", act: "w1-173" },
+    { t: function () { return "Accent color: " + palAccentName(); }, g: "Preferences", act: "w1-174" },
+    { t: "Custom accent…", g: "Preferences", act: "w1-175" },
+    { t: function () { return "Background generate: " + palChecked("prefBgGenerate"); }, g: "Preferences", act: "w1-176" },
+    { t: function () { return "Keep tab awake: " + palChecked("prefKeepAwake"); }, g: "Preferences", act: "w1-177" },
+    { t: "Recent projects kept…", g: "Preferences", act: "w1-178" },
+    { t: "Reset everything…", g: "Danger", act: "w1-179" },
   ];
+  let promptResolve = null;
+  function palettePrompt(title, initial, placeholder) {
+    const ov = document.getElementById('promptOverlay');
+    if (!ov) return Promise.resolve(null);
+    if (promptResolve) { const prev = promptResolve; promptResolve = null; prev(null); }
+    document.getElementById('promptTitle').textContent = title || '';
+    const inp = document.getElementById('promptInput');
+    inp.value = (initial == null) ? '' : String(initial);
+    inp.placeholder = placeholder || '';
+    ov.hidden = false;
+    setTimeout(function () { inp.focus(); inp.select(); }, 0);
+    return new Promise(function (resolve) { promptResolve = resolve; });
+  }
+  function promptClose(val) {
+    const ov = document.getElementById('promptOverlay');
+    if (ov) ov.hidden = true;
+    const a = document.activeElement;
+    if (a && a.id === 'promptInput') a.blur();
+    if (promptResolve) { const r = promptResolve; promptResolve = null; r(val === undefined ? null : val); }
+  }
+  function palTitle(c) { return (typeof c.t === 'function') ? c.t() : c.t; }
+  function palSet(id, val, ev) {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    el.value = val;
+    el.dispatchEvent(new Event(ev || 'input', { bubbles: true }));
+    return true;
+  }
+  function palToggle(id) {
+    const el = document.getElementById(id);
+    if (!el || el.disabled) return false;
+    el.click();
+    return true;
+  }
+  function palChecked(id) {
+    const el = document.getElementById(id);
+    return el ? (el.checked ? 'on' : 'off') : '?';
+  }
+  function palAccentName() {
+    let cur = '';
+    try { cur = localStorage.getItem('comicGen.accent') || ''; } catch (err) {}
+    const names = { '': 'default', '#4d9fff': 'blue', '#4dff88': 'green', '#c8a2ff': 'purple', '#2ad1c4': 'teal', '#ff6fa5': 'pink', '#ff9a3d': 'orange', '#ff4d4d': 'red' };
+    return names[cur] || ('custom ' + cur);
+  }
+  async function palChoose(title, pairs, emptyText) {
+    if (!pairs.length) {
+      await showChoiceDialog({ title: title, paragraphs: [emptyText || 'Nothing to choose.'], buttons: [{ label: 'OK', value: null }] });
+      return null;
+    }
+    const buttons = pairs.map(function (p) { return { label: p[1], value: p[0] }; });
+    buttons.push({ label: 'Cancel', cls: 'choice-neutral', value: null });
+    return showChoiceDialog({ title: title, paragraphs: [], buttons: buttons });
+  }
+  async function palNumber(title, initial, min, max, placeholder) {
+    const raw = await palettePrompt(title, initial, placeholder);
+    if (raw === null) return null;
+    const n = parseInt(raw, 10);
+    if (isNaN(n)) { notify('Not a number — cancelled.'); return null; }
+    return Math.max(min, Math.min(max, n));
+  }
+  function palSelPairs(id) {
+    const el = document.getElementById(id);
+    if (!el) return [];
+    return Array.from(el.options).map(function (o) { return [o.value, o.textContent.trim()]; });
+  }
+  function palCycle(id, order) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    palSet(id, order[(order.indexOf(el.value) + 1) % order.length], 'change');
+  }
+  (function () {
+    const s = document.getElementById('promptSaveBtn');
+    if (s) s.onclick = function () { promptClose(document.getElementById('promptInput').value); };
+    const c = document.getElementById('promptCancelBtn');
+    if (c) c.onclick = function () { promptClose(null); };
+    const inp = document.getElementById('promptInput');
+    if (inp) inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); promptClose(e.target.value); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); promptClose(null); }
+    });
+  })();
   let palettePos = 0;
   let paletteVis = [];
   let paletteNav = [];
@@ -7299,7 +7430,7 @@ color-scheme:light;
     const out = [];
     for (let i = 0; i < PALETTE_COMMANDS.length; i++) {
       const c = PALETTE_COMMANDS[i];
-      if (paletteFuzzy(q, (c.g + ' ' + c.t).toLowerCase())) out.push(i);
+      if (paletteFuzzy(q, (c.g + ' ' + palTitle(c)).toLowerCase())) out.push(i);
     }
     return out;
   }
@@ -7358,7 +7489,7 @@ color-scheme:light;
       r.dataset.n = String(paletteNav.length);
       const l = document.createElement('span');
       l.className = 'cmd-label';
-      l.textContent = c.t;
+      l.textContent = palTitle(c);
       const tag = document.createElement('span');
       tag.className = 'cmd-tag';
       tag.textContent = c.g;
@@ -7374,6 +7505,13 @@ color-scheme:light;
     const p = document.getElementById('cmdPalette');
     if (!p) return;
     p.hidden = false;
+    const b = document.querySelector('[data-action="w1-146"]');
+    if (b) {
+      const r = b.getBoundingClientRect();
+      p.style.transform = 'none';
+      p.style.left = Math.max(12, Math.min(r.left + 40, window.innerWidth - p.offsetWidth - 12)) + 'px';
+      p.style.top = (r.bottom + 6) + 'px';
+    }
     const inp = document.getElementById('cmdInput');
     if (inp) inp.value = '';
     palettePos = 0;
@@ -12877,6 +13015,35 @@ color-scheme:light;
     "w1-148": { ev: "click", run: (el, e) => { focusSelectedPanels() } },
     "w1-149": { ev: "click", run: (el, e) => { pasteBeforeSelection() } },
     "w1-150": { ev: "click", run: (el, e) => { switchMenu('view') } },
+    "w1-151": { ev: "click", run: async (el, e) => { const list = await loadRecentEntries(); const pick = await palChoose('Open recent file…', list.map(function (r, i) { return [i, r.name]; }), 'No recent projects yet.'); if (pick !== null) openRecentEntry(pick); } },
+    "w1-152": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Project name', document.getElementById('projectNameInput').value, 'e.g. Neon Nights — Issue 1'); if (v !== null) palSet('projectNameInput', v, 'input'); } },
+    "w1-153": { ev: "click", run: (el, e) => { palToggle('includeRefsExport'); } },
+    "w1-154": { ev: "click", run: async (el, e) => { const pick = await palChoose('Art style', palSelPairs('presetStyle')); if (pick !== null) palSet('presetStyle', pick, 'change'); } },
+    "w1-155": { ev: "click", run: async (el, e) => { const pick = await palChoose('Color palette', palSelPairs('presetPalette')); if (pick !== null) palSet('presetPalette', pick, 'change'); } },
+    "w1-156": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Global positive keywords', document.getElementById('globalPos').value, 'comic book art, …'); if (v !== null) palSet('globalPos', v, 'input'); } },
+    "w1-157": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Global negative keywords', document.getElementById('globalNeg').value, 'photorealistic, …'); if (v !== null) palSet('globalNeg', v, 'input'); } },
+    "w1-158": { ev: "click", run: (el, e) => { palToggle('nsfwCheck'); } },
+    "w1-159": { ev: "click", run: async (el, e) => { const pick = await palChoose('Switch page', palSelPairs('pageSel')); if (pick !== null) switchPage(parseInt(pick, 10)); } },
+    "w1-160": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Page title', document.getElementById('pageNameInput').value, 'e.g. Cover, Page 1, Climax…'); if (v !== null) palSet('pageNameInput', v, 'input'); } },
+    "w1-161": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Page summary', document.getElementById('pageSummaryInput').value, 'A short summary of what happens on this page…'); if (v !== null) palSet('pageSummaryInput', v, 'input'); } },
+    "w1-162": { ev: "click", run: async (el, e) => { const pairs = [['1', '1 Panel'], ['4', '4 Panels (Standard Page)'], ['6', '6 Panels'], ['12', '12 Panels'], ['24', '24 Panels (Full Storyboard)'], ['custom', 'Custom…']]; const pick = await palChoose('Panels on this page', pairs); if (pick === null) return; if (pick === 'custom') { const n = await palNumber('Custom panel count', document.getElementById('panelCountCustom').value || '4', 1, 24, '1–24'); if (n === null) return; palSet('panelCountCustom', String(n), 'input'); palSet('panelCount', 'custom', 'change'); } else palSet('panelCount', pick, 'change'); } },
+    "w1-163": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Page seed', document.getElementById('seedInput').value, 'Leave blank for random'); if (v !== null) palSet('seedInput', v.trim(), 'input'); } },
+    "w1-164": { ev: "click", run: async (el, e) => { const pairs = [['512x512', '512 × 512'], ['768x768', '768 × 768 (default)'], ['1024x1024', '1024 × 1024'], ['1920x1080', '1920 × 1080 (16:9)'], ['1080x1920', '1080 × 1920 (9:16)'], ['custom', 'Custom…']]; const pick = await palChoose('Image size', pairs); if (pick === null) return; if (pick === 'custom') { const w = await palNumber('Custom width', document.getElementById('imgSizeW').value || '768', 64, 1920, 'max 1920'); if (w === null) return; const h = await palNumber('Custom height', document.getElementById('imgSizeH').value || '768', 64, 1080, 'max 1080'); if (h === null) return; document.getElementById('imgSizeW').value = String(w); document.getElementById('imgSizeH').value = String(h); palSet('imageSizeSel', 'custom', 'change'); } else palSet('imageSizeSel', pick, 'change'); } },
+    "w1-165": { ev: "click", run: async (el, e) => { const pairs = [['1', '1 — loose'], ['4', '4'], ['7', '7 — balanced (default)'], ['12', '12'], ['20', '20'], ['30', '30 — max']]; const pick = await palChoose('Prompt obedience (guidance)', pairs); if (pick === null) return; document.getElementById('guidanceScaleInput').value = pick; onGuidanceScaleChange(); } },
+    "w1-166": { ev: "click", run: async (el, e) => { const pick = await palChoose('Images per panel', [['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']]); if (pick !== null) palSet('bulkImgCountSel', pick, 'change'); } },
+    "w1-167": { ev: "click", run: async (el, e) => { const n = await palNumber('Image preview delay (ms)', document.getElementById('previewDelayInput').value, 0, 5000, '350'); if (n === null) return; document.getElementById('previewDelayInput').value = String(n); schedulePanelSave(); } },
+    "w1-168": { ev: "click", run: (el, e) => { palToggle('previewEnabledCheck'); } },
+    "w1-169": { ev: "click", run: (el, e) => { palToggle('hidePasswordPref'); } },
+    "w1-170": { ev: "click", run: (el, e) => { palToggle('prefMenuFullscreen'); } },
+    "w1-171": { ev: "click", run: (el, e) => { palToggle('prefGenAlwaysVisible'); } },
+    "w1-172": { ev: "click", run: (el, e) => { palToggle('prefHdrAllViews'); } },
+    "w1-173": { ev: "click", run: (el, e) => { palCycle('themeModeSel', ['system', 'light', 'dark']); } },
+    "w1-174": { ev: "click", run: (el, e) => { const acts = ['w1-65', 'w1-66', 'w1-67', 'w1-68', 'w1-69', 'w1-70', 'w1-71', 'w1-72']; const order = ['', '#4d9fff', '#4dff88', '#c8a2ff', '#2ad1c4', '#ff6fa5', '#ff9a3d', '#ff4d4d']; let cur = ''; try { cur = localStorage.getItem('comicGen.accent') || ''; } catch (err) {} const b = document.querySelector('[data-action="' + acts[(order.indexOf(cur) + 1) % acts.length] + '"]'); if (b) b.click(); } },
+    "w1-175": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Custom accent color', document.getElementById('themeAccentInput').value, '#rrggbb'); if (v === null) return; const hex = v.trim().replace(/^#/, ''); if (!/^[0-9a-fA-F]{6}$/.test(hex)) { notify('Not a hex color — cancelled.'); return; } palSet('themeAccentInput', '#' + hex.toLowerCase(), 'input'); } },
+    "w1-176": { ev: "click", run: (el, e) => { palToggle('prefBgGenerate'); } },
+    "w1-177": { ev: "click", run: (el, e) => { palToggle('prefKeepAwake'); } },
+    "w1-178": { ev: "click", run: async (el, e) => { const n = await palNumber('Recent projects remembered', document.getElementById('prefRecentMax').value, 0, 50, '0–50, 0 hides the list'); if (n === null) return; palSet('prefRecentMax', String(n), 'input'); } },
+    "w1-179": { ev: "click", run: (el, e) => { resetEverything(false); } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
