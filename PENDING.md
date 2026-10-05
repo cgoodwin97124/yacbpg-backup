@@ -1,3 +1,8 @@
+### 2026-10-05 — Revert main menu to pre-Commands state, keep Ctrl-K palette (RECON ONLY, build NOT greenlit)
+- **Status:** 🕓 QUEUED — recon + clarifying questions only; no code until author greenlights.
+- **Request (author, verbatim):** "I'm finding some functionality missing or altered, so I'd like to keep the Ctrl-K Commands menu but revert the main menu to before the initial Commands menu implementation. Recon and ask any clarifying questions at verbosity 5. Thank you!"
+- **Scope:** identify the Commands-menu intro release, diff the main menu then vs now, confirm what stays vs what returns; build waits for go-ahead.
+
 ### 2026-10-05 — Cursor phase (BUILD GREENLIT)
 - **Status:** 🟢 START NOW — author said "Let's do the cursor phase!"; recon + shape-confirm before code.
 - **Agreed answers carried in:** (1) pref in Edit → Preferences; (2) gap checkboxes render ONLY while pref on; (3) Shift+arrows extend from anchor; (4) Duplicate/Move can target cursor; (5) gap-click inside/adjacent keeps selection else deselects; (6) Page Break = split + standard reflow OR new page with only the split-off panels.
