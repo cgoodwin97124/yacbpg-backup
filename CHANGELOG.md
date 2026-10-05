@@ -1,3 +1,7 @@
+## 2026.10.05.43 — 2026-10-05 — Dismiss controls on the status pill and popups
+- The persistent bottom status pill gets an ✕ that hides it until the next status update, and popup toasts get an explicit ✕ alongside their existing click-anywhere and 5s auto-dismiss. Nothing else changes.
+- Verified live against a stubbed run (pill shows exactly one ✕, click hides, next panel update re-shows it still single, final Done pill keeps its ✕; popup ✕ dismisses and click-anywhere still works; storage byte-identical) + suites green (smoke 114/0, gen 18/0, fixtures 18/0, state-diff 38/0, core 79/0, diff-core 24/0, byte-identical restores, 0 errors). Pushed pre-Save; re-push after Save.
+
 ## 2026.10.05.42 — 2026-10-05 — Page Setup back in File, accordions unwrapped
 - The main menu returns to its pre-Commands shape where it matters: the full Page Setup section (page nav, renumber, title, summary, count, seed, size, guidance, images-per-panel, preview) moves back into 📄 File as a plain section, and Panel Selection is a plain section again instead of an accordion. The View tab, the palette (all groups, Ctrl-K), and the newer Edit rows (Paste, Focus, cursor prefs) stay exactly as they are.
 - Verified live (File shows Project + Page Setup, all 11 Page controls single-copy in File, Edit heads plain h3, no details elements, zero console errors). Suites green (smoke 114/0, gen 18/0, fixtures 18/0, state-diff 38/0, core 79/0, diff-core 24/0, byte-identical restores, 0 errors). Pushed pre-Save; re-push after Save.
