@@ -2,6 +2,7 @@
 - **Status:** 🕓 QUEUED — recon authorized; build NOT greenlit, sequenced after the menu reversion is finished, saved, and pushed.
 - **Request (author, verbatim):** "the status toast is occasionally covering up things I need to click on, and they're not disappearing. Can they have an X control to close them?"
 - **Scope:** recon toast system (notify/stacking/auto-dismiss) + questions if needed, then build after reversion ships.
+- **Recon (2026-10-05, reversion shipped as .42):** three candidates: (1) notify() toasts (#toastStack, bottom:118px) — auto-dismiss 5s + click-dismiss + max 4, new-UI only; (2) #runSlot status pill (bottom:70px) — PERSISTS indefinitely, NO dismiss path, mirrors the menu status line, overlaps #pageNav on portrait (74px); (3) #runPanel progress panel — already has hide (w1-145). Most likely culprit is #runSlot. Awaiting author's which-one + scope answers.
 
 ### 2026-10-05 — Revert main menu to pre-Commands state, keep Ctrl-K palette (RECON ONLY, build NOT greenlit)
 - **Status:** 🟢 START NOW — author greenlit the reversion (2026-10-05). Answers: (1) the missing piece is Page Setup — old way back until new way learned; (2) structure-only revert, keep newer rows (Paste/Focus/cursor-pref); (3) KEEP the View tab; (4) keep palette View group name; (5) Help reword OK; (6) usual process (suites+park/Save/re-push), deletion stays queued.
