@@ -1489,8 +1489,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.05.40 — 2026-10-05 — Cursor phase 2 of 3: to-cursor destinations
-- The cursor is now a destination: new palette Cursor group (Duplicate/Move selection to cursor, Add panels at cursor, Paste at cursor, all with live titles), a "◇ Cursor" option at the top of every ⇅ Move dropdown (block and single), three new named commands (duplicateEntriesAtGap/addEntriesAtGap/pasteEntriesAtGap, COMMANDS_VERSION 35) with the standard reflow confirms, cursor parks past the inserted block, and moving onto its own span refuses with a message. Single-panel buttons keep after-self; paste-before-selection is unchanged.
+## 2026.10.05.41 — 2026-10-05 — Cursor phase 3 of 3: Page Break at cursor
+- New palette Cursor row "Page Break at cursor" with a two-mode confirm: Split with reflow (panels after the cursor prepend to the next page via the standard cascade, creating pages as needed) or New page without reflow (a new splitPageToNewPage command inserts a fresh page right after the current one holding only the split-off panels; COMMANDS_VERSION 36; the split-off page inherits the page seed). Refuses at gap 0/N, stays on the current page, clears the selection, and re-parks the cursor at the break.
 </script>
 
 
@@ -7166,6 +7166,118 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = (wasCut ? 'Moved ' : 'Pasted ') + n + ' panel' + (n === 1 ? '' : 's') + ' at the cursor.' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '') + (wasCut ? ' The clipboard is now empty.' : '');
   }
 
+  async function pageBreakAtCursor() {
+    const statusEl = document.getElementById('statusEl');
+    const total = getPanelCount();
+    const g = cursorGap();
+    if (!(g >= 1 && g <= total - 1)) {
+      if (statusEl) statusEl.textContent = '⚠ Nothing to split — park the cursor between two panels (not at the very start or end).';
+      return;
+    }
+    const state = storeJsonNow();
+    const page = state.pages[currentPage];
+    if (!page || page[g] === undefined || page[g + 1] === undefined) {
+      if (statusEl) statusEl.textContent = 'Page could not be split — please reload and try again.';
+      return;
+    }
+    const label = pageLabel(page, currentPage);
+    const srcPage = currentPage;
+    const keys = sortedPageKeys(state.pages);
+    let nextKey = null;
+    for (const k of keys) { if (k > currentPage) { nextKey = k; break; } }
+    const movingCount = total - g;
+    const v = await showChoiceDialog({
+      title: '✂ Page break ' + cursorGapLabel(g) + '?',
+      paragraphs: [
+        'Panels 1–' + g + ' stay on ' + label + '; panels ' + (g + 1) + '–' + total + ' move out.',
+        '<b>Split with reflow</b> puts them at the front of ' + (nextKey === null ? 'a new page' : pageLabel(state.pages[nextKey], nextKey)) + ', pushing overflow onward. <b>New page (no reflow)</b> puts only the split-off panels on a fresh page right after this one.'
+      ],
+      buttons: [
+        { label: 'Split with reflow', cls: 'choice-plain', value: 'reflow' },
+        { label: 'New page (no reflow)', cls: 'choice-plain', value: 'newpage' },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    });
+    if (v !== 'reflow' && v !== 'newpage') {
+      if (statusEl) statusEl.textContent = 'Page break cancelled.';
+      return;
+    }
+    stopAllGenerations();
+    pushStructUndo('page break');
+    if (v === 'newpage') {
+      const allImgs = {};
+      for (const k of Object.keys(state.pages)) allImgs[Number(k)] = pageImagesOf(Number(k));
+      const srcImgs = allImgs[currentPage] || {};
+      const cmdSplit = panelCommands ? panelCommands.splitPageToNewPage : null;
+      const project = storeJsonNow();
+      const hit = (typeof cmdSplit === 'function') ? cmdSplit(project, currentPage, total, g) : null;
+      if (!hit) {
+        if (statusEl) statusEl.textContent = 'Page could not be split — please reload and try again.';
+        return;
+      }
+      savePanelStateShape(project);
+      const keptImgs = {};
+      for (let p = 1; p <= g; p++) if (srcImgs[p]) keptImgs[p] = srcImgs[p];
+      const movingImgs = {};
+      for (let p = g + 1; p <= total; p++) if (srcImgs[p]) movingImgs[p - g] = srcImgs[p];
+      const above = Object.keys(allImgs).map(Number).filter(k => k > currentPage).sort((a, b) => b - a);
+      for (const k of above) setPageImagesFor(k + 1, allImgs[k] || {});
+      setPageImagesFor(currentPage, keptImgs);
+      setPageImagesFor(hit.newPage, movingImgs);
+      loadCurrentPage();
+      populatePageSel();
+      updateDeletePageBtn();
+      clearPanelSelection();
+      setCursor(g);
+      if (statusEl) statusEl.textContent = 'Split ' + label + ' — panels ' + (g + 1) + '–' + total + ' moved to new ' + pageLabel(project.pages[hit.newPage], hit.newPage) + '.';
+      return;
+    }
+    const srcImgs = pageImagesOf(currentPage);
+    const keptEntries = [];
+    for (let p = 1; p <= g; p++) keptEntries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: srcImgs[p] ? srcImgs[p] : null });
+    const movingEntries = [];
+    for (let p = g + 1; p <= total; p++) movingEntries.push({ panel: JSON.parse(JSON.stringify(page[p] || {})), img: srcImgs[p] ? srcImgs[p] : null });
+    const res1 = cascadePageSequence(currentPage, keptEntries);
+    if (!res1) {
+      if (statusEl) statusEl.textContent = 'Page could not be split — please reload and try again.';
+      return;
+    }
+    const fresh = storeJsonNow();
+    let nk = null;
+    for (const k of sortedPageKeys(fresh.pages)) { if (k > currentPage) { nk = k; break; } }
+    if (nk === null) {
+      const keys2 = Object.keys(fresh.pages).map(Number);
+      let n = 1;
+      for (const k of keys2) n = Math.max(n, k);
+      n++;
+      const blank = defaultPageData(n);
+      blank.panelCountSel = '1';
+      fresh.pages[n] = blank;
+      savePanelStateShape(fresh);
+      nk = n;
+    }
+    const npage = storeJsonNow().pages[nk];
+    const nCount = analysisPanelCount(npage);
+    const nImgs = pageImagesOf(nk);
+    const allEntries = movingEntries.slice();
+    for (let p = 1; p <= nCount; p++) allEntries.push({ panel: JSON.parse(JSON.stringify(npage[p] || {})), img: nImgs[p] ? nImgs[p] : null });
+    const res2 = cascadePageSequence(nk, allEntries);
+    if (!res2) {
+      if (statusEl) statusEl.textContent = 'Page could not be split — please reload and try again.';
+      return;
+    }
+    const rej = storeJsonNow();
+    rej.currentPage = srcPage;
+    savePanelStateShape(rej);
+    currentPage = srcPage;
+    loadCurrentPage();
+    populatePageSel();
+    updateDeletePageBtn();
+    clearPanelSelection();
+    setCursor(g);
+    if (statusEl) statusEl.textContent = 'Split ' + label + ' at Panel ' + (g + 1) + ' — panels 1–' + g + ' stay; the rest moved to ' + pageLabel(storeJsonNow().pages[nk], nk) + (res2.createdPage ? ' (Page ' + res2.createdPage + ' created by overflow).' : '.');
+  }
+
   function movePanelsToCursor(sel) {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
@@ -7661,6 +7773,7 @@ color-scheme:light;
     { t: function () { const n = panelSelection.size; return "Move " + (n ? n + " panel" + (n === 1 ? "" : "s") + " " : "") + "to cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-183" },
     { t: function () { const n = panelSelection.size || 1; return "Add " + n + " panel" + (n === 1 ? "" : "s") + " at cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-184" },
     { t: function () { return "Paste at cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-185" },
+    { t: function () { return "Page Break at cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-186" },
     { t: "Reset everything…", g: "Danger", act: "w1-179" },
   ];
   let promptResolve = null;
@@ -13409,6 +13522,7 @@ color-scheme:light;
     "w1-183": { ev: "click", run: (el, e) => { moveSelectionToCursor(); } },
     "w1-184": { ev: "click", run: (el, e) => { addPanelsAtCursor(); } },
     "w1-185": { ev: "click", run: (el, e) => { pasteAtCursor(); } },
+    "w1-186": { ev: "click", run: (el, e) => { pageBreakAtCursor(); } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
@@ -13507,7 +13621,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
