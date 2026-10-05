@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 34;
+export const COMMANDS_VERSION = 35;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -241,7 +241,91 @@ export function appendPromptHistory(project, id, run, max) {
   return { page: hit.page, index: hit.index, fields: ["promptHistory"] };
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setCharSel: setCharSel, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, setPageSeed: setPageSeed, setPalette: setPalette, appendPromptHistory: appendPromptHistory, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill };
+export function duplicateEntriesAtGap(project, pageNum, total, indexes, gap, makeId) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  if (!Array.isArray(indexes) || !indexes.length) return null;
+  const sel = [];
+  for (const v of indexes) {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > t) return null;
+    if (sel.indexOf(n) === -1) sel.push(n);
+  }
+  sel.sort((a, b) => a - b);
+  const g = Number(gap);
+  if (!Number.isInteger(g) || g < 0 || g > t) return null;
+  if (typeof makeId !== "function") return null;
+  for (const n of sel) if (page[n] === undefined) return null;
+  const copies = [];
+  for (const n of sel) {
+    const copy = JSON.parse(JSON.stringify(page[n]));
+    const id = makeId();
+    if (typeof id !== "string" || !id) return null;
+    copy.id = id;
+    copies.push(copy);
+  }
+  const out = [];
+  for (let p = 1; p <= t; p++) {
+    if (p === g + 1) for (const c of copies) out.push(c);
+    out.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+  }
+  if (g >= t) for (const c of copies) out.push(c);
+  return out;
+}
+
+export function addEntriesAtGap(project, pageNum, total, gap, count) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  const g = Number(gap);
+  if (!Number.isInteger(g) || g < 0 || g > t) return null;
+  const n = Number(count);
+  if (!Number.isInteger(n) || n < 1) return null;
+  if (g < t) { if (page[g + 1] === undefined) return null; }
+  else if (page[t] === undefined) return null;
+  const out = [];
+  for (let p = 1; p <= t; p++) {
+    if (p === g + 1) for (let k = 0; k < n; k++) out.push({});
+    out.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+  }
+  if (g >= t) for (let k = 0; k < n; k++) out.push({});
+  return out;
+}
+
+export function pasteEntriesAtGap(project, pageNum, total, gap, copies, makeId) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const page = project.pages[pageNum];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  const g = Number(gap);
+  if (!Number.isInteger(g) || g < 0 || g > t) return null;
+  if (!Array.isArray(copies) || !copies.length) return null;
+  for (const c of copies) if (!isObj(c)) return null;
+  if (typeof makeId !== "function") return null;
+  const fresh = [];
+  for (const c of copies) {
+    const fp = JSON.parse(JSON.stringify(c));
+    const id = makeId();
+    if (typeof id !== "string" || !id) return null;
+    fp.id = id;
+    fresh.push(fp);
+  }
+  const out = [];
+  for (let p = 1; p <= t; p++) {
+    if (p === g + 1) for (const fp of fresh) out.push(fp);
+    out.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+  }
+  if (g >= t) for (const fp of fresh) out.push(fp);
+  return out;
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setCharSel: setCharSel, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, setPageSeed: setPageSeed, setPalette: setPalette, appendPromptHistory: appendPromptHistory, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill, duplicateEntriesAtGap: duplicateEntriesAtGap, addEntriesAtGap: addEntriesAtGap, pasteEntriesAtGap: pasteEntriesAtGap };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
