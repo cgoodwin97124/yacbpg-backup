@@ -1,4 +1,4 @@
-export const COMMANDS_VERSION = 35;
+export const COMMANDS_VERSION = 36;
 
 function isObj(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -325,7 +325,48 @@ export function pasteEntriesAtGap(project, pageNum, total, gap, copies, makeId) 
   return out;
 }
 
-export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setCharSel: setCharSel, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, setPageSeed: setPageSeed, setPalette: setPalette, appendPromptHistory: appendPromptHistory, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill, duplicateEntriesAtGap: duplicateEntriesAtGap, addEntriesAtGap: addEntriesAtGap, pasteEntriesAtGap: pasteEntriesAtGap };
+export function splitPageToNewPage(project, srcPage, total, gap) {
+  if (!isObj(project) || !isObj(project.pages)) return null;
+  const src = Number(srcPage);
+  if (!Number.isInteger(src) || src < 1) return null;
+  const page = project.pages[src];
+  if (!isObj(page)) return null;
+  const t = Number(total);
+  if (!Number.isInteger(t) || t < 1 || t > 24) return null;
+  const g = Number(gap);
+  if (!Number.isInteger(g) || g < 1 || g > t - 1) return null;
+  if (page[g] === undefined || page[g + 1] === undefined) return null;
+  const kept = [];
+  for (let p = 1; p <= g; p++) kept.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+  const moving = [];
+  for (let p = g + 1; p <= t; p++) moving.push(JSON.parse(JSON.stringify(page[p] !== undefined ? page[p] : {})));
+  const keys = [];
+  for (const k of Object.keys(project.pages)) {
+    const v = Number(k);
+    if (String(v) === k && Number.isInteger(v) && v >= 1) keys.push(v);
+  }
+  keys.sort((a, b) => b - a);
+  for (const k of keys) {
+    if (k > src) { project.pages[k + 1] = project.pages[k]; delete project.pages[k]; }
+  }
+  const meta = ["name", "summary", "seed"];
+  const np = {};
+  for (const k of meta) np[k] = page[k];
+  const spc = countStateFor(kept.length);
+  np.panelCountSel = spc.sel;
+  np.panelCountCustom = spc.custom;
+  for (let p = 1; p <= kept.length; p++) np[p] = kept[p - 1];
+  project.pages[src] = np;
+  const nn = { name: "", summary: "", seed: (typeof page.seed === "string" ? page.seed : "") };
+  const npc = countStateFor(moving.length);
+  nn.panelCountSel = npc.sel;
+  nn.panelCountCustom = npc.custom;
+  for (let p = 1; p <= moving.length; p++) nn[p] = moving[p - 1];
+  project.pages[src + 1] = nn;
+  return { page: src, newPage: src + 1, keptCount: kept.length, movedCount: moving.length, fields: [] };
+}
+
+export const COMMANDS = { setTitle: setTitle, setImgCount: setImgCount, setStyle: setStyle, setSize: setSize, setPanelSeed: setPanelSeed, setSameSeed: setSameSeed, setProtect: setProtect, setPromptOverride: setPromptOverride, setAction: setAction, setChar: setChar, setCharBase: setCharBase, setCharExtra: setCharExtra, setCharSel: setCharSel, setLoc: setLoc, setLocBase: setLocBase, setLocExtra: setLocExtra, setPageSeed: setPageSeed, setPalette: setPalette, appendPromptHistory: appendPromptHistory, clearMany: clearMany, addPanel: addPanel, duplicatePanel: duplicatePanel, movePanel: movePanel, deletePanel: deletePanel, addPage: addPage, deletePage: deletePage, movePanelToPage: movePanelToPage, moveManyToPage: moveManyToPage, moveMany: moveMany, renumberPages: renumberPages, reflowInsert: reflowInsert, resetPageToBlank: resetPageToBlank, cascadeEntries: cascadeEntries, duplicateEntries: duplicateEntries, pasteEntries: pasteEntries, addEntries: addEntries, planRefill: planRefill, duplicateEntriesAtGap: duplicateEntriesAtGap, addEntriesAtGap: addEntriesAtGap, pasteEntriesAtGap: pasteEntriesAtGap, splitPageToNewPage: splitPageToNewPage };
 
 function countStateFor(n) {
   if (n === 1 || n === 4 || n === 6 || n === 12 || n === 24) return { sel: String(n), custom: "" };
