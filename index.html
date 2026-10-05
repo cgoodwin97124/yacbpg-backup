@@ -1489,8 +1489,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.05.39 — 2026-10-05 — Cursor phase 1 of 3: insertion cursor, gaps, keyboard
-- New session-only insertion cursor (gap 0–N, reset on page switch, never saved), a new Edit › Preferences + palette row "Show insertion gaps" (off by default; gaps render only while on), clickable gap strips before/between/after panels (click parks the cursor, keeping the selection iff the gap is inside/adjacent to it), and ←/→ + Shift+←/→ keyboard (move cursor; extend selection from its anchor). Destinations (.40) and Page Break (.41) ride next.
+## 2026.10.05.40 — 2026-10-05 — Cursor phase 2 of 3: to-cursor destinations
+- The cursor is now a destination: new palette Cursor group (Duplicate/Move selection to cursor, Add panels at cursor, Paste at cursor, all with live titles), a "◇ Cursor" option at the top of every ⇅ Move dropdown (block and single), three new named commands (duplicateEntriesAtGap/addEntriesAtGap/pasteEntriesAtGap, COMMANDS_VERSION 35) with the standard reflow confirms, cursor parks past the inserted block, and moving onto its own span refuses with a message. Single-panel buttons keep after-self; paste-before-selection is unchanged.
 </script>
 
 
@@ -6074,6 +6074,13 @@ color-scheme:light;
       const sel = document.getElementById('panel-reorder-' + i);
       if (!sel) continue;
       sel.innerHTML = '';
+      const cg = document.createElement('optgroup');
+      cg.label = 'At the insertion cursor';
+      const co = document.createElement('option');
+      co.value = 'cursor';
+      co.textContent = '◇ Cursor (' + cursorGapLabel(cursorGap()) + ')';
+      cg.appendChild(co);
+      sel.appendChild(cg);
       for (let p = 1; p <= total; p++) {
         const opt = document.createElement('option');
         opt.value = String(p);
@@ -6138,6 +6145,7 @@ color-scheme:light;
     if (btn) btn.classList.remove('active');
     if (group) {
       if (raw === 'newpage') { batchMoveToNewPage(); return; }
+      if (raw === 'cursor') { moveSelectionToCursor(); return; }
       if (raw.indexOf('pg-') === 0) {
         const target = parseInt(raw.slice(3), 10);
         if (!isNaN(target)) batchMoveToPage(target);
@@ -6148,6 +6156,7 @@ color-scheme:light;
       return;
     }
     if (raw === 'newpage') { movePanelToNewPage(i); return; }
+    if (raw === 'cursor') { movePanelsToCursor([i]); return; }
     if (raw.indexOf('pg-') === 0) {
       const target = parseInt(raw.slice(3), 10);
       if (!isNaN(target)) movePanelToPage(i, target);
@@ -6979,6 +6988,220 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = 'Added ' + sel.length + ' empty panels after Panel ' + lastSel + '.' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '');
   }
 
+  function cursorGap() {
+    return Math.max(0, Math.min(getPanelCount(), panelCursor | 0));
+  }
+
+  function cursorGapLabel(g) {
+    const total = getPanelCount();
+    return (g >= total) ? ('after Panel ' + total + ' (end)') : ('before Panel ' + (g + 1));
+  }
+
+  function moveToForGap(sel, g, total) {
+    let before = 0;
+    for (const n of sel) if (n <= g) before++;
+    return (g - before) + 1;
+  }
+
+  function moveOrderForGap(sel, g, total) {
+    const selSet = {};
+    for (const n of sel) selSet[n] = true;
+    const rest = [];
+    for (let p = 1; p <= total; p++) if (!selSet[p]) rest.push(p);
+    const to = moveToForGap(sel, g, total);
+    return rest.slice(0, to - 1).concat(sel).concat(rest.slice(to - 1));
+  }
+
+  async function duplicateSelectionToCursor() {
+    const statusEl = document.getElementById('statusEl');
+    const total = getPanelCount();
+    const sel = panelSelectionSorted().filter(i => i <= total);
+    if (!sel.length) {
+      if (statusEl) statusEl.textContent = '⚠ Select at least one panel first — Duplicate to cursor copies the selection to the cursor.';
+      return;
+    }
+    const g = cursorGap();
+    const state = storeJsonNow();
+    const page = state.pages[currentPage];
+    const imgs = pageImagesOf(currentPage);
+    const plan = batchReflowPlan(sel.length);
+    const label = pageLabel(page, currentPage);
+    if (plan.needed) {
+      const v = await showChoiceDialog({
+        title: '⧉ ' + label + ' is full?',
+        paragraphs: [label + ' is full (' + total + ' panels). Duplicating ' + sel.length + ' panel' + (sel.length === 1 ? '' : 's') + ' at the cursor (' + cursorGapLabel(g) + ') will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '.'],
+        buttons: [
+          { label: '⧉ Duplicate Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
+        if (statusEl) statusEl.textContent = 'Duplication cancelled.';
+        return;
+      }
+    }
+    pushStructUndo('duplicate panels');
+    const cmdDup = panelCommands ? panelCommands.duplicateEntriesAtGap : null;
+    const dupProject = (typeof cmdDup === 'function' && typeof newPanelId === 'function') ? storeJsonNow() : null;
+    const dupPanels = dupProject ? cmdDup(dupProject, currentPage, total, sel, g, newPanelId) : null;
+    if (!dupPanels) {
+      if (statusEl) statusEl.textContent = 'Panels could not be duplicated — please reload and try again.';
+      return;
+    }
+    const entries = [];
+    let oi = 1;
+    for (let k = 0; k < dupPanels.length; k++) {
+      if (k >= g && k < g + sel.length) entries.push({ panel: dupPanels[k], img: null });
+      else entries.push({ panel: dupPanels[k], img: imgs[oi] ? imgs[oi] : null }), oi++;
+    }
+    const res = cascadePageSequence(currentPage, entries) || { moves: 0, createdPage: null };
+    clearPanelSelection();
+    setCursor(g + sel.length);
+    if (statusEl) statusEl.textContent = 'Duplicated ' + sel.length + ' panel' + (sel.length === 1 ? '' : 's') + ' at the cursor (the copies have no images).' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '');
+  }
+
+  async function addPanelsAtCursor() {
+    const statusEl = document.getElementById('statusEl');
+    const total = getPanelCount();
+    const sel = panelSelectionSorted().filter(i => i <= total);
+    const n = sel.length || 1;
+    const g = cursorGap();
+    const state = storeJsonNow();
+    const page = state.pages[currentPage];
+    const imgs = pageImagesOf(currentPage);
+    const plan = batchReflowPlan(n);
+    const label = pageLabel(page, currentPage);
+    if (plan.needed) {
+      const v = await showChoiceDialog({
+        title: '＋ ' + label + ' is full?',
+        paragraphs: ['Creating ' + n + ' new panel' + (n === 1 ? '' : 's') + ' at the cursor (' + cursorGapLabel(g) + ') will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '.'],
+        buttons: [
+          { label: '＋ Add Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
+        if (statusEl) statusEl.textContent = 'Adding panels cancelled.';
+        return;
+      }
+    }
+    pushStructUndo('add panels');
+    const cmdAdd = panelCommands ? panelCommands.addEntriesAtGap : null;
+    const addProject = (typeof cmdAdd === 'function') ? storeJsonNow() : null;
+    const addPanels = addProject ? cmdAdd(addProject, currentPage, total, g, n) : null;
+    if (!addPanels) {
+      if (statusEl) statusEl.textContent = 'Panels could not be added — please reload and try again.';
+      return;
+    }
+    const entries = [];
+    let oi = 1;
+    for (let k = 0; k < addPanels.length; k++) {
+      if (k >= g && k < g + n) entries.push({ panel: addPanels[k], img: null });
+      else entries.push({ panel: addPanels[k], img: imgs[oi] ? imgs[oi] : null }), oi++;
+    }
+    const res = cascadePageSequence(currentPage, entries) || { moves: 0, createdPage: null };
+    clearPanelSelection();
+    setCursor(g + n);
+    if (statusEl) statusEl.textContent = 'Added ' + n + ' empty panel' + (n === 1 ? '' : 's') + ' at the cursor (' + cursorGapLabel(Math.min(g, getPanelCount())) + ').' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '');
+  }
+
+  async function pasteAtCursor() {
+    const statusEl = document.getElementById('statusEl');
+    const n = clipboardCount();
+    if (!n) {
+      if (statusEl) statusEl.textContent = '⚠ Nothing on the clipboard — Copy or Cut some panels first.';
+      return;
+    }
+    const total = getPanelCount();
+    const g = cursorGap();
+    const state = storeJsonNow();
+    const page = state.pages[currentPage];
+    const imgs = pageImagesOf(currentPage);
+    const label = pageLabel(page, currentPage);
+    const plan = batchReflowPlan(n);
+    if (plan.needed) {
+      const v = await showChoiceDialog({
+        title: '📋 ' + label + ' is full?',
+        paragraphs: [label + ' is full (' + total + ' panels). Pasting ' + n + ' panel' + (n === 1 ? '' : 's') + ' at the cursor (' + cursorGapLabel(g) + ') will reflow the overflow onto the following page' + (plan.pages === 1 ? '' : 's') + (plan.willCreate ? ' and create a new page' : '') + '.'],
+        buttons: [
+          { label: '📋 Paste Anyway', cls: 'choice-plain', value: 'go' },
+          { label: 'Cancel', cls: 'choice-neutral', value: null }
+        ]
+      });
+      if (v !== 'go') {
+        if (statusEl) statusEl.textContent = 'Paste cancelled.';
+        return;
+      }
+    }
+    const wasCut = panelClipboardCut;
+    pushStructUndo('paste panels');
+    const cmdPaste = panelCommands ? panelCommands.pasteEntriesAtGap : null;
+    const pasteProject = (typeof cmdPaste === 'function' && typeof newPanelId === 'function') ? storeJsonNow() : null;
+    const pastePanels = pasteProject ? cmdPaste(pasteProject, currentPage, total, g, panelClipboard.map(e => e.panel), newPanelId) : null;
+    if (!pastePanels) {
+      if (statusEl) statusEl.textContent = 'Panels could not be pasted — please reload and try again.';
+      return;
+    }
+    const entries = [];
+    const freshIds = [];
+    for (let k = 0; k < pastePanels.length; k++) {
+      if (k >= g && k < g + n) freshIds.push(pastePanels[k] && pastePanels[k].id ? pastePanels[k].id : null);
+    }
+    let oi = 1, fi = 0;
+    for (let k = 0; k < pastePanels.length; k++) {
+      if (k >= g && k < g + n) entries.push({ panel: pastePanels[k], img: null }), fi++;
+      else entries.push({ panel: pastePanels[k], img: imgs[oi] ? imgs[oi] : null }), oi++;
+    }
+    const plantById = {};
+    for (let c = 0; c < panelClipboard.length; c++) {
+      const cimg = panelClipboard[c].img;
+      const fid = freshIds[c];
+      if (cimg && fid) plantById[fid] = cimg;
+    }
+    const res = cascadePageSequence(currentPage, entries, plantById) || { moves: 0, createdPage: null };
+    if (wasCut) { panelClipboard = null; panelClipboardCut = false; }
+    updatePasteUI();
+    clearPanelSelection();
+    setCursor(g + n);
+    if (statusEl) statusEl.textContent = (wasCut ? 'Moved ' : 'Pasted ') + n + ' panel' + (n === 1 ? '' : 's') + ' at the cursor.' + (res.createdPage ? ' Page ' + res.createdPage + ' was created.' : '') + (wasCut ? ' The clipboard is now empty.' : '');
+  }
+
+  function movePanelsToCursor(sel) {
+    const statusEl = document.getElementById('statusEl');
+    const total = getPanelCount();
+    const list = (Array.isArray(sel) ? sel : []).filter(i => i >= 1 && i <= total);
+    if (!list.length) {
+      if (statusEl) statusEl.textContent = '⚠ Select at least one panel first — Move to cursor moves the selection to the cursor.';
+      return;
+    }
+    const g = cursorGap();
+    const to = moveToForGap(list, g, total);
+    const order = moveOrderForGap(list, g, total);
+    let same = order.length === total;
+    if (same) for (let k = 0; k < total; k++) if (order[k] !== k + 1) { same = false; break; }
+    if (same) {
+      if (statusEl) statusEl.textContent = 'The selection is already at the cursor — nothing to move.';
+      return;
+    }
+    panelSelection.clear();
+    for (const i of list) panelSelection.add(i);
+    selectionAnchor = list[list.length - 1];
+    updateSelectionUI();
+    moveSelectionWithinPage(to);
+    setCursor(Math.min(getPanelCount(), to + list.length - 1));
+  }
+
+  function moveSelectionToCursor() {
+    const total = getPanelCount();
+    const sel = panelSelectionSorted().filter(i => i <= total);
+    if (!sel.length) {
+      const statusEl = document.getElementById('statusEl');
+      if (statusEl) statusEl.textContent = '⚠ Select at least one panel first — Move to cursor moves the selection to the cursor.';
+      return;
+    }
+    movePanelsToCursor(sel);
+  }
+
   function moveSelectionWithinPage(toPos) {
     const statusEl = document.getElementById('statusEl');
     const total = getPanelCount();
@@ -7096,6 +7319,13 @@ color-scheme:light;
     const pages = ensurePages(readPanelState());
     const keys = Object.keys(pages).map(Number).filter(k => !isNaN(k)).sort((a, b) => a - b);
     sel.innerHTML = '';
+    const g0 = document.createElement('optgroup');
+    g0.label = 'At the insertion cursor';
+    const co = document.createElement('option');
+    co.value = 'cursor';
+    co.textContent = '◇ Cursor (' + cursorGapLabel(cursorGap()) + ')';
+    g0.appendChild(co);
+    sel.appendChild(g0);
     const g1 = document.createElement('optgroup');
     g1.label = 'Move ' + groupSize + ' panels on this page (as one block)';
     for (let p = 1; p <= total; p++) {
@@ -7427,6 +7657,10 @@ color-scheme:light;
     { t: function () { return "Keep tab awake: " + palChecked("prefKeepAwake"); }, g: "Preferences", act: "w1-177" },
     { t: "Recent projects kept…", g: "Preferences", act: "w1-178" },
     { t: function () { return "Insertion gaps: " + palChecked("prefShowGaps"); }, g: "Preferences", act: "w1-180" },
+    { t: function () { const n = panelSelection.size; return "Duplicate " + (n ? n + " panel" + (n === 1 ? "" : "s") + " " : "") + "to cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-182" },
+    { t: function () { const n = panelSelection.size; return "Move " + (n ? n + " panel" + (n === 1 ? "" : "s") + " " : "") + "to cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-183" },
+    { t: function () { const n = panelSelection.size || 1; return "Add " + n + " panel" + (n === 1 ? "" : "s") + " at cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-184" },
+    { t: function () { return "Paste at cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-185" },
     { t: "Reset everything…", g: "Danger", act: "w1-179" },
   ];
   let promptResolve = null;
@@ -13171,6 +13405,10 @@ color-scheme:light;
     "w1-178": { ev: "click", run: async (el, e) => { const n = await palNumber('Recent projects remembered', document.getElementById('prefRecentMax').value, 0, 50, '0–50, 0 hides the list'); if (n === null) return; palSet('prefRecentMax', String(n), 'input'); } },
     "w1-179": { ev: "click", run: (el, e) => { resetEverything(false); } },
     "w1-180": { ev: "click", run: (el, e) => { palToggle('prefShowGaps'); } },
+    "w1-182": { ev: "click", run: (el, e) => { duplicateSelectionToCursor(); } },
+    "w1-183": { ev: "click", run: (el, e) => { moveSelectionToCursor(); } },
+    "w1-184": { ev: "click", run: (el, e) => { addPanelsAtCursor(); } },
+    "w1-185": { ev: "click", run: (el, e) => { pasteAtCursor(); } },
   };
   ["click", "change", "input", "keydown", "scroll"].forEach(function (t) {
     document.addEventListener(t, function (e) {
@@ -13269,7 +13507,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
