@@ -1,3 +1,7 @@
+### 2026-10-05 — Cursor phase (BUILD GREENLIT)
+- **Status:** 🟢 START NOW — author said "Let's do the cursor phase!"; recon + shape-confirm before code.
+- **Agreed answers carried in:** (1) pref in Edit → Preferences; (2) gap checkboxes render ONLY while pref on; (3) Shift+arrows extend from anchor; (4) Duplicate/Move can target cursor; (5) gap-click inside/adjacent keeps selection else deselects; (6) Page Break = split + standard reflow + optional no-reflow checkbox.
+
 ### 2026-10-05 â Parity round answers (plan approved, build NOT greenlit)
 - **Status:** ð¢ START NOW â answers logged; phase (a) parity rows ✅ DONE 2026.10.04.38 — 29 acts w1-151…179, prompt dialog, Style + Preferences groups. Suites green, pushed pre-Save; ✅ Saved + re-pushed 18 files 2026-10-05 (repo index.html = .38, w1-179 + promptOverlay + Preferences verified).
 - **Answers:** header extras stay (incl. Hide Panels + password flow); recommendations approved as listed; order parity â cursor â deletion; deletion deferred.
