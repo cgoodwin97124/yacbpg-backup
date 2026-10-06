@@ -1000,7 +1000,6 @@ color-scheme:light;
         </div>
 
       </div>
-      </div>
 
       <div class="menu-group" id="menuGroup-edit" hidden>
         <div class="config-panel">
@@ -1492,8 +1491,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.05.43 — 2026-10-05 — Dismiss controls on the status pill and popups
-- The persistent bottom status pill gets an ✕ that hides it until the next status update, and popup toasts get an explicit ✕ alongside their existing click-anywhere and 5s auto-dismiss. Nothing else changes.
+## 2026.10.05.44 — 2026-10-05 — Menu structure repair (stray tag fix)
+- The .42 move left one stray closing tag that ended the scroll container early and buried the menu tabs under the Edit content. Removed it; all five tab groups are siblings inside the scroller again. Page Setup stays in File, accordions stay unwrapped, pill/popup dismiss controls unchanged.
 </script>
 
 
