@@ -1,3 +1,7 @@
+## 2026.10.05.44 — 2026-10-05 — Menu structure repair (stray tag fix)
+- The .42 move left one stray closing tag that ended the scroll container early and buried the menu tabs under the Edit content. Removed it; all five tab groups are siblings inside the scroller again. Page Setup stays in File, accordions stay unwrapped, pill/popup dismiss controls unchanged.
+- Verified live (all five tabs hit-test clean with Edit open, File shows Project + Page Setup, frame children correct, screenshot) + suites green (smoke 114/0, gen 18/0, fixtures 18/0, state-diff 38/0, core 79/0, diff-core 24/0, byte-identical restores, 0 errors). Pushed pre-Save; re-push after Save.
+
 ## 2026.10.05.43 — 2026-10-05 — Dismiss controls on the status pill and popups
 - The persistent bottom status pill gets an ✕ that hides it until the next status update, and popup toasts get an explicit ✕ alongside their existing click-anywhere and 5s auto-dismiss. Nothing else changes.
 - Verified live against a stubbed run (pill shows exactly one ✕, click hides, next panel update re-shows it still single, final Done pill keeps its ✕; popup ✕ dismisses and click-anywhere still works; storage byte-identical) + suites green (smoke 114/0, gen 18/0, fixtures 18/0, state-diff 38/0, core 79/0, diff-core 24/0, byte-identical restores, 0 errors). Pushed pre-Save; re-push after Save.
