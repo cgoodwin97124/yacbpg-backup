@@ -1,3 +1,8 @@
+### 2026-10-06 — Prompt slider gone, put it back (RECON)
+- **Status:** RECON — logged first per rule; recon slider identity + last-seen version, then implement.
+- **Request (author, verbatim):** "The prompt slider is gone. Can you put it back?"
+- **Note:** deletion-plan snooze ACTIVE until 2026-10-07T03:12:44.840Z — no deletion reminders in replies until expiry.
+
 ### 2026-10-05 — Snooze deletion-plan notifications 24h (DIRECTIVE, expires 2026-10-07T03:12:44.840Z)
 - **Status:** DIRECTIVE ACTIVE — user directive, no code change, no version bump.
 - **Request (author, verbatim):** "Let's snooze notifications on the deletion plan for 24 hours, shall we? Set that as a user directive that expires 24 hours from now."
