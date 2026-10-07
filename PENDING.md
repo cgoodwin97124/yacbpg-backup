@@ -1,6 +1,7 @@
 ### 2026-10-06 — Prompt slider gone, put it back (RECON)
 - **Status:** RECON — logged first per rule; recon slider identity + last-seen version, then implement.
 - **Request (author, verbatim):** "The prompt slider is gone. Can you put it back?"
+- Recon: Prompt Obedience slider (guidanceScaleInput 1-30 default 7) still in File Page Setup but adv-gated; body ui-new adv-off, Advanced unchecked, value 7 so hidden. Awaiting scope answer.
 - **Note:** deletion-plan snooze ACTIVE until 2026-10-07T03:12:44.840Z — no deletion reminders in replies until expiry.
 
 ### 2026-10-05 — Snooze deletion-plan notifications 24h (DIRECTIVE, expires 2026-10-07T03:12:44.840Z)
