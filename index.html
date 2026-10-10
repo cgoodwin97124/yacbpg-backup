@@ -1491,8 +1491,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.05.44 — 2026-10-05 — Menu structure repair (stray tag fix)
-- The .42 move left one stray closing tag that ended the scroll container early and buried the menu tabs under the Edit content. Removed it; all five tab groups are siblings inside the scroller again. Page Setup stays in File, accordions stay unwrapped, pill/popup dismiss controls unchanged.
+## 2026.10.10.1 — 2026-10-10 — Selection-aware Images per panel, dropdown Commands, guidance slider
+- With no panels selected, Images per panel sets the default and updates every panel on every page; with a selection it updates just those panels (and still records the default). All Commands option dialogs use dropdowns; Guidance uses the full 1–30 slider.
 </script>
 
 
@@ -6043,12 +6043,30 @@ color-scheme:light;
   function onPanelCountChange() {
     const sel = document.getElementById('panelCount');
     const custom = document.getElementById('panelCountCustom');
+    const sp = ensurePages(readPanelState())[currentPage] || {};
+    let oldTotal = 4;
+    if (sp.panelCountSel === 'custom') {
+      const n = parseInt(sp.panelCountCustom, 10);
+      oldTotal = isNaN(n) ? 4 : Math.min(24, Math.max(1, n));
+    } else if (sp.panelCountSel) {
+      const n = parseInt(sp.panelCountSel, 10);
+      oldTotal = isNaN(n) ? 4 : n;
+    }
     custom.hidden = sel.value !== 'custom';
     if (sel.value === 'custom') {
       custom.focus();
       if (!custom.value) custom.value = 4;
     }
     updatePanelVisibility();
+    const newTotal = getPanelCount();
+    if (newTotal > oldTotal) {
+      for (let i = oldTotal + 1; i <= newTotal; i++) {
+        const el = document.getElementById('panel-img-count-' + i);
+        if (el) el.value = imgCountDefaultPref;
+        if (!runPanelCommand('setImgCount', panelIdAt(i), [imgCountDefaultPref])) updatePanelImgSlots(i);
+      }
+      schedulePanelSave();
+    }
     if (focusCards.length) {
       const total = getPanelCount();
       const valid = focusSet.filter(function (n) { return n >= 1 && n <= total; });
@@ -7845,9 +7863,80 @@ color-scheme:light;
       await showChoiceDialog({ title: title, paragraphs: [emptyText || 'Nothing to choose.'], buttons: [{ label: 'OK', value: null }] });
       return null;
     }
-    const buttons = pairs.map(function (p) { return { label: p[1], value: p[0] }; });
-    buttons.push({ label: 'Cancel', cls: 'choice-neutral', value: null });
-    return showChoiceDialog({ title: title, paragraphs: [], buttons: buttons });
+    const ov = document.getElementById('choiceOverlay');
+    if (!ov) return null;
+    if (choiceResolve) { const prev = choiceResolve; choiceResolve = null; prev(null); }
+    document.getElementById('choiceTitle').innerHTML = title || '';
+    const bodyEl = document.getElementById('choiceBody');
+    bodyEl.innerHTML = '';
+    const sel = document.createElement('select');
+    sel.style.cssText = 'width:100%;min-height:40px;font-size:0.95rem;';
+    for (const p of (pairs || [])) {
+      const o = document.createElement('option');
+      o.textContent = p[1];
+      sel.appendChild(o);
+    }
+    bodyEl.appendChild(sel);
+    const hintEl = document.getElementById('choiceHint');
+    hintEl.textContent = '';
+    hintEl.hidden = true;
+    const btns = document.getElementById('choiceBtns');
+    btns.innerHTML = '';
+    const ok = document.createElement('button');
+    ok.textContent = 'OK';
+    ok.className = 'choice-plain';
+    ok.onclick = () => choiceDialogPick(pairs[sel.selectedIndex][0]);
+    const cancel = document.createElement('button');
+    cancel.textContent = 'Cancel';
+    cancel.className = 'choice-neutral';
+    cancel.onclick = () => choiceDialogPick(null);
+    btns.append(ok, cancel);
+    ov.hidden = false;
+    setTimeout(function () { sel.focus(); }, 0);
+    return new Promise(function (resolve) { choiceResolve = resolve; });
+  }
+  async function palGuidance() {
+    const cur = document.getElementById('guidanceScaleInput');
+    const start = cur ? parseInt(cur.value, 10) || 7 : 7;
+    const ov = document.getElementById('choiceOverlay');
+    if (!ov) return null;
+    if (choiceResolve) { const prev = choiceResolve; choiceResolve = null; prev(null); }
+    document.getElementById('choiceTitle').innerHTML = 'Prompt obedience (guidance)';
+    const bodyEl = document.getElementById('choiceBody');
+    bodyEl.innerHTML = '';
+    const wrap = document.createElement('div');
+    const val = document.createElement('span');
+    val.style.cssText = 'font-weight:bold;margin-left:8px;';
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '1';
+    slider.max = '30';
+    slider.step = '1';
+    slider.value = String(Math.max(1, Math.min(30, start)));
+    slider.className = 'guidance-slider';
+    slider.style.cssText = 'width:calc(100% - 48px);';
+    val.textContent = slider.value;
+    slider.oninput = () => { val.textContent = slider.value; };
+    wrap.appendChild(slider);
+    wrap.appendChild(val);
+    bodyEl.appendChild(wrap);
+    const hintEl = document.getElementById('choiceHint');
+    hintEl.textContent = '1 loose, 7 balanced, 15+ diminishing returns.';
+    hintEl.hidden = false;
+    const btns = document.getElementById('choiceBtns');
+    btns.innerHTML = '';
+    const ok = document.createElement('button');
+    ok.textContent = 'OK';
+    ok.className = 'choice-plain';
+    ok.onclick = () => choiceDialogPick(slider.value);
+    const cancel = document.createElement('button');
+    cancel.textContent = 'Cancel';
+    cancel.className = 'choice-neutral';
+    cancel.onclick = () => choiceDialogPick(null);
+    btns.append(ok, cancel);
+    ov.hidden = false;
+    setTimeout(function () { slider.focus(); }, 0);
+    return new Promise(function (resolve) { choiceResolve = resolve; });
   }
   async function palNumber(title, initial, min, max, placeholder) {
     const raw = await palettePrompt(title, initial, placeholder);
@@ -10126,20 +10215,46 @@ color-scheme:light;
 
   function applyAllImageCount() {
     const v = document.getElementById('bulkImgCountSel').value;
-    imgCountDefaultPref = v;
-    for (let i = 1; i <= 24; i++) {
-      const sel = document.getElementById('panel-img-count-' + i);
-      if (sel) {
-        sel.value = v;
-        updatePanelImgSlots(i);
-      }
-    }
-    schedulePanelSave();
+    setImagesPerPanel(v, true);
   }
 
   function onBulkImgCountChange() {
     const sel = document.getElementById('bulkImgCountSel');
-    imgCountDefaultPref = sel ? sel.value : '1';
+    setImagesPerPanel(sel ? sel.value : '1', false);
+  }
+  function setImagesPerPanel(v, forceAll) {
+    v = String(v);
+    if (['1', '2', '3', '4'].indexOf(v) === -1) return;
+    const bic = document.getElementById('bulkImgCountSel');
+    if (bic) bic.value = v;
+    imgCountDefaultPref = v;
+    const sel = (!forceAll && panelSelection.size) ? panelSelectionSorted().filter(i => i >= 1 && i <= 24) : null;
+    if (sel && sel.length) {
+      for (const i of sel) {
+        const el = document.getElementById('panel-img-count-' + i);
+        if (el) el.value = v;
+        if (!runPanelCommand('setImgCount', panelIdAt(i), [v])) updatePanelImgSlots(i);
+      }
+      schedulePanelSave();
+      return;
+    }
+    const raw = readPanelState();
+    const pages = ensurePages(raw);
+    if (!raw.pages || typeof raw.pages !== 'object') raw.pages = pages;
+    for (const k of Object.keys(pages)) {
+      if (Number(k) === currentPage) continue;
+      const pg = pages[k];
+      if (!pg || typeof pg !== 'object') continue;
+      for (let i = 1; i <= 24; i++) {
+        if (pg[i] && typeof pg[i] === 'object') pg[i].imgCount = v;
+      }
+    }
+    savePanelStateShape(raw);
+    for (let i = 1; i <= 24; i++) {
+      const el = document.getElementById('panel-img-count-' + i);
+      if (el) el.value = v;
+      if (!runPanelCommand('setImgCount', panelIdAt(i), [v])) updatePanelImgSlots(i);
+    }
     schedulePanelSave();
   }
 
@@ -13522,7 +13637,7 @@ color-scheme:light;
     "w1-162": { ev: "click", run: async (el, e) => { const pairs = [['1', '1 Panel'], ['4', '4 Panels (Standard Page)'], ['6', '6 Panels'], ['12', '12 Panels'], ['24', '24 Panels (Full Storyboard)'], ['custom', 'Custom…']]; const pick = await palChoose('Panels on this page', pairs); if (pick === null) return; if (pick === 'custom') { const n = await palNumber('Custom panel count', document.getElementById('panelCountCustom').value || '4', 1, 24, '1–24'); if (n === null) return; palSet('panelCountCustom', String(n), 'input'); palSet('panelCount', 'custom', 'change'); } else palSet('panelCount', pick, 'change'); } },
     "w1-163": { ev: "click", run: async (el, e) => { const v = await palettePrompt('Page seed', document.getElementById('seedInput').value, 'Leave blank for random'); if (v !== null) palSet('seedInput', v.trim(), 'input'); } },
     "w1-164": { ev: "click", run: async (el, e) => { const pairs = [['512x512', '512 × 512'], ['768x768', '768 × 768 (default)'], ['1024x1024', '1024 × 1024'], ['1920x1080', '1920 × 1080 (16:9)'], ['1080x1920', '1080 × 1920 (9:16)'], ['custom', 'Custom…']]; const pick = await palChoose('Image size', pairs); if (pick === null) return; if (pick === 'custom') { const w = await palNumber('Custom width', document.getElementById('imgSizeW').value || '768', 64, 1920, 'max 1920'); if (w === null) return; const h = await palNumber('Custom height', document.getElementById('imgSizeH').value || '768', 64, 1080, 'max 1080'); if (h === null) return; document.getElementById('imgSizeW').value = String(w); document.getElementById('imgSizeH').value = String(h); palSet('imageSizeSel', 'custom', 'change'); } else palSet('imageSizeSel', pick, 'change'); } },
-    "w1-165": { ev: "click", run: async (el, e) => { const pairs = [['1', '1 — loose'], ['4', '4'], ['7', '7 — balanced (default)'], ['12', '12'], ['20', '20'], ['30', '30 — max']]; const pick = await palChoose('Prompt obedience (guidance)', pairs); if (pick === null) return; document.getElementById('guidanceScaleInput').value = pick; onGuidanceScaleChange(); } },
+    "w1-165": { ev: "click", run: async (el, e) => { const pick = await palGuidance(); if (pick === null) return; document.getElementById('guidanceScaleInput').value = pick; onGuidanceScaleChange(); } },
     "w1-166": { ev: "click", run: async (el, e) => { const pick = await palChoose('Images per panel', [['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']]); if (pick !== null) palSet('bulkImgCountSel', pick, 'change'); } },
     "w1-167": { ev: "click", run: async (el, e) => { const n = await palNumber('Image preview delay (ms)', document.getElementById('previewDelayInput').value, 0, 5000, '350'); if (n === null) return; document.getElementById('previewDelayInput').value = String(n); schedulePanelSave(); } },
     "w1-168": { ev: "click", run: (el, e) => { palToggle('previewEnabledCheck'); } },
@@ -13641,7 +13756,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
