@@ -1,3 +1,9 @@
+## 2026.10.10.1 — 2026-10-10 — Selection-aware Images per panel, dropdown Commands, guidance slider
+- Commands → Edit → Page → Images per panel (and the File → Page Setup selector) is now selection-aware: with nothing selected it sets the default and updates every panel on every page — including panels revealed later with Panel Count and panels added afterwards; with panels selected it updates just those panels while still recording the default for new ones. Already-generated images are kept; only the visible image slots change.
+- Commands option dialogs (art style, color palette, panel count, image size, images per panel, page switching, recent files) now use a dropdown with OK/Cancel instead of a row of buttons. Confirmations for destructive actions are unchanged.
+- Commands → Edit → Page → Guidance now offers the full 1–30 Prompt Obedience slider instead of six fixed stops.
+- Verified live (every-page apply, selection-only apply, Panel Count reveal inherits the default, dropdown OK/Cancel, slider with live value, storage restored byte-for-byte) + suites green (smoke 118/0, gen 19/0, fixtures 18/0, state-diff 38/0, core 79/0, diff-core 24/0, 0 errors). Pushed pre-Save; re-push after Save.
+
 ## 2026.10.05.44 — 2026-10-05 — Menu structure repair (stray tag fix)
 - The .42 move left one stray closing tag that ended the scroll container early and buried the menu tabs under the Edit content. Removed it; all five tab groups are siblings inside the scroller again. Page Setup stays in File, accordions stay unwrapped, pill/popup dismiss controls unchanged.
 - Verified live (all five tabs hit-test clean with Edit open, File shows Project + Page Setup, frame children correct, screenshot) + suites green (smoke 114/0, gen 18/0, fixtures 18/0, state-diff 38/0, core 79/0, diff-core 24/0, byte-identical restores, 0 errors). Pushed pre-Save; re-push after Save.
