@@ -481,6 +481,7 @@ color-scheme:light;
   .storyboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
   .sb-cell { background: var(--surface); border: 2px solid var(--border); border-radius: 8px; padding: 8px; }
   .sb-cell .sb-label { color: var(--accent); font-size: 0.8rem; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sb-cell button.sb-label { background: none; border: none; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; display: block; width: 100%; text-align: left; }
   .sb-cell img { width: 100%; display: block; border-radius: 4px; }
   .sb-cell.sb-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 160px; color: var(--text-9); border-style: dashed; text-align: center; font-size: 0.85rem; }
   .panel-img-box.generating::after { content: "⏳ Rendering…"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--accent); font-weight: bold; animation: pulse 1.2s ease-in-out infinite; }
@@ -1193,7 +1194,7 @@ color-scheme:light;
             <li><b>View / override a panel's prompt</b> — the <code>📝 Prompt</code> chip on any panel opens an inline editor showing that panel's exact prompt, positive and negative, including the preset style keywords. You can view it or edit it right there: once you modify it, the <code>⚡ GENERATE</code> / <code>🔄 Generate</code> buttons for that panel use your edited text instead of the interface-built prompt. The editor text does <b>not</b> feed back into the panel's character/location/action fields. If you then change the panel's characters, location, or action — or the global keywords, presets, or NSFW flag — the editor resets to the values drawn from those presets and the interface, discarding your override. (The override survives page reloads until such an interface change.)</li>
             <li><b>Reproduce a page</b> — set a <b>Seed</b> in <b>📄 File</b> (each page has its own); leave it blank for random results. When a seed is set, Panel N uses seed + N, so the whole page regenerates identically. The seed is saved across reloads along with your panel details. For full control, every panel has its own <code>Seed</code> box in its header: an empty box shows the value it will use in grey (the page seed + panel number − 1, or "random"). Type a number to override the page seed for that panel only; clear it to fall back. When a panel has no seed at all, the first time it generates it picks one and fills it into the box, so re-generating that panel gives you the same image again until you change it. A panel with several images gives each image its own seed (the panel's seed, then +1, +2 …) — tick <code>🎲 Same seed for every image</code> at the foot of a panel's <b>⚙ Panel</b> menu to render every image of that panel with the panel's seed instead.</li>
             <li><b>Back up your project</b> — give it a name in <b>📄 File → Project</b> (it shows at the top of the page and becomes the default filename). <b>📄 File → Project → Backup Project</b> saves everything (project name, page setup, keywords, NSFW flag, all pages' panel details, saved characters/locations, layout) as a <code>.json</code> file. <code>💾 Save…</code> never asks: it silently overwrites the file you chose with <code>Save as…</code> (remembered even after a reload), or downloads to the default name if you haven't chosen one yet; <code>💾 Save as…</code> always asks for a path and filename and confirms before overwriting an existing file. Where the browser supports it you can choose any folder on your device; otherwise the file is simply downloaded. <code>⬆ Import Project</code> restores a saved file later — even on another device: a <code>.json</code> restores the settings, and a project <code>.zip</code> restores the settings <i>and</i> repopulates every generated panel image (all pages) back into the page. Importing replaces the current project entirely (including image protection), so if you have a project in progress it asks first whether to save it: <b>Save</b> backs the current project up and then imports, <b>Continue</b> imports without saving, <b>Cancel</b> aborts. All menu settings also survive page refreshes automatically. Every panel also has an <code>⬇ Export</code> chip — it downloads the <i>same single JSON file</i> containing all panels' settings, so exporting from any panel backs up the whole project. To back up your generated images too, use <b>📄 File → Export Project (.zip)</b>: it bundles the settings JSON plus every generated panel image (all pages) into one <code>.zip</code>. Images only live in the page until you reload, so export them before then.</li>
-            <li><b>View modes</b> — <b>▦ Storyboard</b> (top of the page) temporarily hides the whole UI and shows every panel's representative image as a comic-page grid — panels with no image yet get a placeholder. The <code>🔍 Focus</code> chip on a panel opens <b>single-panel view</b>: the full page is hidden and just that panel fills the screen, so you can edit it without scrolling. Navigate with the <code>◀ Prev</code> / <code>Next ▶</code> buttons, the panel dropdown, the panel list on the left (landscape only), or the <code>↑</code>/<code>↓</code> arrow keys; <code>Esc</code> or <code>← Back to page</code> returns you. Both views reflect the current number of panels and their titles.</li>
+            <li><b>View modes</b> — <b>▦ Storyboard</b> (top of the page) temporarily hides the whole UI and shows every panel's representative image as a comic-page grid — panels with no image yet get a placeholder. The <code>🔍 Focus</code> chip on a panel opens <b>single-panel view</b>: the full page is hidden and just that panel fills the screen, so you can edit it without scrolling. Navigate with the <code>◀ Prev</code> / <code>Next ▶</code> buttons, the panel dropdown, the panel list on the left (landscape only), or the <code>↑</code>/<code>↓</code> arrow keys; <code>Esc</code> or <code>← Back to page</code> returns you. Both views reflect the current number of panels and their titles. In Storyboard, each panel's <code>Panel N — name</code> label is a link that opens that panel in Focus; in Focus, the <code>▦ Storyboard</code> button next to <code>← Back to page</code> opens the current page's storyboard (ending the focus session).</li>
             <li><b>NSFW</b> — leave unchecked to force SFW output; check it (in <b>🎨 Edit</b>) to let the model follow your prompts without filters.</li>
           </ol>
           <p style="margin-bottom:0;color:var(--text-6);">Tip: generated images live only in this page until you reload — if you want to keep one, screenshot it.</p>
@@ -1234,6 +1235,7 @@ color-scheme:light;
 <div id="singleOverlay" class="view-overlay" hidden>
   <div class="view-top">
     <button class="btn-view" data-action="w1-82" title="Return to the full page">← Back to page</button>
+    <button class="btn-view" data-action="w1-187" title="Open this page in the storyboard grid">▦ Storyboard</button>
     <div class="single-nav">
       <button class="btn-clear" data-action="w1-83" title="Previous panel">◀ Prev</button>
       <select id="singlePanelSel" data-action="w1-84"></select>
@@ -1491,8 +1493,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.10.1 — 2026-10-10 — Selection-aware Images per panel, dropdown Commands, guidance slider
-- With no panels selected, Images per panel sets the default and updates every panel on every page; with a selection it updates just those panels (and still records the default). All Commands option dialogs use dropdowns; Guidance uses the full 1–30 slider.
+## 2026.10.11.1 — 2026-10-11 — Storyboard panel links, Focus storyboard button
+- In Storyboard, each panel's Panel N — name label is a link that opens that panel in the Focus view. In Focus, a ▦ Storyboard button next to ← Back to page opens the current page's storyboard (ending the focus session).
 </script>
 
 
@@ -10424,9 +10426,11 @@ color-scheme:light;
       cell.className = 'sb-cell' + (dataUrl ? '' : ' sb-empty');
       const titleEl = document.getElementById('panel-title-' + p);
       const title = titleEl && titleEl.value.trim() ? titleEl.value.trim() : '';
-      const label = document.createElement('div');
+      const label = document.createElement('button');
       label.className = 'sb-label';
       label.textContent = 'Panel ' + p + (title ? ' — ' + title : '');
+      label.title = 'Open this panel in the Focus view';
+      label.onclick = () => { closeStoryboard(); openSingleView(p); };
       cell.appendChild(label);
       if (dataUrl) {
         const img = document.createElement('img');
@@ -13555,6 +13559,7 @@ color-scheme:light;
     "w1-80": { ev: "change", run: (el, e) => { libraryImportFiles(e) } },
     "w1-81": { ev: "click", run: (el, e) => { openUserManual() } },
     "w1-82": { ev: "click", run: (el, e) => { closeSingleView() } },
+    "w1-187": { ev: "click", run: (el, e) => { closeSingleView(); openStoryboard(); } },
     "w1-83": { ev: "click", run: (el, e) => { singleNav(-1) } },
     "w1-84": { ev: "change", run: (el, e) => { singleNavTo(el.value) } },
     "w1-85": { ev: "click", run: (el, e) => { singleNav(1) } },
