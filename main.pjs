@@ -1,4 +1,5 @@
 title = Yet Another Comic Book Page Generator
+description = Yet Another Comic Book Page Generator - Comic book page generator with character and location library, persistent descriptions, and more.
 generateImage = {import:text-to-image-plugin}
 
 characters
