@@ -18,12 +18,12 @@ const plans = [
   { name: "phone-light", size: [390, 844], theme: "light", subjects: ["grid", "dialog"] },
 ];
 const subjects = {
-  grid: "closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); const ab = document.querySelector('.menu-btn.active'); if (ab && ab.dataset.menu) switchMenu(ab.dataset.menu); window.scrollTo(0,0);",
-  json: "closeSingleView(); closeStoryboard(); closeAnalysis(); openJsonEditor();",
-  analysis: "closeSingleView(); closeStoryboard(); closeJsonEditor(); openAnalysis();",
-  dialog: "closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); clearPanelSelection(); for (const i of [1,2,3]) { const cb = document.getElementById('panel-select-' + i); if (cb) { cb.checked = true; cb.dispatchEvent(new Event('click', { bubbles: true })); } } batchDeletePanels();",
-  storyboard: "closeSingleView(); closeAnalysis(); closeJsonEditor(); openStoryboard();",
-  focus: "closeStoryboard(); closeAnalysis(); closeJsonEditor(); openSingleView(1);",
+  grid: "__dbg.closeSingleView(); __dbg.closeStoryboard(); __dbg.closeAnalysis(); __dbg.closeJsonEditor(); __dbg.ghClose(); const ab = document.querySelector('.menu-btn.active'); if (ab && ab.dataset.menu) __dbg.switchMenu(ab.dataset.menu); window.scrollTo(0,0);",
+  json: "__dbg.closeSingleView(); __dbg.closeStoryboard(); __dbg.closeAnalysis(); __dbg.openJsonEditor();",
+  analysis: "__dbg.closeSingleView(); __dbg.closeStoryboard(); __dbg.closeJsonEditor(); __dbg.openAnalysis();",
+  dialog: "__dbg.closeSingleView(); __dbg.closeStoryboard(); __dbg.closeAnalysis(); __dbg.closeJsonEditor(); __dbg.ghClose(); __dbg.clearPanelSelection(); for (const i of [1,2,3]) { const cb = document.getElementById('panel-select-' + i); if (cb) { cb.checked = true; cb.dispatchEvent(new Event('click', { bubbles: true })); } } __dbg.batchDeletePanels();",
+  storyboard: "__dbg.closeSingleView(); __dbg.closeAnalysis(); __dbg.closeJsonEditor(); __dbg.openStoryboard();",
+  focus: "__dbg.closeStoryboard(); __dbg.closeAnalysis(); __dbg.closeJsonEditor(); __dbg.openSingleView(1);",
 };
 const dumpParked = "const m={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k!=='__test_backup_v10')m[k]=localStorage.getItem(k);}return m;";
 await tools.page_eval({ js: parkBody + "\nreturn window.__park.park();" });
@@ -33,8 +33,8 @@ await fs.writeTextFile("scratch/p0/last-park.json", JSON.stringify(parkedMap, nu
 report.parkedHash = fnvOf(parkedMap);
 
 const prelude = 'const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const $ = (id) => document.getElementById(id);\n' +
-  'if ($("choiceOverlay") && !$("choiceOverlay").hidden) choiceDialogPick(null);\n' +
-  'if (typeof clearPanelSelection === "function") clearPanelSelection();\n' +
+  'if ($("choiceOverlay") && !$("choiceOverlay").hidden) __dbg.choiceDialogPick(null);\n' +
+  '__dbg.clearPanelSelection();\n' +
   'await sleep(150);\n';
 const setupJs = prelude +
   'const fx = ' + JSON.stringify(fixtureText) + ';\n' +
@@ -44,11 +44,11 @@ const setupJs = prelude +
   'await sleep(900);\n' +
   'const ov = $("importConfirmOverlay"); if (ov && !ov.hidden) { const b = [...ov.querySelectorAll("button")].find((x) => /continue/i.test(x.textContent)); if (b) b.click(); }\n' +
   'await sleep(1600);\n' +
-  'switchPage(1); await sleep(400);\n' +
-  'const sel = $("panelCount"); sel.value = "6"; sel.dispatchEvent(new Event("change")); updatePanelVisibility();\n' +
+  '__dbg.switchPage(1); await sleep(400);\n' +
+  'const sel = $("panelCount"); sel.value = "6"; sel.dispatchEvent(new Event("change")); __dbg.updatePanelVisibility();\n' +
   'const gs = $("imageSizeSel"); gs.value = "768x768"; gs.dispatchEvent(new Event("change"));\n' +
   'await sleep(500);\n' +
-  'closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose();\n' +
+  '__dbg.closeSingleView(); __dbg.closeStoryboard(); __dbg.closeAnalysis(); __dbg.closeJsonEditor(); __dbg.ghClose();\n' +
   'return { name: $("projectNameInput").value, shown: [...document.querySelectorAll(\'[id^="panel-card-"]\')].filter((el) => el.style.display !== "none").length };';
 report.setup = (await tools.page_eval({ js: setupJs })).result;
 
@@ -74,7 +74,7 @@ for (const plan of plans) {
   }
 }
 
-try { await tools.page_eval({ js: 'window.confirm = () => true; if (document.getElementById("choiceOverlay") && !document.getElementById("choiceOverlay").hidden) choiceDialogPick(null); clearPanelSelection(); closeSingleView(); closeStoryboard(); closeAnalysis(); closeJsonEditor(); ghClose(); return "closed";' }); } catch (e) {}
+try { await tools.page_eval({ js: 'window.confirm = () => true; if (document.getElementById("choiceOverlay") && !document.getElementById("choiceOverlay").hidden) __dbg.choiceDialogPick(null); __dbg.clearPanelSelection(); __dbg.closeSingleView(); __dbg.closeStoryboard(); __dbg.closeAnalysis(); __dbg.closeJsonEditor(); __dbg.ghClose(); return "closed";' }); } catch (e) {}
 await tools.set_viewport_size({ reset: true }).catch(() => {});
 
 let restored = false;
