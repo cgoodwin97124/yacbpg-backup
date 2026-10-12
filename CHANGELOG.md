@@ -1,3 +1,11 @@
+## 2026.10.12.2 — 2026-10-12 — Bottom-bar stacking + menus/previews above status layers
+- The selection bar now lifts above the page navigator when both are visible (multi-page + active selection); the navigator stays at the bottom. A new stackBottomCluster() measures the bottom-center cluster (navigator, selection bar, run status, notify toasts, run panel) and lifts only what would overlap, on show/hide/resize; single-bar and single-page layouts are byte-untouched.
+- Menus (top/side/fixed header) and hover image previews now paint above the run panel, run status and notify toasts; fullscreen viewing/modal overlays moved above the menus so modals still cover everything (selection bar, command palette and context menu keep their top spots; the fullscreen-menu takeover keeps its prior static layer).
+- Verified live (bar lifts to bottom:72px with zero cluster overlaps, single-bar untouched, menus/previews above status in both menu modes, screenshots) + suites: core 79/0, diff-core 24/0, smoke 114/0, fixtures 18/0, state-diff 38/0, byte-identical author restore (hash 1c6b3740). gen.page.js 12/6: the 6 image-DOM failures reproduce identically on the pre-change .12.1 build (A/B proven pre-existing, unrelated to this change).
+
+## 2026.10.12.1 — 2026-10-12 — Panel Library character reorder arrows
+- Each character row in a panel's Panel Library has up/down arrow chips that move the character, with all of its contents, swapping places with the neighbour above or below.
+
 ## 2026.10.11.1 — 2026-10-11 — Storyboard panel links, Focus storyboard button
 - In Storyboard, each panel's Panel N — name label is now an underlined link that opens that panel in the Focus view (Storyboard closes; Back from Focus returns to the full page).
 - In Focus, a ▦ Storyboard button sits next to ← Back to page and opens the current page's storyboard (ending the focus session).
