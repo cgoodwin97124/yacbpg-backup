@@ -162,7 +162,7 @@ color-scheme:light;
   #panelsToggleBtn:hover { background: var(--hover); }
   #addPageFab { position: fixed; right: 16px; bottom: 16px; z-index: 1000; background: var(--bg); color: var(--green-text); border: 2px solid var(--green); border-radius: 6px; padding: 10px 14px; cursor: pointer; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
   #addPageFab:hover { background: var(--hover); }
-  #uiPreviewFab { position: fixed; top: 12px; right: 12px; z-index: 10006; background: var(--bg); color: var(--purple, #c9a6ff); border: 2px solid var(--purple, #8e6cc9); border-radius: 6px; padding: 10px 14px; cursor: pointer; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+  #uiPreviewFab { position: fixed; top: 12px; right: 12px; z-index: 10013; background: var(--bg); color: var(--purple, #c9a6ff); border: 2px solid var(--purple, #8e6cc9); border-radius: 6px; padding: 10px 14px; cursor: pointer; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
   #uiPreviewFab:hover { background: var(--hover); }
   #advSwitchWrap { display: none; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; }
   body.ui-new #advSwitchWrap { display: inline-flex; }
@@ -256,10 +256,10 @@ color-scheme:light;
   .panel-gap-btn { flex: 1 1 auto; border: 1px dashed var(--border-2); background: transparent; color: var(--text-8); border-radius: 6px; padding: 3px 10px; font-size: 0.75rem; line-height: 1.4; }
   .panel-gap.cursor-on .panel-gap-btn { border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: bold; }
   .page-layout { display: flex; flex-direction: column; gap: 24px; align-items: stretch; }
-  .menu-frame { width: 100%; position: sticky; top: var(--hdr-h, 60px); z-index: 5; background: var(--bg); max-height: 45vh; max-height: 45dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .menu-frame { width: 100%; position: sticky; top: var(--hdr-h, 60px); z-index: 10008; background: var(--bg); max-height: 45vh; max-height: 45dvh; display: flex; flex-direction: column; overflow: hidden; }
   @media (orientation: landscape) {
     body.side-mode .page-layout { flex-direction: row; align-items: stretch; }
-    body.side-mode .menu-frame { flex: 0 0 clamp(260px, 30vw, 340px); min-width: 0; width: auto; background: transparent; position: sticky; top: calc(var(--hdr-h, 60px) + 10px); max-height: calc(100vh - 112px); z-index: auto; }
+    body.side-mode .menu-frame { flex: 0 0 clamp(260px, 30vw, 340px); min-width: 0; width: auto; background: transparent; position: sticky; top: calc(var(--hdr-h, 60px) + 10px); max-height: calc(100vh - 112px); z-index: 10008; }
   }
   @media (orientation: portrait) {
     .layout-toggle { display: none; }
@@ -402,7 +402,7 @@ color-scheme:light;
   .gp-entry .gp-copy, .gp-entry .gp-gen { font-size: 0.72rem; padding: 4px 8px; }
   .panel-img-box { background: var(--well); position: relative; width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
   .panel-img-box img { width: 100%; height: 100%; object-fit: cover; }
-  .img-preview { position: fixed; z-index: 10002; pointer-events: none; background: rgba(10,10,10,0.94); border: 2px solid var(--accent); border-radius: 8px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none; }
+  .img-preview { position: fixed; z-index: 10010; pointer-events: none; background: rgba(10,10,10,0.94); border: 2px solid var(--accent); border-radius: 8px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none; }
   .img-preview:not([hidden]) { display: flex; flex-direction: column; align-items: center; gap: 5px; }
   .img-preview img { display: block; max-width: min(85vw, 1100px); max-height: min(80vh, 900px); object-fit: contain; border-radius: 4px; }
   .img-preview--thumb img { max-width: min(85vw, 420px); max-height: min(70vh, 420px); }
@@ -410,14 +410,14 @@ color-scheme:light;
   .img-preview--center { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; }
   .storyboard-toggle { flex: 0 0 auto; background: var(--surface); color: var(--green-text); border: 2px solid var(--green); border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: bold; font-size: 0.82rem; white-space: nowrap; transition: 0.15s; }
   .storyboard-toggle:hover { background: var(--hover); }
-  .view-overlay { position: fixed; inset: 0; z-index: 10000; background: var(--bg); padding: 16px; overflow: auto; display: none; }
+  .view-overlay { position: fixed; inset: 0; z-index: 10012; background: var(--bg); padding: 16px; overflow: auto; display: none; }
   .view-overlay:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
-  .manual-overlay { position: fixed; inset: 0; z-index: 10001; background: var(--well); padding: 16px; display: none; }
+  .manual-overlay { position: fixed; inset: 0; z-index: 10012; background: var(--well); padding: 16px; display: none; }
   .manual-overlay:not([hidden]) { display: flex; flex-direction: column; gap: 10px; }
   .manual-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .manual-bar .manual-title { color: var(--accent); font-weight: bold; font-size: 1rem; flex: 1; }
   #manualFrame { flex: 1; width: 100%; border: 1px solid var(--border-3); border-radius: 6px; background: var(--surface); }
-  .password-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; overflow: auto; z-index: 10001; }
+  .password-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; overflow: auto; z-index: 10012; }
   .password-box { background: var(--surface-4); border: 1px solid var(--border); border-radius: 10px; padding: 20px; max-width: 380px; width: 90%; margin: auto; max-height: 100%; overflow: auto; box-sizing: border-box; }
   .password-box h3 { margin: 0 0 8px; color: var(--accent); }
   .pw-row { display: flex; gap: 6px; margin: 4px 0 10px; }
@@ -741,7 +741,7 @@ color-scheme:light;
   body.menu-fullscreen .menu-frame { position: static; width: 100%; max-height: none; flex: 1 1 auto; min-height: 0; background: transparent; z-index: auto; }
   body.menu-fullscreen .menu-bar { flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
   body.menu-fullscreen .menu-btn { flex: 1 1 auto; width: auto; }
-  body.menu-fullscreen .app-header, body.hdr-all-views .app-header { position: fixed; top: 0; left: 0; right: 0; margin: 0; padding: 8px 20px; z-index: 10005; background: var(--bg); border-bottom: 1px solid var(--accent); box-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+  body.menu-fullscreen .app-header, body.hdr-all-views .app-header { position: fixed; top: 0; left: 0; right: 0; margin: 0; padding: 8px 20px; z-index: 10008; background: var(--bg); border-bottom: 1px solid var(--accent); box-shadow: 0 2px 12px rgba(0,0,0,0.5); }
   body.menu-fullscreen .view-overlay, body.hdr-all-views .view-overlay, body.hdr-all-views .manual-overlay { padding-top: calc(var(--hdr-h, 60px) + 14px); }
   #jsonEditorOverlay { text-align: left; }
   #jsonEditorOverlay .view-top { align-items: flex-start; }
@@ -1452,7 +1452,7 @@ color-scheme:light;
     </div>
   </div>
 </div>
-<div id="ghBackupOverlay" class="password-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:10001;" hidden>
+<div id="ghBackupOverlay" class="password-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:10012;" hidden>
   <div class="password-box" style="max-width:460px;">
     <h3>⬆ Backup to GitHub</h3>
     <p class="lib-hint" style="margin:0 0 10px;">Pushes this generator's source — <b>main.pjs</b>, <b>index.html</b> (the live page) and <b>src/manual.html</b> — to a GitHub repo as version history. Works with a <b>public or private</b> repo (a fine-grained Personal Access Token with <b>Contents: read &amp; write</b>, scoped to that repo, is required). The changelog, PENDING / AI-NOTES / ISSUES and the dev-notes live in the repo and are kept up to date there. Backs up the <i>last-saved</i> generator — press Save first if you just made changes.</p>
@@ -1472,7 +1472,7 @@ color-scheme:light;
     <p class="ic-hint" style="margin:10px 0 0;">⬆ Backups are run by the AI assistant — just say "back it up to GitHub" in the chat and I'll push using the saved token. No push button ships with the generator, so visitors can't trigger commits.</p>
   </div>
 </div>
-<div id="cmdConsoleOverlay" class="password-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:10001;overflow:auto;padding:12px;box-sizing:border-box;" hidden>
+<div id="cmdConsoleOverlay" class="password-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:10012;overflow:auto;padding:12px;box-sizing:border-box;" hidden>
   <div class="password-box" style="max-width:760px;width:100%;">
     <h3>⌨ Command console <span style="font-weight:normal;font-size:0.8rem;">(dev tool — no menu entry; reopen with <code>__openCommandConsole()</code>)</span></h3>
     <p class="lib-hint" style="margin:0 0 10px;">Runs one named state command against the live project. Every mutating run snapshots <b>↩ Undo</b> first and stops running generations; images travel with their panel ids. A refused command changes nothing.</p>
@@ -1497,8 +1497,9 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.12.1 — 2026-10-12 — Panel Library character reorder arrows
-- Each character row in a panel's Panel Library has ↑/↓ chips (beside ⇤/✕) that swap the character — select, Basic and Panel Specific descriptions — with the neighbour above or below.
+## 2026.10.12.2 — 2026-10-12 — Bottom-bar stacking + menus/previews above status layers
+- The selection bar now lifts above the page navigator when both are visible (multi-page + active selection); navigator stays at the bottom. The bottom-center cluster (navigator, selection bar, run status, notify toasts, run panel) stacks itself with measured rects so nothing overlaps, and settles back when items hide. Single-page layout is untouched.
+- Menus and image previews now paint above the run panel, run status and notify toasts; fullscreen overlays stay on top of everything except the selection bar and command/context menus.
 </script>
 
 
@@ -5167,7 +5168,7 @@ color-scheme:light;
     if (!nav) return;
     const pages = ensurePages(readPanelState());
     const keys = Object.keys(pages).map(Number).filter(k => !isNaN(k)).sort((a, b) => a - b);
-    if (keys.length <= 1) { nav.hidden = true; return; }
+    if (keys.length <= 1) { nav.hidden = true; stackBottomCluster(); return; }
     nav.hidden = false;
     const pagesEl = document.getElementById('pageNavPages');
     if (!pagesEl) return;
@@ -5180,6 +5181,7 @@ color-scheme:light;
       b.onclick = () => switchPage(k);
       pagesEl.appendChild(b);
     }
+    stackBottomCluster();
   }
 
   function pageNavDelta(delta) {
@@ -6642,7 +6644,7 @@ color-scheme:light;
     if (bar) bar.hidden = n === 0;
     const cnt = document.getElementById('selectionBarCount');
     if (cnt) cnt.textContent = n + (n === 1 ? ' panel selected' : ' panels selected');
-    positionAddPageFab();
+    stackBottomCluster();
   }
 
   function panelBatchMode(i) { return panelSelection.size > 0 && panelSelection.has(i); }
@@ -6731,6 +6733,31 @@ color-scheme:light;
     syncPasteBtn();
   }
 
+  function stackBottomCluster() {
+    try {
+      const vh = window.innerHeight || 800;
+      const nav = document.getElementById('pageNav');
+      const bar = document.getElementById('selectionBar');
+      const slot = document.getElementById('runSlot');
+      const stack = document.getElementById('toastStack');
+      const panel = document.getElementById('runPanel');
+      for (const el of [bar, slot, stack, panel]) if (el) el.style.bottom = '';
+      const live = (el) => !!el && !el.hidden && el.offsetHeight > 0;
+      let cursor = live(nav) ? nav.getBoundingClientRect().top : null;
+      const place = (el) => {
+        const r = el.getBoundingClientRect();
+        if (cursor !== null && r.bottom > cursor + 1) {
+          el.style.bottom = Math.max(0, Math.round(vh - cursor + 12)) + 'px';
+          cursor = el.getBoundingClientRect().top;
+        } else if (cursor === null || r.top < cursor) cursor = r.top;
+      };
+      if (live(bar)) place(bar);
+      if (live(slot)) place(slot);
+      if (!!stack && stack.children.length && stack.offsetHeight > 0) place(stack);
+      if (live(panel)) place(panel);
+    } catch (e) {}
+    positionAddPageFab();
+  }
   function positionAddPageFab() {
     const fab = document.getElementById('addPageFab');
     if (!fab) return;
@@ -7634,19 +7661,20 @@ color-scheme:light;
     x.className = 'toast-x';
     x.textContent = '✕';
     x.title = 'Dismiss';
-    x.onclick = (e) => { e.stopPropagation(); d.remove(); };
+    x.onclick = (e) => { e.stopPropagation(); d.remove(); stackBottomCluster(); };
     d.appendChild(s);
     d.appendChild(x);
-    d.onclick = () => d.remove();
+    d.onclick = () => { d.remove(); stackBottomCluster(); };
     stack.prepend(d);
     while (stack.children.length > 4) stack.lastChild.remove();
-    setTimeout(() => { if (d.isConnected) d.remove(); }, 5000);
+    setTimeout(() => { if (d.isConnected) d.remove(); stackBottomCluster(); }, 5000);
+    stackBottomCluster();
   }
   function setRunSlot(text) {
     const el = document.getElementById('runSlot');
     if (!el) return;
     el.textContent = '';
-    if (!text) { el.hidden = true; return; }
+    if (!text) { el.hidden = true; stackBottomCluster(); return; }
     el.hidden = false;
     const s = document.createElement('span');
     s.textContent = text;
@@ -7654,9 +7682,10 @@ color-scheme:light;
     x.className = 'run-slot-x';
     x.textContent = '✕';
     x.title = 'Hide this status (it comes back on the next update)';
-    x.onclick = (e) => { e.stopPropagation(); el.hidden = true; };
+    x.onclick = (e) => { e.stopPropagation(); el.hidden = true; stackBottomCluster(); };
     el.appendChild(s);
     el.appendChild(x);
+    stackBottomCluster();
   }
   function clearRunSlot() { setRunSlot(''); }
   let runPanelActive = false;
@@ -7712,6 +7741,7 @@ color-scheme:light;
     runPanelMode = 'queue';
     runPanelSyncBtns();
     runPanelEl('runPanel').hidden = false;
+    stackBottomCluster();
   }
   function runPanelSyncBtns() {
     const q = runPanelActive && runPanelMode === 'queue';
@@ -7754,6 +7784,7 @@ color-scheme:light;
     const p = runPanelEl('runPanel');
     if (p) p.hidden = true;
     runPanelActive = false;
+    stackBottomCluster();
   }
   function runPanelTargetText(run, totalPanels) {
     if (run.isList) return 'panels ' + run.seq.join(', ');
@@ -12241,6 +12272,7 @@ color-scheme:light;
     window.addEventListener('resize', syncHdrHeight);
     window.addEventListener('resize', syncSideMenuHeight);
     window.addEventListener('resize', positionAddPageFab);
+    window.addEventListener('resize', stackBottomCluster);
     window.addEventListener('orientationchange', positionAddPageFab);
     positionAddPageFab();
     window.addEventListener('load', syncSideMenuHeight);
@@ -13805,7 +13837,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
