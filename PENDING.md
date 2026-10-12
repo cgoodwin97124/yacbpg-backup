@@ -1,3 +1,7 @@
+### 2026-10-12 — Round-robin Generate All order option — START NOW (recon authorized, questions pending, awaiting go-ahead before build)
+- **Request (author, verbatim):** "I'd like an option, configurable in Edit -> Preferences or Commands -> Preferences, that allows Generate All to, instead of generating all of the images in a panel before moving to the next panel, generating all panels' image 1, then all panels' image 2, and so on. If any panel doesn't have as many images, it skips those panels."
+- Status: START NOW — logged 2026-10-12. Recon + questions next; no build until author answers.
+
 ### 2026-10-12 — Copy/Paste/Clear toast overlaps page selector — DONE 2026.10.12.2
 - DONE 2026.10.12.2 — stackBottomCluster() + hooks (selection render, pageNav, notify incl. dismiss/timeout, runSlot incl. X, runPanel open/hide, resize) + z-order (menus 10008 top/side/fixed-header, img-preview 10010, overlays 10012, uiPreviewFab 10013). Verified per above. Author storage intact (29 keys, hash 1c6b3740, key-by-key verified after one suite-timeout restore wobble caused by leftover in-page suite code re-importing post-restore — recovered from the workspace park copy, 0 diffs). Saved + re-pushed 18 files (repo index.html = .12.2 stamp + stacker + z-order, verified via raw).
 
