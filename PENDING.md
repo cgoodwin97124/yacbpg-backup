@@ -1,4 +1,6 @@
-### 2026-10-12 — Copy/Paste/Clear toast overlaps page selector — START NOW
+### 2026-10-12 — Copy/Paste/Clear toast overlaps page selector — DONE 2026.10.12.2
+- DONE 2026.10.12.2 — stackBottomCluster() + hooks (selection render, pageNav, notify incl. dismiss/timeout, runSlot incl. X, runPanel open/hide, resize) + z-order (menus 10008 top/side/fixed-header, img-preview 10010, overlays 10012, uiPreviewFab 10013). Verified per above. Author storage intact (29 keys, hash 1c6b3740, key-by-key verified after one suite-timeout restore wobble caused by leftover in-page suite code re-importing post-restore — recovered from the workspace park copy, 0 diffs). Pushed pre-Save; re-push after Save.
+
 - Answers (author 2026-10-12): (1) lift the SELECTION BAR above the navigator (navigator stays at bottom); (2) scope confirmed: only when both visible, single-page untouched; (3) seen on desktop only, phone unchecked — fix covers both; (4) only this one for the bottom row, PLUS new scope: run-panel + runSlot + notify toasts overlap image previews and menus (2 screenshots) — fix: menus and image previews move ABOVE those status layers (closer to viewer). Single release.
  (recon authorized, questions pending, awaiting go-ahead before build)
 - **Request (author, verbatim):** "In a multiple page project, when I've copied a panel, the Copy / Paste / Clear toast overlaps the page selector at the bottom."
