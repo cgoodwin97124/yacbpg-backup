@@ -1,4 +1,6 @@
-### 2026-10-12 — Copy/Paste/Clear toast overlaps page selector — START NOW (recon authorized, questions pending, awaiting go-ahead before build)
+### 2026-10-12 — Copy/Paste/Clear toast overlaps page selector — START NOW
+- Answers (author 2026-10-12): (1) lift the SELECTION BAR above the navigator (navigator stays at bottom); (2) scope confirmed: only when both visible, single-page untouched; (3) seen on desktop only, phone unchecked — fix covers both; (4) only this one for the bottom row, PLUS new scope: run-panel + runSlot + notify toasts overlap image previews and menus (2 screenshots) — fix: menus and image previews move ABOVE those status layers (closer to viewer). Single release.
+ (recon authorized, questions pending, awaiting go-ahead before build)
 - **Request (author, verbatim):** "In a multiple page project, when I've copied a panel, the Copy / Paste / Clear toast overlaps the page selector at the bottom."
 - Status: START NOW — logged 2026-10-12. Recon + questions next; no build until author answers.
 
