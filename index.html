@@ -621,6 +621,8 @@ color-scheme:light;
   .btn-copy-prev:hover { background: var(--blue-4); }
   .btn-copy-prev:disabled { background: var(--hover-3); color: var(--text-10); cursor: default; }
   .btn-line-del { background: var(--red); color: var(--on-danger); border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 22px; height: 22px; line-height: 1; flex: 0 0 auto; padding: 0; }
+  .btn-char-move { background: var(--blue-3); color: var(--text); border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 22px; height: 22px; line-height: 1; flex: 0 0 auto; padding: 0; }
+  .btn-char-move:hover { background: var(--blue-4); }
   .btn-line-del:hover { background: var(--red-2); }
   .panel-imgs-sel .btn-copy-prev:not(:disabled), .panel-imgs-sel .btn-line-del { color: #fff; }
   .btn-reorder:not(.active) { color: var(--text); }
@@ -807,7 +809,8 @@ color-scheme:light;
 :root[data-theme="light"] .btn-danger,
 :root[data-theme="light"] .btn-copy,
 :root[data-theme="light"] .btn-copy-prompt,
-:root[data-theme="light"] .btn-copy-prev:not(:disabled) { color: #fff; }
+:root[data-theme="light"] .btn-copy-prev:not(:disabled),
+:root[data-theme="light"] .btn-char-move { color: #fff; }
 :root[data-theme="light"] .btn-reorder:not(.active) { color: var(--text); }
 @media (prefers-color-scheme: light) {
 :root:not([data-theme]) .btn-line-del,
@@ -819,7 +822,8 @@ color-scheme:light;
 :root:not([data-theme]) .btn-danger,
 :root:not([data-theme]) .btn-copy,
 :root:not([data-theme]) .btn-copy-prompt,
-:root:not([data-theme]) .btn-copy-prev:not(:disabled) { color: #fff; }
+:root:not([data-theme]) .btn-copy-prev:not(:disabled),
+:root:not([data-theme]) .btn-char-move { color: #fff; }
 :root:not([data-theme]) .btn-reorder:not(.active) { color: var(--text); }
 }
 </style>
@@ -1184,7 +1188,7 @@ color-scheme:light;
             <li><b>Pick your page size</b> — open <b>📄 File</b> and choose how many panels you want (1, 4, 6, 12, or 24). Each menu section's panels start collapsed — click a panel's header (e.g. "Page Setup") to expand its options.</li>
             <li><b>Work across pages</b> — open <b>📄 File → Page Setup → Page:</b> to add, name, switch, and delete pages. Each page has its own number of panels, its own seed, and its own panels; the app-wide settings (image size, art style, NSFW flag) are shared. Generating and both view modes always act on the current page, and images are remembered per page in memory until you reload.</li>
             <li><b>Set the art style</b> — open <b>🎨 Edit</b> for art style &amp; palette presets, hand-edit the global positive/negative keywords, or view and copy the full list in the <b>Keyword List</b>. To control how literally the AI follows your words, use the <b>Prompt Obedience</b> slider in <b>📄 File → Page Setup</b> (1–30; 7 is the balanced default). Low values are loose and free, high values are very faithful but with diminishing returns — past ~15 colors oversaturate and halo / text artifacts appear.</li>
-            <li><b>Fill in each panel</b> — for every panel, choose up to 3 characters, a location, and an optional action like "kicking the door down". The <code>modifier</code> boxes let you tweak a character's look or mood per panel. Use the <b>Images</b> selector in each panel's header to render 1–4 images from the same prompt (variations of the same scene), <b>📄 File → Images per Panel</b> sets the default that new and blank panels start at — it is saved with the project, so it is still set the next time you open the app — and its <b>Apply to all</b> button sets every panel at once. A panel renders as long as it has <i>any</i> content — a character, location, or action. Completely empty panels (no prompt beyond the presets) are skipped automatically. The character dropdowns list your saved library characters first, with the "No Character Selected" option at the bottom.</li>
+            <li><b>Fill in each panel</b> — for every panel, choose up to 3 characters, a location, and an optional action like "kicking the door down". The <code>modifier</code> boxes let you tweak a character's look or mood per panel. Use the <b>Images</b> selector in each panel's header to render 1–4 images from the same prompt (variations of the same scene), <b>📄 File → Images per Panel</b> sets the default that new and blank panels start at — it is saved with the project, so it is still set the next time you open the app — and its <b>Apply to all</b> button sets every panel at once. A panel renders as long as it has <i>any</i> content — a character, location, or action. Completely empty panels (no prompt beyond the presets) are skipped automatically. The character dropdowns list your saved library characters first, with the "No Character Selected" option at the bottom. To reorder a panel's characters, use the <code>↑</code>/<code>↓</code> chips beside <code>⇤</code>/<code>✕</code> in each character row — a character trades places (with all of its descriptions) with its neighbour above or below.</li>
             <li><b>Title and reorder your panels</b> — each panel's title bar has a <b>title box</b> (right of "Panel N", display-only — it isn't added to the prompt). The <code>⇅ Move</code> chip opens a 1-to-N picker: choose a position to move that panel there, shifting the panels in between (e.g. moving panel 5 to position 2 makes it Panel 2, and the old 2–4 each move up one). Everything about a panel — title, characters, modifiers, location, action, panel seed, image count, and prompt override — moves with it, and the arrangement survives reloads and is included in your settings backup/import.</li>
             <li><b>Use saved descriptions</b> — add reusable character or location descriptions in <b>📚 Library</b>. It shows <b>📁 This project</b> (the characters and locations this project owns — saved inside the project and used by its panel dropdowns) and <b>🗂 My catalogue</b> (the reusable set saved in this browser and shared by every project). Copy a catalogue item into this project with <b>⤓</b>; offer one back to the catalogue with <b>⤒</b> to reuse it elsewhere. Tick the checkbox on any row to select it — shift-click a checkbox to select a whole range, or use <b>☑ Select all</b> under a section heading — and the <b>⤒</b>, <b>⤓</b> and <b>🗑</b> buttons on a selected row then act on every selected item at once. A panel uses a saved character only when you explicitly select it in a character slot; it never draws one in automatically. The <b>⛶ Full Screen</b> button opens the Library in a full-screen overlay — the same live list, so your edits save as you type — which is a lot easier to work with on a phone; leave it with <b>← Back to page</b> or <b>Esc</b>. The <b>⬆ Import…</b> button there pulls saved characters/locations (and actions, if the file has them) out of a project file — a <code>.json</code> backup or a <code>.zip</code> — <b>into My catalogue</b>, so you can reuse them in another project; you pick which items to bring in and can edit them first. The <b>📊 Analysis</b> button opens a matrix of your library items against the current page's panels — a ✅ marks each item a panel uses, and you can edit that panel's per-item description right in the grid (or <b>＋ Add</b> an unused item to a panel).</li>
             <li><b>Keep a character consistent</b> — use the small <code>⇤</code> button on a character slot to copy that character + modifier from the panel directly before it (the Location and Panel Action Prompt rows have the same <code>⇤</code> copy buttons). Panel 1 has no previous panel, so its buttons are disabled. Already-set items are overwritten by the copy.</li>
@@ -1493,8 +1497,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.11.1 — 2026-10-11 — Storyboard panel links, Focus storyboard button
-- In Storyboard, each panel's Panel N — name label is a link that opens that panel in the Focus view. In Focus, a ▦ Storyboard button next to ← Back to page opens the current page's storyboard (ending the focus session).
+## 2026.10.12.1 — 2026-10-12 — Panel Library character reorder arrows
+- Each character row in a panel's Panel Library has ↑/↓ chips (beside ⇤/✕) that swap the character — select, Basic and Panel Specific descriptions — with the neighbour above or below.
 </script>
 
 
@@ -4458,6 +4462,8 @@ color-scheme:light;
         <button type="button" class="pl-line-toggle" data-action="w2-1" aria-expanded="${collapsed === '0' ? 'true' : 'false'}" title="Show or hide this character's descriptions">${collapsed === '1' ? '▸' : '▾'}</button>
         <select class="po-sel" id="panel-char-select-${i}-${s}">${charOptionsHtml()}</select>
         <button class="btn-copy-prev" id="char-copy-prev-${i}-${s}" data-action="w2-2" data-a0="${i}" data-a1="${s}" title="Copy this character from the nearest earlier panel that has one">⇤</button>
+        ${s > 1 ? `<button class="btn-char-move" id="char-move-up-${i}-${s}" data-action="w2-77" data-a0="${i}" data-a1="${s}" title="Move this character up, swapping places with the one above">↑</button>` : ''}
+        ${s < 3 ? `<button class="btn-char-move" id="char-move-down-${i}-${s}" data-action="w2-78" data-a0="${i}" data-a1="${s}" title="Move this character down, swapping places with the one below">↓</button>` : ''}
         <button class="btn-line-del" data-action="w2-3" data-a0="${i}" data-a1="${s}" title="Remove this character from the panel">✕</button>
       </div>
       <div class="pl-line-body">
@@ -5787,6 +5793,42 @@ color-scheme:light;
     if (base) base.value = '';
     if (extra) extra.value = '';
     refreshPanelLineDesc('char', i, s);
+    updatePanelSummary(i);
+    schedulePanelSave();
+  }
+
+  function movePanelChar(i, s, dir) {
+    s = +s; const t = s + dir;
+    if (s < 1 || s > 3 || t < 1 || t > 3) return;
+    const val = (slot, kind) => {
+      const el = document.getElementById('panel-char-' + kind + '-' + i + '-' + slot);
+      return el ? el.value : (kind === 'select' ? 'none' : '');
+    };
+    const a = { sel: val(s, 'select'), base: val(s, 'base'), extra: val(s, 'extra') };
+    const b = { sel: val(t, 'select'), base: val(t, 'base'), extra: val(t, 'extra') };
+    const pid = panelIdAt(i);
+    if (pid) {
+      if (runPanelCommand('setChar', pid, [s, b.sel, b.base])
+        && runPanelCommand('setCharExtra', pid, [s, b.extra])
+        && runPanelCommand('setChar', pid, [t, a.sel, a.base])
+        && runPanelCommand('setCharExtra', pid, [t, a.extra])) {
+        refreshPanelLineDesc('char', i, s);
+        refreshPanelLineDesc('char', i, t);
+        updatePanelSummary(i);
+        return;
+      }
+    }
+    const put = (slot, v) => {
+      const sel = document.getElementById('panel-char-select-' + i + '-' + slot);
+      const base = document.getElementById('panel-char-base-' + i + '-' + slot);
+      const extra = document.getElementById('panel-char-extra-' + i + '-' + slot);
+      if (sel && [...sel.options].some(o => o.value === v.sel)) sel.value = v.sel;
+      if (base) base.value = v.base;
+      if (extra) extra.value = v.extra;
+    };
+    put(s, b); put(t, a);
+    refreshPanelLineDesc('char', i, s);
+    refreshPanelLineDesc('char', i, t);
     updatePanelSummary(i);
     schedulePanelSave();
   }
@@ -13688,6 +13730,8 @@ color-scheme:light;
     "w2-7": { ev: "click", run: (el, e) => { deletePanelLoc((+el.dataset.a0)) } },
     "w2-8": { ev: "click", run: (el, e) => { refreshPanelLineFromLibrary('loc',(+el.dataset.a0)) } },
     "w2-9": { ev: "click", run: (el, e) => { savePanelDescription('loc',(+el.dataset.a0),1) } },
+    "w2-77": { ev: "click", run: (el, e) => { movePanelChar((+el.dataset.a0),(+el.dataset.a1),-1) } },
+    "w2-78": { ev: "click", run: (el, e) => { movePanelChar((+el.dataset.a0),(+el.dataset.a1),+1) } },
     "w2-10": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();runPanelSingle((+el.dataset.a0));} } },
     "w2-11": { ev: "click", run: (el, e) => { copyFromPrevPanel((+el.dataset.a0),'act') } },
     "w2-12": { ev: "click", run: (el, e) => { deletePanelAct((+el.dataset.a0)) } },
@@ -13761,7 +13805,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
