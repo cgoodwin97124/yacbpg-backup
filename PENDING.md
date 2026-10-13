@@ -1,3 +1,7 @@
+### 2026-10-13 — Hover preview in Storyboard/Focus + vertical (1xN) panel image layout — RECON
+- **Request (author, verbatim):** "I'd like to have image hover preview work in Storyboard and Focus as well as the main page. I'd like to have the option to arrange images vertically in the panels, to make a 1 x N arrangement. I'd like to have this in the main page, Storyboard, and Focus. Please perform the preliminaries, do recon, and ask me any questions you may have. Thank you!"
+- Status: RECON — logged 2026-10-13. Recon + questions next; no build until author gives go-ahead.
+
 ### 2026-10-12 — Round-robin Generate All order option — DONE 2026.10.12.3
 - Answers (author 2026-10-12): all five recommendations approved — every multi-panel run, regenerate unprotected, exact-slot resume, per-panel rows, default off. Go-ahead given.
 - DONE 2026.10.12.3 — prefRoundRobin checkbox (Generation section, w1-188 change + w1-189 palette toggle + palette Preferences entry), pref plumbing (comicGen.roundRobin, boot init, __dbg exports), engine branch in generateComicPage (per-panel prompt/count/protect prep mirroring generateSinglePanel, slot-major rounds via renderPanelSlot, resumeSlot exact resume, stop/undo sites cleared), G18 suite pins added (order, tally, persistence). Verified per above. Author storage intact (hash d79172fc throughout, key-by-key verified). Saved + re-pushed 18 files (repo index.html = .12.3, verified via raw).
