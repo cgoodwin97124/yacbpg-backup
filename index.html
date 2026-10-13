@@ -497,6 +497,10 @@ color-scheme:light;
   .lib-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
   .lib-row input, .lib-row textarea { flex: 1; margin-bottom: 0; }
   .lib-row .lib-name-input { flex: 0 0 28%; }
+  .lib-row-style { flex-wrap: wrap; }
+  .lib-style-sub { flex: 1 1 100%; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-left: 26px; }
+  .lib-style-sub select { flex: 0 1 auto; max-width: 100%; margin-bottom: 0; }
+  .lib-style-sub textarea { flex: 1 1 220px; margin-bottom: 0; }
   .lib-select-wrap { flex: 0 0 auto; display: inline-flex; align-items: center; cursor: pointer; }
   .lib-row .lib-select-cb { flex: 0 0 auto; width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #4d9fff; }
   .lib-row.lib-selected { border-radius: 6px; box-shadow: 0 0 0 3px rgba(77,159,255,0.45); background-image: linear-gradient(rgba(77,159,255,0.14), rgba(77,159,255,0.14)); }
@@ -1172,7 +1176,7 @@ color-scheme:light;
 
       <div class="menu-group" id="menuGroup-library" hidden>
         <div class="library-section">
-          <p class="lib-hint">Reusable characters and locations. <b>📁 This project</b> is the library this project owns — it is saved inside the project, and it is what the panel dropdowns use. <b>🗂 My catalogue</b> is the reusable set saved in this browser and shared by every project; copy an item in with <b>⤓</b> (or offer one back to the catalogue with <b>⤒</b>). Use the green <b>+</b> button next to a section heading to add a new item, or create one right from a panel (＋ New Character… / ＋ New Location…).</p>
+          <p class="lib-hint">Reusable characters, locations, and art styles. <b>📁 This project</b> is the library this project owns — it is saved inside the project, and it is what the panel dropdowns use. <b>🗂 My catalogue</b> is the reusable set saved in this browser and shared by every project; copy an item in with <b>⤓</b> (or offer one back to the catalogue with <b>⤒</b>). Use the green <b>+</b> button next to a section heading to add a new item, or create one right from a panel (＋ New Character… / ＋ New Location…).</p>
           <div class="lib-toolbar">
             <button class="btn-lib-import" data-action="w1-78" title="Import saved Characters / Locations (and Actions) from a project file (.json or .zip) into My catalogue">⬆ Import…</button>
             <button class="btn-lib-analysis" data-action="w1-79" title="Cross-reference your library items against every panel on a page">📊 Analysis</button>
@@ -1499,9 +1503,10 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.13.1 — 2026-10-13 — Hover preview in Storyboard/Focus + vertical image slots
+## 2026.10.13.2 — 2026-10-13 — Custom artwork styles
 - Image hover preview now works in Storyboard and Focus, not just the main page (same delay + on/off setting).
 - New Preferences checkbox (Edit → Preferences → Generation, also in Commands → Preferences): stack each panel's image slots vertically in one column (1 × N) on the main page and in Focus. Storyboard keeps its one-image-per-panel cells. Off by default.
+- Custom artwork styles: the 📚 Library has a 🎨 Art Styles section — name a style, pick the built-in style it inherits keywords from, and add extra positive/negative keywords. Custom styles save with the project, work in My catalogue (⤒/⤓/import), and appear in the global Art Style dropdown and every panel's Style override. Deleting a style in use falls back to the global style with a notice.
 </script>
 
 
@@ -1549,6 +1554,7 @@ color-scheme:light;
   });
   coreLoad('keywords', './src/core/keywords.js', (m) => {
     if (m.ART_STYLES) ART_STYLES = m.ART_STYLES;
+    if (m.ART_STYLES && !BUILTIN_STYLES) BUILTIN_STYLES = m.ART_STYLES;
     if (m.COLOR_PALETTES) COLOR_PALETTES = m.COLOR_PALETTES;
     if (m.DEFAULT_POS) DEFAULT_POS = m.DEFAULT_POS;
     if (m.DEFAULT_NEGATIVES) DEFAULT_NEGATIVES = m.DEFAULT_NEGATIVES;
@@ -1666,7 +1672,11 @@ color-scheme:light;
   }
 
   function projectLibraryArray() {
-    return projectLibrary.map(o => ({ id: o.id, type: o.type, name: o.name, desc: o.desc, refs: refListOf(o).map(r => ({ src: r.src })) }));
+    return projectLibrary.map(o => {
+      const e = { id: o.id, type: o.type, name: o.name, desc: o.desc, refs: refListOf(o).map(r => ({ src: r.src })) };
+      if (o.type === 'Style') { e.base = o.base || 'comic'; e.pos = o.pos || ''; e.neg = o.neg || ''; }
+      return e;
+    });
   }
 
   function projectKeptArray() {
@@ -1908,6 +1918,7 @@ color-scheme:light;
 
   function refEntryFor(o, withRefs) {
     const e = { id: o.id, type: o.type, name: o.name || '', desc: o.desc || '' };
+    if (o.type === 'Style') { e.base = o.base || 'comic'; e.pos = o.pos || ''; e.neg = o.neg || ''; }
     if (withRefs) e.refs = refListOf(o).map(r => ({ src: r.src }));
     return e;
   }
@@ -1957,7 +1968,7 @@ color-scheme:light;
         if (e && e.id && !have.has(e.id)) { objs.push({ id: e.id, type: typeLabel, name: e.name || '', desc: e.desc || '' }); have.add(e.id); changed = true; }
       }
     }
-    const pruned = objs.map(o => (o && o.type === 'Panel Description') ? Object.assign({}, o, { type: 'Panel Specific Description' }) : o).filter(o => o.type === 'Character' || o.type === 'Location' || o.type === 'Action' || o.type === 'Panel Specific Description');
+    const pruned = objs.map(o => (o && o.type === 'Panel Description') ? Object.assign({}, o, { type: 'Panel Specific Description' }) : o).filter(o => o.type === 'Character' || o.type === 'Location' || o.type === 'Action' || o.type === 'Panel Specific Description' || o.type === 'Style');
     if (changed || pruned.length !== objs.length) saveCatalogue(pruned);
     for (const [, key] of legacy) {
       try { localStorage.removeItem(key); } catch (e) {}
@@ -1968,7 +1979,7 @@ color-scheme:light;
 
   function libTypeLabel(type) {
     if (type === 'Panel Description') return 'Panel Specific Description';
-    if (type === 'Character' || type === 'Location' || type === 'Action' || type === 'Panel Specific Description') return type;
+    if (type === 'Character' || type === 'Location' || type === 'Action' || type === 'Panel Specific Description' || type === 'Style') return type;
     return TYPE_OF[type] || 'Character';
   }
 
@@ -1993,6 +2004,11 @@ color-scheme:light;
     const name = prompt('Name your new ' + label.toLowerCase() + ':' + (firstNote ? ' ' + firstNote : ''), 'New ' + label);
     if (name === null) return null;
     const finalName = (name.trim() || ('New ' + label)).slice(0, 60);
+    if (label === 'Style') {
+      const desc = prompt('Add a note about "' + finalName + '" (optional) — shown in the Library, not used in prompts:', '');
+      if (desc === null) return null;
+      return { type: label, name: finalName, desc: desc.trim(), base: 'comic', pos: '', neg: '' };
+    }
     const desc = prompt('Add the ' + label.toLowerCase() + ' description for "' + finalName + '" (optional) — shown in 📚 Library and used in every panel prompt that uses it:', '');
     let panelDesc = null;
     if (label === 'Character' || label === 'Location') panelDesc = promptPanelDescription(finalName);
@@ -2014,7 +2030,9 @@ color-scheme:light;
     if (!fresh) return null;
     const objs = loadLibraryObjects();
     const id = newLibraryId(fresh.type);
-    objs.push({ id: id, type: fresh.type, name: fresh.name, desc: fresh.desc });
+    const item = { id: id, type: fresh.type, name: fresh.name, desc: fresh.desc };
+    if (fresh.type === 'Style') { item.base = fresh.base || 'comic'; item.pos = fresh.pos || ''; item.neg = fresh.neg || ''; }
+    objs.push(item);
     pushPanelDescriptionItem(objs, fresh.panelDesc);
     saveLibraryObjects(objs);
     renderLibrary();
@@ -2096,9 +2114,71 @@ color-scheme:light;
     };
   }
 
+  function applyStyleDelete(id) {
+    const objs = loadLibraryObjects();
+    const obj = objs.find(e => e.id === id);
+    if (!obj || (obj.type || '') !== 'Style') return null;
+    const name = String(obj.name || '').trim() || '(unnamed style)';
+    const state = storeJsonNow();
+    let panels = 0;
+    const pages = (state && state.pages) || {};
+    for (const key of Object.keys(pages)) {
+      const page = pages[key];
+      if (!page || typeof page !== 'object') continue;
+      for (let i = 1; i <= 24; i++) {
+        const p = page[i];
+        if (p && p.style === id) { p.style = ''; panels++; }
+      }
+    }
+    savePanelStateShape(state);
+    for (let i = 1; i <= 24; i++) {
+      const sel = document.getElementById('panel-style-' + i);
+      if (sel && sel.value === id) sel.value = '';
+    }
+    let presetReset = false;
+    const gs = document.getElementById('presetStyle');
+    if (gs && gs.value === id) { gs.value = 'comic'; presetReset = true; }
+    try {
+      const pr = JSON.parse(localStorage.getItem('comicGen.preset') || 'null');
+      if (pr && pr.style === id) { pr.style = 'comic'; localStorage.setItem('comicGen.preset', JSON.stringify(pr)); presetReset = true; }
+    } catch (e) {}
+    if (presetReset) applyPreset();
+    saveLibraryObjects(objs.filter(e => e.id !== id));
+    renderLibrary();
+    updatePanelSelects();
+    return { name: name, panels: panels, presetReset: presetReset };
+  }
+  function deleteStyleObject(id) {
+    const obj = loadLibraryObjects().find(e => e.id === id);
+    if (!obj) return;
+    const name = String(obj.name || '').trim() || '(unnamed style)';
+    const panels = countStyleUsage(id);
+    const gs = document.getElementById('presetStyle');
+    const globalUsed = !!(gs && gs.value === id);
+    const paras = ['This removes the custom style <b>' + escapeHtml(name) + '</b> from <b>this project</b> only — another project, and a copy in 🗂 My catalogue, are not affected.'];
+    if (panels) paras.push('<b>' + panels + '</b> panel' + (panels === 1 ? '' : 's') + ' in this project use' + (panels === 1 ? 's' : '') + ' it right now — ' + (panels === 1 ? 'it' : 'they') + ' will fall back to the global art style.');
+    else paras.push('No panel in this project is using it right now.');
+    if (globalUsed) paras.push('It is also the current <b>global art style</b> — the global preset will fall back to Comic Book.');
+    paras.push('Deleting cannot be undone — only a project backup can bring the entry back.');
+    showChoiceDialog({
+      title: '🗑 Delete the custom style \u201c' + (name.length > 34 ? name.slice(0, 33) + '…' : name) + '\u201d?',
+      paragraphs: paras,
+      hint: 'Panels keep their generated images — only future generations use the global style instead.',
+      buttons: [
+        { label: panels || globalUsed ? '↩ Delete and fall back to the global style' : '🗑 Delete \u201c' + (name.length > 34 ? name.slice(0, 33) + '…' : name) + '\u201d', cls: 'choice-danger', value: 'go' },
+        { label: 'Cancel', cls: 'choice-neutral', value: null }
+      ]
+    }).then(v => {
+      if (v !== 'go') return;
+      const res = applyStyleDelete(id);
+      const st = document.getElementById('statusEl');
+      if (st && res) st.textContent = 'Deleted custom style \u201c' + res.name + '\u201d' + (res.panels ? ' \u2014 ' + renamePlural(res.panels, 'panel') + ' fell back to the global style.' : '.') + (res.presetReset ? ' The global preset is Comic Book again.' : '');
+    });
+  }
   function deleteLibraryObject(id) {
     const obj = loadLibraryObjects().find(e => e.id === id);
     if (!obj) return;
+    if ((obj.type || '') === 'Style') { deleteStyleObject(id); return; }
     const typeLabel = obj.type || 'Character';
     const name = String(obj.name || '').trim() || '(unnamed)';
     const used = countLibReferences(id);
@@ -2160,7 +2240,9 @@ color-scheme:light;
     const same = cat.find(e => e.id === id);
     const sameRefs = same ? refListOf(same).map(r => r.src).join('|') : null;
     const srcRefs = refListOf(src).map(r => r.src).join('|');
-    if (same && same.name === (src.name || '') && same.desc === (src.desc || '') && sameRefs === srcRefs) {
+    const sameStyle = (same && same.type === 'Style') ? [same.base || 'comic', same.pos || '', same.neg || ''].join('|') : null;
+    const srcStyle = (src.type === 'Style') ? [src.base || 'comic', src.pos || '', src.neg || ''].join('|') : null;
+    if (same && same.name === (src.name || '') && same.desc === (src.desc || '') && sameRefs === srcRefs && sameStyle === srcStyle) {
       const st0 = document.getElementById('statusEl');
       if (st0) st0.textContent = '\u201c' + (src.name || 'That item') + '\u201d is already in My catalogue.';
       return;
@@ -2672,6 +2754,11 @@ color-scheme:light;
     const state = storeJsonNow();
     let panels = 0, swept = false;
     for (const t of targets) {
+      if ((t.type || '') === 'Style') {
+        const r = applyStyleDelete(t.id);
+        if (r) panels += r.panels || 0;
+        continue;
+      }
       const slug = libraryRenameSlug(t.type || 'Character');
       if (!slug) continue;
       swept = true;
@@ -2697,7 +2784,7 @@ color-scheme:light;
     const cat = libSelectedOf('cat');
     const total = proj.length + cat.length;
     if (!total) return;
-    const used = proj.reduce((a, o) => a + countLibReferences(o.id), 0);
+    const used = proj.reduce((a, o) => a + countLibReferences(o.id) + ((o.type || '') === 'Style' ? countStyleUsage(o.id) : 0), 0);
     const bits = [];
     if (proj.length) bits.push('<b>' + renamePlural(proj.length, 'item') + '</b> from 📁 This project');
     if (cat.length) bits.push('<b>' + renamePlural(cat.length, 'catalogue item') + '</b> from 🗂 My catalogue');
@@ -2745,6 +2832,83 @@ color-scheme:light;
     });
   }
 
+  function libStyleRowEl(o, opts) {
+    const cat = !!(opts && opts.cat);
+    const objs = (!cat && opts && opts.objs) || null;
+    const key = (cat ? 'cat:' : 'proj:') + o.id;
+    const row = document.createElement('div');
+    row.className = 'lib-row lib-row-style ' + (cat ? 'lib-row-cat' : 'lib-row-proj');
+    row.dataset.libKey = key;
+    const selWrap = document.createElement('label');
+    selWrap.className = 'lib-select-wrap';
+    selWrap.title = 'Select this item. Shift-click a checkbox to select the whole range from the last one you ticked.';
+    const selCb = document.createElement('input');
+    selCb.type = 'checkbox';
+    selCb.className = 'lib-select-cb';
+    selCb.checked = libSelection.has(key);
+    selCb.onclick = (ev) => onLibSelectClick(key, ev);
+    selWrap.appendChild(selCb);
+    row.appendChild(selWrap);
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'lib-name-input';
+    nameInput.placeholder = 'Style name (shown in Style dropdowns)';
+    nameInput.value = o.name || '';
+    const descInput = document.createElement('textarea');
+    descInput.rows = 2;
+    descInput.className = 'lib-desc';
+    descInput.placeholder = 'Note (Library only — not used in prompts)';
+    descInput.value = o.desc || '';
+    const sub = document.createElement('div');
+    sub.className = 'lib-style-sub';
+    const baseSel = document.createElement('select');
+    baseSel.title = 'The built-in style this custom style inherits its keywords from';
+    const posInput = document.createElement('textarea');
+    posInput.rows = 2;
+    posInput.placeholder = 'Extra positive keywords, comma separated (added after the inherited ones)';
+    posInput.value = o.pos || '';
+    const negInput = document.createElement('textarea');
+    negInput.rows = 2;
+    negInput.placeholder = 'Extra negative keywords, comma separated (added after the inherited negatives)';
+    negInput.value = o.neg || '';
+    const fillBase = () => {
+      const builtinMap = BUILTIN_STYLES || ART_STYLES || {};
+      baseSel.innerHTML = Object.entries(builtinMap).map(([id, s]) => `<option value="${id}">${escapeHtml(s.label)}</option>`).join('');
+      baseSel.value = [...baseSel.options].some(x => x.value === o.base) ? o.base : 'comic';
+    };
+    fillBase();
+    const saveProj = () => { if (objs) { saveLibraryObjects(objs); } };
+    const saveCat = () => { saveCatalogue(loadCatalogue().map(x => (x.id === o.id ? Object.assign({}, x, { name: o.name, desc: o.desc, base: o.base, pos: o.pos, neg: o.neg }) : x))); };
+    const save = cat ? saveCat : saveProj;
+    nameInput.oninput = () => { o.name = nameInput.value; save(); refreshStyleSelects(); updatePanelSelects(); };
+    descInput.oninput = () => { o.desc = descInput.value; save(); };
+    baseSel.onchange = () => { o.base = baseSel.value; save(); };
+    posInput.oninput = () => { o.pos = posInput.value; save(); };
+    negInput.oninput = () => { o.neg = negInput.value; save(); };
+    sub.append(baseSel, posInput, negInput);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-del-lib';
+    delBtn.textContent = '🗑';
+    delBtn.title = cat ? 'Delete from My catalogue' : 'Delete from this project';
+    delBtn.onclick = () => (libBatchMode(key) ? batchDeleteLibrary() : (cat ? deleteCatalogueObject(o.id) : deleteLibraryObject(o.id)));
+    if (cat) {
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'btn-copy-lib btn-copy-down';
+      copyBtn.textContent = '⤓';
+      copyBtn.title = opts.inProject ? 'This project already has a copy' : 'Copy into this project';
+      copyBtn.disabled = !!opts.inProject;
+      copyBtn.onclick = () => (libBatchMode(key) ? batchCopyToProject() : copyCatalogueItemToProject(o.id));
+      row.append(nameInput, descInput, copyBtn, delBtn, sub);
+      return row;
+    }
+    const copyUpBtn = document.createElement('button');
+    copyUpBtn.className = 'btn-copy-lib btn-copy-up';
+    copyUpBtn.textContent = '⤒';
+    copyUpBtn.title = 'Copy into My catalogue, so other projects can use it too';
+    copyUpBtn.onclick = () => (libBatchMode(key) ? batchCopyToCatalogue() : copyProjectItemToCatalogue(o.id));
+    row.append(nameInput, descInput, copyUpBtn, delBtn, sub);
+    return row;
+  }
   function libRowEl(o, opts) {
     const cat = !!(opts && opts.cat);
     const objs = (opts && opts.objs) || null;
@@ -2829,6 +2993,7 @@ color-scheme:light;
     const buckets = [['👤 Characters', 'Character', 'No characters in this project yet — click the green + button to add one, or copy one in from My catalogue below.'], ['📍 Locations', 'Location', 'No locations in this project yet — click the green + button to add one, or copy one in from My catalogue below.']];
     if (objs.some(o => o.type === 'Action') || cat.some(o => o.type === 'Action')) buckets.push(['🎬 Actions', 'Action', 'No actions in this project yet — click the green + button to add one, or copy one in from My catalogue below.']);
     buckets.push(['💬 Panel Specific Descriptions', 'Panel Specific Description', 'No saved Panel Specific Descriptions yet — click the green + button, use 💾 Save to library beside a panel\u2019s Panel Specific Description box, or let a new character or location create one. They are shared: any character or location can use any of them.']);
+    buckets.push(['🎨 Art Styles', 'Style', 'No custom art styles yet — click the green + button to name one. Each style inherits the keywords of a built-in style and adds your own extra positive and negative keywords. Custom styles appear in the global Art Style dropdown and in every panel\u2019s Style override.']);
     for (const [label, type, emptyHint] of buckets) {
       const hrow = document.createElement('div');
       hrow.className = 'lib-bucket-row';
@@ -2847,17 +3012,18 @@ color-scheme:light;
         ctn.appendChild(libHintEl(emptyHint));
         continue;
       }
-      for (const o of list) ctn.appendChild(libRowEl(o, { objs: objs }));
+      for (const o of list) ctn.appendChild(o.type === 'Style' ? libStyleRowEl(o, { objs: objs }) : libRowEl(o, { objs: objs }));
     }
     ctn.appendChild(libScopeHeadEl('🗂 My catalogue', 'cat'));
     ctn.appendChild(libHintEl('Reusable items saved in this browser, shared by every project. Copy one into this project with ⤓. Editing or deleting a catalogue entry never changes a project that already has its own copy.', 'lib-section-hint'));
     if (!cat.length) ctn.appendChild(libHintEl('Nothing in the catalogue yet. ⬆ Import… a saved project file to bring items in, or use ⤒ on one of this project\u2019s items.'));
-    for (const [label, type] of [['👤 Characters', 'Character'], ['📍 Locations', 'Location'], ['🎬 Actions', 'Action'], ['💬 Panel Specific Descriptions', 'Panel Specific Description']]) {
+    for (const [label, type] of [['👤 Characters', 'Character'], ['📍 Locations', 'Location'], ['🎬 Actions', 'Action'], ['💬 Panel Specific Descriptions', 'Panel Specific Description'], ['🎨 Art Styles', 'Style']]) {
       const list = cat.filter(o => o.type === type);
       if (!list.length) continue;
       ctn.appendChild(libHeadEl(label, 'lib-bucket'));
-      for (const o of list) ctn.appendChild(libRowEl(o, { cat: true, inProject: objs.some(p => p.id === o.id) }));
+      for (const o of list) ctn.appendChild(o.type === 'Style' ? libStyleRowEl(o, { cat: true, inProject: objs.some(p => p.id === o.id) }) : libRowEl(o, { cat: true, inProject: objs.some(p => p.id === o.id) }));
     }
+    refreshStyleSelects();
     updateLibSelectionUI();
   }
 
@@ -2907,13 +3073,16 @@ color-scheme:light;
     const existing = loadCatalogue();
     libImportCandidates = raw.map((o, idx) => {
       const same = existing.find(e => e.type === o.type && e.name === o.name);
+      const styleFields = o.type === 'Style' ? { base: o.base || 'comic', pos: o.pos || '', neg: o.neg || '' } : null;
+      const sameStyleFields = (same && same.type === 'Style') ? { base: same.base || 'comic', pos: same.pos || '', neg: same.neg || '' } : null;
+      const styleSame = !styleFields || (sameStyleFields && sameStyleFields.base === styleFields.base && sameStyleFields.pos === styleFields.pos && sameStyleFields.neg === styleFields.neg);
       let status = 'new';
-      if (same && same.desc === o.desc) status = 'identical';
+      if (same && same.desc === o.desc && styleSame) status = 'identical';
       else if (same) status = 'conflict';
-      return { key: 'li-' + idx, type: o.type, name: o.name, desc: o.desc, status: status, existingId: same ? same.id : null, existingDesc: same ? same.desc : '', resolve: 'append', checked: status !== 'identical' };
+      return Object.assign({ key: 'li-' + idx, type: o.type, name: o.name, desc: o.desc, status: status, existingId: same ? same.id : null, existingDesc: same ? same.desc : '', resolve: 'append', checked: status !== 'identical' }, styleFields ? { base: styleFields.base, pos: styleFields.pos, neg: styleFields.neg } : null);
     });
     if (!libImportCandidates.length) {
-      if (hint) hint.textContent = errors.length ? ('Import failed — ' + errors.join('; ')) : 'No Characters, Locations, or Actions were found in those files.';
+      if (hint) hint.textContent = errors.length ? ('Import failed — ' + errors.join('; ')) : 'No Characters, Locations, Actions, or Art Styles were found in those files.';
       return;
     }
     if (hint) hint.textContent = 'Found ' + libImportCandidates.length + ' item' + (libImportCandidates.length === 1 ? '' : 's') + ' — choose what to import.';
@@ -2924,7 +3093,7 @@ color-scheme:light;
     const list = document.getElementById('libImportList');
     if (!list) return;
     list.innerHTML = '';
-    const groups = [['Character', '👤 Characters'], ['Location', '📍 Locations'], ['Action', '🎬 Actions']];
+    const groups = [['Character', '👤 Characters'], ['Location', '📍 Locations'], ['Action', '🎬 Actions'], ['Style', '🎨 Art Styles']];
     for (const [type, label] of groups) {
       const items = libImportCandidates.filter(c => c.type === type);
       if (!items.length) continue;
@@ -3035,13 +3204,18 @@ color-scheme:light;
         } else if (c.resolve === 'overwrite') {
           if (name) existing.name = name;
           existing.desc = desc;
+          if (c.type === 'Style') { existing.base = c.base || 'comic'; existing.pos = c.pos || ''; existing.neg = c.neg || ''; }
           merged++;
         } else {
-          objs.push({ id: newLibraryId(c.type), type: c.type, name: name || '(unnamed)', desc: desc });
+          const entry = { id: newLibraryId(c.type), type: c.type, name: name || '(unnamed)', desc: desc };
+          if (c.type === 'Style') { entry.base = c.base || 'comic'; entry.pos = c.pos || ''; entry.neg = c.neg || ''; }
+          objs.push(entry);
           added++;
         }
       } else {
-        objs.push({ id: newLibraryId(c.type), type: c.type, name: name || '(unnamed)', desc: desc });
+        const entry = { id: newLibraryId(c.type), type: c.type, name: name || '(unnamed)', desc: desc };
+        if (c.type === 'Style') { entry.base = c.base || 'comic'; entry.pos = c.pos || ''; entry.neg = c.neg || ''; }
+        objs.push(entry);
         added++;
       }
     }
@@ -3669,7 +3843,8 @@ color-scheme:light;
 
   function analysisStyleLabel(id) {
     if (!id) return '';
-    return ART_STYLES[id] ? ART_STYLES[id].label : id;
+    const e = resolveStyleEntry(id);
+    return e ? e.label : id;
   }
 
   function analysisPaletteLabel(id) {
@@ -3922,7 +4097,7 @@ color-scheme:light;
     const wrap = document.createElement('span');
     wrap.className = 'an-editor';
     const sel = document.createElement('select');
-    sel.innerHTML = '<option value="">[Global]</option>' + Object.entries(ART_STYLES).map(([id, s]) => `<option value="${id}">${escapeHtml(s.label)}</option>`).join('');
+    sel.innerHTML = styleOptionsHtml('[Global]');
     sel.value = analysisPanelStyle(pageData, i);
     sel.onchange = () => { analysisSetPanelStyle(pg, i, sel.value); renderAnalysis(); };
     wrap.appendChild(sel);
@@ -3991,7 +4166,7 @@ color-scheme:light;
     if (nsfw) nsfw.checked = !!(nsfwSrc && nsfwSrc.checked);
     const st = document.getElementById('analysisGlobalStyle');
     if (st) {
-      if (!st.options.length) st.innerHTML = Object.entries(ART_STYLES).map(([id, s]) => `<option value="${id}">${escapeHtml(s.label)}</option>`).join('');
+      if (!st.options.length) st.innerHTML = styleOptionsHtml(null);
       const v = (document.getElementById('presetStyle') || {}).value || '';
       if (v && [...st.options].some(o => o.value === v)) st.value = v;
     }
@@ -4123,7 +4298,7 @@ color-scheme:light;
     const pageData = pages[analysisPage] || {};
     const total = analysisPanelCount(pageData);
     const images = analysisPageImages(analysisPage);
-    const lib = loadLibraryObjects();
+    const lib = loadLibraryObjects().filter(o => !o || (o.type || '') !== 'Style');
     analysisHasActionItems = lib.some(it => it.type === 'Action');
     const sel = document.getElementById('analysisPageSel');
     if (sel) sel.innerHTML = keys.map(k => `<option value="${k}"${k === analysisPage ? ' selected' : ''}>${escapeHtml(pageLabel(pages[k], k))}</option>`).join('');
@@ -5689,6 +5864,18 @@ color-scheme:light;
       updatePanelImgSlots(i);
     }
     for (let i = 1; i <= 24; i++) updatePanelSummary(i);
+    {
+      let dangling = 0;
+      for (let i = 1; i <= 24; i++) {
+        const p = page[i];
+        const sel = document.getElementById('panel-style-' + i);
+        if (p && p.style && sel && sel.value !== p.style) dangling++;
+      }
+      if (dangling) {
+        const st = document.getElementById('statusEl');
+        if (st) st.textContent = '⚠ ' + dangling + ' panel' + (dangling === 1 ? '' : 's') + ' used a custom art style that is no longer in this project\u2019s library — ' + (dangling === 1 ? 'it' : 'they') + ' fell back to the global art style.';
+      }
+    }
     panelStateRestored = true;
   }
 
@@ -6088,7 +6275,7 @@ color-scheme:light;
       const styleSel = document.getElementById('panel-style-' + i);
       if (styleSel) {
         const curS = styleSel.value;
-        styleSel.innerHTML = '<option value="">[Default (Global)]</option>' + Object.entries(ART_STYLES).map(([id, s]) => `<option value="${id}">${s.label}</option>`).join("");
+        styleSel.innerHTML = styleOptionsHtml('[Default (Global)]');
         if ([...styleSel.options].some(o => o.value === curS)) styleSel.value = curS;
       }
       const paletteSel = document.getElementById('panel-palette-' + i);
@@ -6105,6 +6292,7 @@ color-scheme:light;
       if (lpk) lpk.innerHTML = panelDescOptionsHtml();
     }
     refreshAllPanelLineDescs();
+    refreshStyleSelects();
   }
 
   function resolveDesc(selValue, builtinMap) {
@@ -8993,6 +9181,62 @@ color-scheme:light;
     if (statusEl) statusEl.textContent = 'Panel ' + i + ' could not be deleted — please reload and try again.';
   }
 
+  function splitStyleKw(text) {
+    return String(text == null ? '' : text).split(',').map(s => s.trim()).filter(Boolean);
+  }
+  function customStyleItems() {
+    try { return loadLibraryObjects().filter(o => o && (o.type || '') === 'Style'); }
+    catch (e) { return []; }
+  }
+  function resolveStyleEntry(id) {
+    if (!id) return null;
+    const builtinMap = BUILTIN_STYLES || ART_STYLES || {};
+    if (builtinMap[id]) {
+      const b = builtinMap[id];
+      return { kind: 'builtin', id: id, label: b.label, keywords: b.keywords || [], negatives: b.negatives || null };
+    }
+    const c = customStyleItems().find(o => o.id === id);
+    if (!c) return null;
+    const base = builtinMap[c.base] || builtinMap.comic || { keywords: [], negatives: null };
+    const keywords = [...(base.keywords || []), ...splitStyleKw(c.pos)];
+    const baseNeg = base.negatives || DEFAULT_NEGATIVES;
+    const extraNeg = splitStyleKw(c.neg).join(', ');
+    return { kind: 'custom', id: id, label: c.name || '(unnamed style)', keywords: keywords, negatives: extraNeg ? (baseNeg ? baseNeg + ', ' + extraNeg : extraNeg) : (baseNeg || null) };
+  }
+  function styleOptionsHtml(firstLabel) {
+    const builtinMap = BUILTIN_STYLES || ART_STYLES || {};
+    let html = (firstLabel == null ? '' : '<option value="">' + escapeHtml(firstLabel) + '</option>') + Object.entries(builtinMap).map(([id, s]) => `<option value="${id}">${escapeHtml(s.label)}</option>`).join('');
+    const customs = customStyleItems();
+    if (customs.length) html += '<optgroup label="This project\u2019s custom styles">' + customs.map(o => `<option value="${o.id}">${escapeHtml(o.name || '(unnamed style)')}</option>`).join('') + '</optgroup>';
+    return html;
+  }
+  function refreshStyleSelects() {
+    const gs = document.getElementById('presetStyle');
+    if (gs) {
+      const cur = gs.value;
+      gs.innerHTML = styleOptionsHtml(null);
+      gs.value = [...gs.options].some(o => o.value === cur) ? cur : 'comic';
+    }
+    for (let i = 1; i <= 24; i++) {
+      const sel = document.getElementById('panel-style-' + i);
+      if (!sel) continue;
+      const cur = sel.value;
+      sel.innerHTML = styleOptionsHtml('[Default (Global)]');
+      sel.value = (cur && [...sel.options].some(o => o.value === cur)) ? cur : '';
+    }
+  }
+  function countStyleUsage(id) {
+    let panels = 0;
+    try {
+      const pages = (storeJsonNow().pages) || {};
+      for (const key of Object.keys(pages)) {
+        const page = pages[key];
+        if (!page || typeof page !== 'object') continue;
+        for (let i = 1; i <= 24; i++) if (page[i] && page[i].style === id) panels++;
+      }
+    } catch (e) {}
+    return panels;
+  }
   function getPanelKeywords(i) {
     const styleSel = document.getElementById('panel-style-' + i);
     const styleId = styleSel ? styleSel.value : '';
@@ -9001,7 +9245,7 @@ color-scheme:light;
     if (styleId || palId) {
       const globalStyleId = (document.getElementById('presetStyle') || {}).value || '';
       const globalPaletteId = (document.getElementById('presetPalette') || {}).value || '';
-      const style = ART_STYLES[styleId || globalStyleId];
+      const style = resolveStyleEntry(styleId || globalStyleId);
       if (style) {
         const palette = COLOR_PALETTES[palId || globalPaletteId] || {};
         const pos = [...style.keywords, ...(palette.keywords || [])].join(", ");
@@ -11114,7 +11358,8 @@ color-scheme:light;
       buildPanelGrid();
     }
     if (data.settings && data.settings.theme) applyThemeFromProject(data.settings.theme);
-    if (data.preset && ART_STYLES[data.preset.style] && COLOR_PALETTES[data.preset.palette]) {
+    refreshStyleSelects();
+    if (data.preset && resolveStyleEntry(data.preset.style) && COLOR_PALETTES[data.preset.palette]) {
       document.getElementById('presetStyle').value = data.preset.style;
       document.getElementById('presetPalette').value = data.preset.palette;
       try { localStorage.setItem('comicGen.preset', JSON.stringify(data.preset)); } catch (e) {}
@@ -11872,6 +12117,7 @@ color-scheme:light;
   }
 
   let ART_STYLES, COLOR_PALETTES, DEFAULT_NEGATIVES, DEFAULT_POS, composeKeywords;
+  let BUILTIN_STYLES = null;
 
   function getEffectiveKeywords() {
     const pos = document.getElementById('globalPos').value;
@@ -12129,7 +12375,8 @@ color-scheme:light;
   function applyPreset() {
     const styleId = document.getElementById('presetStyle').value;
     const paletteId = document.getElementById('presetPalette').value;
-    const style = ART_STYLES[styleId];
+    const style = resolveStyleEntry(styleId) || resolveStyleEntry('comic');
+    if (!style) return;
     const keywords = [...style.keywords, ...COLOR_PALETTES[paletteId].keywords];
     document.getElementById('globalPos').value = keywords.join(", ");
     document.getElementById('globalNeg').value = style.negatives || DEFAULT_NEGATIVES;
@@ -12142,11 +12389,11 @@ color-scheme:light;
   function initPresets() {
     const styleSel = document.getElementById('presetStyle');
     const palSel = document.getElementById('presetPalette');
-    styleSel.innerHTML = Object.entries(ART_STYLES).map(([id, s]) => `<option value="${id}">${s.label}</option>`).join("");
+    styleSel.innerHTML = styleOptionsHtml(null);
     palSel.innerHTML = Object.entries(COLOR_PALETTES).map(([id, p]) => `<option value="${id}">${p.label}</option>`).join("");
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem('comicGen.preset')); } catch (e) {}
-    if (saved && ART_STYLES[saved.style] && COLOR_PALETTES[saved.palette]) {
+    if (saved && resolveStyleEntry(saved.style) && COLOR_PALETTES[saved.palette]) {
       styleSel.value = saved.style;
       palSel.value = saved.palette;
       applyPreset();
@@ -12965,7 +13212,7 @@ color-scheme:light;
       return (k === 'version' || k === 'currentPage' || k === 'pages' || k === 'theme' || k === 'library' || k === 'kept') ? 'lock' : 'edit';
     }
     if (path[1] === 'theme') return (path.length === 3 && (path[2] === 'mode' || path[2] === 'accent')) ? 'edit' : 'lock';
-    if (path[1] === 'library') return (path.length === 4 && (path[3] === 'type' || path[3] === 'name' || path[3] === 'desc')) ? 'edit' : 'lock';
+    if (path[1] === 'library') return (path.length === 4 && (path[3] === 'type' || path[3] === 'name' || path[3] === 'desc' || path[3] === 'base' || path[3] === 'pos' || path[3] === 'neg')) ? 'edit' : 'lock';
     if (path[1] !== 'pages') return 'lock';
     if (path.length === 4) return JSON_PAGE_FIELDS.indexOf(path[3]) !== -1 ? 'edit' : 'lock';
     if (path.length === 5) return JSON_PANEL_FIELDS.indexOf(path[4]) !== -1 ? 'edit' : 'lock';
@@ -13522,7 +13769,8 @@ color-scheme:light;
     projectKept = normaliseKeptArray(settings.kept);
     settings.kept = projectKeptArray();
     try { localStorage.setItem(PANEL_STATE_KEY, JSON.stringify(settings)); } catch (e) { throw new Error('could not write the project settings (' + (e && e.message) + ')'); }
-    if (doc.preset && ART_STYLES[doc.preset.style] && COLOR_PALETTES[doc.preset.palette]) {
+    refreshStyleSelects();
+    if (doc.preset && resolveStyleEntry(doc.preset.style) && COLOR_PALETTES[doc.preset.palette]) {
       document.getElementById('presetStyle').value = doc.preset.style;
       document.getElementById('presetPalette').value = doc.preset.palette;
       try { localStorage.setItem('comicGen.preset', JSON.stringify(doc.preset)); } catch (e) {}
@@ -13997,7 +14245,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, customStyleItems, resolveStyleEntry, refreshStyleSelects, countStyleUsage, applyStyleDelete, deleteStyleObject, getPanelKeywords, onPanelStyleChange, copyProjectItemToCatalogue, copyCatalogueItemToProject, updatePanelSelects, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
