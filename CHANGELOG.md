@@ -1,3 +1,6 @@
+## 2026.10.13.2 — 2026-10-13 — Custom artwork styles
+- The Library has a new Art Styles section: name a custom style, pick the built-in style it inherits keywords from, and add extra positive/negative keywords. Custom styles save with the project, work in My catalogue (copy/import), and appear in the global Art Style dropdown and every panel's Style override. Deleting a style in use falls back to the global style with a notice.
+
 ## 2026.10.13.1 — 2026-10-13 — Hover preview in Storyboard/Focus + vertical image slots
 - Image hover preview now works in Storyboard and Focus, not just the main page (same delay + on/off setting).
 - New Preferences checkbox (Edit → Preferences → Generation, also in Commands → Preferences): stack each panel's image slots vertically in one column (1 × N) on the main page and in Focus. Storyboard keeps its one-image-per-panel cells. Off by default.
