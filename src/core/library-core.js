@@ -1,4 +1,4 @@
-export const LIB_TYPE_PREFIX = { Character: 'char', Location: 'loc', Action: 'act', 'Panel Specific Description': 'pd' };
+export const LIB_TYPE_PREFIX = { Character: 'char', Location: 'loc', Action: 'act', 'Panel Specific Description': 'pd', Style: 'sty' };
 
 export function libIdFor(type, now, rand) {
   return (LIB_TYPE_PREFIX[type] || 'obj') + '-' + now + '-' + rand;
@@ -37,11 +37,12 @@ export function countLibRefs(data, id) {
 export function normalizeLibType(o) {
   const t = o && o.type;
   if (t === 'Panel Description') return 'Panel Specific Description';
-  if (t === 'Character' || t === 'Location' || t === 'Action' || t === 'Panel Specific Description') return t;
+  if (t === 'Character' || t === 'Location' || t === 'Action' || t === 'Panel Specific Description' || t === 'Style') return t;
   const id = String((o && o.id) || '');
   if (id.startsWith('loc-')) return 'Location';
   if (id.startsWith('act-')) return 'Action';
   if (id.startsWith('pd-')) return 'Panel Specific Description';
+  if (id.startsWith('sty-')) return 'Style';
   return 'Character';
 }
 
@@ -55,7 +56,7 @@ export function extractLibraryItems(data) {
   const out = [];
   if (!data || typeof data !== 'object') return out;
   if (Array.isArray(data.libObjects)) {
-    for (const o of data.libObjects) if (o && typeof o === 'object') out.push({ type: normalizeLibType(o), name: String(o.name || '').trim(), desc: String(o.desc || '').trim() });
+    for (const o of data.libObjects) if (o && typeof o === 'object') out.push(normalizeLibEntry(o));
   } else {
     const legacy = [['charLibrary', 'Character'], ['locLibrary', 'Location'], ['actLibrary', 'Action']];
     for (const [key, type] of legacy) {
@@ -63,6 +64,16 @@ export function extractLibraryItems(data) {
     }
   }
   return out.filter(o => o.name || o.desc);
+}
+
+function normalizeLibEntry(o) {
+  const entry = { type: normalizeLibType(o), name: String(o.name || '').trim(), desc: String(o.desc || '').trim() };
+  if (entry.type === 'Style') {
+    entry.base = String(o.base || 'comic');
+    entry.pos = String(o.pos || '');
+    entry.neg = String(o.neg || '');
+  }
+  return entry;
 }
 
 export function libRefEntry(objs, selValue) {
