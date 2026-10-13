@@ -1,6 +1,7 @@
 ### 2026-10-13 — Hover preview in Storyboard/Focus + vertical (1xN) panel image layout — RECON
 - **Request (author, verbatim):** "I'd like to have image hover preview work in Storyboard and Focus as well as the main page. I'd like to have the option to arrange images vertically in the panels, to make a 1 x N arrangement. I'd like to have this in the main page, Storyboard, and Focus. Please perform the preliminaries, do recon, and ask me any questions you may have. Thank you!"
-- Status: RECON — logged 2026-10-13. Recon + questions next; no build until author gives go-ahead.
+- Recon (2026-10-13): hover preview is document-level (pointerover/out/move + touch long-press), resolves via img.gp-thumb or .panel-img-box#imgbox-panel-{i}-{k} -> imgSlotUrl. Focus reuses the real cards (ids intact) BUT #imgPreview z-10010 renders beneath .view-overlay z-10012 (verified live) -> invisible in Focus and Storyboard. Storyboard imgs additionally lack box ids (plain <img> in .sb-cell, slot 1 only) -> no match at all. Fix shape: lift preview above overlays + tag storyboard imgs with panel/slot identity. Layout: .panel-imgs grid auto-fill minmax(140px,1fr); each .panel-img-slot is a vertical flex (reroll btn + box + chips), extras hidden by onPanelImgCountChange. Focus moves the same cards -> a CSS-class toggle covers main+Focus free. Storyboard renders its own single-image cells -> vertical multi-image there needs new cell rendering.
+- Status: QUESTIONS — awaiting author answers + go-ahead before build.
 
 ### 2026-10-12 — Round-robin Generate All order option — DONE 2026.10.12.3
 - Answers (author 2026-10-12): all five recommendations approved — every multi-panel run, regenerate unprotected, exact-slot resume, per-panel rows, default off. Go-ahead given.
