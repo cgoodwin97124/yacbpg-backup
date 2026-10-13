@@ -1,3 +1,7 @@
+## 2026.10.13.1 — 2026-10-13 — Hover preview in Storyboard/Focus + vertical image slots
+- Image hover preview now works in Storyboard and Focus, not just the main page (same delay + on/off setting).
+- New Preferences checkbox (Edit → Preferences → Generation, also in Commands → Preferences): stack each panel's image slots vertically in one column (1 × N) on the main page and in Focus. Storyboard keeps its one-image-per-panel cells. Off by default.
+
 ## 2026.10.12.3 — 2026-10-12 — Round-robin generation order option
 - New preference (Edit → Preferences → Generation, mirrored in Commands → Preferences): round-robin multi-panel runs render every panel's image 1, then image 2, and so on; panels with fewer images sit out the later rounds. Applies to Generate All, To Here, From Here, ranges and selections. Pause resumes at the exact panel and image; per-panel run rows and tallies are unchanged. Off by default; seeds derive per panel and image so the same pictures result in either order.
 - Verified live with a stubbed service (round-robin seed order [1001,1002,1001,1002,1001], panel order unchanged with pref off, exact pause/resume, pref persists, storage restored byte-identical) + suites: core 79/0, diff-core 24/0, smoke 114/0, fixtures 18/0, state-diff 38/0 (all byte-identical restores), gen 15/6 (3 new G18 round-robin checks pass; the 6 failures reproduce identically on the pre-change .12.1 build — pre-existing, unrelated).
