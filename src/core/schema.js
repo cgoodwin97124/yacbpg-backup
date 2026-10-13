@@ -23,7 +23,13 @@ export function normaliseLibrary(arr) {
     const id = asString(o.id, "").trim();
     if (!id || seen.has(id)) continue;
     seen.add(id);
-    out.push({ id: id, type: normaliseLibType(o.type, id), name: asString(o.name, ""), desc: asString(o.desc, ""), refs: normaliseRefs(o.refs) });
+    const entry = { id: id, type: normaliseLibType(o.type, id), name: asString(o.name, ""), desc: asString(o.desc, ""), refs: normaliseRefs(o.refs) };
+    if (entry.type === "Style") {
+      entry.base = asString(o.base, "comic") || "comic";
+      entry.pos = asString(o.pos, "");
+      entry.neg = asString(o.neg, "");
+    }
+    out.push(entry);
   }
   return out;
 }
@@ -51,11 +57,12 @@ export function normaliseKept(arr) {
 
 export function normaliseLibType(type, id) {
   if (type === "Panel Description") return "Panel Specific Description";
-  if (type === "Character" || type === "Location" || type === "Action" || type === "Panel Specific Description") return type;
+  if (type === "Character" || type === "Location" || type === "Action" || type === "Panel Specific Description" || type === "Style") return type;
   const s = asString(id, "");
   if (s.startsWith("loc-")) return "Location";
   if (s.startsWith("act-")) return "Action";
   if (s.startsWith("pd-")) return "Panel Specific Description";
+  if (s.startsWith("sty-")) return "Style";
   return "Character";
 }
 
