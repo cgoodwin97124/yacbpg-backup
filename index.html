@@ -402,7 +402,7 @@ color-scheme:light;
   .gp-entry .gp-copy, .gp-entry .gp-gen { font-size: 0.72rem; padding: 4px 8px; }
   .panel-img-box { background: var(--well); position: relative; width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
   .panel-img-box img { width: 100%; height: 100%; object-fit: cover; }
-  .img-preview { position: fixed; z-index: 10010; pointer-events: none; background: rgba(10,10,10,0.94); border: 2px solid var(--accent); border-radius: 8px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none; }
+  .img-preview { position: fixed; z-index: 10014; pointer-events: none; background: rgba(10,10,10,0.94); border: 2px solid var(--accent); border-radius: 8px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none; }
   .img-preview:not([hidden]) { display: flex; flex-direction: column; align-items: center; gap: 5px; }
   .img-preview img { display: block; max-width: min(85vw, 1100px); max-height: min(80vh, 900px); object-fit: contain; border-radius: 4px; }
   .img-preview--thumb img { max-width: min(85vw, 420px); max-height: min(70vh, 420px); }
@@ -662,8 +662,8 @@ color-scheme:light;
   .panel-card.paused { border-color: var(--accent-3); }
   .panel-card.stopped { border-color: var(--red); }
   .panel-imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
-  .panel-imgs .panel-img-box { margin-bottom: 0; }
-  .panel-imgs-sel { display: flex; align-items: center; gap: 6px; color: var(--accent); font-weight: bold; font-size: 0.8rem; white-space: nowrap; }
+  body.slots-vertical .panel-imgs { grid-template-columns: minmax(0, 1fr); }
+  .panel-imgs .panel-img-box { margin-bottom: 0; }  .panel-imgs-sel { display: flex; align-items: center; gap: 6px; color: var(--accent); font-weight: bold; font-size: 0.8rem; white-space: nowrap; }
   .panel-imgs-sel select { width: auto; margin: 0; padding: 3px 6px; font-size: 0.8rem; }
   .panel-header-row .panel-acc { display: contents; }
   .panel-header-row .panel-acc-toggle { background: var(--surface-3); border: 1px solid var(--border-2); border-radius: 4px; padding: 3px 8px; align-self: center; }
@@ -1130,6 +1130,7 @@ color-scheme:light;
           <label class="check-label"><input type="checkbox" id="prefBgGenerate" data-action="w1-74"> <span><b>Keep generating when I switch to another tab or app</b> — with this on, a run keeps going while the page is in the background, so you come back to finished panels instead of a paused run. On by default. Turn it off to save memory, battery and data: a backgrounded page runs slower and a phone may suspend it entirely, in which case the run pauses and <b>⚡ GENERATE ALL PANELS ON PAGE ⚡</b> picks it up again.</span></label>
           <label class="check-label"><input type="checkbox" id="prefKeepAwake" data-action="w1-75"> <span><b>Keep this tab awake while I work</b> — plays a <b>silent</b> audio loop (a sound you cannot hear) so the browser stops slowing this page down when you are looking at another tab or window. A browser deliberately throttles hidden pages, but it leaves a page that is "playing audio" alone, so this keeps a run — and the AI helper's own work — at full speed while the tab is in the background. Off by default; it starts at your first click on the page, and your browser's tab may show its <b>🔊 playing</b> icon while it is on. <span class="pref-state" id="keepAwakeState">● off</span></span></label>
           <label class="check-label"><input type="checkbox" id="prefRoundRobin" data-action="w1-188"> <span><b>Generate round-robin: all panels' image 1, then image 2…</b> — multi-panel runs render every panel's first image before any panel's second, instead of finishing each panel before moving on. Panels with fewer images sit out the later rounds. Off by default; seeds are set per panel and image, so the same pictures come out in either order.</span></label>
+          <label class="check-label"><input type="checkbox" id="prefVerticalSlots" data-action="w1-190"> <span><b>Stack image slots vertically: one column per panel (1 × N)</b> — each panel's image slots pile top-to-bottom in a single column instead of spreading across a grid. Applies on the main page and in Focus; Storyboard keeps its one-image-per-panel cells. Off by default.</span></label>
           <div class="pref-sub">Recent files</div>
           <label class="pref-row"><span><b>Recent projects to remember</b> — how many entries the <b>Recent</b> list under 📄 File shows. Type a number or use the spinner arrows; <b>0</b> hides the list entirely, and the most recent five are still remembered while it is hidden. This is saved in this browser only, like the file list itself.</span>
             <input type="number" id="prefRecentMax" min="0" max="50" step="1" value="5" data-action="w1-76" data-action2="w1-77" title="0 hides the Recent list; up to 50 entries are shown" style="width:6em;">
@@ -1498,8 +1499,9 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.12.3 — 2026-10-12 — Round-robin generation order option
-- New Preferences checkbox (Edit → Preferences → Generation, also in Commands → Preferences): with round-robin on, multi-panel runs render every panel's image 1, then image 2, and so on; panels with fewer images sit out the later rounds. Pausing resumes at the exact panel and image. Off by default; seeds are per panel and image, so either order produces the same pictures.
+## 2026.10.13.1 — 2026-10-13 — Hover preview in Storyboard/Focus + vertical image slots
+- Image hover preview now works in Storyboard and Focus, not just the main page (same delay + on/off setting).
+- New Preferences checkbox (Edit → Preferences → Generation, also in Commands → Preferences): stack each panel's image slots vertically in one column (1 × N) on the main page and in Focus. Storyboard keeps its one-image-per-panel cells. Off by default.
 </script>
 
 
@@ -3118,6 +3120,20 @@ color-scheme:light;
   function onPrefRoundRobinChange() {
     const c = document.getElementById('prefRoundRobin');
     applyRoundRobin(c && c.checked);
+  }
+  const VERT_SLOTS_KEY = 'comicGen.verticalSlots';
+  let verticalSlotsPref = false;
+  function verticalSlotsOn() { return !!verticalSlotsPref; }
+  function applyVerticalSlots(on) {
+    verticalSlotsPref = !!on;
+    try { localStorage.setItem(VERT_SLOTS_KEY, verticalSlotsPref ? '1' : '0'); } catch (e) {}
+    document.body.classList.toggle('slots-vertical', verticalSlotsPref);
+    const cb = document.getElementById('prefVerticalSlots');
+    if (cb) cb.checked = verticalSlotsPref;
+  }
+  function onPrefVerticalSlotsChange() {
+    const c = document.getElementById('prefVerticalSlots');
+    applyVerticalSlots(c && c.checked);
   }
 
   function onIncludeRefsExportChange() {
@@ -4758,6 +4774,11 @@ color-scheme:light;
   function previewDataFromTarget(target) {
     const thumb = target && target.closest ? target.closest('img.gp-thumb') : null;
     if (thumb && thumb.getAttribute('src')) return { label: thumb.dataset.thumbLabel || 'Saved prompt image', dataUrl: thumb.getAttribute('src'), thumb: true };
+    const sb = target && target.closest ? target.closest('img[data-sb-panel]') : null;
+    if (sb && sb.getAttribute('src')) {
+      const p = parseInt(sb.dataset.sbPanel, 10);
+      return { i: p, k: 1, label: 'Panel ' + p + ' · Image 1', dataUrl: sb.getAttribute('src') };
+    }
     const box = target && target.closest ? target.closest('.panel-img-box') : null;
     if (!box) return null;
     const m = /^imgbox-panel-(\d+)-(\d+)$/.exec(box.id);
@@ -7900,6 +7921,7 @@ color-scheme:light;
     { t: "Recent projects kept…", g: "Preferences", act: "w1-178" },
     { t: function () { return "Insertion gaps: " + palChecked("prefShowGaps"); }, g: "Preferences", act: "w1-180" },
     { t: function () { return "Round-robin generation: " + palChecked("prefRoundRobin"); }, g: "Preferences", act: "w1-189" },
+    { t: function () { return "Vertical image slots: " + palChecked("prefVerticalSlots"); }, g: "Preferences", act: "w1-191" },
     { t: function () { const n = panelSelection.size; return "Duplicate " + (n ? n + " panel" + (n === 1 ? "" : "s") + " " : "") + "to cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-182" },
     { t: function () { const n = panelSelection.size; return "Move " + (n ? n + " panel" + (n === 1 ? "" : "s") + " " : "") + "to cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-183" },
     { t: function () { const n = panelSelection.size || 1; return "Add " + n + " panel" + (n === 1 ? "" : "s") + " at cursor (" + cursorGapLabel(cursorGap()) + ")"; }, g: "Cursor", act: "w1-184" },
@@ -10526,6 +10548,7 @@ color-scheme:light;
       if (dataUrl) {
         const img = document.createElement('img');
         img.src = dataUrl;
+        img.dataset.sbPanel = String(p);
         img.alt = 'Panel ' + p;
         cell.appendChild(img);
       } else {
@@ -13762,6 +13785,7 @@ color-scheme:light;
     "w1-76": { ev: "input", run: (el, e) => { onPrefRecentMaxChange() } },    "w1-77": { ev: "change", run: (el, e) => { onPrefRecentMaxChange() } },
     "w1-181": { ev: "change", run: (el, e) => { onShowGapsChange() } },
     "w1-188": { ev: "change", run: (el, e) => { onPrefRoundRobinChange() } },
+    "w1-190": { ev: "change", run: (el, e) => { onPrefVerticalSlotsChange() } },
     "w1-78": { ev: "click", run: (el, e) => { document.getElementById('libImportInput').click() } },
     "w1-79": { ev: "click", run: (el, e) => { openAnalysis() } },
     "w1-80": { ev: "change", run: (el, e) => { libraryImportFiles(e) } },
@@ -13867,6 +13891,7 @@ color-scheme:light;
     "w1-179": { ev: "click", run: (el, e) => { resetEverything(false); } },
     "w1-180": { ev: "click", run: (el, e) => { palToggle('prefShowGaps'); } },
     "w1-189": { ev: "click", run: (el, e) => { palToggle('prefRoundRobin'); } },
+    "w1-191": { ev: "click", run: (el, e) => { palToggle('prefVerticalSlots'); } },
     "w1-182": { ev: "click", run: (el, e) => { duplicateSelectionToCursor(); } },
     "w1-183": { ev: "click", run: (el, e) => { moveSelectionToCursor(); } },
     "w1-184": { ev: "click", run: (el, e) => { addPanelsAtCursor(); } },
@@ -13972,7 +13997,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
 
   function ghLoadSettings() {
     try {
@@ -14284,6 +14309,7 @@ color-scheme:light;
     try { keepAwakePref = localStorage.getItem(KEEP_AWAKE_KEY) === '1'; } catch (e) {}
     try { showGapsPref = localStorage.getItem(SHOW_GAPS_KEY) === '1'; } catch (e) { showGapsPref = false; }
     try { roundRobinPref = localStorage.getItem(ROUND_ROBIN_KEY) === '1'; } catch (e) { roundRobinPref = false; }
+    try { verticalSlotsPref = localStorage.getItem(VERT_SLOTS_KEY) === '1'; } catch (e) { verticalSlotsPref = false; }
     try { const tm = localStorage.getItem(THEME_MODE_KEY); themeModePref = (tm === 'light' || tm === 'dark' || tm === 'system') ? tm : 'system'; } catch (e) { themeModePref = 'system'; }
     try { themeAccent = normalizeAccent(localStorage.getItem(THEME_ACCENT_KEY)); } catch (e) {}
     applyTheme();
@@ -14309,6 +14335,8 @@ color-scheme:light;
     document.addEventListener('visibilitychange', keepAwakeKick);
     window.addEventListener('pageshow', keepAwakeKick);
     document.body.classList.toggle('hdr-all-views', hdrAllViewsPref);
+    document.body.classList.toggle('slots-vertical', verticalSlotsPref);
+    { const cbVs = document.getElementById('prefVerticalSlots'); if (cbVs) cbVs.checked = verticalSlotsPref; }
     syncHdrHeight();
     let savedLayout = '';
     try { savedLayout = localStorage.getItem(LAYOUT_KEY) || ''; } catch (e) {}
