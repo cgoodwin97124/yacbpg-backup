@@ -69,7 +69,7 @@ export function extractLibraryItems(data) {
 function normalizeLibEntry(o) {
   const entry = { type: normalizeLibType(o), name: String(o.name || '').trim(), desc: String(o.desc || '').trim() };
   if (entry.type === 'Style') {
-    entry.base = String(o.base || 'comic');
+    entry.base = String(o.base || 'none');
     entry.pos = String(o.pos || '');
     entry.neg = String(o.neg || '');
   }
