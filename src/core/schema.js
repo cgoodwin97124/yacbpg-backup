@@ -25,7 +25,7 @@ export function normaliseLibrary(arr) {
     seen.add(id);
     const entry = { id: id, type: normaliseLibType(o.type, id), name: asString(o.name, ""), desc: asString(o.desc, ""), refs: normaliseRefs(o.refs) };
     if (entry.type === "Style") {
-      entry.base = asString(o.base, "comic") || "comic";
+      entry.base = asString(o.base, "none") || "none";
       entry.pos = asString(o.pos, "");
       entry.neg = asString(o.neg, "");
     }
