@@ -1503,10 +1503,11 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.13.2 — 2026-10-13 — Custom artwork styles
+## 2026.10.13.3 — 2026-10-13 — Custom styles can inherit None
+ - Custom art styles can now inherit "None" instead of a built-in style: only your own extra keywords are sent (plus the palette's), letting the image generator decide the look. With no negative keywords the default negative safety net still applies. New styles default to None.
 - Image hover preview now works in Storyboard and Focus, not just the main page (same delay + on/off setting).
 - New Preferences checkbox (Edit → Preferences → Generation, also in Commands → Preferences): stack each panel's image slots vertically in one column (1 × N) on the main page and in Focus. Storyboard keeps its one-image-per-panel cells. Off by default.
-- Custom artwork styles: the 📚 Library has a 🎨 Art Styles section — name a style, pick the built-in style it inherits keywords from, and add extra positive/negative keywords. Custom styles save with the project, work in My catalogue (⤒/⤓/import), and appear in the global Art Style dropdown and every panel's Style override. Deleting a style in use falls back to the global style with a notice.
+- Custom artwork styles: the 📚 Library has a 🎨 Art Styles section — name a style, pick the built-in style it inherits keywords from (or None for your keywords only), and add extra positive/negative keywords. Custom styles save with the project, work in My catalogue (⤒/⤓/import), and appear in the global Art Style dropdown and every panel's Style override. Deleting a style in use falls back to the global style with a notice.
 </script>
 
 
@@ -1674,7 +1675,7 @@ color-scheme:light;
   function projectLibraryArray() {
     return projectLibrary.map(o => {
       const e = { id: o.id, type: o.type, name: o.name, desc: o.desc, refs: refListOf(o).map(r => ({ src: r.src })) };
-      if (o.type === 'Style') { e.base = o.base || 'comic'; e.pos = o.pos || ''; e.neg = o.neg || ''; }
+      if (o.type === 'Style') { e.base = o.base || 'none'; e.pos = o.pos || ''; e.neg = o.neg || ''; }
       return e;
     });
   }
@@ -1918,7 +1919,7 @@ color-scheme:light;
 
   function refEntryFor(o, withRefs) {
     const e = { id: o.id, type: o.type, name: o.name || '', desc: o.desc || '' };
-    if (o.type === 'Style') { e.base = o.base || 'comic'; e.pos = o.pos || ''; e.neg = o.neg || ''; }
+    if (o.type === 'Style') { e.base = o.base || 'none'; e.pos = o.pos || ''; e.neg = o.neg || ''; }
     if (withRefs) e.refs = refListOf(o).map(r => ({ src: r.src }));
     return e;
   }
@@ -2007,7 +2008,7 @@ color-scheme:light;
     if (label === 'Style') {
       const desc = prompt('Add a note about "' + finalName + '" (optional) — shown in the Library, not used in prompts:', '');
       if (desc === null) return null;
-      return { type: label, name: finalName, desc: desc.trim(), base: 'comic', pos: '', neg: '' };
+      return { type: label, name: finalName, desc: desc.trim(), base: 'none', pos: '', neg: '' };
     }
     const desc = prompt('Add the ' + label.toLowerCase() + ' description for "' + finalName + '" (optional) — shown in 📚 Library and used in every panel prompt that uses it:', '');
     let panelDesc = null;
@@ -2031,7 +2032,7 @@ color-scheme:light;
     const objs = loadLibraryObjects();
     const id = newLibraryId(fresh.type);
     const item = { id: id, type: fresh.type, name: fresh.name, desc: fresh.desc };
-    if (fresh.type === 'Style') { item.base = fresh.base || 'comic'; item.pos = fresh.pos || ''; item.neg = fresh.neg || ''; }
+    if (fresh.type === 'Style') { item.base = fresh.base || 'none'; item.pos = fresh.pos || ''; item.neg = fresh.neg || ''; }
     objs.push(item);
     pushPanelDescriptionItem(objs, fresh.panelDesc);
     saveLibraryObjects(objs);
@@ -2240,8 +2241,8 @@ color-scheme:light;
     const same = cat.find(e => e.id === id);
     const sameRefs = same ? refListOf(same).map(r => r.src).join('|') : null;
     const srcRefs = refListOf(src).map(r => r.src).join('|');
-    const sameStyle = (same && same.type === 'Style') ? [same.base || 'comic', same.pos || '', same.neg || ''].join('|') : null;
-    const srcStyle = (src.type === 'Style') ? [src.base || 'comic', src.pos || '', src.neg || ''].join('|') : null;
+    const sameStyle = (same && same.type === 'Style') ? [same.base || 'none', same.pos || '', same.neg || ''].join('|') : null;
+    const srcStyle = (src.type === 'Style') ? [src.base || 'none', src.pos || '', src.neg || ''].join('|') : null;
     if (same && same.name === (src.name || '') && same.desc === (src.desc || '') && sameRefs === srcRefs && sameStyle === srcStyle) {
       const st0 = document.getElementById('statusEl');
       if (st0) st0.textContent = '\u201c' + (src.name || 'That item') + '\u201d is already in My catalogue.';
@@ -2862,19 +2863,19 @@ color-scheme:light;
     const sub = document.createElement('div');
     sub.className = 'lib-style-sub';
     const baseSel = document.createElement('select');
-    baseSel.title = 'The built-in style this custom style inherits its keywords from';
+    baseSel.title = 'The built-in style this custom style inherits its keywords from — or None for your keywords only';
     const posInput = document.createElement('textarea');
     posInput.rows = 2;
-    posInput.placeholder = 'Extra positive keywords, comma separated (added after the inherited ones)';
+    posInput.placeholder = 'Extra positive keywords, comma separated (added after the inherited ones — or the only style keywords when inheriting None)';
     posInput.value = o.pos || '';
     const negInput = document.createElement('textarea');
     negInput.rows = 2;
-    negInput.placeholder = 'Extra negative keywords, comma separated (added after the inherited negatives)';
+    negInput.placeholder = 'Extra negative keywords, comma separated (added after the inherited negatives — with None and nothing here, the default negatives apply)';
     negInput.value = o.neg || '';
     const fillBase = () => {
       const builtinMap = BUILTIN_STYLES || ART_STYLES || {};
-      baseSel.innerHTML = Object.entries(builtinMap).map(([id, s]) => `<option value="${id}">${escapeHtml(s.label)}</option>`).join('');
-      baseSel.value = [...baseSel.options].some(x => x.value === o.base) ? o.base : 'comic';
+      baseSel.innerHTML = '<option value="none">None (let the image generator decide)</option>' + Object.entries(builtinMap).map(([id, s]) => `<option value="${id}">${escapeHtml(s.label)}</option>`).join('');
+      baseSel.value = [...baseSel.options].some(x => x.value === o.base) ? o.base : 'none';
     };
     fillBase();
     const saveProj = () => { if (objs) { saveLibraryObjects(objs); } };
@@ -2993,7 +2994,7 @@ color-scheme:light;
     const buckets = [['👤 Characters', 'Character', 'No characters in this project yet — click the green + button to add one, or copy one in from My catalogue below.'], ['📍 Locations', 'Location', 'No locations in this project yet — click the green + button to add one, or copy one in from My catalogue below.']];
     if (objs.some(o => o.type === 'Action') || cat.some(o => o.type === 'Action')) buckets.push(['🎬 Actions', 'Action', 'No actions in this project yet — click the green + button to add one, or copy one in from My catalogue below.']);
     buckets.push(['💬 Panel Specific Descriptions', 'Panel Specific Description', 'No saved Panel Specific Descriptions yet — click the green + button, use 💾 Save to library beside a panel\u2019s Panel Specific Description box, or let a new character or location create one. They are shared: any character or location can use any of them.']);
-    buckets.push(['🎨 Art Styles', 'Style', 'No custom art styles yet — click the green + button to name one. Each style inherits the keywords of a built-in style and adds your own extra positive and negative keywords. Custom styles appear in the global Art Style dropdown and in every panel\u2019s Style override.']);
+    buckets.push(['🎨 Art Styles', 'Style', 'No custom art styles yet — click the green + button to name one. Each style inherits the keywords of a built-in style — or None for your keywords only — and adds your own extra positive and negative keywords. Custom styles appear in the global Art Style dropdown and in every panel\u2019s Style override.']);
     for (const [label, type, emptyHint] of buckets) {
       const hrow = document.createElement('div');
       hrow.className = 'lib-bucket-row';
@@ -3073,8 +3074,8 @@ color-scheme:light;
     const existing = loadCatalogue();
     libImportCandidates = raw.map((o, idx) => {
       const same = existing.find(e => e.type === o.type && e.name === o.name);
-      const styleFields = o.type === 'Style' ? { base: o.base || 'comic', pos: o.pos || '', neg: o.neg || '' } : null;
-      const sameStyleFields = (same && same.type === 'Style') ? { base: same.base || 'comic', pos: same.pos || '', neg: same.neg || '' } : null;
+      const styleFields = o.type === 'Style' ? { base: o.base || 'none', pos: o.pos || '', neg: o.neg || '' } : null;
+      const sameStyleFields = (same && same.type === 'Style') ? { base: same.base || 'none', pos: same.pos || '', neg: same.neg || '' } : null;
       const styleSame = !styleFields || (sameStyleFields && sameStyleFields.base === styleFields.base && sameStyleFields.pos === styleFields.pos && sameStyleFields.neg === styleFields.neg);
       let status = 'new';
       if (same && same.desc === o.desc && styleSame) status = 'identical';
@@ -3204,17 +3205,17 @@ color-scheme:light;
         } else if (c.resolve === 'overwrite') {
           if (name) existing.name = name;
           existing.desc = desc;
-          if (c.type === 'Style') { existing.base = c.base || 'comic'; existing.pos = c.pos || ''; existing.neg = c.neg || ''; }
+          if (c.type === 'Style') { existing.base = c.base || 'none'; existing.pos = c.pos || ''; existing.neg = c.neg || ''; }
           merged++;
         } else {
           const entry = { id: newLibraryId(c.type), type: c.type, name: name || '(unnamed)', desc: desc };
-          if (c.type === 'Style') { entry.base = c.base || 'comic'; entry.pos = c.pos || ''; entry.neg = c.neg || ''; }
+          if (c.type === 'Style') { entry.base = c.base || 'none'; entry.pos = c.pos || ''; entry.neg = c.neg || ''; }
           objs.push(entry);
           added++;
         }
       } else {
         const entry = { id: newLibraryId(c.type), type: c.type, name: name || '(unnamed)', desc: desc };
-        if (c.type === 'Style') { entry.base = c.base || 'comic'; entry.pos = c.pos || ''; entry.neg = c.neg || ''; }
+        if (c.type === 'Style') { entry.base = c.base || 'none'; entry.pos = c.pos || ''; entry.neg = c.neg || ''; }
         objs.push(entry);
         added++;
       }
@@ -9197,6 +9198,10 @@ color-scheme:light;
     }
     const c = customStyleItems().find(o => o.id === id);
     if (!c) return null;
+    if (c.base === 'none') {
+      const onlyNeg = splitStyleKw(c.neg).join(', ');
+      return { kind: 'custom', id: id, label: c.name || '(unnamed style)', keywords: splitStyleKw(c.pos), negatives: onlyNeg || null };
+    }
     const base = builtinMap[c.base] || builtinMap.comic || { keywords: [], negatives: null };
     const keywords = [...(base.keywords || []), ...splitStyleKw(c.pos)];
     const baseNeg = base.negatives || DEFAULT_NEGATIVES;
