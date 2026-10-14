@@ -1,3 +1,7 @@
+## 2026.10.13.3 — 2026-10-13 — Custom styles can inherit None
+- A custom art style can now inherit "None" instead of a built-in style: only your own extra keywords are sent (plus the palette's), letting the image generator decide the look. With no negative keywords the default negative safety net still applies. New styles default to None.
+- Verified live (None default on create, own-keywords-only resolution, safety-net negatives in composition, None first in the inherit dropdown, delete cleanup) + suites: core 81/0, diff-core 24/0, smoke 119/0 (new G24:122 pin, G24:120 updated), fixtures 18/0, state-diff 38/0 (all byte-identical restores), gen 15/6 (same 6 pre-existing failures, A/B-proven unrelated).
+
 ## 2026.10.13.2 — 2026-10-13 — Custom artwork styles
 - The Library has a new Art Styles section: name a custom style, pick the built-in style it inherits keywords from, and add extra positive/negative keywords. Custom styles save with the project, work in My catalogue (copy/import), and appear in the global Art Style dropdown and every panel's Style override. Deleting a style in use falls back to the global style with a notice.
 
