@@ -190,6 +190,14 @@ color-scheme:light;
   .run-reroll { border: 1px solid var(--border-2); background: var(--surface-3); border-radius: 4px; cursor: pointer; padding: 2px 6px; }
   .run-reroll:disabled { opacity: 0.4; cursor: default; }
   .run-state { font-size: 0.72rem; font-weight: bold; padding: 1px 7px; border-radius: 8px; border: 1px solid var(--border-2); white-space: nowrap; }
+  .run-qbtn { border: 1px solid var(--border-2); background: var(--surface-3); color: var(--text); border-radius: 4px; cursor: pointer; padding: 2px 6px; font-size: 0.75rem; }
+  .run-qbtn:disabled { opacity: 0.35; cursor: default; }
+  .gen-split { display: inline-flex; align-items: stretch; }
+  .gen-split .gen-caret { margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; padding-left: 6px; padding-right: 6px; }
+  #genSplitMenu { position: fixed; z-index: 10031; background: var(--surface); color: var(--text); border: 2px solid var(--accent); border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.65); min-width: 220px; max-width: calc(100vw - 24px); padding: 4px; }
+  #genSplitMenu[hidden] { display: none; }
+  #genSplitMenu .gen-choice { display: block; width: 100%; text-align: left; background: none; border: 0; color: var(--text); font: inherit; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+  #genSplitMenu .gen-choice:hover { background: var(--surface-3); }
   .st-queued { color: var(--text-6); }
   .st-rendering { color: var(--accent); border-color: var(--accent); }
   .st-done { color: var(--green-text); border-color: var(--green); }
@@ -858,7 +866,7 @@ color-scheme:light;
 <div id="toastStack"></div>
 <div id="runSlot" hidden></div>
 <div id="runPanel" hidden>
-  <div class="run-panel-head"><span>Run</span><span id="runPanelTarget"></span><span class="run-panel-btns"><button id="runPanelPause" data-action="w1-141" title="Pause the run — resume continues where it left off">⏸</button><button id="runPanelResume" data-action="w1-142" title="Continue the paused run" hidden>▶</button><button id="runPanelStop" data-action="w1-143" title="Cancel the run">■</button><button id="runPanelClose" data-action="w1-145" title="Hide this panel">✕</button></span></div>
+  <div class="run-panel-head"><span>Run</span><span id="runPanelTarget"></span><span class="run-panel-btns"><button id="runPanelPause" data-action="w1-141" title="Pause the run — resume continues where it left off">⏸</button><button id="runPanelResume" data-action="w1-142" title="Continue the paused run" hidden>▶</button><button id="runPanelStop" data-action="w1-143" title="Cancel the run">■</button><button id="runPanelQueueGo" data-action="w1-192" title="Generate the queued items" hidden>📥</button><button id="runPanelClear" data-action="w1-194" title="Remove all items from the queue" hidden>🗑</button><button id="runPanelClose" data-action="w1-145" title="Hide this panel">✕</button></span></div>
   <div id="runPanelRows"></div>
 </div>
 <div id="cmdPalette" hidden>
@@ -867,6 +875,7 @@ color-scheme:light;
   <div class="cmd-foot">↑↓ move · → open · ← close · Enter run · Esc close</div>
 </div>
 <div id="ctxMenu" hidden></div>
+<div id="genSplitMenu" hidden></div>
 <div class="page-layout">
   <div class="menu-frame" id="menuFrame">
     <div class="menu-scroll">
@@ -877,6 +886,7 @@ color-scheme:light;
         <button class="menu-btn" data-menu="library" data-action="w1-10">📚 Library</button>
         <button class="menu-btn" data-menu="help" data-action="w1-11">❓ Help</button>
         <button class="menu-btn menu-action" id="menuGenerateBtn" data-action="w1-12" title="Generate every panel on this page">⚡ Generate All</button>
+        <button class="menu-btn menu-action" id="menuQueueBtn" data-action="w1-192" title="Generate everything currently in the generation queue">📥 Generate queued</button>
         <button class="menu-btn menu-action" id="globalPauseBtn" data-action="w1-13" title="Pause the run — press ⚡ Generate All to continue where you left off" disabled>⏸ Pause</button>
         <button class="menu-btn menu-stop" id="globalStopBtn" data-action="w1-14" title="Cancel the running ⚡ Generate All run" disabled>■ Stop</button>
         <button class="menu-btn" id="globalUndoBtn" data-action="w1-15" title="Nothing to undo yet — structural changes (add, duplicate, move, delete) can be undone here" disabled>↩ Undo</button>
@@ -1078,7 +1088,7 @@ color-scheme:light;
           <div id="selMenuHint" class="lib-hint" style="color:var(--text-8);">Select at least one panel (the checkbox at the left of a panel's header) to use these buttons.</div>
           <div class="panel-header-btns" style="margin-top:6px;justify-content:flex-start;">
             <button class="btn-view" id="selMenuFocusBtn" data-action="w1-148" disabled title="Open the selected panels in the focus view — the list, dropdown and prev/next cycle within the set">🔍 Focus</button>
-            <button class="btn-reroll" id="selMenuGenBtn" data-action="w1-47" disabled title="Generate every selected panel (with several selected, the in-panel button does the same)">🔄 Generate</button>
+            <span class="gen-split"><button class="btn-reroll" id="selMenuGenBtn" data-action="w1-47" disabled title="Generate every selected panel (with several selected, the in-panel button does the same)">🔄 Generate</button><button class="btn-reroll gen-caret" data-action="w1-193" disabled id="selMenuGenCaret" title="Choose: generate now or add to the queue">▾</button></span>
             <button class="btn-add-lib" id="selMenuGenToBtn" data-action="w1-48" disabled title="Generate from panel 1 up to and including the last selected panel">⚡ Generate All To Here</button>
             <button class="btn-add-lib" id="selMenuGenFromBtn" data-action="w1-49" disabled title="Generate from the first selected panel to the end of the page">⚡ Generate All From Here</button>
             <button class="btn-add-lib" id="selMenuGenRangeBtn" data-action="w1-50" disabled title="Choose an inclusive range of panels to generate — it starts out as the selected span">⚡ Generate (x) to (y)…</button>
@@ -1254,6 +1264,7 @@ color-scheme:light;
   </div>
   <div class="focus-gen">
     <button class="btn-generate" id="focusGenerateBtn" data-action="w1-12">⚡ Generate All</button>
+    <button class="btn-generate" id="focusQueueBtn" data-action="w1-192" title="Generate everything currently in the generation queue">📥 Queued</button>
     <button class="btn-pause-global" id="focusPauseBtn" data-action="w1-13" title="Pause the run — press ⚡ Generate All to continue where you left off" disabled>⏸ Pause</button>
     <button class="btn-stop-global" id="focusStopBtn" data-action="w1-14" title="Cancel the running ⚡ Generate All run" disabled>■ Stop</button>
     <div class="status" id="focusStatusEl"></div>
@@ -1503,11 +1514,10 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.13.3 — 2026-10-13 — Custom styles can inherit None
- - Custom art styles can now inherit "None" instead of a built-in style: only your own extra keywords are sent (plus the palette's), letting the image generator decide the look. With no negative keywords the default negative safety net still applies. New styles default to None.
-- Image hover preview now works in Storyboard and Focus, not just the main page (same delay + on/off setting).
-- New Preferences checkbox (Edit → Preferences → Generation, also in Commands → Preferences): stack each panel's image slots vertically in one column (1 × N) on the main page and in Focus. Storyboard keeps its one-image-per-panel cells. Off by default.
-- Custom artwork styles: the 📚 Library has a 🎨 Art Styles section — name a style, pick the built-in style it inherits keywords from (or None for your keywords only), and add extra positive/negative keywords. Custom styles save with the project, work in My catalogue (⤒/⤓/import), and appear in the global Art Style dropdown and every panel's Style override. Deleting a style in use falls back to the global style with a notice.
+## 2026.10.13.4 — 2026-10-15 — Generation queue
+ - New Generation queue: every Generate control is now a split button — Generate Now runs immediately, Add to queue appends the job (whole panels or individual slots) to a first-in-first-out queue. Each split remembers its last-used face.
+ - Generate Queued (menu bar, run panel, and Commands) drains the queue in order: whole panels generate, then their slots expand at runtime. Enqueue more while it runs; pause to reorder or remove items, stop to keep the rest for later. A failed item is marked and skipped, never blocking the rest.
+ - Queue lives in the run panel with up/down/remove controls, outcome badges, and a clear-queue button. Session-only, current page only.
 </script>
 
 
@@ -3567,7 +3577,7 @@ color-scheme:light;
     const menuHidden = document.body.classList.contains('menu-hidden');
     const inHeader = menuHidden && genAlwaysVisiblePref;
     const target = inHeader ? ctr : bar;
-    for (const id of ['menuGenerateBtn', 'globalPauseBtn', 'globalStopBtn']) {
+    for (const id of ['menuGenerateBtn', 'menuQueueBtn', 'globalPauseBtn', 'globalStopBtn']) {
       const b = document.getElementById(id);
       if (b && target && b.parentElement !== target) target.appendChild(b);
     }
@@ -4810,6 +4820,437 @@ color-scheme:light;
   let runSignal = null;
   let stopRequested = false;
   let generateAllRunning = false;
+  let genQueue = [];
+  let genQueueSeq = 1;
+  let queueRunning = false;
+  let pausedRunKind = null;
+  let queueRunId = 0;
+  const queueDone = new Set();
+  const queuePromptCache = new Map();
+  let queueRR = false;
+  function queueUnitKey(i, k) { return queueRunId + '|' + i + ':' + k; }
+  function genPref(which) {
+    try {
+      const v = localStorage.getItem(which === 'slot' ? 'comicGen.genSlotDefault' : 'comicGen.genPanelDefault');
+      return v === 'queue' ? 'queue' : 'now';
+    } catch (e) { return 'now'; }
+  }
+  function setGenPref(which, v) {
+    try { localStorage.setItem(which === 'slot' ? 'comicGen.genSlotDefault' : 'comicGen.genPanelDefault', v === 'queue' ? 'queue' : 'now'); } catch (e) {}
+    syncGenFaces();
+  }
+  function queueExpandItem(it) {
+    const total = getPanelCount();
+    const i = it.panel;
+    if (!(i >= 1 && i <= total)) return [];
+    if (it.slot != null) {
+      if (!(it.slot >= 1 && it.slot <= 4)) return [];
+      return [{ key: it.key, i: i, k: it.slot }];
+    }
+    const count = getPanelImageCount(i);
+    const units = [];
+    for (let k = 1; k <= count; k++) units.push({ key: it.key, i: i, k: k });
+    return units;
+  }
+  function queueItemPending(it) {
+    return queueExpandItem(it).some(u => !queueDone.has(queueUnitKey(u.i, u.k)));
+  }
+  function queueHasPending() {
+    return genQueue.some(it => queueItemPending(it));
+  }
+  function enqueueQueueItems(items, opts) {
+    opts = opts || {};
+    const total = getPanelCount();
+    let added = 0, skipped = 0;
+    for (const it of (items || [])) {
+      const i = it.panel, k = it.slot == null ? null : it.slot;
+      if (!(i >= 1 && i <= total)) { skipped++; continue; }
+      if (k != null && !(k >= 1 && k <= 4)) { skipped++; continue; }
+      if (genQueue.some(q => q.panel === i && (q.slot == null ? null : q.slot) === k && queueItemPending(q))) { skipped++; continue; }
+      if (k == null) {
+        for (let n = genQueue.length - 1; n >= 0; n--) {
+          if (genQueue[n].panel === i && queueItemPending(genQueue[n])) genQueue.splice(n, 1);
+        }
+      }
+      const item = { key: 'q' + (genQueueSeq++), panel: i, slot: k };
+      genQueue.push(item);
+      for (const u of queueExpandItem(item)) queueDone.delete(queueUnitKey(u.i, u.k));
+      added++;
+    }
+    queuePanelRender();
+    const statusEl = document.getElementById('statusEl');
+    if (statusEl && (added || skipped)) statusEl.textContent = added ? ('Queued ' + added + ' item' + (added === 1 ? '' : 's') + (skipped ? ' (' + skipped + ' already queued)' : '') + ' — ' + (queueRunning || generateAllRunning ? 'added to the end of the queue.' : 'starting.')) : 'Those items are already in the queue.';
+    chainQueueDrain();
+    return { added: added, skipped: skipped };
+  }
+  function chainQueueDrain() {
+    if (!genQueue.length || !queueHasPending()) return;
+    if (queueRunning || generateAllRunning) return;
+    if (Object.values(panelBusy).some(Boolean) || inFlightGen.size > 0) return;
+    drainGenQueue();
+  }
+  function clearGenQueue() {
+    genQueue = [];
+    queueDone.clear();
+    queuePromptCache.clear();
+    queueRunning = false;
+    if (pausedRunKind === 'queue') pausedRunKind = null;
+    queuePanelRender();
+    const statusEl = document.getElementById('statusEl');
+    if (statusEl) statusEl.textContent = 'Queue cleared.';
+  }
+  function moveQueueItem(key, dir) {
+    if (queueRunning && !pausedManually) return false;
+    const n = genQueue.findIndex(q => q.key === key);
+    const m = n + dir;
+    if (n < 0 || m < 0 || m >= genQueue.length) return false;
+    const t = genQueue[n]; genQueue[n] = genQueue[m]; genQueue[m] = t;
+    queuePanelRender();
+    return true;
+  }
+  function removeQueueItem(key) {
+    if (queueRunning && !pausedManually) return false;
+    const n = genQueue.findIndex(q => q.key === key);
+    if (n < 0) return false;
+    genQueue.splice(n, 1);
+    queuePanelRender();
+    return true;
+  }
+  const queueOutcome = new Map();
+  const queuePrepped = new Set();
+  async function drainGenQueue() {
+    if (queueRunning || !queueHasPending()) return;
+    for (let n = genQueue.length - 1; n >= 0; n--) {
+      if (!queueExpandItem(genQueue[n]).length) { queueOutcome.delete(genQueue[n].key); genQueue.splice(n, 1); }
+    }
+    if (!queueHasPending()) { queuePanelRender(); return; }
+    const statusEl = document.getElementById('statusEl');
+    const genBtn = document.querySelector('.btn-generate');
+    const pageName = currentPageLabel();
+    const totalPanels = getPanelCount();
+    queuePromptCache.clear();
+    queuePrepped.clear();
+    queueRR = roundRobinOn();
+    pausedRunKind = 'queue';
+    stopRequested = false;
+    pausedManually = false;
+    pausedByVisibility = false;
+    queueRunning = true;
+    generateAllRunning = true;
+    setStopButtonEnabled(true);
+    setPauseButtonEnabled(true);
+    if (genBtn) genBtn.disabled = true;
+    armRunSignal();
+    queuePanelOpen();
+    let generated = 0, skipped = 0, protectedCount = 0, failed = 0;
+    const itemOutcomes = new Map();
+    const itemDone = (key, outcome) => {
+      const arr = itemOutcomes.get(key) || [];
+      arr.push(outcome);
+      itemOutcomes.set(key, arr);
+      const it = genQueue.find(q => q.key === key);
+      if (it && !queueItemPending(it)) {
+        let fin = null;
+        if (!arr.length) fin = queueDone.size ? 'generated' : null;
+        else if (arr.indexOf('error') !== -1) fin = 'error';
+        else if (arr.indexOf('generated') !== -1 || arr.indexOf('ok') !== -1) fin = 'generated';
+        else if (arr.indexOf('cleared') !== -1) fin = 'cleared';
+        else if (arr.indexOf('skipped') !== -1) fin = 'skipped';
+        else if (arr.indexOf('protected') !== -1) fin = 'protected';
+        if (fin === 'generated') generated++;
+        else if (fin === 'skipped') skipped++;
+        else if (fin === 'protected') protectedCount++;
+        else if (fin === 'error') failed++;
+        if (fin) { queueOutcome.set(key, runPanelMapResult(fin)); runPanelSetQ(key, runPanelMapResult(fin)); }
+        if (queueRenderingKey === key) queueRenderingKey = null;
+      }
+    };
+    try {
+      while (true) {
+        const u = queueNextUnit();
+        if (!u) break;
+        const label = 'Panel ' + u.i + (u.k != null && !u.whole ? ' · image ' + u.k : '');
+        if (statusEl) statusEl.textContent = pageName + ': generating queue… (' + label + ')';
+        if (uiPreviewOn) setRunSlot(statusEl ? statusEl.textContent : '');
+        queueRenderingKey = u.item.key;
+        runPanelSetQ(u.item.key, 'rendering');
+        let result;
+        try {
+          if (u.whole) {
+            result = await generateSinglePanel(u.i);
+            if (result === 'cleared' || result === 'busy') {
+              if (!(stopRequested || pausedByVisibility || pausedManually)) { for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(w.i, w.k)); itemDone(u.item.key, 'skipped'); }
+              else break;
+            } else {
+              for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(w.i, w.k));
+              itemDone(u.item.key, result);
+            }
+          } else {
+            const info = await queueEnsurePrompt(u.i);
+            queuePrepPanel(u.i);
+            if (!info.hasContent) {
+              queueDone.add(queueUnitKey(u.i, u.k));
+              itemDone(u.item.key, info.protectedSlots.length === 0 ? 'skipped' : 'protected');
+            } else if (info.protectedSlots.length === info.count || info.protectedSlots.includes(u.k)) {
+              queueDone.add(queueUnitKey(u.i, u.k));
+              itemDone(u.item.key, info.protectedSlots.length === info.count ? 'protected' : 'skipped');
+            } else {
+              panelBusy[u.i] = true;
+              let st;
+              try {
+                promptHistoryRuns[u.i] = { pos: info.fullPrompt, neg: info.negativePrompt, seeds: [] };
+                st = await renderPanelSlot(u.i, u.k, info.fullPrompt, info.negativePrompt, info.size, info.srcRes, info.srcSize, null);
+              } catch (e) { st = 'error'; }
+              finally { panelBusy[u.i] = false; commitPromptHistoryRun(u.i); }
+              if (st === 'cleared') {
+                if (!(stopRequested || pausedByVisibility || pausedManually)) { queueDone.add(queueUnitKey(u.i, u.k)); itemDone(u.item.key, 'skipped'); }
+                else break;
+              } else {
+                queueDone.add(queueUnitKey(u.i, u.k));
+                itemDone(u.item.key, st === 'ok' ? 'generated' : st);
+              }
+            }
+          }
+        } catch (e) {
+          queueDone.add(queueUnitKey(u.i, u.k));
+          if (u.whole) for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(w.i, w.k));
+          itemDone(u.item.key, 'error');
+        }
+        if (stopRequested || pausedByVisibility || pausedManually) {
+          if (stopRequested) {
+            if (statusEl) statusEl.textContent = 'Stopped — queue halted with items still pending. Press 📥 Generate queued to resume, or clear the queue.';
+            if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify('Queue stopped.'); }
+            queueRenderingKey = null;
+            runPanelSetQ(u.item.key, 'stopped');
+            runPanelFinish('stopped');
+          } else {
+            if (statusEl) statusEl.textContent = (pausedManually ? 'Paused' : pageName + ': paused — tab went to background') + ' — press 📥 Generate queued to continue the queue.';
+            queueRenderingKey = null;
+            runPanelSetQ(u.item.key, 'paused');
+            runPanelFinish('paused');
+            if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
+          }
+          break;
+        }
+      }
+      for (const it of genQueue) {
+        if (queueItemPending(it)) continue;
+        if (!itemOutcomes.has(it.key) || !queueOutcome.has(it.key)) {
+          queueOutcome.set(it.key, 'done');
+          runPanelSetQ(it.key, 'done');
+          generated++;
+        }
+      }
+      if (!stopRequested && !pausedManually && !pausedByVisibility) {
+        if (statusEl) statusEl.textContent = (skipped > 0 || failed > 0 || protectedCount > 0
+          ? `Done: generated ${generated}, skipped ${skipped}${protectedCount ? ", protected " + protectedCount : ""}, failed ${failed}.`
+          : `Done: generated ${generated} item${generated === 1 ? "" : "s"}.`);
+        if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
+        runPanelFinish('ended');
+        pausedRunKind = null;
+      }
+    } finally {
+      if (genBtn) genBtn.disabled = false;
+      queueRunning = false;
+      queueRenderingKey = null;
+      generateAllRunning = false;
+      runSignal = null;
+      syncStopButton();
+      runPanelSyncBtns();
+    }
+  }
+  function resumeQueueDrain() {
+    if (queueRunning || !queueHasPending()) return;
+    drainGenQueue();
+  }
+  function generateQueuedAction() {
+    if (queueRunning || generateAllRunning) return;
+    if (!queueHasPending()) {
+      const statusEl = document.getElementById('statusEl');
+      if (statusEl) statusEl.textContent = 'The queue is empty — queue a panel first.';
+      queuePanelOpen();
+      return;
+    }
+    drainGenQueue();
+  }
+  function generateAllAction() {
+    if (queueRunning || generateAllRunning) return;
+    if (queueHasPending()) { drainGenQueue(); return; }
+    generateComicPage();
+  }
+  function resumeRunAction() {
+    if (queueRunning || generateAllRunning) return;
+    if (pausedRunKind === 'queue' && queueHasPending()) { drainGenQueue(); return; }
+    generateComicPage();
+  }
+  function closeGenMenu() {
+    const m = document.getElementById('genSplitMenu');
+    if (m) m.hidden = true;
+  }
+  function openGenMenu(anchorEl, opts) {
+    const m = document.getElementById('genSplitMenu');
+    if (!m) return;
+    m.innerHTML = '';
+    const mk = (label, hint, fn) => {
+      const b = document.createElement('button');
+      b.className = 'gen-choice';
+      b.textContent = label;
+      if (hint) b.title = hint;
+      b.addEventListener('click', (e) => { e.stopPropagation(); closeGenMenu(); fn(); });
+      m.append(b);
+    };
+    if (opts.kind === 'slot') {
+      mk('⚡ Reroll now', 'Generate this image immediately', () => slotGenGo(opts.i, opts.k, 'now'));
+      mk('📥 Queue this slot', 'Add this image to the end of the generation queue', () => slotGenGo(opts.i, opts.k, 'queue'));
+    } else {
+      mk('⚡ Generate now', opts.kind === 'batch' ? 'Queue the selected panels in panel order and start' : 'Generate this panel immediately', () => panelGenGo(opts, 'now'));
+      mk('📥 Add to queue', 'Add to the end of the generation queue', () => panelGenGo(opts, 'queue'));
+    }
+    m.hidden = false;
+    const r = anchorEl.getBoundingClientRect();
+    const w = m.offsetWidth || 240, h = m.offsetHeight || 100;
+    m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+    m.style.top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - h - 8)) + 'px';
+    if (!m.dataset.bound) {
+      m.dataset.bound = '1';
+      document.addEventListener('click', (e) => { const mm = document.getElementById('genSplitMenu'); if (mm && !mm.hidden && !mm.contains(e.target) && !(e.target.closest && e.target.closest('.gen-caret'))) closeGenMenu(); }, true);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGenMenu(); }, true);
+    }
+  }
+  function panelGenGo(opts, which) {
+    setGenPref('panel', which);
+    const list = (opts.list || [opts.i]).filter(i => i >= 1 && i <= getPanelCount());
+    if (!list.length) return;
+    if (which === 'now' && list.length === 1 && !queueRunning && !generateAllRunning) {
+      panelGenerateAction(list[0]);
+      return;
+    }
+    if (list.length > 1) clearPanelSelection();
+    enqueueQueueItems(list.map(i => ({ panel: i, slot: null })));
+    queuePanelOpen();
+  }
+  function slotGenGo(i, k, which) {
+    setGenPref('slot', which);
+    if (which === 'queue' || queueRunning || generateAllRunning) {
+      enqueueQueueItems([{ panel: i, slot: k }]);
+      queuePanelOpen();
+      return;
+    }
+    generateSinglePanelSlot(i, k);
+  }
+  function panelStickyGen(i) {
+    if (panelBatchMode(i) && panelSelection.size > 1) {
+      panelGenGo({ kind: 'batch', list: panelSelectionSorted() }, genPref('panel'));
+      return;
+    }
+    panelGenGo({ kind: 'panel', i: i }, genPref('panel'));
+  }
+  function slotStickyGen(i, k) {
+    slotGenGo(i, k, genPref('slot'));
+  }
+  function batchStickyGen() {
+    const sel = panelSelectionSorted().filter(i => i >= 1 && i <= getPanelCount());
+    if (!sel.length) {
+      const st = document.getElementById('statusEl');
+      if (st) st.textContent = '⚠ Select at least one panel first — these buttons act on the panel selection.';
+      return;
+    }
+    panelGenGo({ kind: 'batch', list: sel }, genPref('panel'));
+  }
+  function syncGenFaces() {
+    const p = genPref('panel'), s = genPref('slot');
+    for (const b of document.querySelectorAll('[data-gen="panel"]')) b.textContent = p === 'queue' ? '📥 Queue' : '🔄 Generate';
+    for (const b of document.querySelectorAll('[data-gen="slot"]')) b.textContent = s === 'queue' ? '📥 Queue' : '🔄 Generate';
+    const sel = document.getElementById('selMenuGenBtn');
+    if (sel) { const n = (typeof panelSelection !== 'undefined' && panelSelection) ? panelSelection.size : 0; sel.textContent = (p === 'queue' ? '📥 Queue' : '🔄 Generate') + (n > 1 ? ' ' + n : ''); }
+  }
+  async function queueEnsurePrompt(i) {
+    const hit = queuePromptCache.get(i);
+    if (hit) return hit;
+    const bp = await buildPanelPrompt(i);
+    const count = getPanelImageCount(i);
+    const protectedSlots = [];
+    for (let k = 1; k <= count; k++) if (isSlotProtected(i, k) && hasPanelImage(i, k)) protectedSlots.push(k);
+    const size = getPanelImageSize(i);
+    const srcRes = pickSourceResolution(size.w, size.h);
+    const entry = { fullPrompt: bp.fullPrompt, negativePrompt: bp.negativePrompt, hasContent: bp.hasContent, count: count, protectedSlots: protectedSlots, size: size, srcRes: srcRes, srcSize: srcRes.split('x').map(Number) };
+    queuePromptCache.set(i, entry);
+    return entry;
+  }
+  function queueNextUnit() {
+    if (!queueRR) {
+      for (const it of genQueue) {
+        if (!queueItemPending(it)) continue;
+        if (it.slot != null) {
+          if (!queueDone.has(queueUnitKey(it.panel, it.slot))) return { item: it, i: it.panel, k: it.slot, whole: false };
+          continue;
+        }
+        return { item: it, i: it.panel, k: null, whole: true };
+      }
+      return null;
+    }
+    let maxK = 0;
+    for (const it of genQueue) maxK = Math.max(maxK, it.slot != null ? it.slot : getPanelImageCount(it.panel));
+    for (let k = 1; k <= maxK; k++) {
+      for (const it of genQueue) {
+        if (it.slot != null) {
+          if (it.slot === k && !queueDone.has(queueUnitKey(it.panel, k))) return { item: it, i: it.panel, k: k, whole: false };
+          continue;
+        }
+        if (k > getPanelImageCount(it.panel)) continue;
+        if (!queueDone.has(queueUnitKey(it.panel, k))) return { item: it, i: it.panel, k: k, whole: false };
+      }
+    }
+    return null;
+  }
+  function queuePrepPanel(i) {
+    if (queuePrepped.has(i)) return queuePromptCache.get(i);
+    queuePrepped.add(i);
+    const info = queuePromptCache.get(i);
+    const card = document.getElementById('panel-card-' + i);
+    const statusEl = document.getElementById('statusEl');
+    if (!info.hasContent) {
+      if (info.protectedSlots.length === 0) {
+        imgWipePanel(i);
+        for (let k = 1; k <= 4; k++) {
+          const box = document.getElementById('imgbox-panel-' + i + '-' + k);
+          const img = document.getElementById('img-panel-' + i + '-' + k);
+          if (box) box.classList.remove('generating', 'failed', 'paused', 'cleared', 'stopped');
+          if (img) { img.removeAttribute('src'); img.alt = "Click Generate to render image"; }
+          setPanelImageButtons(i, k, false);
+        }
+        if (card) { card.classList.remove('failed', 'paused', 'skipped', 'stopped'); card.classList.add('skipped'); }
+      } else {
+        for (let k = 1; k <= info.count; k++) {
+          if (info.protectedSlots.includes(k)) continue;
+          const box = document.getElementById('imgbox-panel-' + i + '-' + k);
+          const img = document.getElementById('img-panel-' + i + '-' + k);
+          if (box) box.classList.remove('generating', 'failed', 'paused', 'cleared', 'stopped');
+          if (img) { img.removeAttribute('src'); img.alt = ""; }
+          setPanelImageButtons(i, k, false);
+        }
+        if (card) card.classList.remove('failed', 'paused', 'skipped');
+        if (statusEl) statusEl.textContent = 'Panel ' + i + ' has no content — its 🔒 protected image(s) were kept.';
+      }
+    } else {
+      if (card) card.classList.remove('skipped');
+      if (info.protectedSlots.length === info.count) {
+        if (statusEl) statusEl.textContent = 'Panel ' + i + ' is fully 🔒 protected — unprotect an image to regenerate it.';
+      } else {
+        if (card) card.classList.remove('failed', 'paused', 'cleared', 'stopped');
+        imgEnsurePanel(i);
+        for (let k = 1; k <= info.count; k++) {
+          if (info.protectedSlots.includes(k)) continue;
+          const box = document.getElementById('imgbox-panel-' + i + '-' + k);
+          const img = document.getElementById('img-panel-' + i + '-' + k);
+          if (box) box.classList.remove('failed', 'paused', 'cleared', 'stopped');
+          if (img) { img.removeAttribute('src'); img.alt = ""; }
+          setPanelImageButtons(i, k, false);
+        }
+      }
+    }
+    return info;
+  }
   let imgObserver = null;
   let gridHasListeners = false;
   let currentPage = 1;
@@ -5449,6 +5890,7 @@ color-scheme:light;
 
   function pauseGenerations() {
     if (!generateAllRunning) return;
+    pausedRunKind = queueRunning ? 'queue' : 'page';
     pausedManually = true;
     if (runSignal) runSignal.fire();
     for (const [pending, key] of inFlightGen) {
@@ -5465,6 +5907,7 @@ color-scheme:light;
 
   function haltGenerations() {
     stopRequested = true;
+    pausedRunKind = queueRunning ? 'queue' : null;
     resumePanel = null;
     resumeSlot = null;
     runEndPanel = null;
@@ -6149,7 +6592,7 @@ color-scheme:light;
                 </div>
               </div>
             </div>
-            <button class="btn-reroll btn-header-gen" data-action="w2-22" data-a0="${i}" title="Generate this panel's images">🔄 Generate</button>
+            <span class="gen-split"><button class="btn-reroll btn-header-gen" data-action="w2-22" data-a0="${i}" data-gen="panel" title="Generate this panel's images">🔄 Generate</button><button class="btn-reroll btn-header-gen gen-caret" data-action="w2-79" data-a0="${i}" title="Choose: generate now or add to the queue">▾</button></span>
             <div class="panel-imgs-sel">
               <button class="btn-reorder" id="reorder-btn-${i}" data-action="w2-23" data-a0="${i}" title="Move this panel to a different position. With several panels selected, this moves the whole selection as a block.">⇅ Move</button>
               <select id="panel-reorder-${i}" class="reorder-select" hidden data-action="w2-24" data-a0="${i}"></select>
@@ -6159,15 +6602,15 @@ color-scheme:light;
             <span class="ps-name" id="ps-char-${i}"></span><span class="ps-sep"> · </span><span class="ps-name" id="ps-loc-${i}"></span><span class="ps-sep"> · </span><span class="ps-act" id="ps-act-${i}"></span>
           </div>
           <div class="panel-imgs">
-            <div class="panel-img-slot" id="imgslot-panel-${i}-1"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-25" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-1"><img id="img-panel-${i}-1" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-1"><button class="btn-img-chip btn-view" data-action="w2-26" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-27" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-28" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-29" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-30" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-31" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
-            <div class="panel-img-slot" id="imgslot-panel-${i}-2"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-32" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-2"><img id="img-panel-${i}-2" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-2"><button class="btn-img-chip btn-view" data-action="w2-33" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-34" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-35" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-36" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-37" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-38" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
-            <div class="panel-img-slot" id="imgslot-panel-${i}-3"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-39" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-3"><img id="img-panel-${i}-3" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-3"><button class="btn-img-chip btn-view" data-action="w2-40" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-41" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-42" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-43" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-44" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-45" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
-            <div class="panel-img-slot" id="imgslot-panel-${i}-4"><div class="slot-reroll"><button class="btn-img-reroll" data-action="w2-46" data-a0="${i}" title="Generate just this image">🔄 Generate</button></div><div class="panel-img-box" id="imgbox-panel-${i}-4"><img id="img-panel-${i}-4" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-4"><button class="btn-img-chip btn-view" data-action="w2-47" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-48" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-49" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-50" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-51" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-52" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-1"><div class="slot-reroll"><span class="gen-split"><button class="btn-img-reroll" data-action="w2-25" data-a0="${i}" data-gen="slot" title="Generate just this image">🔄 Generate</button><button class="btn-img-reroll gen-caret" data-action="w2-80" data-a0="${i}" data-a1="1" title="Choose: reroll now or queue this image">▾</button></span></div><div class="panel-img-box" id="imgbox-panel-${i}-1"><img id="img-panel-${i}-1" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-1"><button class="btn-img-chip btn-view" data-action="w2-26" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-27" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-28" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-29" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-30" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-31" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-2"><div class="slot-reroll"><span class="gen-split"><button class="btn-img-reroll" data-action="w2-32" data-a0="${i}" data-gen="slot" title="Generate just this image">🔄 Generate</button><button class="btn-img-reroll gen-caret" data-action="w2-80" data-a0="${i}" data-a1="2" title="Choose: reroll now or queue this image">▾</button></span></div><div class="panel-img-box" id="imgbox-panel-${i}-2"><img id="img-panel-${i}-2" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-2"><button class="btn-img-chip btn-view" data-action="w2-33" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-34" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-35" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-36" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-37" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-38" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-3"><div class="slot-reroll"><span class="gen-split"><button class="btn-img-reroll" data-action="w2-39" data-a0="${i}" data-gen="slot" title="Generate just this image">🔄 Generate</button><button class="btn-img-reroll gen-caret" data-action="w2-80" data-a0="${i}" data-a1="3" title="Choose: reroll now or queue this image">▾</button></span></div><div class="panel-img-box" id="imgbox-panel-${i}-3"><img id="img-panel-${i}-3" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-3"><button class="btn-img-chip btn-view" data-action="w2-40" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-41" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-42" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-43" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-44" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-45" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
+            <div class="panel-img-slot" id="imgslot-panel-${i}-4"><div class="slot-reroll"><span class="gen-split"><button class="btn-img-reroll" data-action="w2-46" data-a0="${i}" data-gen="slot" title="Generate just this image">🔄 Generate</button><button class="btn-img-reroll gen-caret" data-action="w2-80" data-a0="${i}" data-a1="4" title="Choose: reroll now or queue this image">▾</button></span></div><div class="panel-img-box" id="imgbox-panel-${i}-4"><img id="img-panel-${i}-4" src="" alt="Click Generate to render image" loading="lazy" decoding="async"></div><div class="slot-btns" id="slotbtns-panel-${i}-4"><button class="btn-img-chip btn-view" data-action="w2-47" data-a0="${i}" title="Open this image in a new tab" disabled>↗</button><button class="btn-img-chip btn-dl" data-action="w2-48" data-a0="${i}" title="Save this image to your device" disabled>⬇</button><button class="btn-img-clear" data-action="w2-49" data-a0="${i}" title="Clear just this image">✕</button><button class="btn-img-chip btn-img-protect" data-action="w2-50" data-a0="${i}" title="Protect this image from regeneration" disabled>🔓</button><button class="btn-img-chip btn-star" data-action="w2-51" data-a0="${i}" title="Make this the panel's representative image (shown first with a ⭐ badge)" disabled>⭐</button><button class="btn-img-chip btn-copyto" data-action="w2-52" data-a0="${i}" title="Copy this image to other images in this panel, or to one to four images in another panel" disabled>⧉</button></div></div>
           </div>
           <div class="panel-header-btns" style="margin-top:12px;justify-content:flex-end;">
             <button class="btn-view menu-show" data-action="w2-53" data-a0="${i}" title="Show all of this panel's accordion menus, or hide them again (the same button does both)">Show/Hide Menus</button>
             <button class="btn-view" data-action="w2-54" data-a0="${i}" title="Work on this panel alone in single-panel view">🔍 Focus</button>
-            <button class="btn-reroll" data-action="w2-22" data-a0="${i}">🔄 Generate</button>
+            <span class="gen-split"><button class="btn-reroll" data-action="w2-22" data-a0="${i}" data-gen="panel">🔄 Generate</button><button class="btn-reroll gen-caret" data-action="w2-79" data-a0="${i}" title="Choose: generate now or add to the queue">▾</button></span>
           </div>
           <div class="panel-acc" data-collapsed="1">
             <div class="panel-acc-toggle" data-action="w2-55" title="This panel's characters, location, and action prompt">📖 Panel Library</div>
@@ -6246,6 +6689,7 @@ color-scheme:light;
     updatePasteUI();
     updatePromptRevertChips();
     updateStructUndoUI();
+    syncGenFaces();
     if (!gridHasListeners) {
       gridHasListeners = true;
       grid.addEventListener('input', e => { if (!handleGridInput(e)) schedulePanelSave(); });
@@ -6838,7 +7282,7 @@ color-scheme:light;
       if (dl) dl.textContent = (sel && n > 1) ? ('🗑 Delete ' + n + ' Panels') : '🗑 Delete';
     }
     const menuBtns = [
-      ['selMenuGenBtn', n > 1 ? ('🔄 Generate ' + n) : '🔄 Generate'],
+      ['selMenuGenBtn', (genPref('panel') === 'queue' ? '📥 Queue' : '🔄 Generate') + (n > 1 ? ' ' + n : '')],
       ['selMenuGenToBtn', '⚡ Generate All To Here'],
       ['selMenuGenFromBtn', '⚡ Generate All From Here'],
       ['selMenuGenRangeBtn', '⚡ Generate (x) to (y)…'],
@@ -6857,6 +7301,8 @@ color-scheme:light;
       b.disabled = n === 0;
     }
     for (const b of document.querySelectorAll('[data-action="w1-44"], [data-action="w1-45"]')) b.disabled = n === 0;
+    const selCaret = document.getElementById('selMenuGenCaret');
+    if (selCaret) selCaret.disabled = n === 0;
     for (const b of document.querySelectorAll('[data-action="w1-148"]')) b.disabled = n === 0;
     syncPasteBtn();
     const menuHint = document.getElementById('selMenuHint');
@@ -7971,11 +8417,16 @@ color-scheme:light;
     stackBottomCluster();
   }
   function runPanelSyncBtns() {
-    const q = runPanelActive && runPanelMode === 'queue';
-    const p = runPanelActive && runPanelMode === 'paused';
+    const running = generateAllRunning || queueRunning;
+    const q = runPanelActive && runPanelMode === 'queue' && running && !pausedManually;
+    const p = runPanelActive && (runPanelMode === 'paused' || (!running && pausedRunKind === 'queue' && queueHasPending()));
     runPanelEl('runPanelPause').hidden = !q;
     runPanelEl('runPanelResume').hidden = !p;
     runPanelEl('runPanelStop').hidden = !(q || p);
+    const go = runPanelEl('runPanelQueueGo');
+    if (go) go.hidden = !(!running && queueHasPending());
+    const clear = runPanelEl('runPanelClear');
+    if (clear) clear.hidden = !(genQueue.length > 0);
     for (const b of document.querySelectorAll('#runPanelRows .run-reroll')) b.disabled = q;
   }
   const RUN_STATE_LABEL = {queued:'queued', rendering:'rendering', done:'done', skipped:'skipped', protected:'kept \uD83D\uDD12', failed:'failed', stopped:'stopped', paused:'paused'};
@@ -8001,6 +8452,80 @@ color-scheme:light;
       row.querySelector('.run-seed').textContent = runPanelSeedText(i);
     }
     if (st === 'rendering') row.scrollIntoView({block:'nearest'});
+  }
+  let queueRenderingKey = null;
+  function runPanelSetQ(key, st) {
+    if (!uiPreviewOn) return;
+    const row = runPanelEl('run-row-' + key);
+    if (!row) return;
+    const badge = row.querySelector('.run-state');
+    if (!badge) return;
+    badge.className = 'run-state st-' + st;
+    badge.textContent = RUN_STATE_LABEL[st] || st;
+    if (st === 'rendering') row.scrollIntoView({block:'nearest'});
+  }
+  function queueRowLabel(it) {
+    return it.slot == null ? ('Panel ' + it.panel) : ('Panel ' + it.panel + ' · image ' + it.slot);
+  }
+  function queueControlsLocked() {
+    return queueRunning && !pausedManually;
+  }
+  function queuePanelOpen() {
+    if (!uiPreviewOn) return;
+    queuePanelRender();
+    runPanelActive = true;
+    if (!pausedManually) runPanelMode = 'queue';
+    runPanelSyncBtns();
+    runPanelEl('runPanel').hidden = false;
+    stackBottomCluster();
+  }
+  function queuePanelRender() {
+    if (!uiPreviewOn) return;
+    const rows = runPanelEl('runPanelRows');
+    if (!rows) return;
+    const wasHidden = runPanelEl('runPanel').hidden;
+    rows.innerHTML = '';
+    runPanelEl('runPanelTarget').textContent = genQueue.length ? ('queue — ' + genQueue.length + ' item' + (genQueue.length === 1 ? '' : 's')) : '';
+    const locked = queueControlsLocked();
+    genQueue.forEach((it, n) => {
+      const d = document.createElement('div');
+      d.className = 'run-row';
+      d.id = 'run-row-' + it.key;
+      const badge = document.createElement('span');
+      const st = it.key === queueRenderingKey ? 'rendering' : (queueOutcome.get(it.key) || 'queued');
+      badge.className = 'run-state st-' + st;
+      badge.textContent = RUN_STATE_LABEL[st] || st;
+      const name = document.createElement('span');
+      name.className = 'run-name';
+      name.textContent = queueRowLabel(it);
+      const up = document.createElement('button');
+      up.className = 'run-qbtn';
+      up.textContent = '↑';
+      up.title = 'Move up in the queue';
+      up.disabled = locked || n === 0;
+      up.addEventListener('click', () => moveQueueItem(it.key, -1));
+      const down = document.createElement('button');
+      down.className = 'run-qbtn';
+      down.textContent = '↓';
+      down.title = 'Move down in the queue';
+      down.disabled = locked || n === genQueue.length - 1;
+      down.addEventListener('click', () => moveQueueItem(it.key, 1));
+      const del = document.createElement('button');
+      del.className = 'run-qbtn';
+      del.textContent = '✕';
+      del.title = 'Remove from the queue';
+      del.disabled = locked || it.key === queueRenderingKey;
+      del.addEventListener('click', () => removeQueueItem(it.key));
+      d.append(badge, name, up, down, del);
+      rows.append(d);
+    });
+    if (genQueue.length && wasHidden) {
+      runPanelActive = true;
+      runPanelEl('runPanel').hidden = false;
+      stackBottomCluster();
+    }
+    if (!genQueue.length && !queueRunning) queueOutcome.clear();
+    runPanelSyncBtns();
   }
   function runPanelFinish(mode) {
     if (!uiPreviewOn) return;
@@ -8028,6 +8553,7 @@ color-scheme:light;
       runPanelSet(i, runPanelMapResult(r));
       runPanelMode = 'ended';
       runPanelSyncBtns();
+      chainQueueDrain();
       return r;
     });
   }
@@ -8094,6 +8620,8 @@ color-scheme:light;
     { t: "Full Screen", g: "View", act: "w1-3" },
     { t: "Show / Hide Panels", g: "View", act: "w1-4" },
     { t: "Generate All", g: "Generate", act: "w1-12" },
+    { t: "Generate queued", g: "Generate", act: "w1-192" },
+    { t: "Clear queue", g: "Generate", act: "w1-194" },
     { t: "Pause", g: "Generate", act: "w1-13" },
     { t: "Stop", g: "Generate", act: "w1-14" },
     { t: "Import library…", g: "Library", act: "w1-78" },
@@ -9788,6 +10316,7 @@ color-scheme:light;
     };
     if (statusEl) statusEl.textContent = 'Panel ' + i + ': generating from saved prompt #' + (idx + 1) + '…';
     await generateSinglePanel(i, { pos: entry.pos, neg: entry.neg || '', seedForSlot: seedForSlot });
+    chainQueueDrain();
   }
 
   function renderAccHistory(acc) {
@@ -9979,7 +10508,7 @@ color-scheme:light;
       const st = await renderPanelSlot(i, k, fullPrompt, negativePrompt, size, srcRes, srcSize);
       if (st === 'cleared') return 'cleared';
       return 'generated';
-    } finally { panelBusy[i] = false; commitPromptHistoryRun(i); }
+    } finally { panelBusy[i] = false; commitPromptHistoryRun(i); chainQueueDrain(); }
   }
 
   function panelSameSeedOn(i) {
@@ -11846,12 +12375,14 @@ color-scheme:light;
         : `Done: generated ${generated} panel${generated === 1 ? "" : "s"}.`);
       if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
       runPanelFinish('ended');
+      pausedRunKind = null;
     }
     } finally {
       genBtn.disabled = false;
       generateAllRunning = false;
       runSignal = null;
       syncStopButton();
+      if (!stopRequested) chainQueueDrain();
     }
   }
 
@@ -13971,7 +14502,7 @@ color-scheme:light;
     "w1-9": { ev: "click", run: (el, e) => { switchMenu('edit') } },
     "w1-10": { ev: "click", run: (el, e) => { switchMenu('library') } },
     "w1-11": { ev: "click", run: (el, e) => { switchMenu('help') } },
-    "w1-12": { ev: "click", run: (el, e) => { generateComicPage() } },
+    "w1-12": { ev: "click", run: (el, e) => { generateAllAction() } },
     "w1-13": { ev: "click", run: (el, e) => { pauseGenerations() } },
     "w1-14": { ev: "click", run: (el, e) => { haltGenerations() } },
     "w1-15": { ev: "click", run: (el, e) => { undoStructuralOp() } },
@@ -14006,7 +14537,7 @@ color-scheme:light;
     "w1-44": { ev: "click", run: (el, e) => { panelCopyAction() } },
     "w1-45": { ev: "click", run: (el, e) => { panelCutAction() } },
     "w1-46": { ev: "click", run: (el, e) => { clearPanelSelection() } },
-    "w1-47": { ev: "click", run: (el, e) => { selMenuAction('generate') } },
+    "w1-47": { ev: "click", run: (el, e) => { batchStickyGen() } },
     "w1-48": { ev: "click", run: (el, e) => { selMenuAction('gento') } },
     "w1-49": { ev: "click", run: (el, e) => { selMenuAction('genfrom') } },
     "w1-50": { ev: "click", run: (el, e) => { selMenuAction('genrange') } },
@@ -14104,7 +14635,10 @@ color-scheme:light;
     "w1-139": { ev: "click", run: (el, e) => { toggleUiPreview() } },
     "w1-140": { ev: "change", run: (el, e) => { setAdvancedMode(el.checked) } },
     "w1-141": { ev: "click", run: (el, e) => { pauseGenerations() } },
-    "w1-142": { ev: "click", run: (el, e) => { generateComicPage() } },
+    "w1-142": { ev: "click", run: (el, e) => { resumeRunAction() } },
+    "w1-192": { ev: "click", run: (el, e) => { generateQueuedAction() } },
+    "w1-193": { ev: "click", run: (el, e) => { const sel = panelSelectionSorted().filter(i => i >= 1 && i <= getPanelCount()); if (!sel.length) { batchStickyGen(); return; } openGenMenu(el, { kind: 'batch', list: sel }); } },
+    "w1-194": { ev: "click", run: (el, e) => { clearGenQueue() } },
     "w1-143": { ev: "click", run: (el, e) => { haltGenerations() } },
     "w1-144": { ev: "click", run: (el, e) => { runPanelReroll((+el.dataset.a0)) } },
     "w1-145": { ev: "click", run: (el, e) => { runPanelHide() } },
@@ -14190,31 +14724,33 @@ color-scheme:light;
     "w2-19": { ev: "keydown", run: (el, e) => { if(e.key==='Enter'){e.preventDefault();runPanelSingle((+el.dataset.a0));} } },
     "w2-20": { ev: "click", run: (el, e) => { copySeedFromPrevPanel((+el.dataset.a0)) } },
     "w2-21": { ev: "click", run: (el, e) => { clearPanelSeed((+el.dataset.a0)) } },
-    "w2-22": { ev: "click", run: (el, e) => { runPanelSingle((+el.dataset.a0)) } },
+    "w2-22": { ev: "click", run: (el, e) => { panelStickyGen((+el.dataset.a0)) } },
+    "w2-79": { ev: "click", run: (el, e) => { openGenMenu(el, { kind: 'panel', i: (+el.dataset.a0) }) } },
+    "w2-80": { ev: "click", run: (el, e) => { openGenMenu(el, { kind: 'slot', i: (+el.dataset.a0), k: (+el.dataset.a1) }) } },
     "w2-23": { ev: "click", run: (el, e) => { toggleReorderPicker((+el.dataset.a0)) } },
     "w2-24": { ev: "change", run: (el, e) => { onReorderSelect((+el.dataset.a0), el) } },
-    "w2-25": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),1) } },
+    "w2-25": { ev: "click", run: (el, e) => { slotStickyGen((+el.dataset.a0),1) } },
     "w2-26": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),1) } },
     "w2-27": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),1) } },
     "w2-28": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),1) } },
     "w2-29": { ev: "click", run: (el, e) => { toggleSlotProtect((+el.dataset.a0),1) } },
     "w2-30": { ev: "click", run: (el, e) => { makeRepresentative((+el.dataset.a0),1) } },
     "w2-31": { ev: "click", run: (el, e) => { copyImageToAction((+el.dataset.a0),1) } },
-    "w2-32": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),2) } },
+    "w2-32": { ev: "click", run: (el, e) => { slotStickyGen((+el.dataset.a0),2) } },
     "w2-33": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),2) } },
     "w2-34": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),2) } },
     "w2-35": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),2) } },
     "w2-36": { ev: "click", run: (el, e) => { toggleSlotProtect((+el.dataset.a0),2) } },
     "w2-37": { ev: "click", run: (el, e) => { makeRepresentative((+el.dataset.a0),2) } },
     "w2-38": { ev: "click", run: (el, e) => { copyImageToAction((+el.dataset.a0),2) } },
-    "w2-39": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),3) } },
+    "w2-39": { ev: "click", run: (el, e) => { slotStickyGen((+el.dataset.a0),3) } },
     "w2-40": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),3) } },
     "w2-41": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),3) } },
     "w2-42": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),3) } },
     "w2-43": { ev: "click", run: (el, e) => { toggleSlotProtect((+el.dataset.a0),3) } },
     "w2-44": { ev: "click", run: (el, e) => { makeRepresentative((+el.dataset.a0),3) } },
     "w2-45": { ev: "click", run: (el, e) => { copyImageToAction((+el.dataset.a0),3) } },
-    "w2-46": { ev: "click", run: (el, e) => { generateSinglePanelSlot((+el.dataset.a0),4) } },
+    "w2-46": { ev: "click", run: (el, e) => { slotStickyGen((+el.dataset.a0),4) } },
     "w2-47": { ev: "click", run: (el, e) => { openPanelImage((+el.dataset.a0),4) } },
     "w2-48": { ev: "click", run: (el, e) => { savePanelImage((+el.dataset.a0),4) } },
     "w2-49": { ev: "click", run: (el, e) => { clearPanelImageSlot((+el.dataset.a0),4) } },
@@ -14228,7 +14764,7 @@ color-scheme:light;
     "w2-57": { ev: "click", run: (el, e) => { copyPanelPrompt((+el.dataset.a0)) } },
     "w2-58": { ev: "click", run: (el, e) => { revertPanelPrompt((+el.dataset.a0)) } },
     "w2-59": { ev: "click", run: (el, e) => { collapsePanelMenus((+el.dataset.a0)) } },
-    "w2-60": { ev: "click", run: (el, e) => { panelGenerateAction((+el.dataset.a0)) } },
+    "w2-60": { ev: "click", run: (el, e) => { const i = (+el.dataset.a0); if (panelBatchMode(i) && panelSelection.size > 1) openGenMenu(el, { kind: 'batch', list: panelSelectionSorted() }); else openGenMenu(el, { kind: 'panel', i: i }); } },
     "w2-61": { ev: "click", run: (el, e) => { panelGenerateToHereAction((+el.dataset.a0)) } },
     "w2-62": { ev: "click", run: (el, e) => { panelGenerateFromHereAction((+el.dataset.a0)) } },
     "w2-63": { ev: "click", run: (el, e) => { panelGenerateRangeAction((+el.dataset.a0)) } },
@@ -14250,7 +14786,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, customStyleItems, resolveStyleEntry, refreshStyleSelects, countStyleUsage, applyStyleDelete, deleteStyleObject, getPanelKeywords, onPanelStyleChange, copyProjectItemToCatalogue, copyCatalogueItemToProject, updatePanelSelects, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, customStyleItems, resolveStyleEntry, refreshStyleSelects, countStyleUsage, applyStyleDelete, deleteStyleObject, getPanelKeywords, onPanelStyleChange, copyProjectItemToCatalogue, copyCatalogueItemToProject, updatePanelSelects, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility, enqueueQueueItems, clearGenQueue, moveQueueItem, removeQueueItem, drainGenQueue, generateQueuedAction, generateAllAction, resumeRunAction, resumeQueueDrain, queueHasPending, queueItemPending, openGenMenu, closeGenMenu, panelGenGo, slotGenGo, panelStickyGen, slotStickyGen, batchStickyGen, queuePanelOpen, queuePanelRender, runPanelSetQ, syncGenFaces };
 
   function ghLoadSettings() {
     try {
