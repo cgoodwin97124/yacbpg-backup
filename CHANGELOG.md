@@ -1,3 +1,7 @@
+## 2026.10.16.1 — 2026-10-16 — Right-click on text shows the browser menu
+- Right-clicking inside a text field (title, description, prompt override, etc.) or on selected text in a panel now shows the browser's own context menu instead of selecting the panel and opening the panel menu. Right-clicks elsewhere on a panel are unchanged.
+- Verified live: textbox right-click and selected-text right-click both leave the browser menu alone (not prevented, no panel menu), panel-background right-click still opens the panel menu.
+
 ## 2026.10.13.4 — 2026-10-15 — Generation queue
 - Every Generate control is now a split button: Generate Now runs immediately, Add to queue appends whole panels (expanded to slots at runtime) or individual slots to a FIFO queue. Each split remembers its last-used face (prefs comicGen.genPanelDefault/genSlotDefault).
 - Generate Queued (menu-bar button, run-panel control, Commands entries) drains the queue: whole panels via generateSinglePanel, slots via renderPanelSlot, with a round-robin slot-major branch over a queueRR snapshot taken at drain start. Auto-append while running; pause keeps today's meaning with reorder/remove only while paused or idle; stop keeps pending items; failures mark-and-continue; session-only; current-page-only. Queue panel in the run view with up/down/remove, outcome badges, clear-queue button (runPanelQueueGo w1-192, runPanelClear w1-194).
