@@ -1514,10 +1514,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.13.4 — 2026-10-15 — Generation queue
- - New Generation queue: every Generate control is now a split button — Generate Now runs immediately, Add to queue appends the job (whole panels or individual slots) to a first-in-first-out queue. Each split remembers its last-used face.
- - Generate Queued (menu bar, run panel, and Commands) drains the queue in order: whole panels generate, then their slots expand at runtime. Enqueue more while it runs; pause to reorder or remove items, stop to keep the rest for later. A failed item is marked and skipped, never blocking the rest.
- - Queue lives in the run panel with up/down/remove controls, outcome badges, and a clear-queue button. Session-only, current page only.
+## 2026.10.16.1 — 2026-10-16 — Right-click on text shows the browser menu
+ - Right-clicking inside a text field or on selected text in a panel now shows the browser's own menu (copy/paste/spellcheck) instead of the panel menu. Right-clicking anywhere else on a panel still opens the panel menu as before.
 </script>
 
 
@@ -9149,6 +9147,11 @@ color-scheme:light;
     document.addEventListener('contextmenu', function (e) {
       const grid = document.getElementById('comicGrid');
       if (!grid || !grid.contains(e.target)) return;
+      if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
+      try {
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.containsNode(e.target, true)) return;
+      } catch (err) {}
       const i = panelCardIndex(e.target);
       if (!i) return;
       e.preventDefault();
