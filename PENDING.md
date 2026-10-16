@@ -1,3 +1,7 @@
+### 2026-10-16 — Panel right-click menu: Deselect Panel + Clear Selection
+- **Request (author, verbatim):** "On the right-click panel menu, I'd like to add options to 'Deselect Panel' and 'Clear Selection', for the times I right-click a panel and accidentally select it."
+- Status: building as a minor addition — two CTX_ITEMS entries (deselect just the clicked panel; clear the whole selection), each disabled when it would do nothing.
+
 ### 2026-10-16 — Right-click on text shows the browser menu, not the panel menu
 - **Request (author, verbatim):** "When I right-click on text, it selects the panel. I'd like right-clicking on text to go back to the browser's right-click function, not the app's, if that's possible."
 - Status: DONE — built 2026.10.16.1, author Saved → re-pushed 18/18, repo raw verified (.16.1 stamp + contextmenu fix present). Nothing pending.
