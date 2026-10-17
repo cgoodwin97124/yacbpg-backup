@@ -1,3 +1,7 @@
+## 2026.10.17.1 — 2026-10-17 — Storyboard overlap fix + UI toggles in Commands
+- Fixed the New UI button covering the Storyboard page buttons (measured overlap of page buttons 1-3): fullscreen view top bars now reserve right-side space so nothing sits under the button.
+- New UI and Advanced controls are now also in Commands (View group) with live on/off labels; both rows dispatch the real toggles. Verified live: zero overlap in Storyboard, both rows present, Advanced row toggles the checkbox + body class, New UI row toggles off/on cleanly.
+
 ## 2026.10.16.1 — 2026-10-16 — Right-click on text shows the browser menu
 - Right-clicking inside a text field (title, description, prompt override, etc.) or on selected text in a panel now shows the browser's own context menu instead of selecting the panel and opening the panel menu. Right-clicks elsewhere on a panel are unchanged.
 - Verified live: textbox right-click and selected-text right-click both leave the browser menu alone (not prevented, no panel menu), panel-background right-click still opens the panel menu.
