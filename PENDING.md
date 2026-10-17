@@ -1,6 +1,6 @@
 ### 2026-10-17 — New UI selector overlaps page selector in Storyboard; defaults/menu placement
 - **Request (author, verbatim):** "The New UI selector floats above the page selector in Storyboard mode. I'm leaning towards having both the New UI and the Advanced features default to On, and/or putting the selectors for those two items in the menus. But if you have other recommendations I'll listen."
-- Status: recon — logged 2026-10-17; awaiting recommendation + go-ahead.
+- Status: DONE — built 2026.10.17.1 (reserve-space CSS + 2 Commands rows), verified live, awaiting author Save + re-push.
 
 ### 2026-10-16 — Panel right-click menu: Deselect Panel + Clear Selection
 - **Request (author, verbatim):** "On the right-click panel menu, I'd like to add options to 'Deselect Panel' and 'Clear Selection', for the times I right-click a panel and accidentally select it."
