@@ -471,6 +471,7 @@ color-scheme:light;
   .guidance-value.g-mid { color: var(--accent-pulse); }
   .guidance-value.g-high { color: var(--red-text); }
   .view-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .view-overlay .view-top, .manual-overlay .manual-bar { padding-right: 156px; }
   .view-title { color: var(--accent); font-weight: bold; font-size: 1.1rem; }
   .single-nav { display: flex; align-items: center; gap: 8px; }
   .single-nav select { width: auto; margin: 0; padding: 4px 8px; font-size: 0.85rem; }
@@ -1514,8 +1515,9 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.16.1 — 2026-10-16 — Right-click on text shows the browser menu
- - Right-clicking inside a text field or on selected text in a panel now shows the browser's own menu (copy/paste/spellcheck) instead of the panel menu. Right-clicking anywhere else on a panel still opens the panel menu as before.
+## 2026.10.17.1 — 2026-10-17 — Storyboard overlap fix + UI toggles in Commands
+ - Fixed the 🧪 New UI button covering the Storyboard page buttons: fullscreen view top bars now reserve space on the right, so nothing sits under the button.
+ - New UI and Advanced controls are now also in ⌘K Commands (View group) with live on/off labels, so both toggles are reachable from Storyboard and Focus.
 </script>
 
 
@@ -8617,6 +8619,8 @@ color-scheme:light;
     { t: "Menu layout", g: "View", act: "w1-2" },
     { t: "Full Screen", g: "View", act: "w1-3" },
     { t: "Show / Hide Panels", g: "View", act: "w1-4" },
+    { t: function () { return "New UI: " + (uiPreviewOn ? "on" : "off"); }, g: "View", act: "w1-139" },
+    { t: function () { return "Advanced controls: " + palChecked("advSwitchCheck"); }, g: "View", act: "w1-140" },
     { t: "Generate All", g: "Generate", act: "w1-12" },
     { t: "Generate queued", g: "Generate", act: "w1-192" },
     { t: "Clear queue", g: "Generate", act: "w1-194" },
