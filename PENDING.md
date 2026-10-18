@@ -1,6 +1,6 @@
 ### 2026-10-18 — "Queue Selected" button/menu item for the panel selection
 - **Request (author, verbatim):** "Do we have a 'Queue Selected' button or menu item anywhere? If not, then we need one. Please perform the preliminaries and recon."
-- Status: DONE — built 2026.10.18.1 (queueSelectedPanels + w1-195 + bar button + palette row + ctx row), verified live 3/3, awaiting author Save + re-push.
+- Status: DONE — built 2026.10.18.1, author Saved → re-pushed 18/18, repo raw verified (.18.1 stamp + all three entry points). Nothing pending.
 
 ### 2026-10-17 — New UI selector overlaps page selector in Storyboard; defaults/menu placement
 - **Request (author, verbatim):** "The New UI selector floats above the page selector in Storyboard mode. I'm leaning towards having both the New UI and the Advanced features default to On, and/or putting the selectors for those two items in the menus. But if you have other recommendations I'll listen."
