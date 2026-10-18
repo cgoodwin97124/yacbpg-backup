@@ -1,3 +1,7 @@
+## 2026.10.18.1 — 2026-10-18 — Queue Selected everywhere
+- New explicit queue-the-selection in three places: a Queue button on the bottom selection bar (w1-195), Commands Generate — Queue selected panels, and a Queue row in the right-click panel menu (queues the whole selection when right-clicking one of its panels, otherwise just that panel). All three call the new queueSelectedPanels(): whole panels enqueued without generating; multi-panel queues clear the selection afterwards.
+- Verified live: bar button queues 2 selected panels + clears selection, palette row queues + closes, ctx row queues single panel + closes; cleanup after each probe, author storage untouched.
+
 ## 2026.10.17.1 — 2026-10-17 — Storyboard overlap fix + UI toggles in Commands
 - Fixed the New UI button covering the Storyboard page buttons (measured overlap of page buttons 1-3): fullscreen view top bars now reserve right-side space so nothing sits under the button.
 - New UI and Advanced controls are now also in Commands (View group) with live on/off labels; both rows dispatch the real toggles. Verified live: zero overlap in Storyboard, both rows present, Advanced row toggles the checkbox + body class, New UI row toggles off/on cleanly.
