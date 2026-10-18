@@ -1242,6 +1242,7 @@ color-scheme:light;
     <span id="selectionBarCount" class="selection-count">0 panels selected</span>
     <button class="btn-view" id="selectionCopyBtn" data-action="w1-44" title="Copy the selected panels (their settings and images) to the clipboard, then paste them with the 📋 Paste chip on any panel">📋 Copy</button>
     <button class="btn-view" id="selectionCutBtn" data-action="w1-45" title="Copy the selected panels to the clipboard and remove them from the page">✂ Cut</button>
+    <button class="btn-view" id="selectionQueueBtn" data-action="w1-195" title="Add every selected panel to the generation queue">📥 Queue</button>
     <button class="btn-clear" data-action="w1-46" title="Clear the selection (Esc)">✕ Clear</button>
   </div>
 
@@ -1515,9 +1516,8 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.17.1 — 2026-10-17 — Storyboard overlap fix + UI toggles in Commands
- - Fixed the 🧪 New UI button covering the Storyboard page buttons: fullscreen view top bars now reserve space on the right, so nothing sits under the button.
- - New UI and Advanced controls are now also in ⌘K Commands (View group) with live on/off labels, so both toggles are reachable from Storyboard and Focus.
+## 2026.10.18.1 — 2026-10-18 — Queue Selected everywhere
+ - New explicit "queue the selection" in three places: a 📥 Queue button on the bottom selection bar, ⌘K Commands → Queue selected panels, and a 📥 Queue row in the right-click panel menu (queues the whole selection when you right-click one of its panels, otherwise just that panel). All three enqueue whole panels without generating, and a multi-panel queue clears the selection afterwards, as before.
 </script>
 
 
@@ -5157,6 +5157,19 @@ color-scheme:light;
     }
     panelGenGo({ kind: 'batch', list: sel }, genPref('panel'));
   }
+  function queueSelectedPanels(anchor) {
+    const total = getPanelCount();
+    let list = panelSelectionSorted().filter(i => i >= 1 && i <= total);
+    if (anchor >= 1 && anchor <= total && !(list.length > 1 && list.includes(anchor))) list = [anchor];
+    if (!list.length) {
+      const st = document.getElementById('statusEl');
+      if (st) st.textContent = '⚠ Select at least one panel first — Queue acts on the panel selection.';
+      return;
+    }
+    if (list.length > 1) clearPanelSelection();
+    enqueueQueueItems(list.map(i => ({ panel: i, slot: null })));
+    queuePanelOpen();
+  }
   function syncGenFaces() {
     const p = genPref('panel'), s = genPref('slot');
     for (const b of document.querySelectorAll('[data-gen="panel"]')) b.textContent = p === 'queue' ? '📥 Queue' : '🔄 Generate';
@@ -8623,6 +8636,7 @@ color-scheme:light;
     { t: function () { return "Advanced controls: " + palChecked("advSwitchCheck"); }, g: "View", act: "w1-140" },
     { t: "Generate All", g: "Generate", act: "w1-12" },
     { t: "Generate queued", g: "Generate", act: "w1-192" },
+    { t: "Queue selected panels", g: "Generate", act: "w1-195" },
     { t: "Clear queue", g: "Generate", act: "w1-194" },
     { t: "Pause", g: "Generate", act: "w1-13" },
     { t: "Stop", g: "Generate", act: "w1-14" },
@@ -9044,6 +9058,7 @@ color-scheme:light;
   const CTX_LONGPRESS_MS = 550;
   const CTX_ITEMS = [
     { t: "🔄 Generate", btn: i => 'panel-gen-btn-' + i },
+    { t: "📥 Queue", fn: i => queueSelectedPanels(i) },
     { t: "⚡ Generate All To Here", btn: i => 'panel-gento-btn-' + i },
     { t: "⚡ Generate All From Here", btn: i => 'panel-genfrom-btn-' + i },
     { t: "⧉ Duplicate", btn: i => 'panel-dup-btn-' + i },
@@ -14646,6 +14661,7 @@ color-scheme:light;
     "w1-192": { ev: "click", run: (el, e) => { generateQueuedAction() } },
     "w1-193": { ev: "click", run: (el, e) => { const sel = panelSelectionSorted().filter(i => i >= 1 && i <= getPanelCount()); if (!sel.length) { batchStickyGen(); return; } openGenMenu(el, { kind: 'batch', list: sel }); } },
     "w1-194": { ev: "click", run: (el, e) => { clearGenQueue() } },
+    "w1-195": { ev: "click", run: (el, e) => { queueSelectedPanels() } },
     "w1-143": { ev: "click", run: (el, e) => { haltGenerations() } },
     "w1-144": { ev: "click", run: (el, e) => { runPanelReroll((+el.dataset.a0)) } },
     "w1-145": { ev: "click", run: (el, e) => { runPanelHide() } },
@@ -14793,7 +14809,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, customStyleItems, resolveStyleEntry, refreshStyleSelects, countStyleUsage, applyStyleDelete, deleteStyleObject, getPanelKeywords, onPanelStyleChange, copyProjectItemToCatalogue, copyCatalogueItemToProject, updatePanelSelects, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility, enqueueQueueItems, clearGenQueue, moveQueueItem, removeQueueItem, drainGenQueue, generateQueuedAction, generateAllAction, resumeRunAction, resumeQueueDrain, queueHasPending, queueItemPending, openGenMenu, closeGenMenu, panelGenGo, slotGenGo, panelStickyGen, slotStickyGen, batchStickyGen, queuePanelOpen, queuePanelRender, runPanelSetQ, syncGenFaces };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, customStyleItems, resolveStyleEntry, refreshStyleSelects, countStyleUsage, applyStyleDelete, deleteStyleObject, getPanelKeywords, onPanelStyleChange, copyProjectItemToCatalogue, copyCatalogueItemToProject, updatePanelSelects, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility, enqueueQueueItems, clearGenQueue, moveQueueItem, removeQueueItem, drainGenQueue, generateQueuedAction, generateAllAction, resumeRunAction, resumeQueueDrain, queueHasPending, queueItemPending, openGenMenu, closeGenMenu, panelGenGo, slotGenGo, panelStickyGen, slotStickyGen, batchStickyGen, queueSelectedPanels, queuePanelOpen, queuePanelRender, runPanelSetQ, syncGenFaces };
 
   function ghLoadSettings() {
     try {
