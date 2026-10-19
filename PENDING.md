@@ -1,3 +1,7 @@
+### 2026-10-19 — Mid-run page switch misplaces images; queue other pages while running
+- **Request (author, verbatim):** "When I have a run going, if I switch to another page, the image that was just being generated gets put in the same panel's space on the new page, and then the run continues with the new page's panels. The behavior I expect is that the run continues in the background and page 1's generation would continue running on page 1 while I view page 2. And I should also be able to queue up other pages' runs while a run is going; please check for this as well. Go ahead and run the preliminaries, recon and ask questions."
+- Status: recon — logged 2026-10-19; preliminaries + recon only, no build until go-ahead.
+
 ### 2026-10-18 — "Queue Selected" button/menu item for the panel selection
 - **Request (author, verbatim):** "Do we have a 'Queue Selected' button or menu item anywhere? If not, then we need one. Please perform the preliminaries and recon."
 - Status: DONE — built 2026.10.18.1, author Saved → re-pushed 18/18, repo raw verified (.18.1 stamp + all three entry points). Nothing pending.
