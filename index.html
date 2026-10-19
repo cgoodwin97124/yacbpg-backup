@@ -1516,7 +1516,7 @@ color-scheme:light;
      message. Keep the heading below in sync with the FIRST entry of the repo's CHANGELOG.md. -->
 
 <script type="text/plain" id="embeddedVersion">
-## 2026.10.18.1 — 2026-10-18 — Queue Selected everywhere
+## 2026.10.19.1 — 2026-10-19 — Runs stay on their page + cross-page queue
  - New explicit "queue the selection" in three places: a 📥 Queue button on the bottom selection bar, ⌘K Commands → Queue selected panels, and a 📥 Queue row in the right-click panel menu (queues the whole selection when you right-click one of its panels, otherwise just that panel). All three enqueue whole panels without generating, and a multi-panel queue clears the selection afterwards, as before.
 </script>
 
@@ -4826,9 +4826,23 @@ color-scheme:light;
   let pausedRunKind = null;
   let queueRunId = 0;
   const queueDone = new Set();
-  const queuePromptCache = new Map();
   let queueRR = false;
-  function queueUnitKey(i, k) { return queueRunId + '|' + i + ':' + k; }
+  let runPage = 1;
+  let runPreps = null;
+  function queueUnitKey(pg, i, k) { return queueRunId + '|' + pg + ':' + i + ':' + k; }
+  function pgTag(pg) { return (pg !== currentPage) ? ('Pg' + pg + ' · ') : ''; }
+  async function snapshotPanelPrep(i) {
+    const bp = await buildPanelPrompt(i);
+    const count = getPanelImageCount(i);
+    const protectedSlots = [];
+    for (let k = 1; k <= count; k++) if (isSlotProtected(i, k) && hasPanelImage(i, k)) protectedSlots.push(k);
+    const size = getPanelImageSize(i);
+    const srcRes = pickSourceResolution(size.w, size.h);
+    return { pg: currentPage, i: i, pid: panelIdAt(i), fullPrompt: bp.fullPrompt, negativePrompt: bp.negativePrompt, hasContent: bp.hasContent, count: count, protectedSlots: protectedSlots, size: size, srcRes: srcRes, srcSize: srcRes.split('x').map(Number), sameSeed: panelSameSeedOn(i), seed: bp.hasContent ? pinPanelSeedForRun(i) : -1 };
+  }
+  function ctxOfPrep(prep) {
+    return { pg: prep.pg, i: prep.i, pid: prep.pid, seed: prep.seed, sameSeed: prep.sameSeed, prep: prep, run: { pos: prep.fullPrompt, neg: prep.negativePrompt, seeds: [] } };
+  }
   function genPref(which) {
     try {
       const v = localStorage.getItem(which === 'slot' ? 'comicGen.genSlotDefault' : 'comicGen.genPanelDefault');
@@ -4840,6 +4854,7 @@ color-scheme:light;
     syncGenFaces();
   }
   function queueExpandItem(it) {
+    if (Array.isArray(it.units)) return it.units;
     const total = getPanelCount();
     const i = it.panel;
     if (!(i >= 1 && i <= total)) return [];
@@ -4853,28 +4868,36 @@ color-scheme:light;
     return units;
   }
   function queueItemPending(it) {
-    return queueExpandItem(it).some(u => !queueDone.has(queueUnitKey(u.i, u.k)));
+    const pg = (it.page != null) ? it.page : currentPage;
+    return queueExpandItem(it).some(u => !queueDone.has(queueUnitKey(pg, u.i, u.k)));
   }
   function queueHasPending() {
     return genQueue.some(it => queueItemPending(it));
   }
-  function enqueueQueueItems(items, opts) {
+  async function enqueueQueueItems(items, opts) {
     opts = opts || {};
+    const pg = currentPage;
     const total = getPanelCount();
     let added = 0, skipped = 0;
     for (const it of (items || [])) {
       const i = it.panel, k = it.slot == null ? null : it.slot;
       if (!(i >= 1 && i <= total)) { skipped++; continue; }
       if (k != null && !(k >= 1 && k <= 4)) { skipped++; continue; }
-      if (genQueue.some(q => q.panel === i && (q.slot == null ? null : q.slot) === k && queueItemPending(q))) { skipped++; continue; }
+      if (genQueue.some(q => q.page === pg && q.panel === i && (q.slot == null ? null : q.slot) === k && queueItemPending(q))) { skipped++; continue; }
       if (k == null) {
         for (let n = genQueue.length - 1; n >= 0; n--) {
-          if (genQueue[n].panel === i && queueItemPending(genQueue[n])) genQueue.splice(n, 1);
+          if (genQueue[n].page === pg && genQueue[n].panel === i && queueItemPending(genQueue[n])) genQueue.splice(n, 1);
         }
       }
-      const item = { key: 'q' + (genQueueSeq++), panel: i, slot: k };
+      const prep = await snapshotPanelPrep(i);
+      const units = [];
+      if (k != null) units.push({ key: 'q' + genQueueSeq, i: i, k: k });
+      else for (let u = 1; u <= prep.count; u++) units.push({ key: 'q' + genQueueSeq, i: i, k: u });
+      const item = { key: 'q' + (genQueueSeq++), page: pg, panel: i, slot: k, units: units, prep: prep };
+      for (const u of units) u.key = item.key;
       genQueue.push(item);
-      for (const u of queueExpandItem(item)) queueDone.delete(queueUnitKey(u.i, u.k));
+      for (const u of units) queueDone.delete(queueUnitKey(pg, u.i, u.k));
+      queuePrepPaint(prep);
       added++;
     }
     queuePanelRender();
@@ -4892,7 +4915,6 @@ color-scheme:light;
   function clearGenQueue() {
     genQueue = [];
     queueDone.clear();
-    queuePromptCache.clear();
     queueRunning = false;
     if (pausedRunKind === 'queue') pausedRunKind = null;
     queuePanelRender();
@@ -4917,7 +4939,6 @@ color-scheme:light;
     return true;
   }
   const queueOutcome = new Map();
-  const queuePrepped = new Set();
   async function drainGenQueue() {
     if (queueRunning || !queueHasPending()) return;
     for (let n = genQueue.length - 1; n >= 0; n--) {
@@ -4928,8 +4949,6 @@ color-scheme:light;
     const genBtn = document.querySelector('.btn-generate');
     const pageName = currentPageLabel();
     const totalPanels = getPanelCount();
-    queuePromptCache.clear();
-    queuePrepped.clear();
     queueRR = roundRobinOn();
     pausedRunKind = 'queue';
     stopRequested = false;
@@ -4969,7 +4988,8 @@ color-scheme:light;
       while (true) {
         const u = queueNextUnit();
         if (!u) break;
-        const label = 'Panel ' + u.i + (u.k != null && !u.whole ? ' · image ' + u.k : '');
+        const uPg = (u.item.page != null) ? u.item.page : currentPage;
+        const label = pgTag(uPg) + 'Panel ' + u.i + (u.k != null && !u.whole ? ' · image ' + u.k : '');
         if (statusEl) statusEl.textContent = pageName + ': generating queue… (' + label + ')';
         if (uiPreviewOn) setRunSlot(statusEl ? statusEl.textContent : '');
         queueRenderingKey = u.item.key;
@@ -4977,43 +4997,43 @@ color-scheme:light;
         let result;
         try {
           if (u.whole) {
-            result = await generateSinglePanel(u.i);
+            const wctx = u.item.runCtx || (u.item.runCtx = ctxOfPrep(u.item.prep));
+            result = await generateSinglePanel(u.i, null, wctx);
             if (result === 'cleared' || result === 'busy') {
-              if (!(stopRequested || pausedByVisibility || pausedManually)) { for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(w.i, w.k)); itemDone(u.item.key, 'skipped'); }
+              if (!(stopRequested || pausedByVisibility || pausedManually)) { for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(uPg, w.i, w.k)); itemDone(u.item.key, 'skipped'); }
               else break;
             } else {
-              for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(w.i, w.k));
+              for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(uPg, w.i, w.k));
               itemDone(u.item.key, result);
             }
           } else {
-            const info = await queueEnsurePrompt(u.i);
-            queuePrepPanel(u.i);
+            const info = u.item.prep;
             if (!info.hasContent) {
-              queueDone.add(queueUnitKey(u.i, u.k));
+              queueDone.add(queueUnitKey(uPg, u.i, u.k));
               itemDone(u.item.key, info.protectedSlots.length === 0 ? 'skipped' : 'protected');
             } else if (info.protectedSlots.length === info.count || info.protectedSlots.includes(u.k)) {
-              queueDone.add(queueUnitKey(u.i, u.k));
+              queueDone.add(queueUnitKey(uPg, u.i, u.k));
               itemDone(u.item.key, info.protectedSlots.length === info.count ? 'protected' : 'skipped');
             } else {
               panelBusy[u.i] = true;
               let st;
+              const sctx = u.item.runCtx || (u.item.runCtx = ctxOfPrep(info));
               try {
-                promptHistoryRuns[u.i] = { pos: info.fullPrompt, neg: info.negativePrompt, seeds: [] };
-                st = await renderPanelSlot(u.i, u.k, info.fullPrompt, info.negativePrompt, info.size, info.srcRes, info.srcSize, null);
+                st = await renderPanelSlot(u.i, u.k, info.fullPrompt, info.negativePrompt, info.size, info.srcRes, info.srcSize, null, sctx);
               } catch (e) { st = 'error'; }
-              finally { panelBusy[u.i] = false; commitPromptHistoryRun(u.i); }
+              finally { panelBusy[u.i] = false; commitPromptHistoryRunId(sctx.pid, sctx.run); }
               if (st === 'cleared') {
-                if (!(stopRequested || pausedByVisibility || pausedManually)) { queueDone.add(queueUnitKey(u.i, u.k)); itemDone(u.item.key, 'skipped'); }
+                if (!(stopRequested || pausedByVisibility || pausedManually)) { queueDone.add(queueUnitKey(uPg, u.i, u.k)); itemDone(u.item.key, 'skipped'); }
                 else break;
               } else {
-                queueDone.add(queueUnitKey(u.i, u.k));
+                queueDone.add(queueUnitKey(uPg, u.i, u.k));
                 itemDone(u.item.key, st === 'ok' ? 'generated' : st);
               }
             }
           }
         } catch (e) {
-          queueDone.add(queueUnitKey(u.i, u.k));
-          if (u.whole) for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(w.i, w.k));
+          queueDone.add(queueUnitKey(uPg, u.i, u.k));
+          if (u.whole) for (const w of queueExpandItem(u.item)) queueDone.add(queueUnitKey(uPg, w.i, w.k));
           itemDone(u.item.key, 'error');
         }
         if (stopRequested || pausedByVisibility || pausedManually) {
@@ -5117,7 +5137,7 @@ color-scheme:light;
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGenMenu(); }, true);
     }
   }
-  function panelGenGo(opts, which) {
+  async function panelGenGo(opts, which) {
     setGenPref('panel', which);
     const list = (opts.list || [opts.i]).filter(i => i >= 1 && i <= getPanelCount());
     if (!list.length) return;
@@ -5126,13 +5146,13 @@ color-scheme:light;
       return;
     }
     if (list.length > 1) clearPanelSelection();
-    enqueueQueueItems(list.map(i => ({ panel: i, slot: null })));
+    await enqueueQueueItems(list.map(i => ({ panel: i, slot: null })));
     queuePanelOpen();
   }
-  function slotGenGo(i, k, which) {
+  async function slotGenGo(i, k, which) {
     setGenPref('slot', which);
     if (which === 'queue' || queueRunning || generateAllRunning) {
-      enqueueQueueItems([{ panel: i, slot: k }]);
+      await enqueueQueueItems([{ panel: i, slot: k }]);
       queuePanelOpen();
       return;
     }
@@ -5164,11 +5184,10 @@ color-scheme:light;
     if (!list.length) {
       const st = document.getElementById('statusEl');
       if (st) st.textContent = '⚠ Select at least one panel first — Queue acts on the panel selection.';
-      return;
+      return Promise.resolve({ added: 0, skipped: 0 });
     }
     if (list.length > 1) clearPanelSelection();
-    enqueueQueueItems(list.map(i => ({ panel: i, slot: null })));
-    queuePanelOpen();
+    return enqueueQueueItems(list.map(i => ({ panel: i, slot: null }))).then(r => { queuePanelOpen(); return r; });
   }
   function syncGenFaces() {
     const p = genPref('panel'), s = genPref('slot');
@@ -5177,25 +5196,14 @@ color-scheme:light;
     const sel = document.getElementById('selMenuGenBtn');
     if (sel) { const n = (typeof panelSelection !== 'undefined' && panelSelection) ? panelSelection.size : 0; sel.textContent = (p === 'queue' ? '📥 Queue' : '🔄 Generate') + (n > 1 ? ' ' + n : ''); }
   }
-  async function queueEnsurePrompt(i) {
-    const hit = queuePromptCache.get(i);
-    if (hit) return hit;
-    const bp = await buildPanelPrompt(i);
-    const count = getPanelImageCount(i);
-    const protectedSlots = [];
-    for (let k = 1; k <= count; k++) if (isSlotProtected(i, k) && hasPanelImage(i, k)) protectedSlots.push(k);
-    const size = getPanelImageSize(i);
-    const srcRes = pickSourceResolution(size.w, size.h);
-    const entry = { fullPrompt: bp.fullPrompt, negativePrompt: bp.negativePrompt, hasContent: bp.hasContent, count: count, protectedSlots: protectedSlots, size: size, srcRes: srcRes, srcSize: srcRes.split('x').map(Number) };
-    queuePromptCache.set(i, entry);
-    return entry;
-  }
   function queueNextUnit() {
+    const pending = (it) => queueItemPending(it);
+    const itPage = (it) => (it.page != null ? it.page : currentPage);
     if (!queueRR) {
       for (const it of genQueue) {
-        if (!queueItemPending(it)) continue;
+        if (!pending(it)) continue;
         if (it.slot != null) {
-          if (!queueDone.has(queueUnitKey(it.panel, it.slot))) return { item: it, i: it.panel, k: it.slot, whole: false };
+          if (!queueDone.has(queueUnitKey(itPage(it), it.panel, it.slot))) return { item: it, i: it.panel, k: it.slot, whole: false };
           continue;
         }
         return { item: it, i: it.panel, k: null, whole: true };
@@ -5203,23 +5211,20 @@ color-scheme:light;
       return null;
     }
     let maxK = 0;
-    for (const it of genQueue) maxK = Math.max(maxK, it.slot != null ? it.slot : getPanelImageCount(it.panel));
+    for (const it of genQueue) for (const u of queueExpandItem(it)) maxK = Math.max(maxK, u.k);
     for (let k = 1; k <= maxK; k++) {
       for (const it of genQueue) {
-        if (it.slot != null) {
-          if (it.slot === k && !queueDone.has(queueUnitKey(it.panel, k))) return { item: it, i: it.panel, k: k, whole: false };
-          continue;
+        for (const u of queueExpandItem(it)) {
+          if (u.k !== k) continue;
+          if (!queueDone.has(queueUnitKey(itPage(it), u.i, u.k))) return { item: it, i: u.i, k: u.k, whole: false };
         }
-        if (k > getPanelImageCount(it.panel)) continue;
-        if (!queueDone.has(queueUnitKey(it.panel, k))) return { item: it, i: it.panel, k: k, whole: false };
       }
     }
     return null;
   }
-  function queuePrepPanel(i) {
-    if (queuePrepped.has(i)) return queuePromptCache.get(i);
-    queuePrepped.add(i);
-    const info = queuePromptCache.get(i);
+  function queuePrepPaint(prep) {
+    const i = prep.i, info = prep;
+    if (prep.pg !== currentPage) return info;
     const card = document.getElementById('panel-card-' + i);
     const statusEl = document.getElementById('statusEl');
     if (!info.hasContent) {
@@ -5271,7 +5276,6 @@ color-scheme:light;
   const panelBusy = {};
   let panelPromptOverrides = {};
   let panelPromptHistory = {};
-  let promptHistoryRuns = {};
   const PROMPT_HISTORY_MAX = 5;
   const inFlightGen = new Map();
   let imgIdCache = { raw: null, map: null };
@@ -5328,14 +5332,14 @@ color-scheme:light;
   function hasImagesAnywhere() {
     return panelImageStore.hasAnywhere();
   }
-  function imgDropSlot(i, k) {
-    return panelImageStore.clearSlot(currentPage, i, k);
+  function imgDropSlot(i, k, pg) {
+    return panelImageStore.clearSlot((pg == null ? currentPage : pg), i, k);
   }
-  function imgWipePanel(i) {
-    return panelImageStore.clearPanel(currentPage, i);
+  function imgWipePanel(i, pg) {
+    return panelImageStore.clearPanel((pg == null ? currentPage : pg), i);
   }
-  function imgEnsurePanel(i) {
-    return panelImageStore.ensurePanel(currentPage, i);
+  function imgEnsurePanel(i, pg) {
+    return panelImageStore.ensurePanel((pg == null ? currentPage : pg), i);
   }
 
   function ensureImageObserver() {
@@ -5529,12 +5533,14 @@ color-scheme:light;
     for (const [pending, key] of inFlightGen) {
       if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
       panelBusy[key.i] = false;
-      const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
-      if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
-      imgDropSlot(key.i, key.k);
-      setPanelImageButtons(key.i, key.k, false);
-      const img = document.getElementById('img-panel-' + key.i + '-' + key.k);
-      if (img) { img.removeAttribute('src'); delete img.dataset.hidden; img.alt = ""; }
+      imgDropSlot(key.i, key.k, key.pg);
+      if (key.pg == null || key.pg === currentPage) {
+        const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
+        if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
+        setPanelImageButtons(key.i, key.k, false);
+        const img = document.getElementById('img-panel-' + key.i + '-' + key.k);
+        if (img) { img.removeAttribute('src'); delete img.dataset.hidden; img.alt = ""; }
+      }
     }
     inFlightGen.clear();
     syncStopButton();
@@ -5872,13 +5878,16 @@ color-scheme:light;
     resumePanel = null;
     resumeSlot = null;
     runEndPanel = null;
+    runPreps = null;
     for (const [pending, key] of inFlightGen) {
       if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
       panelBusy[key.i] = false;
-      const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
-      if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
-      imgDropSlot(key.i, key.k);
-      setPanelImageButtons(key.i, key.k, false);
+      imgDropSlot(key.i, key.k, key.pg);
+      if (key.pg == null || key.pg === currentPage) {
+        const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
+        if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
+        setPanelImageButtons(key.i, key.k, false);
+      }
     }
     inFlightGen.clear();
     syncStopButton();
@@ -5909,10 +5918,12 @@ color-scheme:light;
     for (const [pending, key] of inFlightGen) {
       if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
       panelBusy[key.i] = false;
-      const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
-      if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
-      imgDropSlot(key.i, key.k);
-      setPanelImageButtons(key.i, key.k, false);
+      imgDropSlot(key.i, key.k, key.pg);
+      if (key.pg == null || key.pg === currentPage) {
+        const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
+        if (box) { box.classList.remove('generating'); box.classList.add('paused'); }
+        setPanelImageButtons(key.i, key.k, false);
+      }
     }
     inFlightGen.clear();
     syncStopButton();
@@ -5924,15 +5935,18 @@ color-scheme:light;
     resumePanel = null;
     resumeSlot = null;
     runEndPanel = null;
+    runPreps = null;
     if (runSignal) runSignal.fire();
     const statusEl = document.getElementById('statusEl');
     for (const [pending, key] of inFlightGen) {
       if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (e) {} }
       panelBusy[key.i] = false;
-      const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
-      if (box) { box.classList.remove('generating'); box.classList.add('stopped'); }
-      imgDropSlot(key.i, key.k);
-      setPanelImageButtons(key.i, key.k, false);
+      imgDropSlot(key.i, key.k, key.pg);
+      if (key.pg == null || key.pg === currentPage) {
+        const box = document.getElementById('imgbox-panel-' + key.i + '-' + key.k);
+        if (box) { box.classList.remove('generating'); box.classList.add('stopped'); }
+        setPanelImageButtons(key.i, key.k, false);
+      }
     }
     inFlightGen.clear();
     syncStopButton();
@@ -5962,7 +5976,6 @@ color-scheme:light;
     } catch (e) {}
     panelPromptOverrides = {};
     panelPromptHistory = {};
-    promptHistoryRuns = {};
     panelSelection.clear();
     selectionAnchor = null;
     panelCursor = 0;
@@ -5974,7 +5987,6 @@ color-scheme:light;
     n = parseInt(n, 10);
     const pages = ensurePages(readPanelState());
     if (isNaN(n) || pages[n] === undefined || n === currentPage) return;
-    stopAllGenerations();
     const state = storeJsonNow();
     if (!state) return;
     currentPage = n;
@@ -5984,6 +5996,8 @@ color-scheme:light;
     populatePageSel();
     updateDeletePageBtn();
     refreshStoryboardIfOpen();
+    queuePanelRender();
+    refreshRunPanelTarget();
   }
 
   function refreshStoryboardIfOpen() {
@@ -5992,7 +6006,6 @@ color-scheme:light;
   }
 
   function addPage() {
-    stopAllGenerations();
     pushStructUndo('new page');
     const cmd = panelCommands ? panelCommands.addPage : null;
     if (typeof cmd === 'function') {
@@ -6007,6 +6020,8 @@ color-scheme:light;
         updateDeletePageBtn();
         const statusEl = document.getElementById('statusEl');
         if (statusEl) statusEl.textContent = 'Page ' + hit.page + ' added (4 empty panels).';
+        queuePanelRender();
+        refreshRunPanelTarget();
         return;
       }
     }
@@ -6048,7 +6063,11 @@ color-scheme:light;
       if (v !== 'go') return;
     }
     pushStructUndo('delete page');
-    stopAllGenerations();
+    if (generateAllRunning && !queueRunning && runPreps && runPreps.pg === n) haltGenerations();
+    for (let m = genQueue.length - 1; m >= 0; m--) {
+      if (genQueue[m].page === n) { queueOutcome.delete(genQueue[m].key); genQueue.splice(m, 1); }
+    }
+    queuePanelRender();
     const cmd = panelCommands ? panelCommands.deletePage : null;
     if (typeof cmd === 'function') {
       const from = currentPage;
@@ -6959,7 +6978,6 @@ color-scheme:light;
         currentPage = targetPage;
         panelPromptOverrides = {};
         panelPromptHistory = {};
-        promptHistoryRuns = {};
         loadCurrentPage();
         populatePageSel();
         updateDeletePageBtn();
@@ -7063,7 +7081,6 @@ color-scheme:light;
     };
     reorder(panelPromptOverrides);
     reorder(panelPromptHistory);
-    promptHistoryRuns = {};
   }
 
   function shiftPanelMapsForInsert(afterIndex, count) {    const shift = (map) => {
@@ -7075,7 +7092,6 @@ color-scheme:light;
     };
     shift(panelPromptOverrides);
     shift(panelPromptHistory);
-    promptHistoryRuns = {};
   }
 
   function panelCountStateFor(n) {
@@ -8364,6 +8380,9 @@ color-scheme:light;
     el.hidden = false;
     const s = document.createElement('span');
     s.textContent = text;
+    s.title = 'Show the run panel';
+    s.style.cursor = 'pointer';
+    s.onclick = () => { runPanelReshow(); };
     const x = document.createElement('button');
     x.className = 'run-slot-x';
     x.textContent = '✕';
@@ -8391,7 +8410,7 @@ color-scheme:light;
     }
     return '';
   }
-  function runPanelRow(i) {
+  function runPanelRow(i, pg) {
     const rows = runPanelEl('runPanelRows');
     const d = document.createElement('div');
     d.className = 'run-row';
@@ -8401,7 +8420,7 @@ color-scheme:light;
     badge.textContent = 'queued';
     const name = document.createElement('span');
     name.className = 'run-name';
-    name.textContent = 'Panel ' + i;
+    name.textContent = ((pg != null && pg !== currentPage) ? ('Pg' + pg + ' · ') : '') + 'Panel ' + i;
     const seed = document.createElement('span');
     seed.className = 'run-seed';
     seed.textContent = runPanelSeedText(i);
@@ -8418,16 +8437,35 @@ color-scheme:light;
     d.append(badge, name, seed, thumb, re);
     rows.append(d);
   }
-  function runPanelOpen(seq, target) {
+  function runPanelOpen(seq, target, pg) {
     if (!uiPreviewOn) return;
     runPanelEl('runPanelRows').innerHTML = '';
     runPanelEl('runPanelTarget').textContent = target;
-    for (const i of seq) runPanelRow(i);
+    for (const i of seq) runPanelRow(i, pg);
     runPanelActive = true;
     runPanelMode = 'queue';
     runPanelSyncBtns();
     runPanelEl('runPanel').hidden = false;
     stackBottomCluster();
+  }
+  function runPanelReshow() {
+    if (!uiPreviewOn) return;
+    const p = runPanelEl('runPanel');
+    if (!p) return;
+    if (!runPanelActive && !genQueue.length && !generateAllRunning && !queueRunning) return;
+    runPanelActive = true;
+    p.hidden = false;
+    stackBottomCluster();
+  }
+  function refreshRunPanelTarget() {
+    if (!uiPreviewOn) return;
+    const el = runPanelEl('runPanelTarget');
+    if (!el) return;
+    if (genQueue.length) {
+      el.textContent = 'queue — ' + genQueue.length + ' item' + (genQueue.length === 1 ? '' : 's');
+    } else if (generateAllRunning && runPreps) {
+      el.textContent = runPanelTargetText({ isList: runPreps.isList, seq: runPreps.seq, from: runPreps.seq[0] || 1, endPanel: runPreps.endPanel }, runPreps.total, runPreps.pg);
+    }
   }
   function runPanelSyncBtns() {
     const running = generateAllRunning || queueRunning;
@@ -8451,14 +8489,14 @@ color-scheme:light;
     if (r === 'cleared') return 'stopped';
     return 'queued';
   }
-  function runPanelSet(i, st) {
+  function runPanelSet(i, st, pg) {
     if (!uiPreviewOn) return;
     const row = runPanelEl('run-row-' + i);
     if (!row) return;
     const badge = row.querySelector('.run-state');
     badge.className = 'run-state st-' + st;
     badge.textContent = RUN_STATE_LABEL[st] || st;
-    if (st === 'done' || st === 'failed') {
+    if ((st === 'done' || st === 'failed') && (pg == null || pg === currentPage)) {
       const src = runPanelThumb(i);
       const img = row.querySelector('img');
       if (src) { img.src = src; img.hidden = false; }
@@ -8478,7 +8516,9 @@ color-scheme:light;
     if (st === 'rendering') row.scrollIntoView({block:'nearest'});
   }
   function queueRowLabel(it) {
-    return it.slot == null ? ('Panel ' + it.panel) : ('Panel ' + it.panel + ' · image ' + it.slot);
+    const pg = (it.page != null) ? it.page : currentPage;
+    const base = it.slot == null ? ('Panel ' + it.panel) : ('Panel ' + it.panel + ' · image ' + it.slot);
+    return (pg !== currentPage ? ('Pg' + pg + ' · ') : '') + base;
   }
   function queueControlsLocked() {
     return queueRunning && !pausedManually;
@@ -8551,10 +8591,12 @@ color-scheme:light;
     runPanelActive = false;
     stackBottomCluster();
   }
-  function runPanelTargetText(run, totalPanels) {
-    if (run.isList) return 'panels ' + run.seq.join(', ');
-    if (run.from <= 1 && run.endPanel >= totalPanels) return 'all ' + totalPanels + ' panels';
-    return 'panels ' + run.from + '\u2013' + run.endPanel;
+  function runPanelTargetText(run, totalPanels, pg) {
+    let t;
+    if (run.isList) t = 'panels ' + run.seq.join(', ');
+    else if (run.from <= 1 && run.endPanel >= totalPanels) t = 'all ' + totalPanels + ' panels';
+    else t = 'panels ' + run.from + '–' + run.endPanel;
+    return ((pg != null && pg !== currentPage) ? ('page ' + pg + ' · ') : '') + t;
   }
   function runPanelSingle(i) {
     if (!uiPreviewOn || panelBusy[i] || (runPanelActive && (runPanelMode === 'queue' || runPanelMode === 'single'))) return generateSinglePanel(i);
@@ -8637,6 +8679,7 @@ color-scheme:light;
     { t: "Generate All", g: "Generate", act: "w1-12" },
     { t: "Generate queued", g: "Generate", act: "w1-192" },
     { t: "Queue selected panels", g: "Generate", act: "w1-195" },
+    { t: "Show run panel", g: "Generate", act: "w1-196" },
     { t: "Clear queue", g: "Generate", act: "w1-194" },
     { t: "Pause", g: "Generate", act: "w1-13" },
     { t: "Stop", g: "Generate", act: "w1-14" },
@@ -10271,42 +10314,67 @@ color-scheme:light;
     ctn.innerHTML = list.map((entry, idx) => promptHistoryEntryHtml(i, idx, entry)).join('');
   }
 
-  function addPromptHistoryEntry(i, run) {
+  function addPromptHistoryEntryById(pid, run) {
     if (!run || !Array.isArray(run.seeds) || !run.seeds.length) return;
-    const histId = (typeof panelIdAt === 'function') ? panelIdAt(i) : null;
+    const entry = { pos: run.pos, neg: run.neg || '', seeds: run.seeds.slice(), at: Date.now() };
+    const same = JSON.stringify({ pos: entry.pos, neg: entry.neg, seeds: entry.seeds });
     const histCmd = panelCommands ? panelCommands.appendPromptHistory : null;
-    if (histCmd && histId) {
+    if (histCmd && pid) {
       const histProject = storeJsonNow();
       if (histProject) {
-        const histHit = histCmd(histProject, histId, { pos: run.pos, neg: run.neg || '', seeds: run.seeds.slice(), at: Date.now() }, PROMPT_HISTORY_MAX);
+        const histHit = histCmd(histProject, pid, { pos: run.pos, neg: run.neg || '', seeds: run.seeds.slice(), at: entry.at }, PROMPT_HISTORY_MAX);
         if (histHit) {
           savePanelStateShape(histProject);
-          panelPromptHistory[i] = ((histProject.pages[histHit.page] || {})[histHit.index] || {}).promptHistory || [];
-          renderPromptHistory(i);
-          attachPromptHistoryThumb(i, panelPromptHistory[i][0], run);
+          if (histHit.page === currentPage) {
+            panelPromptHistory[histHit.index] = ((histProject.pages[histHit.page] || {})[histHit.index] || {}).promptHistory || [];
+            renderPromptHistory(histHit.index);
+            attachPromptHistoryThumb(histHit.index, panelPromptHistory[histHit.index][0], run);
+          }
           prunePromptThumbs();
           return;
         }
       }
     }
-    const list = panelPromptHistory[i] || (panelPromptHistory[i] = []);
-    const entry = { pos: run.pos, neg: run.neg || '', seeds: run.seeds.slice(), at: Date.now() };
-    const same = JSON.stringify({ pos: entry.pos, neg: entry.neg, seeds: entry.seeds });
+    const found = findPanelByIdInStore(pid);
+    if (!found) return;
+    const stored = readPanelState();
+    const page = stored && stored.pages ? stored.pages[found.page] : null;
+    const panel = page ? page[found.index] : null;
+    if (!panel) return;
+    const list = Array.isArray(panel.promptHistory) ? panel.promptHistory : (panel.promptHistory = []);
     for (let k = list.length - 1; k >= 0; k--) {
       if (JSON.stringify({ pos: list[k].pos, neg: list[k].neg, seeds: promptHistorySeeds(list[k]) }) === same) list.splice(k, 1);
     }
     list.unshift(entry);
     if (list.length > PROMPT_HISTORY_MAX) list.length = PROMPT_HISTORY_MAX;
     savePanelStateShape(storeJsonNow());
-    renderPromptHistory(i);
-    attachPromptHistoryThumb(i, entry, run);
+    if (found.page === currentPage) {
+      panelPromptHistory[found.index] = list;
+      renderPromptHistory(found.index);
+      attachPromptHistoryThumb(found.index, entry, run);
+    }
     prunePromptThumbs();
   }
-
-  function commitPromptHistoryRun(i) {
-    const run = promptHistoryRuns[i];
-    delete promptHistoryRuns[i];
-    if (run) addPromptHistoryEntry(i, run);
+  function commitPromptHistoryRunId(pid, run) {
+    if (pid && run) addPromptHistoryEntryById(pid, run);
+  }
+  function findPanelByIdInStore(pid) {
+    if (!pid) return null;
+    let stored = null;
+    try { stored = readPanelState(); } catch (e) { stored = null; }
+    const pages = stored && stored.pages ? stored.pages : null;
+    if (!pages) return null;
+    for (const pgk of Object.keys(pages)) {
+      const page = pages[pgk];
+      if (!page || typeof page !== 'object') continue;
+      for (const pos of Object.keys(page)) {
+        const n = Number(pos);
+        if (String(n) !== pos || !Number.isInteger(n) || n < 1) continue;
+        const p = page[pos];
+        if (p && typeof p === 'object' && String(p.id || '') === String(pid)) return { page: Number(pgk), index: n };
+      }
+    }
+    return null;
   }
 
   async function copyPromptHistoryEntry(i, idx) {
@@ -10379,76 +10447,84 @@ color-scheme:light;
     updateCopyPrevChipStates();
   }
 
-  async function renderPanelSlot(i, k, fullPrompt, negativePrompt, size, srcRes, srcSize, seedOverride) {
-    const box = document.getElementById('imgbox-panel-' + i + '-' + k);
-    const img = document.getElementById('img-panel-' + i + '-' + k);
-    if (!box || !img) return 'ok';
+  async function renderPanelSlot(i, k, fullPrompt, negativePrompt, size, srcRes, srcSize, seedOverride, ctx) {
+    const ctxPg = (ctx && ctx.pg) || currentPage;
+    const onPage = ctxPg === currentPage;
+    const box = onPage ? document.getElementById('imgbox-panel-' + i + '-' + k) : null;
+    const img = onPage ? document.getElementById('img-panel-' + i + '-' + k) : null;
+    if (onPage && (!box || !img)) return 'ok';
     if (stopRequested) return 'cleared';
-    const card = document.getElementById('panel-card-' + i);
-    const genPid = panelIdAt(i);
-    box.classList.remove('failed', 'paused', 'cleared');
-    img.removeAttribute('src');
-    img.alt = "";
+    const card = onPage ? document.getElementById('panel-card-' + i) : null;
+    const genPid = (ctx && ctx.pid) || panelIdAt(i);
+    if (box) box.classList.remove('failed', 'paused', 'cleared');
+    if (img) { img.removeAttribute('src'); img.alt = ""; }
     setPanelImageButtons(i, k, false);
-    box.classList.add('generating');
+    if (box) box.classList.add('generating');
     let pending = null;
     try {
       const useSeed = (typeof seedOverride === 'number' && seedOverride >= 0);
-      const seed = useSeed ? seedOverride : pinPanelSeedForRun(i);
+      const seed = useSeed ? seedOverride : ((ctx && typeof ctx.seed === 'number' && ctx.seed >= 0) ? ctx.seed : pinPanelSeedForRun(i));
       const opts = { prompt: fullPrompt, negativePrompt: negativePrompt, resolution: srcRes };
       const gsEl = document.getElementById('guidanceScaleInput');
       if (gsEl) { const gs = parseInt(gsEl.value, 10); if (!isNaN(gs)) opts.guidanceScale = Math.max(1, Math.min(30, gs)); }
-      if (seed !== -1) opts.seed = imageSeed(seed, k, useSeed || panelSameSeedOn(i));
+      if (seed !== -1) opts.seed = imageSeed(seed, k, useSeed || (ctx ? !!ctx.sameSeed : panelSameSeedOn(i)));
       pending = root.generateImage(opts);
-      inFlightGen.set(pending, { i: i, k: k });
+      inFlightGen.set(pending, { i: i, k: k, pg: (ctx && ctx.pg) || currentPage });
       setStopButtonEnabled(true);
       const result = await withRunSignal(withTimeout(pending, GENERATION_TIMEOUT_MS, runSignal ? runSignal.p : null));
       if (!result || !result.dataUrl) throw new Error('The image service returned no image (it stalled, likely after a tab switch). Reload the page and try again.');
       const dataUrl = (srcSize[0] === size.w && srcSize[1] === size.h) ? result.dataUrl : await upscaleDataUrl(result.dataUrl, size.w, size.h);
       showPanelImage(i, k, dataUrl, genPid);
-      const historyRun = promptHistoryRuns[i];
+      const historyRun = (ctx && ctx.run) || null;
       if (historyRun) historyRun.seeds.push({ k: k, seed: (typeof opts.seed === 'number' ? opts.seed : null) });
       return 'ok';
     } catch (e) {
-      if (pausedByVisibility || pausedManually || stopRequested || card.classList.contains('cleared') || box.classList.contains('cleared')) return 'cleared';
+      if (pausedByVisibility || pausedManually || stopRequested || (card && card.classList.contains('cleared')) || (box && box.classList.contains('cleared'))) return 'cleared';
       if (pending && typeof pending.stop === 'function') { try { pending.stop(); } catch (err) {} }
-      img.alt = "Generation failed: " + (e.message || e);
-      box.classList.add('failed');
+      if (img) img.alt = "Generation failed: " + (e.message || e);
+      if (box) box.classList.add('failed');
       setPanelImageButtons(i, k, false);
       throw e;
     } finally {
       inFlightGen.delete(pending);
-      box.classList.remove('generating');
+      if (box) box.classList.remove('generating');
       syncStopButton();
     }
   }
 
-  async function generateSinglePanel(i, runOverride) {
+  async function generateSinglePanel(i, runOverride, ctx) {
     if (panelBusy[i]) return 'busy';
     pausedByVisibility = false;
     if (!generateAllRunning) stopRequested = false;
     panelBusy[i] = true;
+    let pid = null, run = null;
     try {
     let fullPrompt, negativePrompt, hasContent;
+    const prep = ctx && ctx.prep;
     if (runOverride) {
       fullPrompt = runOverride.pos || '';
       negativePrompt = runOverride.neg || '';
       hasContent = fullPrompt.trim() !== '';
+    } else if (prep) {
+      fullPrompt = prep.fullPrompt; negativePrompt = prep.negativePrompt; hasContent = prep.hasContent;
     } else {
       const bp = await buildPanelPrompt(i);
       fullPrompt = bp.fullPrompt; negativePrompt = bp.negativePrompt; hasContent = bp.hasContent;
     }
-    if (runOverride) delete promptHistoryRuns[i];
-    else promptHistoryRuns[i] = { pos: fullPrompt, neg: negativePrompt, seeds: [] };
+    pid = (ctx && ctx.pid) || panelIdAt(i);
+    run = (ctx && ctx.run) || { pos: fullPrompt, neg: negativePrompt, seeds: [] };
+    const ctxPg = (ctx && ctx.pg) || currentPage;
+    const onPage = ctxPg === currentPage;
     const card = document.getElementById('panel-card-' + i);
-    const count = getPanelImageCount(i);
+    const count = prep ? prep.count : getPanelImageCount(i);
     const statusEl = document.getElementById('statusEl');
-    const protectedSlots = [];
-    for (let k = 1; k <= count; k++) if (isSlotProtected(i, k) && hasPanelImage(i, k)) protectedSlots.push(k);
+    const protectedSlots = prep ? prep.protectedSlots.slice() : [];
+    if (!prep) for (let k = 1; k <= count; k++) if (isSlotProtected(i, k) && hasPanelImage(i, k)) protectedSlots.push(k);
 
     if (!hasContent) {
       if (protectedSlots.length === 0) {
-        imgWipePanel(i);
+        if (onPage) {
+        imgWipePanel(i, ctxPg);
         for (let k = 1; k <= 4; k++) {
           const box = document.getElementById('imgbox-panel-' + i + '-' + k);
           const img = document.getElementById('img-panel-' + i + '-' + k);
@@ -10458,8 +10534,10 @@ color-scheme:light;
         }
         card.classList.remove('failed', 'paused', 'skipped', 'stopped');
         card.classList.add('skipped');
+        }
         return 'skipped';
       }
+      if (onPage) {
       for (let k = 1; k <= count; k++) {
         if (protectedSlots.includes(k)) continue;
         const box = document.getElementById('imgbox-panel-' + i + '-' + k);
@@ -10469,18 +10547,20 @@ color-scheme:light;
         setPanelImageButtons(i, k, false);
       }
       card.classList.remove('failed', 'paused', 'skipped');
+      }
       if (statusEl) statusEl.textContent = 'Panel ' + i + ' has no content — its 🔒 protected image(s) were kept.';
       return 'protected';
     }
-    card.classList.remove('skipped');
+    if (onPage) card.classList.remove('skipped');
 
     if (protectedSlots.length === count) {
       if (statusEl) statusEl.textContent = 'Panel ' + i + ' is fully 🔒 protected — unprotect an image to regenerate it.';
       return 'protected';
     }
 
+    if (onPage) {
     card.classList.remove('failed', 'paused', 'cleared', 'stopped');
-    imgEnsurePanel(i);
+    imgEnsurePanel(i, ctxPg);
     for (let k = 1; k <= count; k++) {
       if (protectedSlots.includes(k)) continue;
       const box = document.getElementById('imgbox-panel-' + i + '-' + k);
@@ -10489,22 +10569,23 @@ color-scheme:light;
       if (img) { img.removeAttribute('src'); img.alt = ""; }
       setPanelImageButtons(i, k, false);
     }
+    }
 
-    const size = getPanelImageSize(i);
-    const srcRes = pickSourceResolution(size.w, size.h);
-    const srcSize = srcRes.split('x').map(Number);
+    const size = prep ? prep.size : getPanelImageSize(i);
+    const srcRes = prep ? prep.srcRes : pickSourceResolution(size.w, size.h);
+    const srcSize = prep ? prep.srcSize : srcRes.split('x').map(Number);
 
     for (let k = 1; k <= count; k++) {
       if (protectedSlots.includes(k)) continue;
-      const st = await renderPanelSlot(i, k, fullPrompt, negativePrompt, size, srcRes, srcSize, runOverride && runOverride.seedForSlot ? runOverride.seedForSlot(k) : null);
+      const st = await renderPanelSlot(i, k, fullPrompt, negativePrompt, size, srcRes, srcSize, (runOverride && runOverride.seedForSlot) ? runOverride.seedForSlot(k) : (ctx ? imageSeed(ctx.seed, k, !!ctx.sameSeed) : null), ctx || { pg: currentPage, i: i, pid: pid, seed: -1, sameSeed: panelSameSeedOn(i), run: run });
       if (st === 'cleared') {
-        if (pausedByVisibility || pausedManually || stopRequested || card.classList.contains('cleared')) return 'cleared';
+        if (pausedByVisibility || pausedManually || stopRequested || (onPage && card && card.classList.contains('cleared'))) return 'cleared';
         continue;
       }
     }
     if (statusEl && protectedSlots.length) statusEl.textContent = 'Panel ' + i + ': regenerated ' + (count - protectedSlots.length) + ', kept ' + protectedSlots.length + ' 🔒 protected.';
     return 'generated';
-    } finally { panelBusy[i] = false; commitPromptHistoryRun(i); }
+    } finally { panelBusy[i] = false; commitPromptHistoryRunId(pid, run); }
   }
 
   async function generateSinglePanelSlot(i, k) {
@@ -10516,21 +10597,17 @@ color-scheme:light;
       if (statusEl) statusEl.textContent = 'Image ' + k + ' of Panel ' + i + ' is 🔒 protected — unprotect it to regenerate.';
       return 'protected';
     }
-    const bp = await buildPanelPrompt(i);
-    const fullPrompt = bp.fullPrompt, negativePrompt = bp.negativePrompt;
-    if (!bp.hasContent) return 'skipped';
-    promptHistoryRuns[i] = { pos: fullPrompt, neg: negativePrompt, seeds: [] };
+    const prep = await snapshotPanelPrep(i);
+    if (!prep.hasContent) return 'skipped';
+    const ctx = ctxOfPrep(prep);
     panelBusy[i] = true;
     try {
       const card = document.getElementById('panel-card-' + i);
       card.classList.remove('skipped', 'failed', 'paused', 'cleared', 'stopped');
-      const size = getPanelImageSize(i);
-      const srcRes = pickSourceResolution(size.w, size.h);
-      const srcSize = srcRes.split('x').map(Number);
-      const st = await renderPanelSlot(i, k, fullPrompt, negativePrompt, size, srcRes, srcSize);
+      const st = await renderPanelSlot(i, k, prep.fullPrompt, prep.negativePrompt, prep.size, prep.srcRes, prep.srcSize, imageSeed(prep.seed, k, !!prep.sameSeed), ctx);
       if (st === 'cleared') return 'cleared';
       return 'generated';
-    } finally { panelBusy[i] = false; commitPromptHistoryRun(i); chainQueueDrain(); }
+    } finally { panelBusy[i] = false; commitPromptHistoryRunId(prep.pid, ctx.run); chainQueueDrain(); }
   }
 
   function panelSameSeedOn(i) {
@@ -11894,7 +11971,6 @@ color-scheme:light;
     panelImageStore.resetAll();
     for (const k in panelPromptOverrides) delete panelPromptOverrides[k];
     for (const k in panelPromptHistory) delete panelPromptHistory[k];
-    promptHistoryRuns = {};
     let fileLib = null;
     if (data.settings && Array.isArray(data.settings.library)) fileLib = data.settings.library;
     if (!fileLib && Array.isArray(data.libObjects)) fileLib = data.libObjects;
@@ -12224,20 +12300,38 @@ color-scheme:light;
     if (generateAllRunning) return;
     const statusEl = document.getElementById('statusEl');
     const genBtn = document.querySelector('.btn-generate');
-    const pageName = currentPageLabel();
-    const totalPanels = getPanelCount();
-    const run = computeRunSeq(startPanel, panelList, totalPanels, resumePanel, runEndPanel);
-    if (!run) return;
-    resumePanel = null;
-    const seq = run.seq;
-    const isList = run.isList;
-    const endPanel = run.endPanel;
-    runEndPanel = endPanel;
-    const rrMax = roundRobinOn() ? Math.max.apply(null, seq.map(i => getPanelImageCount(i)).concat([0])) : 0;
-    const roundRobin = rrMax > 0;
-    const rrResumeK = (roundRobin && !isList && run.resumed && resumeSlot) ? resumeSlot : null;
+    const isListArg = Array.isArray(panelList) && panelList.length > 0;
+    let seq, isList, endPanel, totalPanels, rrResumeK = null;
+    if (!isListArg && resumePanel != null && runPreps && runPreps.pg != null) {
+      runPage = runPreps.pg;
+      totalPanels = runPreps.total;
+      isList = runPreps.isList;
+      endPanel = runPreps.endPanel;
+      seq = runPreps.seq.filter(i => i >= resumePanel);
+      if (!seq.length) seq = runPreps.seq.slice();
+      if (runPreps.roundRobin && !runPreps.isList && resumeSlot != null) rrResumeK = resumeSlot;
+    } else {
+      runPage = currentPage;
+      totalPanels = getPanelCount();
+      const run = computeRunSeq(startPanel, panelList, totalPanels, resumePanel, runEndPanel);
+      if (!run) return;
+      seq = run.seq;
+      isList = run.isList;
+      endPanel = run.endPanel;
+      resumePanel = null;
+      runEndPanel = endPanel;
+      runPreps = null;
+      const preps = [];
+      for (const i of seq) preps.push(await snapshotPanelPrep(i));
+      const rrMax0 = roundRobinOn() ? Math.max.apply(null, preps.map(p => p.count).concat([0])) : 0;
+      runPreps = { pg: runPage, total: totalPanels, seq: seq.slice(), from: seq[0] || 1, isList: isList, endPanel: endPanel, roundRobin: rrMax0 > 0, rrMax: rrMax0, preps: preps };
+    }
     resumeSlot = null;
-    runPanelOpen(seq, runPanelTargetText(run, totalPanels));
+    const pageName = (runPage === currentPage) ? currentPageLabel() : pageLabel(ensurePages(readPanelState())[runPage], runPage);
+    const roundRobin = runPreps.roundRobin;
+    const rrMax = runPreps.rrMax;
+    const prepByIdx = new Map(runPreps.preps.map(p => [p.i, p]));
+    runPanelOpen(seq, runPanelTargetText({ isList: runPreps.isList, seq: runPreps.seq, from: runPreps.from, endPanel: runPreps.endPanel }, runPreps.total, runPage), runPage);
     let generated = 0;
     let skipped = 0;
     let protectedCount = 0;
@@ -12252,17 +12346,16 @@ color-scheme:light;
     try {
     pausedByVisibility = false;
     if (roundRobin) {
-      const rrInfo = new Map();
-      for (const i of seq) {
-        const bp = await buildPanelPrompt(i);
-        const count = getPanelImageCount(i);
-        const protectedSlots = [];
-        for (let k = 1; k <= count; k++) if (isSlotProtected(i, k) && hasPanelImage(i, k)) protectedSlots.push(k);
+      const rrInfo = new Map(runPreps.preps.map(p => [p.i, p]));
+      for (const prep of runPreps.preps) {
+        const i = prep.i;
+        if (!prep.outcomes) prep.outcomes = [];
+        if (prep.painted || runPage !== currentPage) continue;
+        prep.painted = true;
         const card = document.getElementById('panel-card-' + i);
-        rrInfo.set(i, { fullPrompt: bp.fullPrompt, negativePrompt: bp.negativePrompt, hasContent: bp.hasContent, count: count, protectedSlots: protectedSlots, size: null, srcRes: null, srcSize: null, outcomes: [] });
-        promptHistoryRuns[i] = { pos: bp.fullPrompt, neg: bp.negativePrompt, seeds: [] };
-        if (!bp.hasContent) {
-          if (protectedSlots.length === 0) {
+        if (!card) continue;
+        if (!prep.hasContent) {
+          if (prep.protectedSlots.length === 0) {
             imgWipePanel(i);
             for (let k = 1; k <= 4; k++) {
               const box = document.getElementById('imgbox-panel-' + i + '-' + k);
@@ -12274,8 +12367,8 @@ color-scheme:light;
             card.classList.remove('failed', 'paused', 'skipped', 'stopped');
             card.classList.add('skipped');
           } else {
-            for (let k = 1; k <= count; k++) {
-              if (protectedSlots.includes(k)) continue;
+            for (let k = 1; k <= prep.count; k++) {
+              if (prep.protectedSlots.includes(k)) continue;
               const box = document.getElementById('imgbox-panel-' + i + '-' + k);
               const img = document.getElementById('img-panel-' + i + '-' + k);
               if (box) box.classList.remove('generating', 'failed', 'paused', 'cleared', 'stopped');
@@ -12287,13 +12380,13 @@ color-scheme:light;
           }
         } else {
           card.classList.remove('skipped');
-          if (protectedSlots.length === count) {
+          if (prep.protectedSlots.length === prep.count) {
             if (statusEl) statusEl.textContent = 'Panel ' + i + ' is fully 🔒 protected — unprotect an image to regenerate it.';
           } else {
             card.classList.remove('failed', 'paused', 'cleared', 'stopped');
             imgEnsurePanel(i);
-            for (let k = 1; k <= count; k++) {
-              if (protectedSlots.includes(k)) continue;
+            for (let k = 1; k <= prep.count; k++) {
+              if (prep.protectedSlots.includes(k)) continue;
               const box = document.getElementById('imgbox-panel-' + i + '-' + k);
               const img = document.getElementById('img-panel-' + i + '-' + k);
               if (box) box.classList.remove('failed', 'paused', 'cleared', 'stopped');
@@ -12301,11 +12394,6 @@ color-scheme:light;
               setPanelImageButtons(i, k, false);
             }
           }
-          const size = getPanelImageSize(i);
-          const info = rrInfo.get(i);
-          info.size = size;
-          info.srcRes = pickSourceResolution(size.w, size.h);
-          info.srcSize = info.srcRes.split('x').map(Number);
         }
       }
       let rrHalt = false;
@@ -12313,18 +12401,21 @@ color-scheme:light;
         for (let si = 0; si < seq.length && !rrHalt; si++) {
           const i = seq[si];
           const info = rrInfo.get(i);
-          if (k > info.count) continue;
-          if (rrResumeK !== null && i === run.from && k < rrResumeK) continue;
+          if (!info || k > info.count) continue;
+          if (info.doneSlots && info.doneSlots[k]) continue;
+          if (rrResumeK !== null && i === runPreps.from && k < rrResumeK) continue;
           if (!info.hasContent || info.protectedSlots.length === info.count || info.protectedSlots.includes(k)) continue;
+          const sctx = info.runCtx || (info.runCtx = ctxOfPrep(info));
           statusEl.textContent = `${pageName}: generating panels… (image ${k} of ${rrMax} — panel ${isList ? ((si + 1) + '/' + seq.length) : (i + '/' + totalPanels)})`;
           if (uiPreviewOn) setRunSlot(statusEl.textContent);
-          runPanelSet(i, 'rendering');
+          runPanelSet(i, 'rendering', runPage);
           panelBusy[i] = true;
           let st;
-          try { st = await renderPanelSlot(i, k, info.fullPrompt, info.negativePrompt, info.size, info.srcRes, info.srcSize, null); }
+          try { st = await renderPanelSlot(i, k, info.fullPrompt, info.negativePrompt, info.size, info.srcRes, info.srcSize, null, sctx); }
           catch (e) { st = 'error'; }
           panelBusy[i] = false;
           info.outcomes.push(st);
+          if (st !== 'cleared') { if (!info.doneSlots) info.doneSlots = {}; info.doneSlots[k] = true; }
           if (stopRequested || pausedByVisibility || pausedManually) {
             if (stopRequested) {
               resumePanel = null;
@@ -12332,21 +12423,22 @@ color-scheme:light;
               resumeSlot = null;
               statusEl.textContent = 'Stopped — generation cancelled. Press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to generate.';
               if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify('Run stopped.'); }
-              runPanelSet(i, 'stopped'); runPanelFinish('stopped');
+              runPanelSet(i, 'stopped', runPage); runPanelFinish('stopped');
             } else {
               resumePanel = i;
               resumeSlot = isList ? null : k;
               if (resumePanel > totalPanels) resumePanel = totalPanels;
               statusEl.textContent = (pausedManually ? 'Paused' : pageName + ': paused — tab went to background') + ' — press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to continue from panel ' + resumePanel + (resumeSlot ? ', image ' + resumeSlot : '') + '.';
-              runPanelSet(i, 'paused'); runPanelFinish('paused');
+              runPanelSet(i, 'paused', runPage); runPanelFinish('paused');
               if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
             }
             rrHalt = true;
           }
         }
       }
-      for (const i of seq) {
-        const info = rrInfo.get(i);
+      for (const prep of runPreps.preps) {
+        const i = prep.i;
+        const info = prep;
         let outcome = null;
         if (!info.hasContent) outcome = info.protectedSlots.length === 0 ? 'skipped' : 'protected';
         else if (info.protectedSlots.length === info.count) outcome = 'protected';
@@ -12357,34 +12449,36 @@ color-scheme:light;
         else if (outcome === 'skipped') skipped++;
         else if (outcome === 'protected') protectedCount++;
         else if (outcome === 'error') failed++;
-        if (outcome) runPanelSet(i, runPanelMapResult(outcome));
-        commitPromptHistoryRun(i);
+        if (outcome) runPanelSet(i, runPanelMapResult(outcome), runPage);
+        if (info.runCtx) commitPromptHistoryRunId(info.pid, info.runCtx.run);
       }
     } else {
     for (let si = 0; si < seq.length; si++) {
       const i = seq[si];
+      const prep = prepByIdx.get(i);
+      const sctx = prep ? (prep.runCtx || (prep.runCtx = ctxOfPrep(prep))) : null;
       statusEl.textContent = `${pageName}: generating panels… (${isList ? ((si + 1) + '/' + seq.length) : (i + '/' + totalPanels)})`;
       if (uiPreviewOn) setRunSlot(statusEl.textContent);
-      runPanelSet(i, 'rendering');
+      runPanelSet(i, 'rendering', runPage);
       let result;
-      try { result = await generateSinglePanel(i); } catch (e) { result = 'error'; }
+      try { result = await generateSinglePanel(i, null, sctx); } catch (e) { result = 'error'; }
       if (result === 'generated') generated++;
       else if (result === 'skipped') skipped++;
       else if (result === 'protected') protectedCount++;
       else if (result === 'error') failed++;
-      runPanelSet(i, runPanelMapResult(result));
+      runPanelSet(i, runPanelMapResult(result), runPage);
       if (stopRequested || pausedByVisibility || pausedManually) {
         if (stopRequested) {
           resumePanel = null;
           runEndPanel = null;
           statusEl.textContent = 'Stopped — generation cancelled. Press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to generate.';
           if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify('Run stopped.'); }
-          runPanelSet(i, 'stopped'); runPanelFinish('stopped');
+          runPanelSet(i, 'stopped', runPage); runPanelFinish('stopped');
         } else {
           resumePanel = isList ? i : ((result === 'cleared') ? i : i + 1);
           if (resumePanel > totalPanels) resumePanel = totalPanels;
           statusEl.textContent = (pausedManually ? 'Paused' : pageName + ': paused — tab went to background') + ' — press ⚡ GENERATE ALL PANELS ON PAGE ⚡ to continue from panel ' + resumePanel + '.';
-          runPanelSet(i, 'paused'); runPanelFinish('paused');
+          runPanelSet(i, 'paused', runPage); runPanelFinish('paused');
           if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
         }
         break;
@@ -12398,6 +12492,7 @@ color-scheme:light;
       if (uiPreviewOn) { setRunSlot(statusEl.textContent); notify(statusEl.textContent); }
       runPanelFinish('ended');
       pausedRunKind = null;
+      runPreps = null;
     }
     } finally {
       genBtn.disabled = false;
@@ -12802,7 +12897,6 @@ color-scheme:light;
     panelImageStore.resetAll();
     for (const k in panelPromptOverrides) delete panelPromptOverrides[k];
     for (const k in panelPromptHistory) delete panelPromptHistory[k];
-    promptHistoryRuns = {};
     for (let i = 1; i <= 24; i++) {
       const posEl = document.getElementById('prompt-pos-' + i);
       const negEl = document.getElementById('prompt-neg-' + i);
@@ -12814,6 +12908,13 @@ color-scheme:light;
     try { localStorage.removeItem(PANEL_STATE_KEY); } catch (e) {}
     stopRequested = false;
     generateAllRunning = false;
+    queueRunning = false;
+    genQueue = [];
+    queueDone.clear();
+    queueOutcome.clear();
+    runPreps = null;
+    runPage = 1;
+    pausedRunKind = null;
     setStopButtonEnabled(false);
     applyPanelsVisible(true);
     for (let i = 1; i <= 24; i++) {
@@ -14662,6 +14763,7 @@ color-scheme:light;
     "w1-193": { ev: "click", run: (el, e) => { const sel = panelSelectionSorted().filter(i => i >= 1 && i <= getPanelCount()); if (!sel.length) { batchStickyGen(); return; } openGenMenu(el, { kind: 'batch', list: sel }); } },
     "w1-194": { ev: "click", run: (el, e) => { clearGenQueue() } },
     "w1-195": { ev: "click", run: (el, e) => { queueSelectedPanels() } },
+    "w1-196": { ev: "click", run: (el, e) => { runPanelReshow() } },
     "w1-143": { ev: "click", run: (el, e) => { haltGenerations() } },
     "w1-144": { ev: "click", run: (el, e) => { runPanelReroll((+el.dataset.a0)) } },
     "w1-145": { ev: "click", run: (el, e) => { runPanelHide() } },
@@ -14809,7 +14911,7 @@ color-scheme:light;
 
 
 
-  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, customStyleItems, resolveStyleEntry, refreshStyleSelects, countStyleUsage, applyStyleDelete, deleteStyleObject, getPanelKeywords, onPanelStyleChange, copyProjectItemToCatalogue, copyCatalogueItemToProject, updatePanelSelects, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility, enqueueQueueItems, clearGenQueue, moveQueueItem, removeQueueItem, drainGenQueue, generateQueuedAction, generateAllAction, resumeRunAction, resumeQueueDrain, queueHasPending, queueItemPending, openGenMenu, closeGenMenu, panelGenGo, slotGenGo, panelStickyGen, slotStickyGen, batchStickyGen, queueSelectedPanels, queuePanelOpen, queuePanelRender, runPanelSetQ, syncGenFaces };
+  window.__dbg = { addLibraryEntryByType, addPage, addPanel, palChoose, palGuidance, setImagesPerPanel, applyKeepAwake, applyLibraryDelete, applyLibraryRename, applyPreset, batchAddPanels, batchDeletePanels, batchDuplicatePanels, batchMoveToPage, buildPanelGrid, buildPanelPrompt, choiceDialogPick, clearLibSelection, clearPanelImageSlot, clearPanelImages, clearPanelSeed, clearPanelSelection, applyShowGaps, showGapsOn, onShowGapsChange, roundRobinOn, applyRoundRobin, onPrefRoundRobinChange, verticalSlotsOn, applyVerticalSlots, onPrefVerticalSlotsChange, customStyleItems, resolveStyleEntry, refreshStyleSelects, countStyleUsage, applyStyleDelete, deleteStyleObject, getPanelKeywords, onPanelStyleChange, copyProjectItemToCatalogue, copyCatalogueItemToProject, updatePanelSelects, setCursor, onGapClick, moveCursor, renderGaps, paintCursor, cursorClamped, cursorGap, cursorGapLabel, duplicateSelectionToCursor, addPanelsAtCursor, pasteAtCursor, movePanelsToCursor, moveSelectionToCursor, pageBreakAtCursor, closeAnalysis, closeJsonEditor, closePanelContextMenu, closeSingleView, closeStoryboard, closeUserManual, collectDomSnapshot, copyFromPrevPanel, copySeedFromPrevPanel, countLibReferences, deletePage, deletePanel, duplicatePanel, exportSettings, exportZip, focusSelectedPanels, generateComicPage, generateSinglePanel, generateSinglePanelSlot, ghClose, ghPush, ghSaveSettings, haltGenerations, jsonEditorApply, jsonEditorFindChanged, jsonEditorInput, jsonEditorReplaceAll, jsonEditorUndoApply, keepAwakeStateText, loadLibraryObjects, makeRepresentative, movePanelChar, movePanelToPage, moveSelectionWithinPage, newPanelLibraryEntry, notify, onPanelImgCountChange, onPanelSelectClick, onPrefBgGenerateChange, onPrefKeepAwakeChange, openAnalysis, openFocusPanels, openGhBackup, openJsonEditor, openPanelContextMenu, openSingleView, openStoryboard, openUserManual, panelCopyAction, panelCutAction, panelPasteAction, panelSameSeedOn, pasteBeforeSelection, pauseGenerations, copyPanelPromptFull, projectKeptArray, projectLibraryArray, refreshPanelLineBase, renderLibrary, renumberPageTo, resequencePanel, resetEverything, revertPanelPrompt, runPanelCommand, saveKept, saveLibraryObjects, savePanelDescription, savePanelState, selectAllPanels, setAdvancedMode, setPanelSameSeed, singleNav, stackBottomCluster, stopKeepAwake, storyboardNavDelta, switchMenu, switchPage, testCollectPanelState, toggleLayout, togglePromptEditor, toggleSlotProtect, toggleUiPreview, undoStructuralOp, updatePanelVisibility, enqueueQueueItems, clearGenQueue, moveQueueItem, removeQueueItem, drainGenQueue, generateQueuedAction, generateAllAction, resumeRunAction, resumeQueueDrain, queueHasPending, queueItemPending, openGenMenu, closeGenMenu, panelGenGo, slotGenGo, panelStickyGen, slotStickyGen, batchStickyGen, queueSelectedPanels, queuePanelOpen, queuePanelRender, runPanelSetQ, syncGenFaces, runPanelReshow, runPanelHide, refreshRunPanelTarget };
 
   function ghLoadSettings() {
     try {
