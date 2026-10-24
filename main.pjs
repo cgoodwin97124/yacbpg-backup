@@ -1,5 +1,5 @@
 title = Yet Another Comic Book Page Generator
-description = Yet Another Comic Book Page Generator - Comic book page generator with character and location library, persistent descriptions, and more.
+description = Yet Another Comic Book Page Generator — describe each panel (characters, location, action) and it renders AI art for every slot, 1–4 images per panel. Multi-page projects, reusable character/location/style libraries, per-panel seeds and protected "keeper" images, storyboard and focus views, file export/import plus one-click GitHub backup. Runs entirely in your browser — no account, no server.
 generateImage = {import:text-to-image-plugin}
 
 characters
